@@ -34,8 +34,8 @@
 - 💡 **Interactive Proposed Changes**: View AI's proposed changes with detailed file paths, action types (ADD, MODIFY, DELETE), and AI-generated reasons. Selectively apply or discard individual changes, and even edit the proposed content before application.
 - 📊 **Git Diff Visualization**: Inspect detailed git diffs for proposed modifications and deletions directly within the editor before applying changes, ensuring transparency and control.
 - 🔒 **Secure Authentication**: Seamlessly log in using Google or GitHub OAuth2 for secure access to the editor, with user session management handled by the backend.
-- 📂 **Project Context & Scanning**: Specify a project root path and relevant scan paths for the AI to analyze, providing crucial context for intelligent code suggestions and understanding project structure.
-- 🚀 **File Tree Navigation & Content Viewing**: Browse your project's file structure with an interactive file tree, allowing for easy exploration, selection of files, and direct viewing of their current content in a dedicated editor panel.
+- 📂 **Project Context & Scanning**: Specify a project root path and relevant scan paths for the AI to analyze, providing crucial context for intelligent code suggestions and understanding project structure. Includes an interactive file picker dialog for easy path selection.
+- 🚀 **File Tree Navigation & Content Viewing**: Browse your project's file structure with an interactive file tree, allowing for easy exploration, selection of files, and direct viewing of their current content in a dedicated editor panel. You can also manually edit the content of opened files.
 - 🌍 **Modern UI/UX**: Built with React, Material-UI, and Tailwind CSS for a responsive, accessible, and intuitive user experience.
 - ⚡ **Vite Development**: Fast development and build times powered by Vite, providing a modern and efficient development workflow.
 - 🌗 **Dark/Light Theme Toggle**: Effortlessly switch between dark and light modes, enhancing readability and user comfort.
@@ -54,14 +54,14 @@ ai-editor-front/
 │   │   ├── code-editor/ # CodeMirror editor component for displaying and editing code
 │   │   ├── file-tree/  # Components for rendering and interacting with the project's file tree
 │   │   ├── ui/         # Wrapper components for Material-UI elements (e.g., Button, TextField, CircularProgress)
-│   │   └── ...         # Other general UI components (e.g., Layout, Navbar, Loading, WelcomeMessage)
+│   │   └── ...         # Other general UI components (e.g., Layout, Navbar, Loading, WelcomeMessage, PromptGenerator, FilePickerDialog)
 │   ├── constants/      # Global constants, AI instruction templates, and configuration values
 │   ├── context/        # React Contexts (e.g., AuthContext, though Nanostores is the primary state management solution)
 │   ├── hooks/          # Custom React hooks (e.g., useAuth for simplified authentication access)
-│   ├── pages/          # Top-level page components, defining the main views of the application (e.g., AiEditorPage, LoginPage, AuthCallback, LandingPage)
+│   ├── pages/          # Top-level page components, defining the main views of the application (e.g., AiEditorPage, LoginPage, AuthCallback)
 │   ├── routes/         # Application routing setup (currently defined in App.tsx using React Router DOM)
 │   ├── services/       # Business logic for API calls, authentication state management, and other non-UI related operations (e.g., authService)
-│   ├── stores/         # Nanostores for centralized, reactive global state management (e.g., authStore, aiEditorStore, fileTreeStore)
+│   ├── stores/         # Nanostores for centralized, reactive global state management (e.g., authStore, aiEditorStore, fileTreeStore, themeStore)
 │   ├── types/          # TypeScript type definitions for API responses, application state, and domain models
 │   └── utils/          # General utility functions (e.g., path manipulation, debounce, file tree building)
 ├── .env                # Environment variables (local overrides for development, not committed)
@@ -153,7 +153,7 @@ npm run test:coverage
 
 ## 📊 Roadmap
 
-- [ ] **Real-time File Content Editing (with saving)**: Enable editing the content of _any_ selected file from the file tree in a dedicated editor panel, with options to save changes back to the file system via the backend.
+- [ ] **Real-time File Content Editing & Saving**: Enhance the editor panel to allow full real-time editing and saving of _any_ selected file from the file tree, synchronizing changes via the backend.
 - [ ] **WebSocket Integration**: Implement real-time updates from the backend, such as file system changes, AI generation progress, and new notifications.
 - [ ] **Enhanced Error Handling & Feedback**: Improve user-facing error messages, loading indicators, and success notifications across the application.
 - [ ] **Dedicated Settings Page**: Develop a page for user preferences, AI model selection, API key configurations, and other configurable options.

@@ -1,9 +1,5 @@
 import { getToken } from '@/stores/authStore';
-import {
-  LlmGeneratePayload,
-  LlmResponse,
-  ProposedFileChange,
-} from '@/types/llm'; // Import new LLM types and ProposedFileChange
+import { ModelResponse, FileChange } from '@/types'; // Import new LLM types and FileChange
 
 const API_BASE_URL = `/api`; // Changed to relative path for Vite proxy consistency
 
@@ -12,7 +8,7 @@ interface ApiError extends Error {
   message: string;
 }
 
-const handleResponse = async <T>(response: Response): Promise<T> => {
+const handleResponse = async <T,>(response: Response): Promise<T> => {
   if (!response.ok) {
     const errorData: ApiError = await response.json();
     throw new Error(errorData.message || `API error: ${response.status}`);
@@ -37,16 +33,14 @@ const fetchWithAuth = async (url: string, options?: RequestInit) => {
  * @param data The payload containing user prompt, project root, scan paths, and instructions.
  * @returns A promise that resolves to the LLM's structured response with proposed file changes.
  */
-export const generateCode = async (
-  data: LlmGeneratePayload,
-): Promise<LlmResponse> => {
+export const generateCode = async (data: LlmGeneratePayload): Promise<ModelResponse> => {
   try {
     // projectRoot is now part of LlmGeneratePayload, no need for it as a query parameter.
     const response = await fetchWithAuth(`${API_BASE_URL}/llm/generate-llm`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return handleResponse<LlmResponse>(response);
+    return handleResponse<ModelResponse>(response);
   } catch (error) {
     console.error('Error generating code:', error);
     throw error;
@@ -55,12 +49,12 @@ export const generateCode = async (
 
 /**
  * Applies selected proposed changes to the file system.
- * @param changes An array of ProposedFileChange objects to apply.
+ * @param changes An array of FileChange objects to apply.
  * @param projectRoot The root directory of the project.
  * @returns A promise indicating success or failure of the diff application.
  */
 export const applyProposedChanges = async (
-  changes: ProposedFileChange[],
+  changes: FileChange[],
   projectRoot: string,
 ): Promise<{ success: boolean; messages: string[] }> => {
   try {
@@ -81,11 +75,11 @@ export const applyProposedChanges = async (
  * @param projectRoot The root directory of the project (git repository).
  * @returns A promise that resolves to the git diff string.
  */
-export const getGitDiff = async (
-  filePath: string,
-  projectRoot: string,
-): Promise<string> => {
+export const getGitDiff = async (filePath: string, projectRoot: string): Promise<string> => {
   try {
+    if (projectRoot) {
+      filePath = `${projectRoot}/${filePath}`;
+    }
     const response = await fetchWithAuth(`${API_BASE_URL}/file/git-diff`, {
       method: 'POST',
       body: JSON.stringify({ filePath, projectRoot }),
@@ -98,3 +92,19 @@ export const getGitDiff = async (
     throw error;
   }
 };
+
+export interface LlmRelevantFile {
+  filePath: string;
+  relativePath: string;
+  content: string;
+}
+
+export interface LlmGeneratePayload {
+  userPrompt: string;
+  projectRoot: string;
+  projectStructure: string;
+  relevantFiles: LlmRelevantFile[];
+  additionalInstructions: string;
+  expectedOutputFormat: string;
+  scanPaths: string[];
+}

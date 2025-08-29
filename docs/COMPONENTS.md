@@ -51,16 +51,17 @@ src/
 
 ### `AiEditorPage.tsx`
 
-- **Responsibility**: The central interface for interacting with the AI. It handles user prompts, displays AI-generated changes, allows diff viewing, and manages the application of proposed changes.
+- **Responsibility**: The central interface for interacting with the AI. It coordinates user prompts via `PromptGenerator`, displays AI-generated proposed changes, allows diff viewing, manages the application of selected changes, and provides a file tree for project navigation and viewing file content.
 - **Key Features**:
-  - Input fields for project root and scan paths.
-  - Text area for AI instructions.
-  - Displays AI's summary and thought process.
-  - Lists proposed file changes with checkboxes for selection.
-  - Integrates `CodeMirrorEditor` for viewing/editing proposed content.
-  - Displays git diffs.
-  - Handles applying selected changes via `applyProposedChanges` API.
-  - Integrates `FileTree` for browsing project files and `CodeMirrorEditor` for viewing file content.
+  - Integrates `PromptGenerator` for handling project root input, scan paths, and AI instructions.
+  - Displays AI's `summary` and `thoughtProcess` from `lastLlmResponse`.
+  - Lists `ProposedFileChange` objects with checkboxes for selective application.
+  - Allows editing the `newContent` of `ADD` or `MODIFY` changes using `CodeMirrorEditor` before applying.
+  - Provides a 'View Git Diff' button for `MODIFY` and `DELETE` changes, displaying the diff using `getGitDiff` API.
+  - Manages the application of selected changes using `applyProposedChanges` API, showing progress and messages.
+  - Embeds `FileTree` component for hierarchical project file navigation.
+  - Displays the content of a `selectedFile` from the `FileTree` in a dedicated `CodeMirrorEditor` panel (read-only).
+  - Handles general loading and error states for AI generation and change application.
 
 ### `LoginPage.tsx`
 
@@ -76,22 +77,39 @@ src/
 
 ### `src/components/code-editor/CodeMirrorEditor.tsx`
 
-- **Responsibility**: A wrapper around the CodeMirror 6 library, providing a functional code editor component.
-- **Key Features**: Supports syntax highlighting for various languages, handles value changes, and can be set to read-only or editable modes. Used for displaying proposed AI changes and viewing existing file content.
+- **Responsibility**: A versatile wrapper around the CodeMirror 6 library, providing a functional code editor component.
+- **Key Features**: Supports syntax highlighting for various languages, handles value changes, and can be set to read-only or editable modes. It is used for displaying proposed AI changes (editable) and for viewing existing file content from the file tree (read-only).
 
 ### `src/components/file-tree/`
 
-- **`FileTree.tsx`**: The main component for displaying the hierarchical project file structure.
-  - **Responsibility**: Fetches file data from the backend, builds the tree, and renders `FileTreeItem` components.
-  - **Key Features**: Integrates with `fileTreeStore` and `aiEditorStore` to manage file data, expansion, and selected files. Includes refresh functionality.
-- **`FileTreeItem.tsx`**: Represents a single file or directory within the file tree.
-  - **Responsibility**: Renders the name, icon, and expansion toggle for a file or directory. Recursively renders children for directories.
-  - **Key Features**: Handles expanding/collapsing directories, selecting files (which updates the `aiEditorStore` to show file content), and provides visual cues for selected/expanded states.
+- **`FileTree.tsx`**:
+  - **Responsibility**: The main component for displaying the hierarchical project file structure in the sidebar.
+  - **Key Features**: Fetches file data from the backend using `fileTreeStore`, constructs the tree, and renders `FileTreeItem` components. Manages file data, expansion states, and communicates selected files to `aiEditorStore` for content display. Includes a refresh button.
+- **`FileTreeItem.tsx`**:
+  - **Responsibility**: Represents a single file or directory within the file tree.
+  - **Key Features**: Renders the name, appropriate icon, and expansion toggle for a file or directory. Handles expanding/collapsing directories, and upon file selection, it calls `setSelectedFile` in `fileTreeStore` (which in turn updates `aiEditorStore` to show file content). Provides visual cues for selected and expanded states.
 
-### `src/components/ui/`
+### `src/components/PromptGenerator.tsx`
 
-- **Responsibility**: Contains simple wrapper components for common Material-UI elements like `Button`, `TextField`, and `CircularProgress`.
-- **Purpose**: Provides a consistent interface, allows for easier custom styling (e.g., `!normal-case` for buttons), and simplifies imports within the application, ensuring that any global MUI overrides or custom behaviors are consistently applied.
+- **Responsibility**: Provides the primary input interface for the AI Editor, allowing users to define the project context and generate code.
+- **Key Features**:
+  - Input for `projectRoot` path and a 'Load Project' button to initialize the file tree and AI context.
+  - Input for `scanPathsInput` (comma-separated relative paths), with an autocomplete feature populated from the file tree and an 'Add' button to open `FilePickerDialog`.
+  - Textarea for `instruction` (the user's prompt to the AI).
+  - 'Generate/Modify Code' button to trigger the AI generation process via the `generateCode` API.
+  - Displays loading indicators and error messages specific to the generation process.
+  - Integrates with `aiEditorStore` to manage all its input states and triggers AI actions.
+
+### `src/components/FilePickerDialog.tsx`
+
+- **Responsibility**: A modal dialog for interactively selecting multiple files and folders to be included in the AI's `scanPaths`.
+- **Key Features**:
+  - Displays a searchable, flattened list of all files and directories in the `currentProjectPath`.
+  - Allows users to checkbox-select multiple paths.
+  - Provides 'Select All' and 'Deselect All' actions.
+  - Filters the list based on a search term.
+  - Returns the selected relative paths to the `PromptGenerator` upon confirmation.
+  - Integrates with `fileTreeStore` to get the list of available files.
 
 ## Styling Conventions
 

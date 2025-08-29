@@ -15,19 +15,21 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      outDir: 'dist',
+      sourcemap: true,
       chunkSizeWarningLimit: 1000,
     },
     server: {
-      port: 3001, // Port for ai-editor-front
+      port: 3000, // Port for ai-editor-front
       proxy: {
         '/api': {
-          target: env.VITE_API_URL || 'http://localhost:3000', // Default to 3000 for backend
+          target: env.VITE_API_URL || 'http://localhost:5000', // Default to 3000 for backend
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
 
         '/socket.io': {
-          target: env.VITE_API_URL || 'http://localhost:3000',
+          target: env.VITE_API_URL || 'http://localhost:5000',
           changeOrigin: true,
           ws: true,
         },

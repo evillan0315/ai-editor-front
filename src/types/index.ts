@@ -1,5 +1,4 @@
-import { ProposedFileChange } from './llm';
-import { LlmResponse } from './llm';
+import { FileChange, ModelResponse, type FileAction, AddOrModifyFileChange ,DeleteOrAnalyzeFileChange } from '@/constants';
 import { FileEntry as TreeFileEntry } from './fileTree'; // Import for FileTree
 
 export interface FileEntry {
@@ -22,8 +21,8 @@ export interface AiEditorState {
   loading: boolean;
   error: string | null;
   scanPathsInput: string; // Add scanPathsInput to the state
-  lastLlmResponse: LlmResponse | null; // Stores the full structured response from LLM
-  selectedChanges: Record<string, ProposedFileChange>; // Map of filePath to ProposedFileChange
+  lastLlmResponse: ModelResponse | null; // Stores the full structured response from LLM
+  selectedChanges: Record<string, FileChange>; // Map of filePath to ProposedFileChange
   currentDiff: string | null; // The content of the diff for the currently viewed file
   diffFilePath: string | null; // The filePath of the file whose diff is currently displayed
   applyingChanges: boolean; // Indicates if apply changes operation is in progress
@@ -34,4 +33,4 @@ export interface AiEditorState {
   fetchFileContentError: string | null; // Error state for fetching opened file content
 }
 
-export type { ProposedFileChange };
+export type { FileChange, ModelResponse, FileAction, AddOrModifyFileChange, DeleteOrAnalyzeFileChange };

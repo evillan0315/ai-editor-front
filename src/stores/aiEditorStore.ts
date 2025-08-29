@@ -1,6 +1,11 @@
 import { map } from 'nanostores';
-import { AiEditorState, ProposedFileChange } from '@/types';
-import { LlmResponse } from '@/types/llm';
+import {
+  AiEditorState,
+  FileChange,
+  ModelResponse,
+  AddOrModifyFileChange,
+  DeleteOrAnalyzeFileChange,
+} from '@/types/index';
 
 export const aiEditorStore = map<AiEditorState>({
   instruction: '',
@@ -10,7 +15,7 @@ export const aiEditorStore = map<AiEditorState>({
   error: null,
   scanPathsInput: 'src,package.json,README.md', // Initialize with default scan paths
   lastLlmResponse: null, // Stores the full structured response from LLM
-  selectedChanges: {}, // Map of filePath to ProposedFileChange for selected items
+  selectedChanges: {}, // Map of filePath to FileChange for selected items
   currentDiff: null, // The content of the diff for the currently viewed file
   diffFilePath: null, // The filePath of the file whose diff is currently displayed
   applyingChanges: false, // New state for tracking if changes are being applied
@@ -62,11 +67,11 @@ export const setScanPathsInput = (paths: string) => {
   aiEditorStore.setKey('scanPathsInput', paths);
 };
 
-export const setLastLlmResponse = (response: LlmResponse | null) => {
+export const setLastLlmResponse = (response: ModelResponse | null) => {
   aiEditorStore.setKey('lastLlmResponse', response);
   // Auto-select all changes when a new response comes in
   if (response && response.changes) {
-    const newSelectedChanges: Record<string, ProposedFileChange> = {};
+    const newSelectedChanges: Record<string, FileChange> = {};
     response.changes.forEach((change) => {
       newSelectedChanges[change.filePath] = change; // Select all by default
     });
@@ -76,7 +81,7 @@ export const setLastLlmResponse = (response: LlmResponse | null) => {
   }
 };
 
-export const toggleSelectedChange = (change: ProposedFileChange) => {
+export const toggleSelectedChange = (change: FileChange) => {
   const state = aiEditorStore.get(); // Get current state
   const newSelected = { ...state.selectedChanges };
   if (newSelected[change.filePath]) {
@@ -90,7 +95,7 @@ export const toggleSelectedChange = (change: ProposedFileChange) => {
 export const selectAllChanges = () => {
   const state = aiEditorStore.get(); // Get current state
   if (state.lastLlmResponse?.changes) {
-    const newSelectedChanges: Record<string, ProposedFileChange> = {};
+    const newSelectedChanges: Record<string, FileChange> = {};
     state.lastLlmResponse.changes.forEach((change) => {
       newSelectedChanges[change.filePath] = change;
     });
@@ -102,10 +107,7 @@ export const deselectAllChanges = () => {
   aiEditorStore.setKey('selectedChanges', {});
 };
 
-export const setCurrentDiff = (
-  filePath: string | null,
-  diffContent: string | null,
-) => {
+export const setCurrentDiff = (filePath: string | null, diffContent: string | null) => {
   aiEditorStore.setKey('diffFilePath', filePath);
   aiEditorStore.setKey('currentDiff', diffContent);
 };
@@ -123,26 +125,39 @@ export const setAppliedMessages = (messages: string[]) => {
   aiEditorStore.setKey('appliedMessages', messages);
 };
 
-export const updateProposedChangeContent = (
-  filePath: string,
-  newContent: string,
-) => {
+export const updateProposedChangeContent = (filePath: string, newContent: string) => {
   const state = aiEditorStore.get(); // Get current state
   if (!state.lastLlmResponse) return; // No change if there's no LLM response
 
-  const updatedChanges = state.lastLlmResponse.changes.map((change) => {
+  // Update changes in lastLlmResponse
+  const updatedChanges: FileChange[] = state.lastLlmResponse.changes.map((change) => {
     if (change.filePath === filePath) {
-      return { ...change, newContent };
+      if (change.action === 'add' || change.action === 'modify' || change.action === 'repair') {
+        // Type guard ensures 'change' is AddOrModifyFileChange here
+        return { ...(change as AddOrModifyFileChange), newContent };
+      }
+      // For 'delete' or 'analyze' actions, newContent is not applicable.
+      return change; // Return the original change without modifying newContent
     }
     return change;
   });
 
-  const newSelectedChanges = state.selectedChanges[filePath]
-    ? {
-        ...state.selectedChanges,
-        [filePath]: { ...state.selectedChanges[filePath], newContent },
-      }
-    : state.selectedChanges;
+  // Update changes in selectedChanges
+  const newSelectedChanges: Record<string, FileChange> = { ...state.selectedChanges };
+  const selectedChange = newSelectedChanges[filePath];
+
+  if (selectedChange) {
+    if (
+      selectedChange.action === 'add' ||
+      selectedChange.action === 'modify' ||
+      selectedChange.action === 'repair'
+    ) {
+      // Type guard ensures 'selectedChange' is AddOrModifyFileChange here
+      newSelectedChanges[filePath] = { ...(selectedChange as AddOrModifyFileChange), newContent };
+    }
+    // For 'delete' or 'analyze' actions, newContent is not applicable.
+    // So, no need to modify newSelectedChanges[filePath] for these actions.
+  }
 
   aiEditorStore.set({
     // Set new full state

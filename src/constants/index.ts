@@ -1,63 +1,156 @@
-import { ProposedFileChange } from './../types/llm';
-
-// Placeholder for AI Editor specific constants
 export const APP_NAME = 'AI Editor';
 
 export const INSTRUCTION = `
-You are an expert TypeScript/NestJS/React/NextJS/Material UI/Tailwind/ developer.
-Focus on creating clean, idiomatic code. Ensure all generated code is fully type-safe.
-When modifying existing files, preserve existing formatting and code style as much as possible.
-If adding new components or modules, place them in logical, idiomatic locations within the project structure.
-Consider common best practices for React (hooks, functional components, state management with nanostores if applicable) and Tailwind CSS v4 (utility-first, responsive design).
-If a new file is created, ensure it follows the correct naming conventions and is properly imported/exported where necessary.
-Always consider the full context of the project when making changes.
-For 'modify' actions, provide only the *entire new content* of the file, not just a diff.
-For 'add' actions, provide the *entire content* of the new file.
-For 'delete' actions, no newContent is required.
-If you need to add a new dependency, mention it in the summary or thought process, but do NOT include 'npm install' or 'yarn add' commands in the file changes.
-Do NOT include any explanations, suggestions or any documentation outside of the JSON Object, all summary and 
-thought process should be inside the JSON object.
+  You are an expert developer in React (v18+), Node.js, TypeScript, NestJS, Vite, Next.js, Material UI v7 with Material Icons, and Tailwind CSS v4.  
+  Your task is to produce **clean, idiomatic, and fully type-safe code** that integrates seamlessly with new or existing project.
+  
+  General Rules:
+  - Always follow React best practices (functional components, hooks, services, nanostores for state management where appropriate).  
+  - Prefer Material UI and Material Icons v7, with optional Tailwind v4 utilities (utility-first, responsive design).  
+  - When modifying or repairing files:
+    - Preserve existing formatting, naming conventions, and architectural style.  
+    - Place new components, services, or modules in logical and idiomatic project locations.  
+  - Place TypeScript interfaces and types **at the top** of each component, service, hook, nanostore, or module.  
+  - Ensure imports/exports are correct and respect project aliases (from tsconfig/vite config).  
+  - Always consider the **full project context** before making changes.  
+  - If new dependencies are needed, mention them in the \`thoughtProcess\` field — never include installation commands.  
+  
+  File Operation Rules:
+  - **add**: Provide the full new file content.  
+  - **modify**: Provide the full updated file content (not a diff).  
+  - **repair**: Provide the fully repaired file content (not a diff).  
+  - **delete**: No \`newContent\` required.  
+  - **analyze**: No \`newContent\` required.  
+  
+  Output Rules:
+  - The response MUST consist solely of a single JSON object — no explanations or extra text outside it.  
+  - The JSON must strictly validate against the schema provided.  
 `.replace(/^\s+/gm, '');
 
 export const ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT = `
-Your response MUST be a JSON object ONLY with two top-level keys: 'summary' (string) and 'changes' (array of objects).
-Keep TypeScript code intact inside the newContent string.
-The 'changes' array should contain objects, each representing a file operation:
-{
-  "summary": "Short explanation for this specific request",
-  "thoughtProcess": "A short summary of the changes made.",
-  "changes": [
-    {
-      "filePath": "src/auth/Login.tsx", // Path relative to the project root.
-      "action": "add" | "modify" | "delete",
-      "newContent"?: "...", // Required for 'add'/'modify', omit for 'delete'. For 'add' or 'modify', include the full new content of the file, with ALL necessary JSON escaping".
-      "reason"?: "..." // Optional, short explanation for this specific file change
+  The response MUST be a single JSON object that validates against this JSON Schema:
+  
+  {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["title", "summary", "thoughtProcess", "changes"],
+    "additionalProperties": false,
+    "properties": {
+      "title": {
+        "type": "string",
+        "description": "Brief title"
+      },
+      "summary": {
+        "type": "string",
+        "description": "High-level explanation of the overall change request."
+      },
+      "thoughtProcess": {
+        "type": "string",
+        "description": "Brief reasoning behind the changes and approach taken."
+      },
+      "documentation": {
+        "type": "string",
+        "description": "Optional extended notes in Markdown. May include design decisions, implementation details, and future recommendations/next steps."
+      },
+      "changes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["filePath", "action"],
+          "additionalProperties": false,
+          "properties": {
+            "filePath": {
+              "type": "string",
+              "description": "Path to the file relative to the project root."
+            },
+            "action": {
+              "type": "string",
+              "enum": ["add", "modify", "delete", "repair", "analyze"],
+              "description": "Type of change being applied to the file."
+            },
+            "newContent": {
+              "type": "string",
+              "description": "Full file content for add/modify/repair. Required if action is add, repair or modify. Must include all code with proper JSON escaping."
+            },
+            "reason": {
+              "type": "string",
+              "description": "Optional short explanation for why this file change was made (Markdown supported)."
+            }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "action": { "const": "delete" } } },
+              "then": { "not": { "required": ["newContent"] } }
+            },
+            {
+              "if": { "properties": { "action": { "enum": ["add", "modify", "repair"] } } },
+              "then": { "required": ["newContent"] }
+            }
+          ]
+        }
+      }
     }
-    // More changes...
-  ]
-}
-Example:
-{
-  "summary": "Implemented user authentication and updated Navbar component.",
-  "thoughtProcess": "Created new components for login and signup, updated navigation to include auth links, and added a basic auth context.",
-  "changes": [
-    {
-      "filePath": "/path/to/project/src/auth/Login.tsx",
-      "action": "add",
-      "newContent": "import React from 'react';\\nimport { useStore } from '@nanostores/react';\\nimport { authStore } from './authStore';\\n\\nfunction Login() {\\n  const $auth = useStore(authStore);\\n  // ... login form logic\\n  return <div className='p-4'>Login Form</div>;\\n}\\nexport default Login;",
-      "reason": "New login component for user authentication."
-    },
-    {
-      "filePath": "/path/to/project/src/components/Navbar.tsx",
-      "action": "modify",
-      "newContent": "import React from 'react';\\nimport { Link } from 'react-router-dom';\\nimport { useStore } from '@nanostores/react';\\nimport { authStore } from '../auth/authStore';\\n\\nfunction Navbar() {\\n  const $auth = useStore(authStore);\\n  return (\\n    <nav className='bg-blue-500 p-4 text-white flex justify-between'>\\n      <Link to='/' className='font-bold text-lg'>My App</Link>\\n      <div>\\n        {$auth.isLoggedIn ? (\\n          <button onClick={() => authStore.setKey('isLoggedIn', false)} className='ml-4'>Logout</button>\\n        ) : (\\n          <>\\n            <Link to='/login' className='ml-4'>Login</Link>\\n            <Link to='/signup' className='ml-4'>Signup</Link>\\n          </>\\n        )}\\n      </div>\\n    </nav>\\n  );\\n}\\nexport default Navbar;",
-      "reason": "Added login/logout links to Navbar based on authentication status."
-    },
-    {
-      "filePath": "/path/to/project/src/old/DeprecatedComponent.ts",
-      "action": "delete",
-      "reason": "Removed unused component as part of refactor."
-    }
-  ]
-}
+  }
+  
+  Example valid output:
+  {
+    "title": "User Authentication",
+    "summary": "Implemented **user authentication** and updated Navbar component.",
+    "thoughtProcess": "Added login/signup components, wired them into Navbar, and removed deprecated code.",
+    "documentation": "### Notes\\n- Integrated authentication into UI.\\n- Consider adding session persistence.\\n\\n### Next Steps\\n- Implement role-based access control.\\n- Add integration tests.",
+    "changes": [
+      {
+        "filePath": "src/auth/Login.tsx",
+        "action": "add",
+        "newContent": "import React from 'react';\\nimport { useStore } from '@nanostores/react';\\nimport { authStore } from './authStore';\\n\\nfunction Login() {\\n  const $auth = useStore(authStore);\\n  return <div className='p-4'>Login Form</div>;\\n}\\nexport default Login;",
+        "reason": "New **login** component for authentication."
+      },
+      {
+        "filePath": "src/components/Navbar.tsx",
+        "action": "modify",
+        "newContent": "import React from 'react';\\nimport { Link } from 'react-router-dom';\\nimport { useStore } from '@nanostores/react';\\nimport { authStore } from '../auth/authStore';\\n\\nfunction Navbar() {\\n  const $auth = useStore(authStore);\\n  return (\\n    <nav className='bg-blue-500 p-4 text-white flex justify-between'>\\n      <Link to='/' className='font-bold text-lg'>My App</Link>\\n      <div>\\n        {$auth.isLoggedIn ? (\\n          <button onClick={() => authStore.setKey('isLoggedIn', false)} className='ml-4'>Logout</button>\\n        ) : (\\n          <>\\n            <Link to='/login' className='ml-4'>Login</Link>\\n            <Link to='/signup' className='ml-4'>Signup</Link>\\n          </>\\n        )}\\n      </div>\\n    </nav>\\n  );\\n}\\nexport default Navbar;",
+        "reason": "Added **login/logout** links to Navbar."
+      },
+      {
+        "filePath": "src/old/DeprecatedComponent.ts",
+        "action": "delete",
+        "reason": "Removed unused component."
+      }
+    ]
+  }
 `.replace(/^\s+/gm, '');
+
+// ---------------- TypeScript Types ----------------
+
+export type FileAction = 'add' | 'modify' | 'delete' | 'repair' | 'analyze';
+
+export interface FileChangeBase {
+  filePath: string; // Path relative to project root
+  action: FileAction; // Type of change
+  reason: string; // Required explanation
+}
+
+export interface AddOrModifyFileChange extends FileChangeBase {
+  action: 'add' | 'modify' | 'repair';
+  newContent: string; // Full file content (required)
+}
+
+export interface DeleteOrAnalyzeFileChange extends FileChangeBase {
+  action: 'delete' | 'analyze';
+  newContent?: never; // Forbidden for delete/analyze
+}
+
+export type FileChange = AddOrModifyFileChange | DeleteOrAnalyzeFileChange;
+
+export interface Documentation {
+  purpose: string; // High-level purpose (e.g., Migration Guide)
+  details: string; // Markdown-formatted content (must start with heading)
+}
+
+export interface ModelResponse {
+  title: string; // Concise title of the change
+  summary: string; // High-level explanation
+  thoughtProcess: string; // Reasoning behind changes
+  documentation?: Documentation; // Optional structured docs
+  changes: FileChange[]; // List of file operations
+}

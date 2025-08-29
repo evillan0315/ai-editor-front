@@ -15,4 +15,6 @@ export interface FileTreeState {
   selectedFile: string | null; // filePath of the currently selected file
   isFetchingTree: boolean;
   fetchTreeError: string | null;
+  lastFetchedProjectRoot?: string | null; // Tracks the project root for the last successful fetch
+  lastFetchedScanPaths?: string[]; // Tracks the scan paths for the last successful fetch
 }

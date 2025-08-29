@@ -46,57 +46,61 @@ Manages the state related to AI interactions, proposed code changes, and current
 
 - **State**:
   - `instruction: string`: The user's prompt for the AI.
-  - `currentProjectPath: string | null`: The absolute path of the project root being worked on.
-  - `scanPathsInput: string`: Comma-separated paths for the AI to scan.
-  - `lastLlmResponse: LlmResponse | null`: The full structured response from the AI, including summary, thought process, and `ProposedFileChange[]`.
-  - `selectedChanges: Record<string, ProposedFileChange>`: A map of selected changes to be applied (keyed by `filePath`).
-  - `currentDiff: string | null`: The content of the git diff for the currently viewed file.
-  - `diffFilePath: string | null`: The path of the file whose diff is currently displayed.
-  - `openedFile: string | null`: The absolute path of the file currently opened for viewing in the editor panel.
-  - `openedFileContent: string | null`: The content of the `openedFile`.
-  - `isFetchingFileContent: boolean`: Loading state for fetching `openedFile` content.
-  - `fetchFileContentError: string | null`: Error state for fetching `openedFile` content.
-  - `loading: boolean`: General loading state for AI generation or other heavy operations.
-  - `error: string | null`: General error message for AI Editor operations.
-  - `applyingChanges: boolean`: Indicates if the process of applying changes is in progress.
-  - `appliedMessages: string[]`: Messages received from the backend after attempting to apply changes.
+  - `currentProjectPath: string | null`: The absolute path of the project root being worked on, typically set from `VITE_BASE_DIR` or user input.
+  - `scanPathsInput: string`: A comma-separated string of relative file/folder paths for the AI to focus its analysis.
+  - `lastLlmResponse: LlmResponse | null`: The full structured response from the AI after code generation, including a summary, thought process, and an array of `ProposedFileChange` objects.
+  - `selectedChanges: Record<string, ProposedFileChange>`: A map where keys are `filePath` strings and values are `ProposedFileChange` objects, representing the AI-suggested changes that the user has selected to apply.
+  - `currentDiff: string | null`: The content of the git diff for the file currently being previewed (e.g., after clicking 'View Git Diff').
+  - `diffFilePath: string | null`: The `filePath` of the file whose diff is currently displayed in `currentDiff`.
+  - `openedFile: string | null`: The absolute path of the file currently opened for viewing (and potential future editing) in the dedicated editor panel.
+  - `openedFileContent: string | null`: The actual content (string) of the `openedFile`.
+  - `isFetchingFileContent: boolean`: A boolean indicating if the content of the `openedFile` is currently being fetched from the backend.
+  - `fetchFileContentError: string | null`: Stores any error message if fetching `openedFileContent` fails.
+  - `loading: boolean`: General loading state for AI generation or other heavy operations specific to the AI Editor.
+  - `error: string | null`: General error message for AI Editor operations (e.g., failed AI generation, diff fetching errors).
+  - `applyingChanges: boolean`: Indicates if the process of applying selected proposed changes to the file system is currently in progress.
+  - `appliedMessages: string[]`: An array of messages received from the backend after attempting to apply changes, providing feedback on success or failure for each change.
 
 - **Actions**:
-  - `setInstruction(instruction: string)`: Updates the AI prompt.
-  - `setScanPathsInput(paths: string)`: Updates the scan paths.
-  - `setLastLlmResponse(response: LlmResponse | null)`: Stores the AI's full response and automatically selects all proposed changes.
-  - `toggleSelectedChange(change: ProposedFileChange)`: Toggles the selection status of a proposed file change.
-  - `selectAllChanges()` / `deselectAllChanges()`: Manage bulk selection of changes.
-  - `setCurrentDiff(filePath: string | null, diffContent: string | null)`: Sets the diff content for a specific file.
-  - `updateProposedChangeContent(filePath: string, newContent: string)`: Allows editing the content of a proposed change before applying.
-  - `setOpenedFile(filePath: string | null)`: Sets the file to be displayed in the editor panel and clears related content/errors.
+  - `setInstruction(instruction: string)`: Updates the AI prompt string.
+  - `setScanPathsInput(paths: string)`: Updates the comma-separated scan paths string.
+  - `setLastLlmResponse(response: LlmResponse | null)`: Stores the AI's full structured response and automatically selects all proposed changes for convenience.
+  - `toggleSelectedChange(change: ProposedFileChange)`: Adds or removes a `ProposedFileChange` from `selectedChanges`.
+  - `selectAllChanges()`: Selects all `ProposedFileChange` objects from `lastLlmResponse`.
+  - `deselectAllChanges()`: Clears all selected changes.
+  - `setCurrentDiff(filePath: string | null, diffContent: string | null)`: Sets the `diffFilePath` and `currentDiff` to display a specific file's diff.
+  - `clearDiff()`: Clears the currently displayed diff.
+  - `updateProposedChangeContent(filePath: string, newContent: string)`: Modifies the `newContent` for a specific proposed change, allowing users to edit AI suggestions.
+  - `setOpenedFile(filePath: string | null)`: Sets the `filePath` of the file to be opened in the editor panel, triggering content fetch and clearing previous file content/errors.
   - `setOpenedFileContent(content: string | null)`: Sets the content for the `openedFile`.
-  - `setIsFetchingFileContent(isLoading: boolean)`: Updates fetching loading state for `openedFile`.
-  - `setFetchFileContentError(message: string | null)`: Sets an error message for fetching `openedFile` content.
-  - `setLoading(isLoading: boolean)` / `setError(message: string | null)` / `clearState()`: General state management for the editor.
+  - `setIsFetchingFileContent(isLoading: boolean)`: Updates the loading state for `openedFile` content fetching.
+  - `setFetchFileContentError(message: string | null)`: Sets an error message if fetching `openedFile` content fails.
+  - `setLoading(isLoading: boolean)` / `setError(message: string | null)` / `setApplyingChanges(isApplying: boolean)` / `setAppliedMessages(messages: string[])` / `clearState()`: General state management for the editor's various operational states.
 
-- **Integration**: Primarily consumed by `AiEditorPage.tsx` to drive the core AI interaction and file editing UI. Also used by `FileTreeStore` to set the `openedFile`.
+- **Integration**: Primarily consumed by `AiEditorPage.tsx` to drive the core AI interaction and file editing UI. Its actions are also called by `PromptGenerator.tsx` for initiating AI requests and by `FileTreeStore` via `setSelectedFile` to display file contents.
 
 ### 3. `fileTreeStore` (`src/stores/fileTreeStore.ts`)
 
 Manages the state of the project file tree displayed in the sidebar.
 
 - **State**:
-  - `files: FileEntry[]`: The hierarchical structure of the project files, ready for rendering.
-  - `flatFileList: ApiFileEntry[]`: The raw, flat list of files returned from the API.
-  - `expandedDirs: Set<string>`: A set of `filePath` strings for currently expanded directories.
-  - `selectedFile: string | null`: The `filePath` of the file currently selected in the tree.
-  - `isFetchingTree: boolean`: True when the file tree data is being fetched from the backend.
+  - `files: FileEntry[]`: The hierarchical structure of the project files, ready for rendering in a tree view.
+  - `flatFileList: ApiFileEntry[]`: The raw, flat list of files returned directly from the API before being transformed into a tree.
+  - `expandedDirs: Set<string>`: A set of `filePath` strings for currently expanded directories in the tree.
+  - `selectedFile: string | null`: The `filePath` of the file currently selected in the file tree.
+  - `isFetchingTree: boolean`: True when the file tree data is currently being fetched from the backend.
   - `fetchTreeError: string | null`: Stores any error messages encountered during file tree fetching.
+  - `lastFetchedProjectRoot?: string | null`: Tracks the `projectRoot` of the last _successful_ file tree fetch, used for caching and preventing unnecessary re-fetches.
+  - `lastFetchedScanPaths?: string[]`: Tracks the `scanPaths` (parsed array) of the last _successful_ file tree fetch.
 
 - **Actions**:
-  - `fetchFiles(projectRoot: string, scanPaths: string[])`: Initiates an API call to fetch project files and constructs the hierarchical tree.
-  - `setFiles(files: FileEntry[])`: Updates the hierarchical file list.
-  - `toggleDirExpansion(filePath: string)`: Toggles the expanded/collapsed state of a directory.
-  - `setSelectedFile(filePath: string | null)`: Sets the currently selected file and triggers `setOpenedFile` in `aiEditorStore`.
-  - `clearFileTree()`: Resets the file tree state.
+  - `fetchFiles(projectRoot: string, scanPaths: string[])`: Initiates an API call to fetch project files (`fetchProjectFiles`), constructs the hierarchical tree (`buildFileTree`), and updates the store. It includes logic to prevent redundant fetches if the data is already fresh.
+  - `setFiles(files: FileEntry[])`: Updates the hierarchical `files` list.
+  - `toggleDirExpansion(filePath: string)`: Toggles the expanded/collapsed state of a directory in `expandedDirs`.
+  - `setSelectedFile(filePath: string | null)`: Sets the `selectedFile` in this store and also calls `aiEditorStore.setOpenedFile()` to display the content of the selected file in the main editor panel.
+  - `clearFileTree()`: Resets the entire file tree state, including expanded directories and fetched data.
 
-- **Integration**: Used by `FileTree.tsx` and `FileTreeItem.tsx` to render and interact with the file tree. It also communicates with `aiEditorStore` to open selected files.
+- **Integration**: Used by `FileTree.tsx` and `FileTreeItem.tsx` to render and interact with the file tree. It also actively communicates with `aiEditorStore` to open selected files for content viewing.
 
 ### 4. `themeStore` (`src/stores/themeStore.ts`)
 
@@ -113,9 +117,9 @@ Manages the application's current theme mode (light or dark).
 
 ## Inter-Store Communication
 
-Stores can interact with each other by calling actions from other stores. For example:
+Stores can interact with each other by calling actions from other stores. This ensures a clear flow of data and updates across different parts of the application, maintaining consistency and reactivity. Key examples include:
 
-- `fileTreeStore.setSelectedFile()` calls `aiEditorStore.setOpenedFile()` to display the content of the selected file.
+- `fileTreeStore.setSelectedFile()` calls `aiEditorStore.setOpenedFile()` to trigger the display of the selected file's content in the main editor area.
 - `aiEditorStore.clearState()` also calls `setOpenedFile(null)` to ensure the editor panel is cleared when the main AI editor state is reset.
-
-This approach ensures a clear flow of data and updates across different parts of the application, maintaining consistency and reactivity.
+- `PromptGenerator` updates `aiEditorStore` for all user inputs and triggers actions within `aiEditorStore`.
+- `aiEditorStore` actions (like `setLastLlmResponse`) automatically update other parts of its own state (like `selectedChanges`).

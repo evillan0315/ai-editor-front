@@ -27,7 +27,7 @@ The AI Editor follows a classic client-server architecture:
 ### Editor & File System Interaction
 
 - **CodeMirror**: A versatile text editor implemented in JavaScript for the browser, used for displaying and editing code content.
-- **`path-browserify`**: A browser-compatible polyfill for Node.js's `path` module, used for consistent path manipulation within the frontend.
+- **`path-browserify`**: A browser-compatible polyfill for Node.js's `path` module, used for consistent path manipulation within the frontend, particularly for file tree construction and path resolution.
 
 ### Other Dependencies
 
@@ -35,18 +35,18 @@ The AI Editor follows a classic client-server architecture:
 
 ## High-Level Data Flow
 
-1.  **User Interaction**: The user interacts with the React UI (e.g., inputs AI instructions, selects files).
-2.  **Frontend State Update**: User actions trigger updates to local component state or global Nanostores (e.g., `aiEditorStore`, `authStore`, `fileTreeStore`).
-3.  **API Call (if needed)**: If an action requires backend resources (e.g., generating code, fetching files, authenticating), a service function (e.g., `authService`, `api/llm`, `api/file`) is called.
-4.  **Backend Processing**: The backend receives the request, performs necessary operations (e.g., interacts with an LLM, reads/writes files, validates credentials).
-5.  **Backend Response**: The backend sends a response back to the frontend, often in JSON format.
-6.  **Frontend State Update (from API)**: The frontend processes the API response and updates the relevant Nanostores, causing UI components to reactively re-render.
-7.  **UI Re-render**: The updated state reflects in the user interface, showing new file trees, AI responses, diffs, or authentication status.
+1.  **User Interaction**: The user interacts with the React UI (e.g., inputs AI instructions, selects files in the file tree, views diffs, edits proposed content).
+2.  **Frontend State Update**: User actions trigger updates to local component state or global Nanostores (e.g., `aiEditorStore`, `authStore`, `fileTreeStore`). These updates typically cause reactive UI re-renders.
+3.  **API Call (if needed)**: If an action requires backend resources (e.g., generating code, fetching project files, reading file content, getting git diffs, authenticating, applying changes), a service function (e.g., `authService`, `api/llm`, `api/file`) is called.
+4.  **Backend Processing**: The backend receives the request, performs necessary operations (e.g., interacts with an LLM, scans/reads/writes files on the file system, generates git diffs, validates credentials).
+5.  **Backend Response**: The backend sends a response back to the frontend, often in JSON format, containing data like file entries, LLM output, diff content, or status messages.
+6.  **Frontend State Update (from API)**: The frontend processes the API response and updates the relevant Nanostores. For example, `fileTreeStore` updates with new file structures, or `aiEditorStore` updates with AI responses or diff content.
+7.  **UI Re-render**: The updated state reflects in the user interface, showing new file trees, AI responses, interactive diffs, opened file content, or authentication status.
 
 ## Key Architectural Decisions
 
 - **Separation of Concerns**: Clear distinction between UI components (`components`, `pages`), API interaction (`api`), business logic (`services`), and global state (`stores`).
 - **Utility-First Styling**: Combining Material-UI for core components with Tailwind CSS for granular styling provides flexibility and rapid development.
-- **Reactive State Management**: Nanostores provide a lightweight and efficient way to manage global state, minimizing boilerplate and ensuring reactivity.
-- **Modular API Services**: API calls are encapsulated in dedicated `api` modules (e.g., `api/auth.ts`, `api/file.ts`, `api/llm.ts`) to maintain a clean interface between frontend and backend.
-- **Themeability**: The application supports dynamic dark/light mode switching using Material-UI's theming capabilities integrated with a Nanostore.
+- **Reactive State Management**: Nanostores provide a lightweight and efficient way to manage global state, minimizing boilerplate and ensuring reactivity across independent parts of the application.
+- **Modular API Services**: API calls are encapsulated in dedicated `api` modules (e.g., `api/auth.ts`, `api/file.ts`, `api/llm.ts`) to maintain a clean interface between frontend and backend, improving maintainability and testability.
+- **Themeability**: The application supports dynamic dark/light mode switching using Material-UI's theming capabilities integrated with a Nanostore, providing a cohesive visual experience.

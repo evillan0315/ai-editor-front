@@ -55,7 +55,7 @@ export const readFileContent = async (filePath: string): Promise<string> => {
       body: JSON.stringify({ filePath: filePath }),
     });
     const data = await handleResponse<FileContentResponse>(response);
-    console.log(data, 'data');
+
     return data.content;
   } catch (error) {
     console.error(`Error reading file ${filePath}:`, error);
