@@ -35,9 +35,10 @@
 - 📊 **Git Diff Visualization**: Inspect detailed git diffs for proposed modifications and deletions directly within the editor before applying changes, ensuring transparency and control.
 - 🔒 **Secure Authentication**: Seamlessly log in using Google or GitHub OAuth2 for secure access to the editor, with user session management handled by the backend.
 - 📂 **Project Context & Scanning**: Specify a project root path and relevant scan paths for the AI to analyze, providing crucial context for intelligent code suggestions and understanding project structure.
-- 🚀 **File Tree Navigation**: Browse your project's file structure with an interactive file tree, allowing for easy exploration and selection of files, and viewing their content.
+- 🚀 **File Tree Navigation & Content Viewing**: Browse your project's file structure with an interactive file tree, allowing for easy exploration, selection of files, and direct viewing of their current content in a dedicated editor panel.
 - 🌍 **Modern UI/UX**: Built with React, Material-UI, and Tailwind CSS for a responsive, accessible, and intuitive user experience.
 - ⚡ **Vite Development**: Fast development and build times powered by Vite, providing a modern and efficient development workflow.
+- 🌗 **Dark/Light Theme Toggle**: Effortlessly switch between dark and light modes, enhancing readability and user comfort.
 
 ---
 
@@ -122,11 +123,11 @@ Create a `.env` file in the root directory of `ai-editor-front`. **Do not commit
 ```ini
 VITE_API_URL=http://localhost:3000          # The URL of your AI Editor backend API
 VITE_FRONTEND_URL=http://localhost:3001     # The URL where your frontend is hosted (e.g., for OAuth redirects)
-VITE_BASE_DIR=/path/to/your/project/root    # **Optional**: Default project root to pre-fill in the editor. Can be overridden in the UI.
+VITE_BASE_DIR=/path/to/your/project/root    # **Optional**: Default project root to pre-fill in the editor. Can be overridden in the UI. If not set, the user must provide one.
 # The following are used by the backend for constructing OAuth redirect URLs, but are included here for completeness.
 # The actual values for these environment variables should be configured in your backend service.
-GITHUB_CALLBACK_URL=/auth/github/callback   # Relative path for GitHub OAuth callback (handled by backend)
-GOOGLE_CALLBACK_URL=/auth/google/callback   # Relative path for Google OAuth callback (handled by backend)
+# GITHUB_CALLBACK_URL=/auth/github/callback   # Relative path for GitHub OAuth callback (handled by backend)
+# GOOGLE_CALLBACK_URL=/auth/google/callback   # Relative path for Google OAuth callback (handled by backend)
 ```
 
 ---
@@ -152,7 +153,7 @@ npm run test:coverage
 
 ## 📊 Roadmap
 
-- [ ] **Real-time File Content Editing**: Enable editing the content of _any_ selected file from the file tree in a dedicated editor panel, beyond just AI-proposed changes, with options to save changes.
+- [ ] **Real-time File Content Editing (with saving)**: Enable editing the content of _any_ selected file from the file tree in a dedicated editor panel, with options to save changes back to the file system via the backend.
 - [ ] **WebSocket Integration**: Implement real-time updates from the backend, such as file system changes, AI generation progress, and new notifications.
 - [ ] **Enhanced Error Handling & Feedback**: Improve user-facing error messages, loading indicators, and success notifications across the application.
 - [ ] **Dedicated Settings Page**: Develop a page for user preferences, AI model selection, API key configurations, and other configurable options.

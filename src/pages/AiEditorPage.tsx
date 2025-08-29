@@ -555,7 +555,7 @@ const AiEditorPage: React.FC = () => {
                     value={openedFileContent || ''}
                     onChange={() => {}}
                     language={getCodeMirrorLanguage(openedFile)}
-                    editable={false} // Read-only for viewed files
+                    editable={true} // Read-only for viewed files
                     height="100%" // Explicitly set height to ensure it fills the parent
                   />
                 )}

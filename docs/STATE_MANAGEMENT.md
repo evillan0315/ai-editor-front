@@ -1,137 +1,121 @@
-# 🎯 State Management with Nanostores
+# ♻️ State Management with Nanostores
 
-This document details the state management strategy employed in the AI Editor Frontend, primarily using `Nanostores`.
+This document describes how global state is managed in the AI Editor frontend using [Nanostores](https://nanostores.github.io/). Nanostores is a small, fast, and unopinionated state manager that provides reactive, atomic stores for different parts of the application's state.
 
-## 📋 Table of Contents
+## Why Nanostores?
 
-- [Introduction to Nanostores](#-introduction-to-nanostores)
-- [Core Concepts](#-core-concepts)
-- [Global Stores](#-global-stores)
-  - [Authentication Store (`authStore`)](#authentication-store-authstore)
-  - [AI Editor Store (`aiEditorStore`)](#ai-editor-store-aieditorstore)
-- [Usage in React Components](#-usage-in-react-components)
-- [Best Practices](#-best-practices)
+- **Simplicity**: Minimal API, easy to understand and use.
+- **Reactivity**: Components automatically re-render when the stores they subscribe to change.
+- **Performance**: Optimized for speed with direct subscriptions.
+- **Scalability**: Easy to organize state into separate, focused stores.
+- **TypeScript-friendly**: Excellent TypeScript support for type-safe state.
 
----
+## Core Concepts
 
-## ✨ Introduction to Nanostores
+- **`map()`**: Used to create stores that hold objects (maps) of values. This is ideal for complex state objects.
+- **`useStore()` (from `@nanostores/react`)**: A React hook to subscribe to a store and get its current value. When the store updates, the component re-renders.
+- **`store.set(newValue)`**: Replaces the entire state of the store with `newValue`.
+- **`store.setKey(key, value)`**: Updates a specific key within a `map()` store.
 
-`Nanostores` is a small, fast, and scalable state manager for JavaScript applications. It focuses on simplicity and reactivity, providing an atomic approach to state. Unlike larger libraries, Nanostores has a minimal API, making it easy to learn and integrate. It's built on the concept of _stores_ (atomic pieces of state) and _actions_ (functions that modify stores).
+## Global Stores
 
-## 💡 Core Concepts
+The application uses several global stores, each responsible for a specific domain of the application's state:
 
-- **Stores**: Immutable objects that hold a piece of state. They are created using `map` (for objects/records) or `atom` (for primitive values).
-- **Actions**: Functions that are responsible for changing the state within a store. They should be pure functions whenever possible, but can also encapsulate side effects like API calls.
-- **Listeners**: Components or other parts of the application can subscribe to store changes and react accordingly.
-- **`@nanostores/react`**: A utility library that provides the `useStore` hook, allowing React components to easily subscribe to and consume Nanostores.
+### 1. `authStore` (`src/stores/authStore.ts`)
 
-## 🌐 Global Stores
+Manages the user's authentication status and profile information.
 
-Two primary global stores are used in this application:
+- **State**:
+  - `isLoggedIn: boolean`: Indicates if a user is currently authenticated.
+  - `user: UserProfile | null`: Contains user details (id, email, name, etc.) if logged in.
+  - `loading: boolean`: True when an authentication check or action is in progress.
+  - `error: string | null`: Stores any authentication-related error messages.
 
-### Authentication Store (`authStore`)
-
-- **File**: `src/stores/authStore.ts`
-- **Purpose**: Manages the authentication state of the user, including login status, user profile data, loading indicators for auth operations, and any authentication-related errors.
-- **State (`AuthState`)**:
-  ```typescript
-  export interface AuthState {
-    isLoggedIn: boolean; // True if a user is logged in
-    user: UserProfile | null; // User details if logged in
-    loading: boolean; // Indicates if authentication status is being checked
-    error: string | null; // Any authentication error messages
-  }
-  ```
 - **Actions**:
-  - `loginSuccess(user: UserProfile, token?: string)`: Sets the user as logged in, stores user data, and optionally persists the token (e.g., in `localStorage`).
-  - `logout()`: Clears user data, sets `isLoggedIn` to `false`, and removes the token from `localStorage`.
+  - `loginSuccess(user: UserProfile, token?: string)`: Sets the user as logged in, stores user data, and optionally saves the access token to `localStorage`.
+  - `logout()`: Clears user data, sets `isLoggedIn` to false, and removes the token from `localStorage`.
   - `setLoading(isLoading: boolean)`: Updates the loading state.
-  - `setError(message: string | null)`: Sets or clears an error message.
-  - `getToken()`: Retrieves the `accessToken` from `localStorage`.
+  - `setError(message: string | null)`: Sets an authentication error message.
+  - `getToken()`: Retrieves the access token from `localStorage`.
 
-### AI Editor Store (`aiEditorStore`)
+- **Integration**: Used by `Navbar.tsx` to display login/logout options, `LoginPage.tsx` and `AuthCallback.tsx` to manage the login flow, and `Layout.tsx` to show global loading for auth status.
 
-- **File**: `src/stores/aiEditorStore.ts`
-- **Purpose**: Manages all state related to the AI Code Editor functionality, including user input, AI responses, proposed changes, diff views, and operation status.
-- **State (`AiEditorState`)**:
-  ```typescript
-  export interface AiEditorState {
-    instruction: string; // User's prompt to the AI
-    currentProjectPath: string | null; // The root path of the project being edited
-    response: string | null; // AI's last raw response (deprecated, now uses lastLlmResponse)
-    loading: boolean; // Indicates if AI is generating or diffing
-    error: string | null; // Any errors from AI generation or file operations
-    scanPathsInput: string; // User-defined paths for AI to scan
-    lastLlmResponse: LlmResponse | null; // Structured AI response with proposed changes
-    selectedChanges: Record<string, ProposedFileChange>; // Map of changes selected by user for application
-    currentDiff: string | null; // Content of the currently viewed diff
-    diffFilePath: string | null; // File path for the current diff
-    applyingChanges: boolean; // Indicates if applying changes operation is in progress
-    appliedMessages: string[]; // Messages received after applying changes
-  }
-  ```
-- **Actions**: A comprehensive set of actions for:
-  - Setting instruction, loading, and error states.
-  - Clearing the entire editor state.
-  - Managing `scanPathsInput`.
-  - Storing and processing `lastLlmResponse`.
-  - Toggling, selecting, and deselecting proposed file changes (`selectedChanges`).
-  - Setting and clearing the `currentDiff` and `diffFilePath`.
-  - Managing `applyingChanges` status and `appliedMessages`.
+### 2. `aiEditorStore` (`src/stores/aiEditorStore.ts`)
 
-## 🔄 Usage in React Components
+Manages the state related to AI interactions, proposed code changes, and currently opened files.
 
-Components interact with Nanostores using the `useStore` hook from `@nanostores/react`.
+- **State**:
+  - `instruction: string`: The user's prompt for the AI.
+  - `currentProjectPath: string | null`: The absolute path of the project root being worked on.
+  - `scanPathsInput: string`: Comma-separated paths for the AI to scan.
+  - `lastLlmResponse: LlmResponse | null`: The full structured response from the AI, including summary, thought process, and `ProposedFileChange[]`.
+  - `selectedChanges: Record<string, ProposedFileChange>`: A map of selected changes to be applied (keyed by `filePath`).
+  - `currentDiff: string | null`: The content of the git diff for the currently viewed file.
+  - `diffFilePath: string | null`: The path of the file whose diff is currently displayed.
+  - `openedFile: string | null`: The absolute path of the file currently opened for viewing in the editor panel.
+  - `openedFileContent: string | null`: The content of the `openedFile`.
+  - `isFetchingFileContent: boolean`: Loading state for fetching `openedFile` content.
+  - `fetchFileContentError: string | null`: Error state for fetching `openedFile` content.
+  - `loading: boolean`: General loading state for AI generation or other heavy operations.
+  - `error: string | null`: General error message for AI Editor operations.
+  - `applyingChanges: boolean`: Indicates if the process of applying changes is in progress.
+  - `appliedMessages: string[]`: Messages received from the backend after attempting to apply changes.
 
-**Example (`Navbar.tsx` using `authStore`):**
+- **Actions**:
+  - `setInstruction(instruction: string)`: Updates the AI prompt.
+  - `setScanPathsInput(paths: string)`: Updates the scan paths.
+  - `setLastLlmResponse(response: LlmResponse | null)`: Stores the AI's full response and automatically selects all proposed changes.
+  - `toggleSelectedChange(change: ProposedFileChange)`: Toggles the selection status of a proposed file change.
+  - `selectAllChanges()` / `deselectAllChanges()`: Manage bulk selection of changes.
+  - `setCurrentDiff(filePath: string | null, diffContent: string | null)`: Sets the diff content for a specific file.
+  - `updateProposedChangeContent(filePath: string, newContent: string)`: Allows editing the content of a proposed change before applying.
+  - `setOpenedFile(filePath: string | null)`: Sets the file to be displayed in the editor panel and clears related content/errors.
+  - `setOpenedFileContent(content: string | null)`: Sets the content for the `openedFile`.
+  - `setIsFetchingFileContent(isLoading: boolean)`: Updates fetching loading state for `openedFile`.
+  - `setFetchFileContentError(message: string | null)`: Sets an error message for fetching `openedFile` content.
+  - `setLoading(isLoading: boolean)` / `setError(message: string | null)` / `clearState()`: General state management for the editor.
 
-```typescript
-import React from 'react';
-import { useStore } from '@nanostores/react';
-import { authStore } from '@/stores/authStore';
+- **Integration**: Primarily consumed by `AiEditorPage.tsx` to drive the core AI interaction and file editing UI. Also used by `FileTreeStore` to set the `openedFile`.
 
-const Navbar: React.FC = () => {
-  const { isLoggedIn, user, loading } = useStore(authStore); // Subscribe to authStore
+### 3. `fileTreeStore` (`src/stores/fileTreeStore.ts`)
 
-  // ... component logic ...
+Manages the state of the project file tree displayed in the sidebar.
 
-  return (
-    // ... JSX using isLoggedIn, user, loading ...
-  );
-};
-```
+- **State**:
+  - `files: FileEntry[]`: The hierarchical structure of the project files, ready for rendering.
+  - `flatFileList: ApiFileEntry[]`: The raw, flat list of files returned from the API.
+  - `expandedDirs: Set<string>`: A set of `filePath` strings for currently expanded directories.
+  - `selectedFile: string | null`: The `filePath` of the file currently selected in the tree.
+  - `isFetchingTree: boolean`: True when the file tree data is being fetched from the backend.
+  - `fetchTreeError: string | null`: Stores any error messages encountered during file tree fetching.
 
-**Example (`AiEditorPage.tsx` using `aiEditorStore` and its actions):**
+- **Actions**:
+  - `fetchFiles(projectRoot: string, scanPaths: string[])`: Initiates an API call to fetch project files and constructs the hierarchical tree.
+  - `setFiles(files: FileEntry[])`: Updates the hierarchical file list.
+  - `toggleDirExpansion(filePath: string)`: Toggles the expanded/collapsed state of a directory.
+  - `setSelectedFile(filePath: string | null)`: Sets the currently selected file and triggers `setOpenedFile` in `aiEditorStore`.
+  - `clearFileTree()`: Resets the file tree state.
 
-```typescript
-import React from 'react';
-import { useStore } from '@nanostores/react';
-import { aiEditorStore, setLoading, setInstruction } from '@/stores/aiEditorStore';
+- **Integration**: Used by `FileTree.tsx` and `FileTreeItem.tsx` to render and interact with the file tree. It also communicates with `aiEditorStore` to open selected files.
 
-const AiEditorPage: React.FC = () => {
-  const { instruction, loading } = useStore(aiEditorStore); // Subscribe to editor state
+### 4. `themeStore` (`src/stores/themeStore.ts`)
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInstruction(event.target.value); // Dispatch an action to update the store
-  };
+Manages the application's current theme mode (light or dark).
 
-  const handleSubmit = async () => {
-    setLoading(true); // Dispatch a loading action
-    // ... async operation ...
-    setLoading(false);
-  };
+- **State**:
+  - `mode: 'light' | 'dark'`: The currently active theme mode.
 
-  return (
-    <input type="text" value={instruction} onChange={handleChange} disabled={loading} />
-    <button onClick={handleSubmit} disabled={loading}>Submit</button>
-  );
-};
-```
+- **Actions**:
+  - `toggleTheme()`: Switches between 'light' and 'dark' modes and persists the preference in `localStorage`.
+  - `setTheme(mode: 'light' | 'dark')`: Explicitly sets the theme mode.
 
-## ✅ Best Practices
+- **Integration**: Used by `ThemeToggle.tsx` and `main.tsx` to apply the theme to both Material-UI and Tailwind CSS (by toggling a `dark` class on the `body` element). Initialized from `localStorage` or system preference.
 
-- **Encapsulate State Logic**: All state modifications should occur through functions (actions) defined alongside the store, promoting a centralized and predictable state flow.
-- **Atomic Stores**: Keep stores focused on a single domain of state. Avoid creating monolithic stores that handle unrelated data.
-- **Derived State**: For computed values based on store data, derive them within the component or define a getter function on the store itself rather than storing redundant data.
-- **Immutability**: Nanostores naturally encourages immutability. When updating map stores, always create new objects for nested changes to ensure reactivity.
-- **Clear Naming**: Use clear and descriptive names for stores and their actions.
+## Inter-Store Communication
+
+Stores can interact with each other by calling actions from other stores. For example:
+
+- `fileTreeStore.setSelectedFile()` calls `aiEditorStore.setOpenedFile()` to display the content of the selected file.
+- `aiEditorStore.clearState()` also calls `setOpenedFile(null)` to ensure the editor panel is cleared when the main AI editor state is reset.
+
+This approach ensures a clear flow of data and updates across different parts of the application, maintaining consistency and reactivity.
