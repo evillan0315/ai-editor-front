@@ -81,7 +81,10 @@ const LoginPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="sm" className="flex justify-center items-center min-h-[50vh]">
+      <Container
+        maxWidth="sm"
+        className="flex justify-center items-center min-h-[50vh]"
+      >
         <CircularProgress />
       </Container>
     );
@@ -150,15 +153,25 @@ const LoginPage: React.FC = () => {
             '&::before, &::after': { borderColor: theme.palette.divider },
           }}
         >
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          <Typography
+            variant="body2"
+            sx={{ color: theme.palette.text.secondary }}
+          >
             OR
           </Typography>
         </Divider>
 
-        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-          Standard email/password login and registration are not yet implemented on the frontend.
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.text.secondary }}
+        >
+          Standard email/password login and registration are not yet implemented
+          on the frontend.
         </Typography>
-        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.text.secondary }}
+        >
           Please use Google or GitHub to continue.
         </Typography>
       </Box>

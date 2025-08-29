@@ -102,7 +102,10 @@ export const deselectAllChanges = () => {
   aiEditorStore.setKey('selectedChanges', {});
 };
 
-export const setCurrentDiff = (filePath: string | null, diffContent: string | null) => {
+export const setCurrentDiff = (
+  filePath: string | null,
+  diffContent: string | null,
+) => {
   aiEditorStore.setKey('diffFilePath', filePath);
   aiEditorStore.setKey('currentDiff', diffContent);
 };
@@ -120,7 +123,10 @@ export const setAppliedMessages = (messages: string[]) => {
   aiEditorStore.setKey('appliedMessages', messages);
 };
 
-export const updateProposedChangeContent = (filePath: string, newContent: string) => {
+export const updateProposedChangeContent = (
+  filePath: string,
+  newContent: string,
+) => {
   const state = aiEditorStore.get(); // Get current state
   if (!state.lastLlmResponse) return; // No change if there's no LLM response
 

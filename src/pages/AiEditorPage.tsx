@@ -42,8 +42,16 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { generateCode, applyProposedChanges, getGitDiff } from '@/api/llm';
 import { readFileContent } from '@/api/file'; // Import readFileContent
-import { LlmGeneratePayload, LlmResponse, ProposedFileChange, FileAction } from '@/types/llm';
-import { INSTRUCTION, ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT } from '@/constants';
+import {
+  LlmGeneratePayload,
+  LlmResponse,
+  ProposedFileChange,
+  FileAction,
+} from '@/types/llm';
+import {
+  INSTRUCTION,
+  ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
+} from '@/constants';
 import CodeMirrorEditor from '@/components/code-editor/CodeMirrorEditor';
 import * as path from 'path-browserify'; // Using a browser-compatible path module
 import { FileTree } from '@/components/file-tree'; // Import FileTree
@@ -204,15 +212,21 @@ const AiEditorPage: React.FC = () => {
     fetchContent();
   }, [openedFile]); // Removed currentProjectPath from dependency array as openedFile is already absolute
 
-  const handleInstructionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInstructionChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setInstruction(event.target.value);
   };
 
-  const handleScanPathsInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleScanPathsInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setScanPathsInput(event.target.value);
   };
 
-  const handleProjectInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProjectInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setProjectInput(event.target.value);
   };
 
@@ -267,7 +281,9 @@ const AiEditorPage: React.FC = () => {
       console.log(aiResponse, 'aiResponse');
       setLastLlmResponse(aiResponse); // Store the full structured response
     } catch (err) {
-      setError(`Failed to generate code: ${err instanceof Error ? err.message : String(err)}`);
+      setError(
+        `Failed to generate code: ${err instanceof Error ? err.message : String(err)}`,
+      );
     } finally {
       setLoading(false);
     }
@@ -291,7 +307,10 @@ const AiEditorPage: React.FC = () => {
       // Ensure the filePath sent to the backend is always relative to the projectRoot.
       // The LLM is instructed to provide relative paths, but this adds robustness
       // against potential absolute paths or backend strictness.
-      const filePathToSend = getRelativePath(change.filePath, currentProjectPath);
+      const filePathToSend = getRelativePath(
+        change.filePath,
+        currentProjectPath,
+      );
 
       if (change.action === FileAction.ADD) {
         // Simulate diff for a new file: show its content as added
@@ -309,7 +328,10 @@ const AiEditorPage: React.FC = () => {
       setError(
         `Failed to get diff for ${change.filePath}: ${err instanceof Error ? err.message : String(err)}`,
       );
-      setCurrentDiff(change.filePath, `Error: ${err instanceof Error ? err.message : String(err)}`);
+      setCurrentDiff(
+        change.filePath,
+        `Error: ${err instanceof Error ? err.message : String(err)}`,
+      );
     } finally {
       setLoading(false);
     }
@@ -331,7 +353,10 @@ const AiEditorPage: React.FC = () => {
 
     try {
       const changesToApply = Object.values(selectedChanges);
-      const result = await applyProposedChanges(changesToApply, currentProjectPath);
+      const result = await applyProposedChanges(
+        changesToApply,
+        currentProjectPath,
+      );
       setAppliedMessages(result.messages);
       if (!result.success) {
         setError('Some changes failed to apply. Check messages above.');
@@ -341,7 +366,9 @@ const AiEditorPage: React.FC = () => {
       deselectAllChanges();
       clearDiff();
     } catch (err) {
-      setError(`Failed to apply changes: ${err instanceof Error ? err.message : String(err)}`);
+      setError(
+        `Failed to apply changes: ${err instanceof Error ? err.message : String(err)}`,
+      );
     } finally {
       setApplyingChanges(false);
     }
@@ -363,7 +390,10 @@ const AiEditorPage: React.FC = () => {
   return (
     // Added min-h-0 and overflow-auto to the main Container for proper scrolling within the layout
     // Adjusted padding from py-8 to p-6 sm:p-8 for more consistent spacing with Layout.tsx changes.
-    <Container maxWidth="xl" className="p-6 sm:p-8 flex flex-col flex-grow min-h-0 overflow-auto">
+    <Container
+      maxWidth="xl"
+      className="p-6 sm:p-8 flex flex-col flex-grow min-h-full overflow-auto h-[100vh-120px]"
+    >
       {/* Removed p-6 from Paper as Container now provides main page padding. Added min-h-0. */}
       <Paper
         elevation={3}
@@ -380,8 +410,9 @@ const AiEditorPage: React.FC = () => {
           AI Code Editor
         </Typography>
         <Typography variant="body1" color="text.secondary" className="mb-4">
-          Provide instructions to the AI to generate or modify code in your project. Start by
-          loading your project, and optionally browse files from the tree.
+          Provide instructions to the AI to generate or modify code in your
+          project. Start by loading your project, and optionally browse files
+          from the tree.
         </Typography>
 
         {!isLoggedIn && (
@@ -406,7 +437,12 @@ const AiEditorPage: React.FC = () => {
             variant="contained"
             color="primary"
             onClick={handleLoadProject}
-            disabled={loading || !projectInput || applyingChanges || isFetchingFileContent}
+            disabled={
+              loading ||
+              !projectInput ||
+              applyingChanges ||
+              isFetchingFileContent
+            }
             sx={{ flexShrink: 0 }}
           >
             Load Project
@@ -425,7 +461,10 @@ const AiEditorPage: React.FC = () => {
         {currentProjectPath && (
           <Box
             className="mb-6 p-4 border rounded-md"
-            sx={{ borderColor: theme.palette.divider, bgcolor: theme.palette.background.default }}
+            sx={{
+              borderColor: theme.palette.divider,
+              bgcolor: theme.palette.background.default,
+            }}
           >
             <Typography
               variant="h6"
@@ -433,7 +472,10 @@ const AiEditorPage: React.FC = () => {
               sx={{ color: theme.palette.text.primary }}
             >
               Current Project Root:
-              <span style={{ color: theme.palette.primary.main }}> {currentProjectPath}</span>
+              <span style={{ color: theme.palette.primary.main }}>
+                {' '}
+                {currentProjectPath}
+              </span>
             </Typography>
             <Typography
               variant="body2"
@@ -457,7 +499,7 @@ const AiEditorPage: React.FC = () => {
           <FileTree projectRoot={currentProjectPath || ''} />
 
           {/* AI Editor & File Content Column - Added min-h-0 */}
-          <Box className="flex-grow flex flex-col gap-4 min-h-0">
+          <Box className="flex-grow flex flex-col gap-4 min-h-0 max-h-[100vh-120px] overflow-auto">
             {/* Opened File Content Editor (conditionally rendered) */}
             {openedFile && !lastLlmResponse && (
               <Paper
@@ -467,6 +509,7 @@ const AiEditorPage: React.FC = () => {
                   flexGrow: 1,
                   display: 'flex',
                   flexDirection: 'column',
+
                   bgcolor: theme.palette.background.paper,
                 }}
               >
@@ -496,7 +539,10 @@ const AiEditorPage: React.FC = () => {
                 {isFetchingFileContent ? (
                   <Box className="flex justify-center items-center flex-grow">
                     <CircularProgress size={24} />
-                    <Typography variant="body2" sx={{ ml: 2, color: theme.palette.text.secondary }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ ml: 2, color: theme.palette.text.secondary }}
+                    >
                       Loading file content...
                     </Typography>
                   </Box>
@@ -541,7 +587,9 @@ const AiEditorPage: React.FC = () => {
                   fullWidth
                   margin="normal"
                   helperText="Paths where the AI should focus its analysis for project structure and relevant files (relative to project root)."
-                  InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+                  InputLabelProps={{
+                    style: { color: theme.palette.text.secondary },
+                  }}
                   InputProps={{ style: { color: theme.palette.text.primary } }}
                 />
 
@@ -561,7 +609,9 @@ const AiEditorPage: React.FC = () => {
                   }
                   fullWidth
                   margin="normal"
-                  InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+                  InputLabelProps={{
+                    style: { color: theme.palette.text.secondary },
+                  }}
                   InputProps={{ style: { color: theme.palette.text.primary } }}
                 />
 
@@ -579,7 +629,13 @@ const AiEditorPage: React.FC = () => {
                   }
                   sx={{ mt: 3, py: 1.5, px: 4, fontSize: '1.05rem' }}
                 >
-                  {loading ? <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> : null}
+                  {loading ? (
+                    <CircularProgress
+                      size={20}
+                      color="inherit"
+                      sx={{ mr: 1 }}
+                    />
+                  ) : null}
                   Generate/Modify Code
                 </Button>
               </Paper>
@@ -640,7 +696,11 @@ const AiEditorPage: React.FC = () => {
             {lastLlmResponse && (
               <Paper
                 elevation={1}
-                sx={{ p: 3, bgcolor: theme.palette.background.paper, flexGrow: 1 }}
+                sx={{
+                  p: 3,
+                  bgcolor: theme.palette.background.paper,
+                  flexGrow: 1,
+                }}
               >
                 <Typography
                   variant="h5"
@@ -702,10 +762,14 @@ const AiEditorPage: React.FC = () => {
                     color="primary"
                     onClick={handleApplySelectedChanges}
                     disabled={
-                      loading || applyingChanges || Object.keys(selectedChanges).length === 0
+                      loading ||
+                      applyingChanges ||
+                      Object.keys(selectedChanges).length === 0
                     }
                     startIcon={
-                      applyingChanges ? <CircularProgress size={16} color="inherit" /> : null
+                      applyingChanges ? (
+                        <CircularProgress size={16} color="inherit" />
+                      ) : null
                     }
                   >
                     {applyingChanges ? 'Applying...' : 'Apply Selected Changes'}
@@ -738,7 +802,11 @@ const AiEditorPage: React.FC = () => {
                         <AccordionSummary
                           component="div" // 👈 prevents <button> nesting
                           expandIcon={<ExpandMoreIcon />}
-                          sx={{ '& .MuiAccordionSummary-content': { alignItems: 'center' } }}
+                          sx={{
+                            '& .MuiAccordionSummary-content': {
+                              alignItems: 'center',
+                            },
+                          }}
                         >
                           <Checkbox
                             checked={!!selectedChanges[change.filePath]}
@@ -782,7 +850,13 @@ const AiEditorPage: React.FC = () => {
                             </Button>
                           )}
                         </AccordionSummary>
-                        <AccordionDetails sx={{ flexDirection: 'column', display: 'flex', gap: 2 }}>
+                        <AccordionDetails
+                          sx={{
+                            flexDirection: 'column',
+                            display: 'flex',
+                            gap: 2,
+                          }}
+                        >
                           {' '}
                           {change.reason && (
                             <Typography
@@ -806,9 +880,14 @@ const AiEditorPage: React.FC = () => {
                               <CodeMirrorEditor
                                 value={change.newContent || ''}
                                 onChange={(value) =>
-                                  updateProposedChangeContent(change.filePath, value)
+                                  updateProposedChangeContent(
+                                    change.filePath,
+                                    value,
+                                  )
                                 }
-                                language={getCodeMirrorLanguage(change.filePath)}
+                                language={getCodeMirrorLanguage(
+                                  change.filePath,
+                                )}
                                 editable={!loading && !applyingChanges}
                                 minHeight="150px" // Provide a reasonable minimum height
                                 maxHeight="400px" // Limit maximum height to prevent one editor from taking too much space
@@ -818,11 +897,7 @@ const AiEditorPage: React.FC = () => {
                           {diffFilePath === change.filePath && currentDiff && (
                             <DiffViewer
                               diffContent={currentDiff}
-                              filePath={
-                                currentProjectPath
-                                  ? path.join(currentProjectPath, diffFilePath)
-                                  : diffFilePath
-                              }
+                              filePath={diffFilePath} // Displaying the relative path directly
                             />
                           )}
                         </AccordionDetails>

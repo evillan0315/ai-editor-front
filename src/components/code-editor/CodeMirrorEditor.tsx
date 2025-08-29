@@ -1,12 +1,18 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { EditorState } from '@codemirror/state';
-import { EditorView, keymap,lineNumbers,
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
   highlightActiveLineGutter,
-  highlightActiveLine, } from '@codemirror/view';
-import {   defaultKeymap,
+  highlightActiveLine,
+} from '@codemirror/view';
+import {
+  defaultKeymap,
   history,
   historyKeymap,
-  indentWithTab, } from '@codemirror/commands';
+  indentWithTab,
+} from '@codemirror/commands';
 import { javascript } from '@codemirror/lang-javascript';
 import { json } from '@codemirror/lang-json';
 import { markdown } from '@codemirror/lang-markdown';
@@ -76,7 +82,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       highlightActiveLine(),
       history(),
       oneDark, // Apply the dark theme
-     //lineWrapping, // Enable line wrapping from @codemirror/view
+      //lineWrapping, // Enable line wrapping from @codemirror/view
       EditorView.updateListener.of((update) => {
         if (update.docChanged && editable) {
           onChange(update.state.doc.toString());

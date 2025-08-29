@@ -37,20 +37,30 @@ const Navbar: React.FC = () => {
           variant="h6"
           component={Link}
           to="/"
-          sx={{ textDecoration: 'none', color: theme.palette.text.primary, fontWeight: 'bold' }}
+          sx={{
+            textDecoration: 'none',
+            color: theme.palette.text.primary,
+            fontWeight: 'bold',
+          }}
         >
           AI Editor
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <ThemeToggle /> {/* Add ThemeToggle here */}
           {loading ? (
-            <CircularProgress size={24} sx={{ color: theme.palette.text.primary }} />
+            <CircularProgress
+              size={24}
+              sx={{ color: theme.palette.text.primary }}
+            />
           ) : isLoggedIn ? (
             <>
               <AccountCircle sx={{ color: theme.palette.text.primary }} />
               <Typography
                 variant="body1"
-                sx={{ display: { xs: 'none', sm: 'block' }, color: theme.palette.text.primary }}
+                sx={{
+                  display: { xs: 'none', sm: 'block' },
+                  color: theme.palette.text.primary,
+                }}
               >
                 {user?.name || user?.email || 'User'}
               </Typography>
