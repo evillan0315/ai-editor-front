@@ -2,7 +2,7 @@
 
 This document outlines the high-level architecture of the AI Editor frontend application, focusing on its structure, key technologies, and data flow.
 
-## High-Level Architecture Diagram
+## 🗺️ High-Level Architecture
 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
@@ -46,11 +46,11 @@ graph LR
     Services -- Data --> State
     Router -- Navigates --> Pages
 
-    style Frontend fill:#f9f,stroke:#333,stroke-width:2px
-    style Backend fill:#ccf,stroke:#333,stroke-width:2px
-    style State fill:#fff,stroke:#333,stroke-width:1px
-    style Services fill:#fff,stroke:#333,stroke-width:1px
-    style API fill:#fff,stroke:#333,stroke-width:1px
+    style Frontend fill:#111,stroke:#333,stroke-width:2px
+    style Backend fill:#222,stroke:#333,stroke-width:2px
+    style State fill:#000,stroke:#333,stroke-width:1px
+    style Services fill:#000,stroke:#333,stroke-width:1px
+    style API fill:#000,stroke:#333,stroke-width:1px
     linkStyle 0 stroke:#0a0,stroke-width:2px;
     linkStyle 1 stroke:#0a0,stroke-width:2px;
     linkStyle 2 stroke:#0a0,stroke-width:2px;
