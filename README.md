@@ -52,7 +52,7 @@
 
 ```mermaid
 graph LR
-    subgraph Frontend (Client - React / Vite / TS / MUI / Tailwind)
+    subgraph "Frontend (Client - React / Vite / TS / MUI / Tailwind)"
         Browser[User Browser]
         UI[React UI Components]
         Pages(Pages - AiEditorPage, LoginPage etc.)
@@ -61,7 +61,7 @@ graph LR
         Router[React Router DOM]
     end
 
-    subgraph Backend (Server - NestJS / Node.js)
+    subgraph "Backend (Server - NestJS / Node.js)"
         API[REST API Endpoints]
         Auth(Auth Service)
         LLM(LLM Orchestration Service)
