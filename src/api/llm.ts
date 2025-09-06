@@ -1,5 +1,5 @@
 import { getToken } from '@/stores/authStore';
-import { ModelResponse, FileChange } from '@/types'; // Import new LLM types and FileChange
+import { ModelResponse, FileChange, RequestType } from '@/types'; // Import new LLM types and FileChange, RequestType
 
 const API_BASE_URL = `/api`; // Changed to relative path for Vite proxy consistency
 
@@ -104,7 +104,11 @@ export interface LlmGeneratePayload {
   projectRoot: string;
   projectStructure: string;
   relevantFiles: LlmRelevantFile[];
-  additionalInstructions: string;
+  additionalInstructions: string; // Corresponds to `systemInstruction` in GeminiRequest
   expectedOutputFormat: string;
   scanPaths: string[];
+  requestType: RequestType; // New: AI Request Type
+  imageData?: string; // New: Base64 image data
+  fileData?: string; // New: Base64 file data
+  fileMimeType?: string; // New: Mime type of the uploaded file/image
 }

@@ -30,12 +30,15 @@
 
 ## ✨ Features
 
-- 🤖 **AI-Powered Code Generation & Modification**: Interact with a powerful AI to generate new files, modify existing ones, or delete files based on natural language instructions.
-- 💡 **Interactive Proposed Changes**: View AI's proposed changes with detailed file paths, action types (ADD, MODIFY, DELETE), and AI-generated reasons. Selectively apply or discard individual changes, and even edit the proposed content before application.
+- 🤖 **AI-Powered Code Generation & Modification**: Interact with a powerful AI to generate new files, modify existing ones, **repair code with suggestions**, or delete files based on natural language instructions.
+- 💡 **Interactive Proposed Changes**: View AI's proposed changes with detailed file paths, action types (ADD, MODIFY, DELETE, **REPAIR**), and AI-generated reasons. Selectively apply or discard individual changes, and even edit the proposed content before application.
 - 📊 **Git Diff Visualization**: Inspect detailed git diffs for proposed modifications and deletions directly within the editor before applying changes, ensuring transparency and control.
 - 🔒 **Secure Authentication**: Seamlessly log in using Google or GitHub OAuth2 for secure access to the editor, with user session management handled by the backend.
 - 📂 **Project Context & Scanning**: Specify a project root path and relevant scan paths for the AI to analyze, providing crucial context for intelligent code suggestions and understanding project structure. Includes an interactive file picker dialog for easy path selection.
-- 🚀 **File Tree Navigation & Content Viewing**: Browse your project's file structure with an interactive file tree, allowing for easy exploration, selection of files, and direct viewing of their current content in a dedicated editor panel. You can also manually edit the content of opened files.
+- 🚀 **File Tree Navigation & Content Viewing**: Browse your project's file structure with an interactive file tree, allowing for easy exploration, selection of files, and direct viewing of their current content in a dedicated editor panel. You can manually edit the content of proposed AI changes, but **opened files from the file tree are currently read-only**.
+- ⬆️ **File/Image Upload for AI Context**: Upload files or paste Base64 data (e.g., images, text files) to provide additional context to the AI, enabling multi-modal requests.
+- 📝 **Customizable AI Instructions & Output Format**: Modify the underlying AI system instructions and the expected output JSON schema directly within the UI, allowing for fine-tuned control over AI behavior.
+- ⚙️ **Selectable AI Request Types**: Choose between various request types (e.g., `TEXT_ONLY`, `TEXT_WITH_IMAGE`, `TEXT_WITH_FILE`) to optimize AI interaction based on your input and desired outcome.
 - 🌍 **Modern UI/UX**: Built with React, Material-UI, and Tailwind CSS for a responsive, accessible, and intuitive user experience.
 - ⚡ **Vite Development**: Fast development and build times powered by Vite, providing a modern and efficient development workflow.
 - 🌗 **Dark/Light Theme Toggle**: Effortlessly switch between dark and light modes, enhancing readability and user comfort.
@@ -51,7 +54,7 @@ ai-editor-front/
 │   ├── api/            # API client functions for interacting with the backend (e.g., auth, file, LLM operations)
 │   ├── assets/         # Static assets like images/icons (e.g., react.svg)
 │   ├── components/     # Reusable React components
-│   │   ├── code-editor/ # CodeMirror editor component for displaying and editing code
+│   │   ├── dialogs/    # Modal dialog components (e.g., FileUploaderDialog, InstructionEditorDialog)
 │   │   ├── file-tree/  # Components for rendering and interacting with the project's file tree
 │   │   ├── ui/         # Wrapper components for Material-UI elements (e.g., Button, TextField, CircularProgress)
 │   │   └── ...         # Other general UI components (e.g., Layout, Navbar, Loading, WelcomeMessage, PromptGenerator, FilePickerDialog)
@@ -63,7 +66,7 @@ ai-editor-front/
 │   ├── services/       # Business logic for API calls, authentication state management, and other non-UI related operations (e.g., authService)
 │   ├── stores/         # Nanostores for centralized, reactive global state management (e.g., authStore, aiEditorStore, fileTreeStore, themeStore)
 │   ├── types/          # TypeScript type definitions for API responses, application state, and domain models
-│   └── utils/          # General utility functions (e.g., path manipulation, debounce, file tree building)
+│   └── utils/          # General utility functions (e.g., path manipulation, debounce, file tree building, CodeMirror language extensions)
 ├── .env                # Environment variables (local overrides for development, not committed)
 ├── .env.local          # Local environment variables (sensitive data, not committed to VCS)
 ├── eslint.config.ts    # ESLint configuration for code quality and style
@@ -153,12 +156,14 @@ npm run test:coverage
 
 ## 📊 Roadmap
 
-- [ ] **Real-time File Content Editing & Saving**: Enhance the editor panel to allow full real-time editing and saving of _any_ selected file from the file tree, synchronizing changes via the backend.
+- [ ] **Real-time File Content Editing & Saving**: Implement full real-time editing and saving for _any_ selected file from the file tree, synchronizing changes via the backend.
 - [ ] **WebSocket Integration**: Implement real-time updates from the backend, such as file system changes, AI generation progress, and new notifications.
 - [ ] **Enhanced Error Handling & Feedback**: Improve user-facing error messages, loading indicators, and success notifications across the application.
 - [ ] **Dedicated Settings Page**: Develop a page for user preferences, AI model selection, API key configurations, and other configurable options.
 - [ ] **Local Authentication**: Implement standard email/password login and registration forms for users who prefer not to use OAuth providers.
 - [ ] **UI/UX Refinements**: Continuous improvements to the user interface for a smoother and more intuitive experience.
+- [ ] **AI-driven Code Refactoring/Linting**: Implement features for the AI to suggest and apply refactoring, linting fixes, or code improvements without requiring a full code generation request.
+- [ ] **Robust Testing Suite**: Introduce comprehensive unit, integration, and end-to-end tests for critical functionalities.
 
 ---
 
@@ -182,6 +187,7 @@ Distributed under the MIT License. See [LICENSE](https://github.com/evillan0315/
 - [Nanostores](https://nanostores.github.io/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Material-UI](https://mui.com/)
+- [@uiw/react-codemirror](https://uiwjs.github.io/react-codemirror/)
 - [CodeMirror](https://codemirror.net/)
 - [path-browserify](https://www.npmjs.com/package/path-browserify)
 - [socket.io-client](https://socket.io/docs/v4/client-api/)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useStore } from '@nanostores/react';
 import {
   Button,
@@ -12,8 +12,22 @@ import {
   IconButton,
   useTheme,
   Autocomplete,
+  Chip,
+  Tooltip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Menu,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+import DriveFolderUploadIcon from '@mui/icons-material/DriveFolderUpload';
+import ClearAllIcon from '@mui/icons-material/ClearAll';
+import AddRoadIcon from '@mui/icons-material/AddRoad';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'; // Changed to CloudUpload
+import EditNoteIcon from '@mui/icons-material/EditNote'; // New icon for instructions
+import TuneIcon from '@mui/icons-material/Tune'; // New icon for AI Options
+import { RequestType, RequestTypeValues } from '@/types';
 import {
   aiEditorStore,
   setLoading,
@@ -25,6 +39,10 @@ import {
   setCurrentDiff,
   setAppliedMessages,
   setOpenedFile,
+  setAiInstruction,
+  setExpectedOutputInstruction,
+  setRequestType,
+  setUploadedFile,
 } from '@/stores/aiEditorStore';
 import { authStore } from '@/stores/authStore';
 import { fileTreeStore, fetchFiles } from '@/stores/fileTreeStore';
@@ -32,10 +50,41 @@ import { INSTRUCTION, ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT } from '@/constants
 import { generateCode, LlmGeneratePayload } from '@/api/llm';
 import { ModelResponse } from '@/types';
 import FilePickerDialog from '@/components/FilePickerDialog';
+import FileUploaderDialog from '@/components/dialogs/FileUploaderDialog'; // New Import
+import InstructionEditorDialog from '@/components/dialogs/InstructionEditorDialog'; // New Import
+
+// Helper function to truncate long paths for display in chips
+const truncatePath = (path: string, maxLength: number = 30): string => {
+  if (path.length <= maxLength) {
+    return path;
+  }
+  const parts = path.split('/');
+  // Try to truncate directory path and keep filename if possible
+  if (parts.length > 1) {
+    const fileName = parts[parts.length - 1];
+    const dirPath = parts.slice(0, -1).join('/');
+    const availableLengthForDir = maxLength - fileName.length - 3; // -3 for '.../'
+    if (availableLengthForDir > 0) {
+      const truncatedDirPath = dirPath.substring(0, availableLengthForDir);
+      // Ensure truncatedDirPath doesn't end with a partial path segment
+      const lastSlashIndex = truncatedDirPath.lastIndexOf('/');
+      const finalDirPath =
+        lastSlashIndex !== -1 ? truncatedDirPath.substring(0, lastSlashIndex) : truncatedDirPath;
+      return `${finalDirPath ? finalDirPath + '/' : ''}.../${fileName}`;
+    }
+  }
+  // Fallback to simple truncation if path is very long or no directory structure
+  return `${path.substring(0, maxLength - 3)}...`;
+};
 
 const PromptGenerator: React.FC = () => {
   const {
     instruction,
+    aiInstruction,
+    expectedOutputInstruction,
+    requestType,
+    uploadedFileData,
+    uploadedFileMimeType,
     loading,
     error,
     currentProjectPath,
@@ -51,9 +100,18 @@ const PromptGenerator: React.FC = () => {
     currentProjectPath || import.meta.env.VITE_BASE_DIR || '',
   );
   const [isPickerDialogOpen, setIsPickerDialogOpen] = useState(false);
+  const [showAddScanPathInput, setShowAddScanPathInput] = useState(false);
+  const [newScanPathValue, setNewScanPathValue] = useState<string>('');
+
+  // State for new dialogs
+  const [isFileUploaderDialogOpen, setIsFileUploaderDialogOpen] = useState(false);
+  const [isInstructionEditorDialogOpen, setIsInstructionEditorDialogOpen] = useState(false);
+  const [editingInstructionType, setEditingInstructionType] = useState<'ai' | 'expected' | null>(
+    null,
+  );
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null); // For MUI Menu
 
   useEffect(() => {
-    // Initialize projectInput from store or env on mount
     if (currentProjectPath && projectInput !== currentProjectPath) {
       setProjectInput(currentProjectPath);
     }
@@ -67,30 +125,46 @@ const PromptGenerator: React.FC = () => {
     setInstruction(event.target.value);
   };
 
-  const handleScanPathsInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setScanPathsInput(event.target.value);
-  };
-
   const handleProjectInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setProjectInput(event.target.value);
+  };
+
+  const currentScanPathsArray = useMemo(
+    () =>
+      scanPathsInput
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [scanPathsInput],
+  );
+
+  const updateScanPaths = (paths: string[]) => {
+    const uniquePaths = Array.from(new Set(paths)).sort();
+    setScanPathsInput(uniquePaths.join(','));
+  };
+
+  const handleAddScanPath = (path: string) => {
+    const trimmedPath = path.trim();
+    if (trimmedPath && !currentScanPathsArray.includes(trimmedPath)) {
+      updateScanPaths([...currentScanPathsArray, trimmedPath]);
+    }
+    setNewScanPathValue('');
+    setShowAddScanPathInput(false);
+  };
+
+  const handleRemoveScanPath = (pathToRemove: string) => {
+    updateScanPaths(currentScanPathsArray.filter((path) => path !== pathToRemove));
   };
 
   const handleLoadProject = () => {
     if (!projectInput) return;
     aiEditorStore.setKey('currentProjectPath', projectInput);
     setError(null);
-    setLastLlmResponse(null); // Clear previous response when loading new project
+    setLastLlmResponse(null);
     setAppliedMessages([]);
     setCurrentDiff(null, null);
-    setOpenedFile(null); // Clear opened file when loading new project
-    // Optionally refetch file tree for the new project root
-    fetchFiles(
-      projectInput,
-      scanPathsInput
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
-    );
+    setOpenedFile(null);
+    fetchFiles(projectInput, currentScanPathsArray);
   };
 
   const handleGenerateCode = async () => {
@@ -109,30 +183,29 @@ const PromptGenerator: React.FC = () => {
 
     setLoading(true);
     setError(null);
-    setLastLlmResponse(null); // Clear previous response
-    setCurrentDiff(null, null); // Clear any previous diff
+    setLastLlmResponse(null);
+    setCurrentDiff(null, null);
     setAppliedMessages([]);
-    setOpenedFile(null); // Close opened file when new generation starts
+    setOpenedFile(null);
 
     try {
-      const parsedScanPaths = scanPathsInput
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s !== '');
-
       const payload: LlmGeneratePayload = {
         userPrompt: instruction,
         projectRoot: currentProjectPath,
-        projectStructure: '', // This is generated by the backend
-        relevantFiles: [], // This is gathered by the backend
-        additionalInstructions: INSTRUCTION,
-        expectedOutputFormat: ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
-        scanPaths: parsedScanPaths,
+        projectStructure: '',
+        relevantFiles: [],
+        additionalInstructions: aiInstruction, // Use dynamic instruction
+        expectedOutputFormat: expectedOutputInstruction, // Use dynamic expected output
+        scanPaths: currentScanPathsArray,
+        requestType: requestType, // The selected request type is passed here.
+        ...(uploadedFileData && { fileData: uploadedFileData }), // Include file data if present
+        ...(uploadedFileMimeType && { fileMimeType: uploadedFileMimeType }), // Include mime type if present
+        // backend handles if it's image or generic file based on mime type
       };
 
       const aiResponse: ModelResponse = await generateCode(payload);
       console.log(aiResponse, 'aiResponse');
-      setLastLlmResponse(aiResponse); // Store the full structured response
+      setLastLlmResponse(aiResponse);
     } catch (err) {
       setError(`Failed to generate code: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
@@ -140,8 +213,7 @@ const PromptGenerator: React.FC = () => {
     }
   };
 
-  // Autocomplete options: relative paths from flatFileList
-  const scanPathAutocompleteOptions = React.useMemo(() => {
+  const scanPathAutocompleteOptions = useMemo(() => {
     if (!currentProjectPath) return [];
     const normalizedProjectRoot = currentProjectPath.replace(/\\/g, '/');
     const options = flatFileList
@@ -151,46 +223,49 @@ const PromptGenerator: React.FC = () => {
           ? fullPath.substring(normalizedProjectRoot.length + 1)
           : fullPath === normalizedProjectRoot
             ? '.'
-            : null; // Exclude paths outside project root
+            : null;
       })
-      .filter((p): p is string => p !== null && p !== ''); // Filter out nulls and empty strings
+      .filter((p): p is string => p !== null && p !== '');
 
-    // Add default options if not present
     const defaultPaths = ['src', 'package.json', 'README.md'];
     defaultPaths.forEach((dp) => {
       if (!options.includes(dp)) {
         options.push(dp);
       }
     });
-    return Array.from(new Set(options)).sort(); // Ensure unique and sorted
+    return Array.from(new Set(options)).sort();
   }, [flatFileList, currentProjectPath]);
 
-  const handleScanPathAutocompleteChange = (
-    _event: React.SyntheticEvent,
-    newValue: string | null,
-  ) => {
-    if (newValue) {
-      const currentPaths = scanPathsInput
-        .split(',')
-        .map((p) => p.trim())
-        .filter(Boolean);
-      if (!currentPaths.includes(newValue)) {
-        const updatedPaths = [...currentPaths, newValue].join(',');
-        setScanPathsInput(updatedPaths);
-      }
-    }
+  const handleFilePickerDialogSelect = (selectedRelativePaths: string[]) => {
+    const currentPathsSet = new Set(currentScanPathsArray);
+    selectedRelativePaths.forEach((p) => currentPathsSet.add(p));
+    updateScanPaths(Array.from(currentPathsSet));
   };
 
-  const handleFilePickerDialogSelect = (selectedRelativePaths: string[]) => {
-    const currentPaths = new Set(
-      scanPathsInput
-        .split(',')
-        .map((p) => p.trim())
-        .filter(Boolean),
-    );
-    selectedRelativePaths.forEach((p) => currentPaths.add(p));
-    setScanPathsInput(Array.from(currentPaths).join(','));
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
   };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleEditInstruction = (type: 'ai' | 'expected') => {
+    setEditingInstructionType(type);
+    setIsInstructionEditorDialogOpen(true);
+    handleMenuClose();
+  };
+
+  const handleSaveInstruction = (type: 'ai' | 'expected', content: string) => {
+    if (type === 'ai') {
+      setAiInstruction(content);
+    } else if (type === 'expected') {
+      setExpectedOutputInstruction(content);
+    }
+    setIsInstructionEditorDialogOpen(false);
+  };
+
+  const commonDisabled = !isLoggedIn || applyingChanges || isFetchingFileContent;
 
   return (
     <Paper
@@ -201,117 +276,264 @@ const PromptGenerator: React.FC = () => {
         bgcolor: theme.palette.background.paper,
       }}
     >
-      <Box className="mb-6 flex gap-4 items-center flex-wrap">
+      {/* Combined Top Row for Project Config and AI Options */}
+      <Box
+        className="mb-6 flex flex-wrap items-stretch justify-start gap-2"
+        sx={{ alignItems: 'flex-start' }}
+      >
+        {/* Scan Paths Section (Left) - Autocomplete & Add/Picker Buttons */}
+        <Box
+          className="flex flex-wrap items-center gap-1 p-1 border rounded-md"
+          sx={{
+            borderColor: theme.palette.divider,
+            bgcolor: theme.palette.background.default,
+            minWidth: { xs: '100%', sm: '300px' },
+            flexGrow: 1,
+          }}
+        >
+          {currentScanPathsArray.length === 0 && !showAddScanPathInput ? (
+            <Typography variant="body2" color="text.secondary" sx={{ ml: 1, my: 0.5 }}>
+              No scan paths. Add some.
+            </Typography>
+          ) : (
+            currentScanPathsArray.map((path) => (
+              <Tooltip key={path} title={path} placement="top">
+                <Chip
+                  label={truncatePath(path)}
+                  onDelete={() => handleRemoveScanPath(path)}
+                  disabled={commonDisabled}
+                  deleteIcon={<CloseIcon />}
+                  sx={{
+                    maxWidth: 180,
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    },
+                  }}
+                  size="small"
+                />
+              </Tooltip>
+            ))
+          )}
+
+          {showAddScanPathInput ? (
+            <Autocomplete
+              freeSolo
+              options={scanPathAutocompleteOptions}
+              value={newScanPathValue}
+              onInputChange={(_event, newInputValue) => setNewScanPathValue(newInputValue)}
+              onChange={(_event, newValue) => {
+                if (typeof newValue === 'string') {
+                  handleAddScanPath(newValue);
+                } else if (newValue && (newValue as any).inputValue) {
+                  handleAddScanPath((newValue as any).inputValue);
+                }
+              }}
+              onBlur={() => {
+                if (newScanPathValue === '') {
+                  setShowAddScanPathInput(false);
+                }
+              }}
+              disabled={commonDisabled}
+              sx={{ minWidth: 150, flexGrow: 1 }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Add new path (e.g., src/utils)"
+                  autoFocus
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && newScanPathValue) {
+                      handleAddScanPath(newScanPathValue);
+                      event.preventDefault();
+                    }
+                    if (event.key === 'Escape') {
+                      setShowAddScanPathInput(false);
+                      setNewScanPathValue('');
+                    }
+                  }}
+                  size="small"
+                  InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+                  InputProps={{
+                    ...params.InputProps,
+                    style: { color: theme.palette.text.primary },
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        {newScanPathValue && (
+                          <IconButton
+                            onClick={() => setNewScanPathValue('')}
+                            edge="end"
+                            disabled={commonDisabled}
+                            size="small"
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                        {params.InputProps.endAdornment}
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
+          ) : (
+            <Tooltip title="Add New Scan Path Manually">
+              <span>
+                <IconButton
+                  onClick={() => setShowAddScanPathInput(true)}
+                  edge="end"
+                  disabled={commonDisabled}
+                  sx={{ color: theme.palette.text.secondary }}
+                  size="small"
+                >
+                  <AddRoadIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
+
+          <Tooltip title="Select Paths from File Tree">
+            <span>
+              <IconButton
+                onClick={() => setIsPickerDialogOpen(true)}
+                edge="end"
+                disabled={commonDisabled}
+                sx={{ color: theme.palette.text.secondary }}
+                size="small"
+              >
+                <CloudUploadIcon />{' '}
+                {/* Changed to CloudUploadIcon to indicate selection/upload kind of action */}
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
+
+        {/* Project Root Path Section (Middle) */}
         <TextField
           label="Project Root Path"
           value={projectInput}
           onChange={handleProjectInputChange}
           placeholder="e.g., /home/user/my-project"
-          disabled={loading || applyingChanges || isFetchingFileContent}
-          sx={{ flexGrow: 1 }}
+          disabled={commonDisabled}
+          sx={{ flexShrink: 0, minWidth: { xs: '100%', sm: '300px' } }}
           size="small"
           InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
-          InputProps={{ style: { color: theme.palette.text.primary } }}
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleLoadProject}
-          disabled={loading || !projectInput || applyingChanges || isFetchingFileContent}
-          sx={{ flexShrink: 0 }}
-        >
-          Load Project
-        </Button>
-        <Button
-          variant="outlined"
-          color="secondary"
-          onClick={clearState}
-          disabled={loading || applyingChanges || isFetchingFileContent}
-          sx={{ flexShrink: 0 }}
-        >
-          Clear All
-        </Button>
-      </Box>
-
-      {currentProjectPath && (
-        <Box
-          className="mb-6 p-4 border rounded-md"
-          sx={{
-            borderColor: theme.palette.divider,
-            bgcolor: theme.palette.background.default,
+          InputProps={{
+            style: { color: theme.palette.text.primary },
+            endAdornment: (
+              <InputAdornment position="end">
+                <Tooltip title="Load Project">
+                  <span>
+                    <IconButton
+                      onClick={handleLoadProject}
+                      disabled={commonDisabled || !projectInput}
+                      color="primary"
+                    >
+                      <DriveFolderUploadIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title="Clear All State">
+                  <span>
+                    <IconButton onClick={clearState} disabled={commonDisabled} color="secondary">
+                      <ClearAllIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </InputAdornment>
+            ),
           }}
-        >
-          <Typography
-            variant="h6"
-            className="!font-semibold"
-            sx={{ color: theme.palette.text.primary }}
-          >
-            Current Project Root:
-            <span style={{ color: theme.palette.primary.main }}> {currentProjectPath}</span>
-          </Typography>
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }} className="mt-2">
-            AI will scan paths specified below within this project root.
-          </Typography>
-        </Box>
-      )}
+        />
 
-      <Autocomplete
-        freeSolo
-        options={scanPathAutocompleteOptions}
-        value={scanPathsInput}
-        onInputChange={(_event, newInputValue) => {
-          setScanPathsInput(newInputValue);
-        }}
-        onChange={handleScanPathAutocompleteChange}
-        disabled={
-          loading || !isLoggedIn || !currentProjectPath || applyingChanges || isFetchingFileContent
-        }
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Scan Paths (comma-separated relative paths)"
-            placeholder="e.g., src/components,package.json,README.md"
-            fullWidth
-            margin="normal"
-            helperText="Paths where the AI should focus its analysis for project structure and relevant files (relative to project root)."
-            InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
-            InputProps={{
-              ...params.InputProps,
-              style: { color: theme.palette.text.primary },
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setIsPickerDialogOpen(true)}
-                    edge="end"
-                    disabled={
-                      loading ||
-                      !isLoggedIn ||
-                      !currentProjectPath ||
-                      applyingChanges ||
-                      isFetchingFileContent
-                    }
-                    sx={{ color: theme.palette.text.secondary }}
-                  >
-                    <AddIcon />
-                  </IconButton>
-                  {params.InputProps.endAdornment}
-                </InputAdornment>
-              ),
-            }}
-          />
-        )}
-      />
+        {/* New Buttons/Dropdowns (Right) */}
+        <Box className="flex gap-2 items-center flex-shrink-0">
+          {/* File Upload/Paste Button */}
+          <Tooltip title="Upload File or Paste Base64">
+            <span>
+              <IconButton
+                onClick={() => setIsFileUploaderDialogOpen(true)}
+                disabled={commonDisabled}
+                color="primary"
+              >
+                <CloudUploadIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          {/* RequestType Dropdown */}
+          <FormControl sx={{ minWidth: 160 }} size="small" disabled={commonDisabled}>
+            <InputLabel id="request-type-label" sx={{ color: theme.palette.text.secondary }}>
+              Request Type
+            </InputLabel>
+            <Select
+              labelId="request-type-label"
+              id="request-type-select"
+              value={requestType}
+              label="Request Type"
+              onChange={(e) => setRequestType(e.target.value as RequestType)}
+              sx={{ color: theme.palette.text.primary }}
+              inputProps={{ sx: { color: theme.palette.text.primary } }}
+            >
+              {RequestTypeValues.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type.replace(/_/g, ' ')}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Context Menu for Instructions */}
+          <Tooltip title="Edit AI Instructions & Expected Output">
+            <span>
+              <IconButton onClick={handleMenuClick} disabled={commonDisabled} color="primary">
+                <EditNoteIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            MenuListProps={{ sx: { bgcolor: theme.palette.background.paper } }}
+          >
+            <MenuItem onClick={() => handleEditInstruction('ai')}>
+              <TuneIcon sx={{ mr: 1 }} /> Edit AI Instruction
+            </MenuItem>
+            <MenuItem onClick={() => handleEditInstruction('expected')}>
+              <EditNoteIcon sx={{ mr: 1 }} /> Edit Expected Output Format
+            </MenuItem>
+          </Menu>
+        </Box>
+      </Box>
 
       <FilePickerDialog
         open={isPickerDialogOpen}
         onClose={() => setIsPickerDialogOpen(false)}
         onSelect={handleFilePickerDialogSelect}
-        currentScanPaths={scanPathsInput
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)}
+        currentScanPaths={currentScanPathsArray}
       />
 
+      <FileUploaderDialog
+        open={isFileUploaderDialogOpen}
+        onClose={() => setIsFileUploaderDialogOpen(false)}
+        onUpload={setUploadedFile} // Pass the action to update store
+        currentUploadedFile={uploadedFileData}
+        currentUploadedMimeType={uploadedFileMimeType}
+      />
+
+      {editingInstructionType && (
+        <InstructionEditorDialog
+          open={isInstructionEditorDialogOpen}
+          onClose={() => setIsInstructionEditorDialogOpen(false)}
+          onSave={handleSaveInstruction}
+          instructionType={editingInstructionType}
+          initialContent={
+            editingInstructionType === 'ai' ? aiInstruction : expectedOutputInstruction
+          }
+        />
+      )}
+
+      {/* Main AI Prompt Text Area */}
       <TextField
         label="AI Instructions (User Prompt)"
         multiline
@@ -319,9 +541,7 @@ const PromptGenerator: React.FC = () => {
         value={instruction}
         onChange={handleInstructionChange}
         placeholder="e.g., Implement a new user authentication module with JWT. Include login and register endpoints."
-        disabled={
-          loading || !isLoggedIn || !currentProjectPath || applyingChanges || isFetchingFileContent
-        }
+        disabled={commonDisabled || loading}
         fullWidth
         margin="normal"
         InputLabelProps={{ style: { color: theme.palette.text.secondary } }}

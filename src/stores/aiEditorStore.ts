@@ -5,10 +5,17 @@ import {
   ModelResponse,
   AddOrModifyFileChange,
   DeleteOrAnalyzeFileChange,
+  RequestType,
 } from '@/types/index';
+import { INSTRUCTION, ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT } from '@/constants';
 
 export const aiEditorStore = map<AiEditorState>({
   instruction: '',
+  aiInstruction: INSTRUCTION, // Initialize with default INSTRUCTION
+  expectedOutputInstruction: ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT, // Initialize with default
+  requestType: RequestType.TEXT_ONLY, // Default request type
+  uploadedFileData: null,
+  uploadedFileMimeType: null,
   currentProjectPath: null, // Initialized to null, will be set from VITE_BASE_DIR or user input
   response: null,
   loading: false,
@@ -30,6 +37,23 @@ export const setInstruction = (instruction: string) => {
   aiEditorStore.setKey('instruction', instruction);
 };
 
+export const setAiInstruction = (instruction: string) => {
+  aiEditorStore.setKey('aiInstruction', instruction);
+};
+
+export const setExpectedOutputInstruction = (instruction: string) => {
+  aiEditorStore.setKey('expectedOutputInstruction', instruction);
+};
+
+export const setRequestType = (type: RequestType) => {
+  aiEditorStore.setKey('requestType', type);
+};
+
+export const setUploadedFile = (data: string | null, mimeType: string | null) => {
+  aiEditorStore.setKey('uploadedFileData', data);
+  aiEditorStore.setKey('uploadedFileMimeType', mimeType);
+};
+
 export const setResponse = (response: string | null) => {
   aiEditorStore.setKey('response', response);
 };
@@ -45,6 +69,11 @@ export const setError = (message: string | null) => {
 export const clearState = () => {
   aiEditorStore.set({
     instruction: '',
+    aiInstruction: INSTRUCTION, // Reset to default
+    expectedOutputInstruction: ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT, // Reset to default
+    requestType: RequestType.TEXT_ONLY, // Reset to default
+    uploadedFileData: null,
+    uploadedFileMimeType: null,
     currentProjectPath: null,
     response: null,
     loading: false,

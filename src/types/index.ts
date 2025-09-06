@@ -1,4 +1,10 @@
-import { FileChange, ModelResponse, type FileAction, AddOrModifyFileChange ,DeleteOrAnalyzeFileChange } from '@/constants';
+import {
+  FileChange,
+  ModelResponse,
+  type FileAction,
+  AddOrModifyFileChange,
+  DeleteOrAnalyzeFileChange,
+} from '@/constants';
 import { FileEntry as TreeFileEntry } from './fileTree'; // Import for FileTree
 
 export interface FileEntry {
@@ -14,8 +20,29 @@ export interface FileContentResponse {
   filePath: string;
 }
 
+// Duplicating from Prisma schema for frontend usage
+export enum RequestType {
+  TEXT_ONLY = 'TEXT_ONLY',
+  TEXT_WITH_IMAGE = 'TEXT_WITH_IMAGE',
+  TEXT_WITH_FILE = 'TEXT_WITH_FILE',
+  LLM_GENERATION = 'LLM_GENERATION',
+  LIVE_API = 'LIVE_API',
+  RESUME_GENERATION = 'RESUME_GENERATION',
+  RESUME_OPTIMIZATION = 'RESUME_OPTIMIZATION',
+  RESUME_ENHANCEMENT = 'RESUME_ENHANCEMENT',
+  VIDEO_GENERATION = 'VIDEO_GENERATION',
+  IMAGE_GENERATION = 'IMAGE_GENERATION',
+}
+
+export const RequestTypeValues = Object.values(RequestType);
+
 export interface AiEditorState {
   instruction: string;
+  aiInstruction: string; // Editable version of INSTRUCTION constant
+  expectedOutputInstruction: string; // Editable version of ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT constant
+  requestType: RequestType; // New field for selecting request type
+  uploadedFileData: string | null; // Base64 content of an uploaded file/image
+  uploadedFileMimeType: string | null; // Mime type of the uploaded file/image
   currentProjectPath: string | null;
   response: string | null; // AI's last raw response string
   loading: boolean;
@@ -33,4 +60,10 @@ export interface AiEditorState {
   fetchFileContentError: string | null; // Error state for fetching opened file content
 }
 
-export type { FileChange, ModelResponse, FileAction, AddOrModifyFileChange, DeleteOrAnalyzeFileChange };
+export type {
+  FileChange,
+  ModelResponse,
+  FileAction,
+  AddOrModifyFileChange,
+  DeleteOrAnalyzeFileChange,
+};

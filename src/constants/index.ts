@@ -25,11 +25,10 @@ export const INSTRUCTION = `
   Output Rules:
   - The response MUST consist solely of a single JSON object — no explanations or extra text outside it.  
   - The JSON must strictly validate against the schema provided.  
+  - The response MUST be a single JSON object that validates against this JSON Schema:
 `.replace(/^\s+/gm, '');
 
 export const ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT = `
-  The response MUST be a single JSON object that validates against this JSON Schema:
-  
   {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",

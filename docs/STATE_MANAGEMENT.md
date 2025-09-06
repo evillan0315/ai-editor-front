@@ -28,7 +28,7 @@ Manages the user's authentication status and profile information.
 - **State**:
   - `isLoggedIn: boolean`: Indicates if a user is currently authenticated.
   - `user: UserProfile | null`: Contains user details (id, email, name, etc.) if logged in.
-  - `loading: boolean`: True when an authentication check or action is in progress.
+  - `loading: boolean`: True when an authentication check or action is in progress. **Initialized to `true` to indicate that auth status is being determined on app load.**
   - `error: string | null`: Stores any authentication-related error messages.
 
 - **Actions**:
@@ -45,28 +45,38 @@ Manages the user's authentication status and profile information.
 Manages the state related to AI interactions, proposed code changes, and currently opened files.
 
 - **State**:
-  - `instruction: string`: The user's prompt for the AI.
+  - `instruction: string`: The user's primary natural language prompt for the AI.
+  - `aiInstruction: string`: **The current global AI system instruction (editable by user) which defines the AI's persona and general rules.**
+  - `expectedOutputInstruction: string`: **The current expected JSON schema/format for the AI's output (editable by user).**
+  - `requestType: RequestType`: **The selected type of AI request (e.g., `TEXT_ONLY`, `TEXT_WITH_IMAGE`), influencing the backend's LLM interaction.**
+  - `uploadedFileData: string | null`: **Base64 encoded content of a file or image uploaded by the user to provide additional AI context.**
+  - `uploadedFileMimeType: string | null`: **The MIME type of the `uploadedFileData` (e.g., `image/png`, `text/plain`).**
   - `currentProjectPath: string | null`: The absolute path of the project root being worked on, typically set from `VITE_BASE_DIR` or user input.
+  - `response: string | null`: The AI's last raw response string (legacy, superseded by `lastLlmResponse`).
+  - `loading: boolean`: General loading state for AI generation or other heavy operations specific to the AI Editor.
+  - `error: string | null`: General error message for AI Editor operations (e.g., failed AI generation, diff fetching errors).
   - `scanPathsInput: string`: A comma-separated string of relative file/folder paths for the AI to focus its analysis.
-  - `lastLlmResponse: LlmResponse | null`: The full structured response from the AI after code generation, including a summary, thought process, and an array of `ProposedFileChange` objects.
-  - `selectedChanges: Record<string, ProposedFileChange>`: A map where keys are `filePath` strings and values are `ProposedFileChange` objects, representing the AI-suggested changes that the user has selected to apply.
+  - `lastLlmResponse: ModelResponse | null`: The full structured response from the AI after code generation, including a summary, thought process, and an array of `FileChange` objects.
+  - `selectedChanges: Record<string, FileChange>`: A map where keys are `filePath` strings and values are `FileChange` objects, representing the AI-suggested changes that the user has selected to apply.
   - `currentDiff: string | null`: The content of the git diff for the file currently being previewed (e.g., after clicking 'View Git Diff').
   - `diffFilePath: string | null`: The `filePath` of the file whose diff is currently displayed in `currentDiff`.
-  - `openedFile: string | null`: The absolute path of the file currently opened for viewing (and potential future editing) in the dedicated editor panel.
+  - `applyingChanges: boolean`: Indicates if the process of applying selected proposed changes to the file system is currently in progress.
+  - `appliedMessages: string[]`: An array of messages received from the backend after attempting to apply changes, providing feedback on success or failure for each change.
+  - `openedFile: string | null`: The absolute path of the file currently opened for viewing in the dedicated editor panel.
   - `openedFileContent: string | null`: The actual content (string) of the `openedFile`.
   - `isFetchingFileContent: boolean`: A boolean indicating if the content of the `openedFile` is currently being fetched from the backend.
   - `fetchFileContentError: string | null`: Stores any error message if fetching `openedFileContent` fails.
-  - `loading: boolean`: General loading state for AI generation or other heavy operations specific to the AI Editor.
-  - `error: string | null`: General error message for AI Editor operations (e.g., failed AI generation, diff fetching errors).
-  - `applyingChanges: boolean`: Indicates if the process of applying selected proposed changes to the file system is currently in progress.
-  - `appliedMessages: string[]`: An array of messages received from the backend after attempting to apply changes, providing feedback on success or failure for each change.
 
 - **Actions**:
   - `setInstruction(instruction: string)`: Updates the AI prompt string.
+  - `setAiInstruction(instruction: string)`: Updates the global AI system instruction.
+  - `setExpectedOutputInstruction(instruction: string)`: Updates the expected output JSON schema instruction.
+  - `setRequestType(type: RequestType)`: Sets the selected AI request type.
+  - `setUploadedFile(data: string | null, mimeType: string | null)`: Stores the Base64 file data and its MIME type.
   - `setScanPathsInput(paths: string)`: Updates the comma-separated scan paths string.
-  - `setLastLlmResponse(response: LlmResponse | null)`: Stores the AI's full structured response and automatically selects all proposed changes for convenience.
-  - `toggleSelectedChange(change: ProposedFileChange)`: Adds or removes a `ProposedFileChange` from `selectedChanges`.
-  - `selectAllChanges()`: Selects all `ProposedFileChange` objects from `lastLlmResponse`.
+  - `setLastLlmResponse(response: ModelResponse | null)`: Stores the AI's full structured response and automatically selects all proposed changes for convenience.
+  - `toggleSelectedChange(change: FileChange)`: Adds or removes a `FileChange` from `selectedChanges`.
+  - `selectAllChanges()`: Selects all `FileChange` objects from `lastLlmResponse`.
   - `deselectAllChanges()`: Clears all selected changes.
   - `setCurrentDiff(filePath: string | null, diffContent: string | null)`: Sets the `diffFilePath` and `currentDiff` to display a specific file's diff.
   - `clearDiff()`: Clears the currently displayed diff.
@@ -77,7 +87,7 @@ Manages the state related to AI interactions, proposed code changes, and current
   - `setFetchFileContentError(message: string | null)`: Sets an error message if fetching `openedFile` content fails.
   - `setLoading(isLoading: boolean)` / `setError(message: string | null)` / `setApplyingChanges(isApplying: boolean)` / `setAppliedMessages(messages: string[])` / `clearState()`: General state management for the editor's various operational states.
 
-- **Integration**: Primarily consumed by `AiEditorPage.tsx` to drive the core AI interaction and file editing UI. Its actions are also called by `PromptGenerator.tsx` for initiating AI requests and by `FileTreeStore` via `setSelectedFile` to display file contents.
+- **Integration**: Primarily consumed by `AiEditorPage.tsx` to drive the core AI interaction and file editing UI. Its actions are also called by `PromptGenerator.tsx` for initiating AI requests and by `fileTreeStore` via `setSelectedFile` to display file contents.
 
 ### 3. `fileTreeStore` (`src/stores/fileTreeStore.ts`)
 
@@ -121,5 +131,6 @@ Stores can interact with each other by calling actions from other stores. This e
 
 - `fileTreeStore.setSelectedFile()` calls `aiEditorStore.setOpenedFile()` to trigger the display of the selected file's content in the main editor area.
 - `aiEditorStore.clearState()` also calls `setOpenedFile(null)` to ensure the editor panel is cleared when the main AI editor state is reset.
-- `PromptGenerator` updates `aiEditorStore` for all user inputs and triggers actions within `aiEditorStore`.
+- `PromptGenerator` updates `aiEditorStore` for all user inputs and triggers actions within `aiEditorStore`, including `setLastLlmResponse`, `setAiInstruction`, `setExpectedOutputInstruction`, `setRequestType`, `setUploadedFile`.
 - `aiEditorStore` actions (like `setLastLlmResponse`) automatically update other parts of its own state (like `selectedChanges`).
+- `fileTreeStore.fetchFiles` includes logic to prevent redundant fetches based on `lastFetchedProjectRoot` and `lastFetchedScanPaths` stored in its state.
