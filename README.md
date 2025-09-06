@@ -68,7 +68,7 @@ graph LR
         File(File System Service)
         Terminal(Terminal Execution Service)
         DB[(Database)]
-        AI_Provider[AI Provider (e.g., Gemini)]
+        AI_Provider[AI Provider &lpar;e.g., Gemini&rpar;]
         FS[Project File System]
     end
 
