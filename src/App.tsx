@@ -7,6 +7,7 @@ import Loading from './components/Loading'; // Import the Loading component
 const AiEditorPage = lazy(() => import('./pages/AiEditorPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage')); // Lazy load RegisterPage
 
 function App() {
   return (
@@ -25,6 +26,14 @@ function App() {
           element={
             <Suspense fallback={<Loading />}>
               <LoginPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <Suspense fallback={<Loading />}>
+              <RegisterPage />
             </Suspense>
           }
         />

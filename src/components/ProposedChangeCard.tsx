@@ -9,7 +9,6 @@ import {
 } from '@/stores/aiEditorStore';
 import { getGitDiff } from '@/api/llm';
 import { FileChange, FileAction } from '@/types';
-//import CodeMirrorEditor from './code-editor/CodeMirrorEditor';
 import CodeMirror from '@uiw/react-codemirror';
 import {
   Box,
@@ -26,54 +25,12 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import * as path from 'path-browserify';
 import { getRelativePath, getCodeMirrorLanguage } from '@/utils/index';
-// Import getCodeMirrorLanguage
 import { themeStore } from '@/stores/themeStore';
 
 interface ProposedChangeCardProps {
   change: FileChange;
   index: number;
 }
-
-// Basic Diff Viewer Component (can be replaced with a more advanced library)
-const DiffViewer: React.FC<{ diffContent: string; filePath: string }> = ({
-  diffContent,
-  filePath,
-}) => {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
-
-  return (
-    <Box
-      sx={{
-        mt: 2,
-        p: 2,
-        bgcolor: isDarkMode ? '#2d2d2d' : '#f0f0f0',
-        borderRadius: 1,
-        overflowX: 'auto',
-        border: '1px solid ' + (isDarkMode ? '#444' : '#ccc'),
-      }}
-    >
-      <Typography
-        variant="subtitle2"
-        gutterBottom
-        sx={{ fontFamily: 'monospace', color: theme.palette.text.primary }}
-      >
-        Diff for: {filePath}
-      </Typography>
-      <pre
-        style={{
-          fontFamily: 'monospace',
-          fontSize: '0.85rem',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-all',
-          color: isDarkMode ? '#e0e0e0' : '#333',
-        }}
-      >
-        {diffContent}
-      </pre>
-    </Box>
-  );
-};
 
 const getFileActionChipColor = (action: FileAction) => {
   switch (action) {
@@ -103,6 +60,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
   } = useStore(aiEditorStore);
   const theme = useTheme();
   const { mode } = useStore(themeStore);
+
   const handleShowDiff = async () => {
     if (!currentProjectPath) {
       setError('Project root is not set. Please load a project first.');
@@ -116,11 +74,12 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
       const filePathToSend = getRelativePath(change.filePath, currentProjectPath);
 
       if (change.action === 'add') {
-        diffContent = `--- /dev/null\n+++ a/${change.filePath}\n@@ -0,0 +1,${change.newContent?.split('\n').length || 1} @@\n${change.newContent
+        diffContent = `--- /dev/null\n+++ a/${filePathToSend}\n@@ -0,0 +1,${change.newContent?.split('\n').length || 1} @@\n${change.newContent
           ?.split('\n')
           .map((line) => `+${line}`)
           .join('\n')}`;
       } else {
+        // For modify, delete, and repair actions, fetch the actual git diff
         diffContent = await getGitDiff(filePathToSend, currentProjectPath);
       }
 
@@ -170,7 +129,9 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
           >
             {currentProjectPath ? path.join(currentProjectPath, change.filePath) : change.filePath}
           </Typography>
-          {(change.action === 'modify' || change.action === 'delete') && (
+          {(change.action === 'modify' ||
+            change.action === 'delete' ||
+            change.action === 'repair') && (
             <Button
               size="small"
               onClick={(e) => {
@@ -199,7 +160,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
           )}
           {(change.action === 'add' ||
             change.action === 'modify' ||
-            change.action === 'repair') && ( // ADD 'repair' here
+            change.action === 'repair') && (
             <Box sx={{ mt: 1 }}>
               <Typography
                 variant="subtitle2"
@@ -220,7 +181,38 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
             </Box>
           )}
           {diffFilePath === change.filePath && currentDiff && (
-            <DiffViewer diffContent={currentDiff} filePath={diffFilePath} />
+            <Box
+              sx={{
+                mt: 2,
+                p: 0,
+                bgcolor: theme.palette.background.default,
+                borderRadius: 1,
+                overflow: 'hidden',
+                border: '1px solid ' + theme.palette.divider,
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontFamily: 'monospace',
+                  color: theme.palette.text.primary,
+                  bgcolor: theme.palette.action.hover,
+                  p: 1,
+                  borderBottom: '1px solid ' + theme.palette.divider,
+                }}
+              >
+                Git Diff for: {diffFilePath}
+              </Typography>
+              <CodeMirror
+                value={currentDiff || ''}
+                extensions={[]}
+                editable={false} // Diff view should be read-only
+                theme={mode}
+                minHeight="200px"
+                maxHeight="500px"
+                style={{ fontSize: '0.85rem' }}
+              />
+            </Box>
           )}
         </AccordionDetails>
       </Accordion>

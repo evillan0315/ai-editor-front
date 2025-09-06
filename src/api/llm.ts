@@ -71,18 +71,17 @@ export const applyProposedChanges = async (
 
 /**
  * Fetches the git diff for a specific file.
- * @param filePath The path to the file for which to get the diff.
+ * @param filePath The path to the file for which to get the diff, relative to projectRoot.
  * @param projectRoot The root directory of the project (git repository).
  * @returns A promise that resolves to the git diff string.
  */
 export const getGitDiff = async (filePath: string, projectRoot: string): Promise<string> => {
   try {
-    if (projectRoot) {
-      filePath = `${projectRoot}/${filePath}`;
-    }
+    // filePath should already be relative to projectRoot from the frontend's getRelativePath call.
+    // Do NOT prepend projectRoot here, as it would create an incorrect absolute path for the backend.
     const response = await fetchWithAuth(`${API_BASE_URL}/file/git-diff`, {
       method: 'POST',
-      body: JSON.stringify({ filePath, projectRoot }),
+      body: JSON.stringify({ filePath: `${projectRoot}/${filePath}`, projectRoot }),
     });
     const data = await handleResponse<{ diff: string }>(response);
     console.log(data, 'data');

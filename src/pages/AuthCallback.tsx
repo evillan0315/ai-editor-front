@@ -28,8 +28,7 @@ const AuthCallback: React.FC = () => {
         username: params.get('username')
           ? decodeURIComponent(params.get('username') as string)
           : undefined,
-        provider:
-          (params.get('provider') as UserProfile['provider']) || undefined,
+        provider: (params.get('provider') as UserProfile['provider']) || undefined,
       };
 
       try {

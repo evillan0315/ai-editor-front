@@ -2,6 +2,72 @@
 
 This document outlines the high-level architecture of the AI Editor frontend application, focusing on its structure, key technologies, and data flow.
 
+## High-Level Architecture Diagram
+
+```mermaid
+graph LR
+    subgraph Frontend (Client - React / Vite / TS / MUI / Tailwind)
+        Browser[User Browser]
+        UI[React UI Components]
+        Pages(Pages - AiEditorPage, LoginPage etc.)
+        State(Nanostores - aiEditorStore, authStore, fileTreeStore, themeStore)
+        Services(Frontend Services / API Clients)
+        Router[React Router DOM]
+    end
+
+    subgraph Backend (Server - NestJS / Node.js)
+        API[REST API Endpoints]
+        Auth(Auth Service)
+        LLM(LLM Orchestration Service)
+        File(File System Service)
+        Terminal(Terminal Execution Service)
+        DB[(Database)]
+        AI_Provider[AI Provider (e.g., Gemini)]
+        FS[Project File System]
+    end
+
+    Browser -- Renders --> UI
+    UI -- User Input --> Pages
+    Pages -- Actions / Data --> State
+    State -- Updates --> UI
+    State -- API Calls --> Services
+    Services -- HTTP/S Requests --> API
+    API -- Delegates --> Auth
+    API -- Delegates --> LLM
+    API -- Delegates --> File
+    API -- Delegates --> Terminal
+    Auth -- Reads/Writes --> DB
+    LLM -- Requests/Responses --> AI_Provider
+    File -- Reads/Writes --> FS
+    Terminal -- Executes --> FS
+    Terminal -- Executes --> Shell(Shell Commands)
+    API -- HTTP/S Responses --> Services
+    Services -- Data --> State
+    Router -- Navigates --> Pages
+
+    style Frontend fill:#f9f,stroke:#333,stroke-width:2px
+    style Backend fill:#ccf,stroke:#333,stroke-width:2px
+    style State fill:#fff,stroke:#333,stroke-width:1px
+    style Services fill:#fff,stroke:#333,stroke-width:1px
+    style API fill:#fff,stroke:#333,stroke-width:1px
+    linkStyle 0 stroke:#0a0,stroke-width:2px;
+    linkStyle 1 stroke:#0a0,stroke-width:2px;
+    linkStyle 2 stroke:#0a0,stroke-width:2px;
+    linkStyle 3 stroke:#0a0,stroke-width:2px;
+    linkStyle 4 stroke:#f60,stroke-width:2px;
+    linkStyle 5 stroke:#f60,stroke-width:2px;
+    linkStyle 6 stroke:#f60,stroke-width:2px;
+    linkStyle 7 stroke:#f60,stroke-width:2px;
+    linkStyle 8 stroke:#f60,stroke-width:2px;
+    linkStyle 9 stroke:#f60,stroke-width:2px;
+    linkStyle 10 stroke:#f60,stroke-width:2px;
+    linkStyle 11 stroke:#f60,stroke-width:2px;
+    linkStyle 12 stroke:#f60,stroke-width:2px;
+    linkStyle 13 stroke:#f60,stroke-width:2px;
+    linkStyle 14 stroke:#f60,stroke-width:2px;
+    linkStyle 15 stroke:#f60,stroke-width:2px;
+```
+
 ## Client-Server Architecture
 
 The AI Editor follows a classic client-server architecture:

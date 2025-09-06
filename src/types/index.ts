@@ -20,6 +20,12 @@ export interface FileContentResponse {
   filePath: string;
 }
 
+export interface TerminalCommandResponse {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+}
+
 // Duplicating from Prisma schema for frontend usage
 export enum RequestType {
   TEXT_ONLY = 'TEXT_ONLY',
@@ -54,6 +60,10 @@ export interface AiEditorState {
   diffFilePath: string | null; // The filePath of the file whose diff is currently displayed
   applyingChanges: boolean; // Indicates if apply changes operation is in progress
   appliedMessages: string[]; // Messages from the backend after applying changes
+  gitInstructions: string[] | null; // New: Optional git commands from LLM response
+  runningGitCommandIndex: number | null; // New: Index of the git command currently being executed
+  commandExecutionOutput: TerminalCommandResponse | null; // New: Output from the last git command execution
+  commandExecutionError: string | null; // New: Error from the last git command execution
   openedFile: string | null; // Path of the file currently opened in the right editor panel
   openedFileContent: string | null; // Content of the file currently opened
   isFetchingFileContent: boolean; // Loading state for fetching opened file content

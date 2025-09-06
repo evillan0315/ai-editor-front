@@ -10,6 +10,9 @@ import {
   setError,
   clearDiff,
   setOpenedFile,
+  setRunningGitCommandIndex,
+  setCommandExecutionError,
+  setCommandExecutionOutput,
 } from '@/stores/aiEditorStore';
 import {
   Button,
@@ -22,9 +25,14 @@ import {
   AccordionSummary,
   AccordionDetails,
   useTheme,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'; // New Import
 import { applyProposedChanges } from '@/api/llm';
+import { runTerminalCommand } from '@/api/terminal'; // New Import
 import ProposedChangeCard from './ProposedChangeCard';
 import { ModelResponse, FileChange } from '@/types'; // Import FileChange here
 
@@ -40,6 +48,10 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
     applyingChanges,
     appliedMessages,
     currentProjectPath,
+    gitInstructions,
+    runningGitCommandIndex,
+    commandExecutionOutput,
+    commandExecutionError,
   } = useStore(aiEditorStore);
   const theme = useTheme();
 
@@ -74,13 +86,42 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
         setError('Some changes failed to apply. Check messages above.');
       }
       // Clear the response and selected changes after applying
-      setLastLlmResponse(null);
-      deselectAllChanges();
+      // Do NOT clear lastLlmResponse directly here, it will clear gitInstructions.
+      // Instead, explicitly clear components of lastLlmResponse that should be reset.
+      // For now, let's keep lastLlmResponse so gitInstructions can be seen.
+      deselectAllChanges(); // Clear selected changes, but keep the full response visible
       clearDiff();
+      // Note: If you want to explicitly clear git instructions after application, you'd add an action to aiEditorStore and call it here.
+      // For now, they remain tied to lastLlmResponse.
     } catch (err) {
       setError(`Failed to apply changes: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setApplyingChanges(false);
+    }
+  };
+
+  const handleRunGitCommand = async (command: string, index: number) => {
+    if (!currentProjectPath) {
+      setError('Project root is not set. Cannot run git command.');
+      return;
+    }
+    setRunningGitCommandIndex(index);
+    setCommandExecutionError(null);
+    setCommandExecutionOutput(null);
+
+    try {
+      const result = await runTerminalCommand(command, currentProjectPath);
+      setCommandExecutionOutput(result);
+      if (result.exitCode !== 0) {
+        setCommandExecutionError(`Command exited with code ${result.exitCode}`);
+      }
+    } catch (err) {
+      setCommandExecutionError(
+        `Failed to run command: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      setCommandExecutionOutput({ stdout: '', stderr: '', exitCode: 1 }); // Clear previous output on error
+    } finally {
+      setRunningGitCommandIndex(null);
     }
   };
 
@@ -210,6 +251,120 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
             </Box>
           </Paper>
         )}
+
+      {gitInstructions && gitInstructions.length > 0 && (
+        <Accordion sx={{ mt: 3 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography
+              variant="subtitle1"
+              className="!font-semibold"
+              sx={{ color: theme.palette.text.primary }}
+            >
+              Git Instructions
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box
+              sx={{
+                whiteSpace: 'pre-wrap',
+                fontFamily: 'monospace',
+                bgcolor: theme.palette.background.default,
+                p: 2,
+                borderRadius: 1,
+                overflowX: 'auto',
+                color: theme.palette.text.primary,
+                position: 'relative',
+              }}
+            >
+              {gitInstructions.map((command, index) => (
+                <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Typography
+                    component="span"
+                    sx={{ flexGrow: 1, mr: 1, color: theme.palette.text.primary }}
+                  >
+                    {command}
+                  </Typography>
+                  <Tooltip title="Copy command">
+                    <IconButton
+                      size="small"
+                      onClick={() => navigator.clipboard.writeText(command)}
+                      sx={{ color: theme.palette.text.secondary, mr: 0.5 }}
+                    >
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Run command in NestJS terminal">
+                    <span>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRunGitCommand(command, index)}
+                        disabled={
+                          runningGitCommandIndex !== null && runningGitCommandIndex !== index
+                        }
+                        sx={{ color: theme.palette.success.main }}
+                      >
+                        {runningGitCommandIndex === index ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : (
+                          <PlayArrowIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </Box>
+              ))}
+            </Box>
+            {(commandExecutionOutput || commandExecutionError) && (
+              <Box sx={{ mt: 2 }}>
+                <Accordion defaultExpanded>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                      Command Execution Output
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    {commandExecutionError && (
+                      <Alert severity="error" sx={{ mb: 1 }}>
+                        {commandExecutionError}
+                      </Alert>
+                    )}
+                    {commandExecutionOutput && (
+                      <Box
+                        sx={{
+                          whiteSpace: 'pre-wrap',
+                          fontFamily: 'monospace',
+                          bgcolor: theme.palette.background.default,
+                          p: 1,
+                          borderRadius: 1,
+                          maxHeight: '200px',
+                          overflowY: 'auto',
+                          border: `1px solid ${theme.palette.divider}`,
+                        }}
+                      >
+                        {commandExecutionOutput.stdout && (
+                          <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                            {commandExecutionOutput.stdout}
+                          </Typography>
+                        )}
+                        {commandExecutionOutput.stderr && (
+                          <Typography variant="body2" color="error">
+                            {commandExecutionOutput.stderr}
+                          </Typography>
+                        )}
+                        {commandExecutionOutput.exitCode !== undefined && (
+                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                            Exit Code: {commandExecutionOutput.exitCode}
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+                  </AccordionDetails>
+                </Accordion>
+              </Box>
+            )}
+          </AccordionDetails>
+        </Accordion>
+      )}
 
       <Typography
         variant="h6"

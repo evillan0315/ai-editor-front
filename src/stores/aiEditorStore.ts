@@ -13,7 +13,7 @@ export const aiEditorStore = map<AiEditorState>({
   instruction: '',
   aiInstruction: INSTRUCTION, // Initialize with default INSTRUCTION
   expectedOutputInstruction: ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT, // Initialize with default
-  requestType: RequestType.TEXT_ONLY, // Default request type
+  requestType: RequestType.LLM_GENERATION, // Default request type changed to LLM_GENERATION
   uploadedFileData: null,
   uploadedFileMimeType: null,
   currentProjectPath: null, // Initialized to null, will be set from VITE_BASE_DIR or user input
@@ -27,6 +27,10 @@ export const aiEditorStore = map<AiEditorState>({
   diffFilePath: null, // The filePath of the file whose diff is currently displayed
   applyingChanges: false, // New state for tracking if changes are being applied
   appliedMessages: [], // Messages from the backend after applying changes
+  gitInstructions: null, // New: Optional git commands from LLM response
+  runningGitCommandIndex: null, // New: Index of the git command currently being executed
+  commandExecutionOutput: null, // New: Output from the last git command execution
+  commandExecutionError: null, // New: Error from the last git command execution
   openedFile: null, // Path of the file currently opened in the right editor panel
   openedFileContent: null, // Content of the file currently opened
   isFetchingFileContent: false, // Loading state for fetching opened file content
@@ -71,7 +75,7 @@ export const clearState = () => {
     instruction: '',
     aiInstruction: INSTRUCTION, // Reset to default
     expectedOutputInstruction: ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT, // Reset to default
-    requestType: RequestType.TEXT_ONLY, // Reset to default
+    requestType: RequestType.LLM_GENERATION, // Reset to default, which is now LLM_GENERATION
     uploadedFileData: null,
     uploadedFileMimeType: null,
     currentProjectPath: null,
@@ -85,6 +89,10 @@ export const clearState = () => {
     diffFilePath: null,
     applyingChanges: false,
     appliedMessages: [],
+    gitInstructions: null, // Reset to null
+    runningGitCommandIndex: null,
+    commandExecutionOutput: null,
+    commandExecutionError: null,
     openedFile: null,
     openedFileContent: null,
     isFetchingFileContent: false,
@@ -105,7 +113,10 @@ export const setLastLlmResponse = (response: ModelResponse | null) => {
       newSelectedChanges[change.filePath] = change; // Select all by default
     });
     aiEditorStore.setKey('selectedChanges', newSelectedChanges);
-  } else {
+  }
+  aiEditorStore.setKey('gitInstructions', response?.gitInstructions || null); // New: Set git instructions
+  // Clear selected changes if no response or no changes
+  if (!response || !response.changes) {
     aiEditorStore.setKey('selectedChanges', {});
   }
 };
@@ -215,4 +226,19 @@ export const setIsFetchingFileContent = (isLoading: boolean) => {
 
 export const setFetchFileContentError = (message: string | null) => {
   aiEditorStore.setKey('fetchFileContentError', message);
+};
+
+// New actions for running git commands
+export const setRunningGitCommandIndex = (index: number | null) => {
+  aiEditorStore.setKey('runningGitCommandIndex', index);
+};
+
+export const setCommandExecutionOutput = (
+  output: { stdout: string; stderr: string; exitCode: number } | null,
+) => {
+  aiEditorStore.setKey('commandExecutionOutput', output);
+};
+
+export const setCommandExecutionError = (error: string | null) => {
+  aiEditorStore.setKey('commandExecutionError', error);
 };

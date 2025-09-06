@@ -48,9 +48,6 @@ const AiEditorPage: React.FC = () => {
         your project, and optionally browse files from the tree.
       </Typography>
 
-      {/* AI Proposed Changes Display - Moved above PromptGenerator */}
-      <AiResponseDisplay />
-
       {/* General error display (can be set by PromptGenerator or other actions) */}
       {error && (
         <Alert severity="error" sx={{ mt: 3 }}>
@@ -58,20 +55,16 @@ const AiEditorPage: React.FC = () => {
         </Alert>
       )}
 
-      {/* Prompt Generator */}
       <PromptGenerator />
 
       <Box className="flex gap-4 mt-6 flex-grow min-h-0">
         {/* File Tree Column */}
-        <FileTree projectRoot={currentProjectPath || ''} />
+        {currentProjectPath && <FileTree projectRoot={currentProjectPath} />}
 
         {/* AI Editor & File Content Column */}
         <Box className="flex-grow flex flex-col gap-4 min-h-0 overflow-auto">
-          {/* Removed max-h-[calc(100vh-280px)] to allow flex-grow to manage height */}
-          {/* Opened File Content Editor (conditionally rendered) */}
-          {!lastLlmResponse && <OpenedFileViewer />}
-
-          {/* AiResponseDisplay was here, but has been moved above PromptGenerator */}
+          {/* Conditionally render AiResponseDisplay or OpenedFileViewer based on lastLlmResponse */}
+          {lastLlmResponse ? <AiResponseDisplay /> : <OpenedFileViewer />}
         </Box>
       </Box>
     </Paper>

@@ -26,6 +26,7 @@ export const INSTRUCTION = `
   - The response MUST consist solely of a single JSON object — no explanations or extra text outside it.  
   - The JSON must strictly validate against the schema provided.  
   - The response MUST be a single JSON object that validates against this JSON Schema:
+  - If you applied changes, also provide relevant \`git\` commands for staging and committing, e.g., \`git add .\`, \`git commit -m "feat: your commit message"\`.
 `.replace(/^\s+/gm, '');
 
 export const ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT = `
@@ -87,6 +88,13 @@ export const ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT = `
             }
           ]
         }
+      },
+      "gitInstructions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Optional git commands to execute after applying changes, e.g., git add, git commit."
       }
     }
   }
@@ -115,6 +123,10 @@ export const ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT = `
         "action": "delete",
         "reason": "Removed unused component."
       }
+    ],
+    "gitInstructions": [
+      "git add .",
+      "git commit -m \"feat: implemented authentication\""
     ]
   }
 `.replace(/^\s+/gm, '');
@@ -152,4 +164,5 @@ export interface ModelResponse {
   thoughtProcess: string; // Reasoning behind changes
   documentation?: Documentation; // Optional structured docs
   changes: FileChange[]; // List of file operations
+  gitInstructions?: string[]; // Optional git commands to execute after applying changes
 }
