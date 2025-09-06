@@ -92,8 +92,8 @@ graph LR
     Services -- Data --> State
     Router -- Navigates --> Pages
 
-    style Frontend fill:#f9f,stroke:#333,stroke-width:2px
-    style Backend fill:#ccf,stroke:#333,stroke-width:2px
+    style Frontend fill:#111,stroke:#333,stroke-width:2px
+    style Backend fill:#222,stroke:#333,stroke-width:2px
     style State fill:#000,stroke:#333,stroke-width:1px
     style Services fill:#000,stroke:#333,stroke-width:1px
     style API fill:#000,stroke:#333,stroke-width:1px
