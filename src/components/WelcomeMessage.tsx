@@ -1,17 +1,33 @@
 import React from 'react';
+import { Paper, Typography, Box, useTheme } from '@mui/material';
 
 const WelcomeMessage: React.FC = () => {
+  const theme = useTheme();
+
   return (
-    <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md flex items-center space-x-4">
-      <div>
-        <div className="text-xl font-medium text-black">
+    <Paper
+      elevation={3}
+      sx={{
+        p: 4,
+        maxWidth: 400,
+        mx: 'auto',
+        borderRadius: 2,
+        bgcolor: theme.palette.background.paper,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        color: theme.palette.text.primary,
+      }}
+    >
+      <Box>
+        <Typography variant="h5" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
           Welcome to AI Editor!
-        </div>
-        <p className="text-gray-500">
+        </Typography>
+        <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
           Start editing your code with AI assistance.
-        </p>
-      </div>
-    </div>
+        </Typography>
+      </Box>
+    </Paper>
   );
 };
 

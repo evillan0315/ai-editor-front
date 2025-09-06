@@ -7,7 +7,7 @@ import { registerLocal } from '@/services/authService';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
+import TextField from '@/components/ui/TextField'; // Use the custom TextField
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -77,7 +77,7 @@ const RegisterPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="sm" className="mt-8">
+    <Container maxWidth="sm" sx={{ mt: 8 }}>
       <Box
         sx={{
           display: 'flex',
@@ -116,8 +116,6 @@ const RegisterPage: React.FC = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             disabled={loading}
-            InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
-            InputProps={{ style: { color: theme.palette.text.primary } }}
           />
           <TextField
             margin="normal"
@@ -130,8 +128,6 @@ const RegisterPage: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
-            InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
-            InputProps={{ style: { color: theme.palette.text.primary } }}
           />
           <TextField
             margin="normal"
@@ -145,8 +141,6 @@ const RegisterPage: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
-            InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
-            InputProps={{ style: { color: theme.palette.text.primary } }}
           />
           <TextField
             margin="normal"
@@ -160,8 +154,6 @@ const RegisterPage: React.FC = () => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             disabled={loading}
-            InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
-            InputProps={{ style: { color: theme.palette.text.primary } }}
           />
           <Button
             type="submit"

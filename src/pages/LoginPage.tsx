@@ -13,7 +13,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import GoogleIcon from '@mui/icons-material/Google';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import TextField from '@mui/material/TextField';
+import TextField from '@/components/ui/TextField'; // Use the custom TextField
 import { useTheme } from '@mui/material/styles';
 
 import type { UserProfile } from '@/types/auth';
@@ -124,7 +124,7 @@ const LoginPage: React.FC = () => {
   const displayError = localError || authStoreError;
 
   return (
-    <Container maxWidth="sm" className="mt-8">
+    <Container maxWidth="sm" sx={{ mt: 8 }}>
       <Box
         sx={{
           display: 'flex',
@@ -163,8 +163,6 @@ const LoginPage: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
-            InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
-            InputProps={{ style: { color: theme.palette.text.primary } }}
           />
           <TextField
             margin="normal"
@@ -178,8 +176,6 @@ const LoginPage: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
-            InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
-            InputProps={{ style: { color: theme.palette.text.primary } }}
           />
           <Button
             type="submit"
