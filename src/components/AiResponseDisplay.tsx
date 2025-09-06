@@ -80,7 +80,10 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
 
     try {
       const changesToApply = Object.values(selectedChanges);
-      const result = await applyProposedChanges(changesToApply, currentProjectPath);
+      const result = await applyProposedChanges(
+        changesToApply,
+        currentProjectPath,
+      );
       setAppliedMessages(result.messages);
       if (!result.success) {
         setError('Some changes failed to apply. Check messages above.');
@@ -94,7 +97,9 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
       // Note: If you want to explicitly clear git instructions after application, you'd add an action to aiEditorStore and call it here.
       // For now, they remain tied to lastLlmResponse.
     } catch (err) {
-      setError(`Failed to apply changes: ${err instanceof Error ? err.message : String(err)}`);
+      setError(
+        `Failed to apply changes: ${err instanceof Error ? err.message : String(err)}`,
+      );
     } finally {
       setApplyingChanges(false);
     }
@@ -179,7 +184,11 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
       )}
 
       <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-        <Button variant="outlined" onClick={selectAllChanges} disabled={loading || applyingChanges}>
+        <Button
+          variant="outlined"
+          onClick={selectAllChanges}
+          disabled={loading || applyingChanges}
+        >
           Select All
         </Button>
         <Button
@@ -193,8 +202,16 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
           variant="contained"
           color="primary"
           onClick={handleApplySelectedChanges}
-          disabled={loading || applyingChanges || Object.keys(selectedChanges).length === 0}
-          startIcon={applyingChanges ? <CircularProgress size={16} color="inherit" /> : null}
+          disabled={
+            loading ||
+            applyingChanges ||
+            Object.keys(selectedChanges).length === 0
+          }
+          startIcon={
+            applyingChanges ? (
+              <CircularProgress size={16} color="inherit" />
+            ) : null
+          }
         >
           {applyingChanges ? 'Applying...' : 'Apply Selected Changes'}
         </Button>
@@ -277,10 +294,17 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
               }}
             >
               {gitInstructions.map((command, index) => (
-                <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Box
+                  key={index}
+                  sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
+                >
                   <Typography
                     component="span"
-                    sx={{ flexGrow: 1, mr: 1, color: theme.palette.text.primary }}
+                    sx={{
+                      flexGrow: 1,
+                      mr: 1,
+                      color: theme.palette.text.primary,
+                    }}
                   >
                     {command}
                   </Typography>
@@ -299,7 +323,8 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
                         size="small"
                         onClick={() => handleRunGitCommand(command, index)}
                         disabled={
-                          runningGitCommandIndex !== null && runningGitCommandIndex !== index
+                          runningGitCommandIndex !== null &&
+                          runningGitCommandIndex !== index
                         }
                         sx={{ color: theme.palette.success.main }}
                       >
@@ -342,7 +367,10 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
                         }}
                       >
                         {commandExecutionOutput.stdout && (
-                          <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: theme.palette.text.primary }}
+                          >
                             {commandExecutionOutput.stdout}
                           </Typography>
                         )}
@@ -352,7 +380,10 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
                           </Typography>
                         )}
                         {commandExecutionOutput.exitCode !== undefined && (
-                          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             Exit Code: {commandExecutionOutput.exitCode}
                           </Typography>
                         )}

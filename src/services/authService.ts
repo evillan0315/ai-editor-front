@@ -23,7 +23,11 @@ export const handleLogout = async () => {
 
     logout();
   } catch (err) {
-    setError(err instanceof Error ? err.message : 'An unknown error occurred during logout.');
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'An unknown error occurred during logout.',
+    );
   } finally {
     setLoading(false);
   }
@@ -82,7 +86,7 @@ export const loginLocal = async (credentials: LoginRequest) => {
 
     if (!response.ok) {
       throw new Error(data.message || 'Login failed');
-      n;
+   
     }
 
     // Assuming the backend returns the user object and a token (if needed client-side)
@@ -90,8 +94,15 @@ export const loginLocal = async (credentials: LoginRequest) => {
     loginSuccess(user, data.access_token); // Use data.access_token as returned by backend
     return { success: true };
   } catch (err) {
-    setError(err instanceof Error ? err.message : 'An unknown error occurred during login.');
-    return { success: false, message: err instanceof Error ? err.message : 'Unknown error' };
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'An unknown error occurred during login.',
+    );
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : 'Unknown error',
+    };
   } finally {
     setLoading(false);
   }
@@ -125,8 +136,15 @@ export const registerLocal = async (userData: RegisterRequest) => {
     loginSuccess(user, data.access_token); // Use data.access_token as returned by backend
     return { success: true };
   } catch (err) {
-    setError(err instanceof Error ? err.message : 'An unknown error occurred during registration.');
-    return { success: false, message: err instanceof Error ? err.message : 'Unknown error' };
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'An unknown error occurred during registration.',
+    );
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : 'Unknown error',
+    };
   } finally {
     setLoading(false);
   }

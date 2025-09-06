@@ -10,7 +10,15 @@ import {
 import { readFileContent } from '@/api/file';
 import CodeMirror from '@uiw/react-codemirror';
 // Language extensions are now handled by getCodeMirrorLanguage from utils
-import { Box, Typography, Button, CircularProgress, Alert, Paper, useTheme } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+  Alert,
+  Paper,
+  useTheme,
+} from '@mui/material';
 import { themeStore } from '@/stores/themeStore';
 import { getCodeMirrorLanguage } from '@/utils/index'; // Import from utils
 
@@ -19,8 +27,12 @@ interface OpenedFileViewerProps {
 }
 
 const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
-  const { openedFile, openedFileContent, isFetchingFileContent, fetchFileContentError } =
-    useStore(aiEditorStore);
+  const {
+    openedFile,
+    openedFileContent,
+    isFetchingFileContent,
+    fetchFileContentError,
+  } = useStore(aiEditorStore);
   const theme = useTheme();
   const { mode } = useStore(themeStore);
   useEffect(() => {
@@ -91,7 +103,10 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
       {isFetchingFileContent ? (
         <Box className="flex justify-center items-center flex-grow">
           <CircularProgress size={24} />
-          <Typography variant="body2" sx={{ ml: 2, color: theme.palette.text.secondary }}>
+          <Typography
+            variant="body2"
+            sx={{ ml: 2, color: theme.palette.text.secondary }}
+          >
             Loading file content...
           </Typography>
         </Box>

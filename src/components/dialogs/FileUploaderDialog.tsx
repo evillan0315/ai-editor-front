@@ -90,7 +90,8 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
   const handlePasteBase64 = () => {
     if (base64Input) {
       // Basic validation for data URL format
-      const regex = /^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+)?;base64,([a-zA-Z0-9\/+=]+)$/;
+      const regex =
+        /^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+)?;base64,([a-zA-Z0-9\/+=]+)$/;
       const match = base64Input.match(regex);
       if (match) {
         const mimeType = match[1];
@@ -137,7 +138,11 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
         <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
           Upload File or Paste Base64
         </Typography>
-        <IconButton onClick={onClose} size="small" sx={{ color: theme.palette.text.secondary }}>
+        <IconButton
+          onClick={onClose}
+          size="small"
+          sx={{ color: theme.palette.text.secondary }}
+        >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -148,7 +153,10 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
           </Alert>
         )}
 
-        <Typography variant="subtitle1" sx={{ mb: 1, color: theme.palette.text.primary }}>
+        <Typography
+          variant="subtitle1"
+          sx={{ mb: 1, color: theme.palette.text.primary }}
+        >
           Drag & Drop File
         </Typography>
         <Box
@@ -162,7 +170,9 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
             p: 4,
             textAlign: 'center',
             cursor: 'pointer',
-            bgcolor: dragActive ? theme.palette.action.hover : theme.palette.background.default,
+            bgcolor: dragActive
+              ? theme.palette.action.hover
+              : theme.palette.background.default,
             mb: 2,
             transition: 'all 0.2s ease-in-out',
           }}
@@ -178,13 +188,19 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
             <IconButton component="span" color="primary" size="large">
               <CloudUploadIcon sx={{ fontSize: 48 }} />
             </IconButton>
-            <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+            <Typography
+              variant="body1"
+              sx={{ color: theme.palette.text.secondary }}
+            >
               Drag files here or click to browse
             </Typography>
           </label>
         </Box>
 
-        <Typography variant="subtitle1" sx={{ mb: 1, color: theme.palette.text.primary }}>
+        <Typography
+          variant="subtitle1"
+          sx={{ mb: 1, color: theme.palette.text.primary }}
+        >
           Or Paste Base64 Data URL
         </Typography>
         <TextField
@@ -200,7 +216,10 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
           placeholder="e.g., data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="
           fullWidth
           variant="outlined"
-          InputLabelProps={{ shrink: true, style: { color: theme.palette.text.secondary } }}
+          InputLabelProps={{
+            shrink: true,
+            style: { color: theme.palette.text.secondary },
+          }}
           InputProps={{ style: { color: theme.palette.text.primary } }}
           sx={{ mb: 2 }}
         />

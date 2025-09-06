@@ -6,8 +6,12 @@ import { json } from '@codemirror/lang-json';
 import { markdown } from '@codemirror/lang-markdown';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
+import { diffLanguage } from './diffLanguage'; // New import for custom diff highlighting
 
-export const debounce = <T extends (...args: any[]) => void>(func: T, delay: number) => {
+export const debounce = <T extends (...args: any[]) => void>(
+  func: T,
+  delay: number,
+) => {
   let timeoutId: ReturnType<typeof setTimeout>;
   return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
     clearTimeout(timeoutId);
@@ -15,7 +19,14 @@ export const debounce = <T extends (...args: any[]) => void>(func: T, delay: num
   };
 };
 
-export function getCodeMirrorLanguage(filePath: string): LanguageSupport[] {
+export function getCodeMirrorLanguage(
+  filePath: string,
+  isDiff: boolean = false,
+): LanguageSupport[] {
+  if (isDiff) {
+    return [diffLanguage()]; // Return custom diff language extension if explicitly marked as diff
+  }
+
   const ext = path.extname(filePath).toLowerCase();
   switch (ext) {
     case '.js':

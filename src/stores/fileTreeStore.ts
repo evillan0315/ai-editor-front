@@ -48,7 +48,8 @@ export const fetchFiles = async (projectRoot: string, scanPaths: string[]) => {
   if (
     !currentStore.isFetchingTree &&
     currentStore.lastFetchedProjectRoot === projectRoot &&
-    JSON.stringify(currentStore.lastFetchedScanPaths) === JSON.stringify(parsedScanPaths) &&
+    JSON.stringify(currentStore.lastFetchedScanPaths) ===
+      JSON.stringify(parsedScanPaths) &&
     currentStore.fetchTreeError === null &&
     currentStore.flatFileList.length > 0 // Only consider fresh if there are files
   ) {
@@ -68,7 +69,12 @@ export const fetchFiles = async (projectRoot: string, scanPaths: string[]) => {
   // Do NOT reset lastFetchedProjectRoot/ScanPaths here yet, as it indicates what was LAST successfully fetched.
   // Resetting them now would make the "fresh" check always false until successful completion.
 
-  console.log('Fetching files for projectRoot:', projectRoot, 'scanPaths:', scanPaths);
+  console.log(
+    'Fetching files for projectRoot:',
+    projectRoot,
+    'scanPaths:',
+    scanPaths,
+  );
   try {
     const apiFiles = await fetchProjectFiles(projectRoot, parsedScanPaths);
     const tree = buildFileTree(apiFiles, projectRoot);

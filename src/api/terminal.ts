@@ -1,5 +1,10 @@
 import { getToken } from '@/stores/authStore';
-import { TerminalCommandResponse } from '@/types';
+import {
+  TerminalCommandResponse,
+  PackageScript,
+  PackageManager,
+  ProjectScriptsResponse,
+} from '@/types';
 
 const API_BASE_URL = `/api`;
 
@@ -8,7 +13,7 @@ interface ApiError extends Error {
   message: string;
 }
 
-const handleResponse = async <T,>(response: Response): Promise<T> => {
+const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     const errorData: ApiError = await response.json();
     throw new Error(errorData.message || `API error: ${response.status}`);
@@ -45,6 +50,30 @@ export const runTerminalCommand = async (
     return handleResponse<TerminalCommandResponse>(response);
   } catch (error) {
     console.error(`Error running terminal command '${command}':`, error);
+    throw error;
+  }
+};
+
+/**
+ * Fetches package.json scripts and detects the package manager from the project root.
+ * This conceptually calls a backend endpoint that reads package.json and lock files.
+ * @param projectRoot The root directory of the project.
+ * @returns A promise that resolves to an object containing package scripts and the detected package manager.
+ */
+export const fetchProjectScripts = async (
+  projectRoot: string,
+): Promise<ProjectScriptsResponse> => {
+  try {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/terminal/package-scripts`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ projectRoot }),
+      },
+    );
+    return handleResponse<ProjectScriptsResponse>(response);
+  } catch (error) {
+    console.error(`Error fetching package scripts for ${projectRoot}:`, error);
     throw error;
   }
 };

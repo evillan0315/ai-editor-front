@@ -42,6 +42,25 @@ export enum RequestType {
 
 export const RequestTypeValues = Object.values(RequestType);
 
+export type PackageManager = 'npm' | 'yarn' | 'pnpm' | null;
+
+export interface PackageScript {
+  name: string;
+  script: string; // The raw script command from package.json, e.g., "vite --port 3001"
+}
+
+export interface ProjectScriptsResponse {
+  scripts: PackageScript[];
+  packageManager: PackageManager;
+}
+
+export enum ScriptStatus {
+  IDLE = 'IDLE',
+  RUNNING = 'RUNNING',
+  SUCCESS = 'SUCCESS',
+  ERROR = 'ERROR',
+}
+
 export interface AiEditorState {
   instruction: string;
   aiInstruction: string; // Editable version of INSTRUCTION constant
@@ -70,10 +89,10 @@ export interface AiEditorState {
   fetchFileContentError: string | null; // Error state for fetching opened file content
 }
 
-export type {
-  FileChange,
-  ModelResponse,
+export {
+  type FileChange,
+  type ModelResponse,
   FileAction,
-  AddOrModifyFileChange,
-  DeleteOrAnalyzeFileChange,
+  type AddOrModifyFileChange,
+  type DeleteOrAnalyzeFileChange,
 };

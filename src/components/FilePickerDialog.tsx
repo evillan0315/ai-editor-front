@@ -52,7 +52,8 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
   onSelect,
   currentScanPaths,
 }) => {
-  const { flatFileList, isFetchingTree, fetchTreeError } = useStore(fileTreeStore);
+  const { flatFileList, isFetchingTree, fetchTreeError } =
+    useStore(fileTreeStore);
   const { currentProjectPath, scanPathsInput } = useStore(aiEditorStore);
   const theme = useTheme();
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
@@ -128,7 +129,9 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           relativePath,
         };
       })
-      .filter((entry) => entry.relativePath !== '.' || entry.type === 'directory'); // Exclude root file item itself if it's a file
+      .filter(
+        (entry) => entry.relativePath !== '.' || entry.type === 'directory',
+      ); // Exclude root file item itself if it's a file
   }, [flatFileList, currentProjectPath]);
 
   const filteredFiles = React.useMemo(() => {
@@ -178,7 +181,11 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
           Select Files and Folders
         </Typography>
-        <IconButton onClick={onClose} size="small" sx={{ color: theme.palette.text.secondary }}>
+        <IconButton
+          onClick={onClose}
+          size="small"
+          sx={{ color: theme.palette.text.secondary }}
+        >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -211,7 +218,9 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           sx={{ mb: 2 }}
           size="small"
         />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}>
+        <Box
+          sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}
+        >
           <Button
             variant="outlined"
             size="small"
@@ -233,7 +242,10 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         {isFetchingTree ? (
           <Box className="flex justify-center items-center h-48">
             <CircularProgress size={24} />
-            <Typography variant="body2" sx={{ ml: 2, color: theme.palette.text.secondary }}>
+            <Typography
+              variant="body2"
+              sx={{ ml: 2, color: theme.palette.text.secondary }}
+            >
               Loading files...
             </Typography>
           </Box>
@@ -243,7 +255,9 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           </Alert>
         ) : filteredFiles.length === 0 ? (
           <Alert severity="info" sx={{ mt: 2 }}>
-            {searchTerm ? 'No matching files found.' : 'No files available in the project root.'}
+            {searchTerm
+              ? 'No matching files found.'
+              : 'No files available in the project root.'}
           </Alert>
         ) : (
           <List
@@ -264,7 +278,9 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
                     edge="end"
                     checked={selectedPaths.has(fileEntry.relativePath)}
                     onChange={() => handleTogglePath(fileEntry.relativePath)}
-                    inputProps={{ 'aria-labelledby': `checkbox-list-label-${fileEntry.filePath}` }}
+                    inputProps={{
+                      'aria-labelledby': `checkbox-list-label-${fileEntry.filePath}`,
+                    }}
                     sx={{ color: theme.palette.primary.main }}
                   />
                 }
@@ -278,7 +294,9 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
                 <ListItemText
                   id={`checkbox-list-label-${fileEntry.filePath}`}
                   primary={fileEntry.relativePath}
-                  primaryTypographyProps={{ style: { color: theme.palette.text.primary } }}
+                  primaryTypographyProps={{
+                    style: { color: theme.palette.text.primary },
+                  }}
                 />
               </ListItem>
             ))}
@@ -292,11 +310,17 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           justifyContent: 'space-between',
         }}
       >
-        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.text.secondary }}
+        >
           Selected: {selectedPaths.size}
         </Typography>
         <Box>
-          <Button onClick={onClose} sx={{ mr: 1, color: theme.palette.text.secondary }}>
+          <Button
+            onClick={onClose}
+            sx={{ mr: 1, color: theme.palette.text.secondary }}
+          >
             Cancel
           </Button>
           <Button

@@ -13,7 +13,8 @@ import AiResponseDisplay from '@/components/AiResponseDisplay';
 import OpenedFileViewer from '@/components/OpenedFileViewer';
 
 const AiEditorPage: React.FC = () => {
-  const { error, currentProjectPath, lastLlmResponse } = useStore(aiEditorStore);
+  const { error, currentProjectPath, lastLlmResponse } =
+    useStore(aiEditorStore);
 
   const theme = useTheme();
 
@@ -44,8 +45,9 @@ const AiEditorPage: React.FC = () => {
         AI Code Editor
       </Typography>
       <Typography variant="body1" color="text.secondary" className="mb-4">
-        Provide instructions to the AI to generate or modify code in your project. Start by loading
-        your project, and optionally browse files from the tree.
+        Provide instructions to the AI to generate or modify code in your
+        project. Start by loading your project, and optionally browse files from
+        the tree.
       </Typography>
 
       {/* General error display (can be set by PromptGenerator or other actions) */}

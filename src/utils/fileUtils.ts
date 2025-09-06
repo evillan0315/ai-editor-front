@@ -11,7 +11,10 @@ export function joinPaths(...paths: string[]): string {
     .replace(/\/\/+/g, '/');
 }
 
-export function getRelativePath(absolutePath: string, basePath: string): string {
+export function getRelativePath(
+  absolutePath: string,
+  basePath: string,
+): string {
   // Ensure paths use forward slashes for consistency
   const normalizedAbsolutePath = absolutePath.replace(/\\/g, '/');
   const normalizedBasePath = basePath.replace(/\\/g, '/');
@@ -42,7 +45,10 @@ export function getRelativePath(absolutePath: string, basePath: string): string 
  * @param projectRoot The root path of the project, used to make paths relative.
  * @returns An array of FileEntry objects representing the top-level items of the tree.
  */
-export function buildFileTree(flatList: ApiFileEntry[], projectRoot: string): FileEntry[] {
+export function buildFileTree(
+  flatList: ApiFileEntry[],
+  projectRoot: string,
+): FileEntry[] {
   const normalizedProjectRoot = projectRoot.replace(/\\/g, '/');
   const pathToNodeMap = new Map<string, FileEntry>();
 
@@ -132,7 +138,12 @@ export function buildFileTree(flatList: ApiFileEntry[], projectRoot: string): Fi
 
       node.children?.sort((a, b) => {
         // Double-check for undefined/null/malformed entries during sorting for ultimate safety.
-        if (!a || !b || typeof a.name !== 'string' || typeof b.name !== 'string') {
+        if (
+          !a ||
+          !b ||
+          typeof a.name !== 'string' ||
+          typeof b.name !== 'string'
+        ) {
           console.warn(
             `FileTree: Malformed entry found during children sorting. Skipping: a=${JSON.stringify(a)}, b=${JSON.stringify(b)}`,
           );

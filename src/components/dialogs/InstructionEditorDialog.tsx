@@ -44,7 +44,10 @@ const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
     onSave(instructionType, content);
   };
 
-  const title = instructionType === 'ai' ? 'Edit AI Instruction' : 'Edit Expected Output Format';
+  const title =
+    instructionType === 'ai'
+      ? 'Edit AI Instruction'
+      : 'Edit Expected Output Format';
 
   // Determine language extensions for CodeMirror
   const languageExtensions =
@@ -77,11 +80,17 @@ const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
         <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
           {title}
         </Typography>
-        <IconButton onClick={onClose} size="small" sx={{ color: theme.palette.text.secondary }}>
+        <IconButton
+          onClick={onClose}
+          size="small"
+          sx={{ color: theme.palette.text.secondary }}
+        >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      <DialogContent sx={{ p: 2, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+      <DialogContent
+        sx={{ p: 2, display: 'flex', flexDirection: 'column', flexGrow: 1 }}
+      >
         <Box sx={{ flexGrow: 1, minHeight: 0 }}>
           <CodeMirror
             value={content}

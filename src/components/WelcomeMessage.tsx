@@ -20,10 +20,17 @@ const WelcomeMessage: React.FC = () => {
       }}
     >
       <Box>
-        <Typography variant="h5" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
+        <Typography
+          variant="h5"
+          component="div"
+          sx={{ fontWeight: 'bold', mb: 1 }}
+        >
           Welcome to AI Editor!
         </Typography>
-        <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+        <Typography
+          variant="body1"
+          sx={{ color: theme.palette.text.secondary }}
+        >
           Start editing your code with AI assistance.
         </Typography>
       </Box>

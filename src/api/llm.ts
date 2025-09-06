@@ -8,7 +8,7 @@ interface ApiError extends Error {
   message: string;
 }
 
-const handleResponse = async <T,>(response: Response): Promise<T> => {
+const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     const errorData: ApiError = await response.json();
     throw new Error(errorData.message || `API error: ${response.status}`);
@@ -33,7 +33,9 @@ const fetchWithAuth = async (url: string, options?: RequestInit) => {
  * @param data The payload containing user prompt, project root, scan paths, and instructions.
  * @returns A promise that resolves to the LLM's structured response with proposed file changes.
  */
-export const generateCode = async (data: LlmGeneratePayload): Promise<ModelResponse> => {
+export const generateCode = async (
+  data: LlmGeneratePayload,
+): Promise<ModelResponse> => {
   try {
     // projectRoot is now part of LlmGeneratePayload, no need for it as a query parameter.
     const response = await fetchWithAuth(`${API_BASE_URL}/llm/generate-llm`, {
@@ -75,13 +77,19 @@ export const applyProposedChanges = async (
  * @param projectRoot The root directory of the project (git repository).
  * @returns A promise that resolves to the git diff string.
  */
-export const getGitDiff = async (filePath: string, projectRoot: string): Promise<string> => {
+export const getGitDiff = async (
+  filePath: string,
+  projectRoot: string,
+): Promise<string> => {
   try {
     // filePath should already be relative to projectRoot from the frontend's getRelativePath call.
     // Do NOT prepend projectRoot here, as it would create an incorrect absolute path for the backend.
     const response = await fetchWithAuth(`${API_BASE_URL}/file/git-diff`, {
       method: 'POST',
-      body: JSON.stringify({ filePath: `${projectRoot}/${filePath}`, projectRoot }),
+      body: JSON.stringify({
+        filePath: `${projectRoot}/${filePath}`,
+        projectRoot,
+      }),
     });
     const data = await handleResponse<{ diff: string }>(response);
     console.log(data, 'data');

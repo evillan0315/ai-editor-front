@@ -10,7 +10,11 @@ import {
 } from '@mui/material';
 import FileTreeItem from './FileTreeItem';
 import { useStore } from '@nanostores/react';
-import { fileTreeStore, fetchFiles, clearFileTree } from '@/stores/fileTreeStore';
+import {
+  fileTreeStore,
+  fetchFiles,
+  clearFileTree,
+} from '@/stores/fileTreeStore';
 import { aiEditorStore } from '@/stores/aiEditorStore';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined';
@@ -108,7 +112,10 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
       {isFetchingTree ? (
         <Box className="flex justify-center items-center flex-grow">
           <CircularProgress size={24} />
-          <Typography variant="body2" sx={{ ml: 2, color: theme.palette.text.secondary }}>
+          <Typography
+            variant="body2"
+            sx={{ ml: 2, color: theme.palette.text.secondary }}
+          >
             Loading files...
           </Typography>
         </Box>
@@ -118,12 +125,17 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
         </Alert>
       ) : treeFiles.length === 0 && projectRoot ? (
         <Alert severity="info" sx={{ mt: 2 }}>
-          No files found for project root: {projectRoot}. Check path and scan paths.
+          No files found for project root: {projectRoot}. Check path and scan
+          paths.
         </Alert>
       ) : (
         <Box className="flex-grow">
           {treeFiles.map((entry) => (
-            <FileTreeItem key={entry.filePath} fileEntry={entry} projectRoot={projectRoot} />
+            <FileTreeItem
+              key={entry.filePath}
+              fileEntry={entry}
+              projectRoot={projectRoot}
+            />
           ))}
         </Box>
       )}

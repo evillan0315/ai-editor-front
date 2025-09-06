@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import {
   aiEditorStore,
   toggleSelectedChange,
   setCurrentDiff,
   updateProposedChangeContent,
+  updateProposedChangePath,
   setError,
 } from '@/stores/aiEditorStore';
 import { getGitDiff } from '@/api/llm';
@@ -21,8 +22,14 @@ import {
   AccordionSummary,
   AccordionDetails,
   useTheme,
+  IconButton,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 import * as path from 'path-browserify';
 import { getRelativePath, getCodeMirrorLanguage } from '@/utils/index';
 import { themeStore } from '@/stores/themeStore';
@@ -49,7 +56,10 @@ const getFileActionChipColor = (action: FileAction) => {
   }
 };
 
-const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }) => {
+const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
+  change,
+  index,
+}) => {
   const {
     selectedChanges,
     currentDiff,
@@ -61,6 +71,16 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
   const theme = useTheme();
   const { mode } = useStore(themeStore);
 
+  const [isEditingFilePath, setIsEditingFilePath] = useState(false);
+  const [editedFilePath, setEditedFilePath] = useState(change.filePath);
+
+  // Update editedFilePath if the actual change.filePath from store changes
+  useEffect(() => {
+    if (!isEditingFilePath) {
+      setEditedFilePath(change.filePath);
+    }
+  }, [change.filePath, isEditingFilePath]);
+
   const handleShowDiff = async () => {
     if (!currentProjectPath) {
       setError('Project root is not set. Please load a project first.');
@@ -71,7 +91,10 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
 
     try {
       let diffContent: string;
-      const filePathToSend = getRelativePath(change.filePath, currentProjectPath);
+      const filePathToSend = getRelativePath(
+        change.filePath,
+        currentProjectPath,
+      );
 
       if (change.action === 'add') {
         diffContent = `--- /dev/null\n+++ a/${filePathToSend}\n@@ -0,0 +1,${change.newContent?.split('\n').length || 1} @@\n${change.newContent
@@ -88,12 +111,44 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
       setError(
         `Failed to get diff for ${change.filePath}: ${err instanceof Error ? err.message : String(err)}`,
       );
-      setCurrentDiff(change.filePath, `Error: ${err instanceof Error ? err.message : String(err)}`);
+      setCurrentDiff(
+        change.filePath,
+        `Error: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   };
 
+  const handleSaveFilePath = () => {
+    if (editedFilePath !== change.filePath) {
+      // Dispatch action to update the store
+      updateProposedChangePath(change.filePath, editedFilePath);
+    }
+    setIsEditingFilePath(false);
+  };
+
+  const handleCancelEditFilePath = () => {
+    setEditedFilePath(change.filePath); // Revert to original
+    setIsEditingFilePath(false);
+  };
+
+  const handleKeyDownOnInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveFilePath();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelEditFilePath();
+    }
+  };
+
+  const commonDisabled = loading || applyingChanges;
+
   return (
-    <Paper key={index} elevation={2} sx={{ p: 2, bgcolor: theme.palette.background.paper }}>
+    <Paper
+      key={index}
+      elevation={2}
+      sx={{ p: 2, bgcolor: theme.palette.background.paper }}
+    >
       <Accordion expanded={!!selectedChanges[change.filePath]}>
         <AccordionSummary
           component="div" // 👈 prevents <button> nesting
@@ -110,7 +165,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
               e.stopPropagation();
               toggleSelectedChange(change);
             }}
-            disabled={loading || applyingChanges}
+            disabled={commonDisabled}
             onClick={(e) => e.stopPropagation()}
           />
           <Chip
@@ -119,16 +174,77 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
             size="small"
             sx={{ mr: 1 }}
           />
-          <Typography
-            variant="body1"
-            sx={{
-              fontFamily: 'monospace',
-              flexGrow: 1,
-              color: theme.palette.text.primary,
-            }}
-          >
-            {currentProjectPath ? path.join(currentProjectPath, change.filePath) : change.filePath}
-          </Typography>
+          {isEditingFilePath ? (
+            <TextField
+              variant="outlined"
+              size="small"
+              value={editedFilePath}
+              onChange={(e) => setEditedFilePath(e.target.value)}
+              onBlur={handleSaveFilePath}
+              onKeyDown={handleKeyDownOnInput}
+              disabled={commonDisabled}
+              autoFocus
+              fullWidth
+              sx={{
+                flexGrow: 1,
+                mr: 1,
+                '& .MuiOutlinedInput-root': { paddingRight: '0 !important' },
+              }}
+              InputProps={{
+                style: {
+                  color: theme.palette.text.primary,
+                  fontSize: '0.875rem',
+                  fontFamily: 'monospace',
+                },
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={handleSaveFilePath}
+                      disabled={commonDisabled}
+                    >
+                      <SaveIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={handleCancelEditFilePath}
+                      disabled={commonDisabled}
+                    >
+                      <CancelIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          ) : (
+            <Typography
+              variant="body1"
+              sx={{
+                fontFamily: 'monospace',
+                flexGrow: 1,
+                color: theme.palette.text.primary,
+                mr: 1,
+              }}
+            >
+              {currentProjectPath
+                ? path.join(currentProjectPath, change.filePath)
+                : change.filePath}
+            </Typography>
+          )}
+          {!isEditingFilePath && (
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent accordion collapse
+                setIsEditingFilePath(true);
+              }}
+              disabled={commonDisabled}
+              sx={{ color: theme.palette.text.secondary }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          )}
+
           {(change.action === 'modify' ||
             change.action === 'delete' ||
             change.action === 'repair') && (
@@ -138,7 +254,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
                 e.stopPropagation();
                 handleShowDiff();
               }}
-              disabled={loading || applyingChanges}
+              disabled={commonDisabled}
               sx={{ ml: 1, whiteSpace: 'nowrap' }}
             >
               View Git Diff
@@ -154,7 +270,11 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
         >
           {' '}
           {change.reason && (
-            <Typography variant="body2" color="text.secondary" sx={{ pl: 0, mb: 0 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ pl: 0, mb: 0 }}
+            >
               Reason: {change.reason}
             </Typography>
           )}
@@ -171,9 +291,11 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
               </Typography>
               <CodeMirror
                 value={change.newContent || ''}
-                onChange={(value) => updateProposedChangeContent(change.filePath, value)}
+                onChange={(value) =>
+                  updateProposedChangeContent(change.filePath, value)
+                }
                 extensions={getCodeMirrorLanguage(change.filePath)}
-                editable={!loading && !applyingChanges}
+                editable={!commonDisabled}
                 theme={mode}
                 minHeight="150px" // Provide a reasonable minimum height
                 maxHeight="400px" // Limit maximum height to prevent one editor from taking too much space
@@ -205,7 +327,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }
               </Typography>
               <CodeMirror
                 value={currentDiff || ''}
-                extensions={[]}
+                extensions={getCodeMirrorLanguage('', true)} // Apply diff language extension
                 editable={false} // Diff view should be read-only
                 theme={mode}
                 minHeight="200px"

@@ -46,7 +46,10 @@ import {
 } from '@/stores/aiEditorStore';
 import { authStore } from '@/stores/authStore';
 import { fileTreeStore, fetchFiles } from '@/stores/fileTreeStore';
-import { INSTRUCTION, ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT } from '@/constants';
+import {
+  INSTRUCTION,
+  ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
+} from '@/constants';
 import { generateCode, LlmGeneratePayload } from '@/api/llm';
 import { ModelResponse } from '@/types';
 import FilePickerDialog from '@/components/FilePickerDialog';
@@ -69,7 +72,9 @@ const truncatePath = (path: string, maxLength: number = 30): string => {
       // Ensure truncatedDirPath doesn't end with a partial path segment
       const lastSlashIndex = truncatedDirPath.lastIndexOf('/');
       const finalDirPath =
-        lastSlashIndex !== -1 ? truncatedDirPath.substring(0, lastSlashIndex) : truncatedDirPath;
+        lastSlashIndex !== -1
+          ? truncatedDirPath.substring(0, lastSlashIndex)
+          : truncatedDirPath;
       return `${finalDirPath ? finalDirPath + '/' : ''}.../${fileName}`;
     }
   }
@@ -104,11 +109,13 @@ const PromptGenerator: React.FC = () => {
   const [newScanPathValue, setNewScanPathValue] = useState<string>('');
 
   // State for new dialogs
-  const [isFileUploaderDialogOpen, setIsFileUploaderDialogOpen] = useState(false);
-  const [isInstructionEditorDialogOpen, setIsInstructionEditorDialogOpen] = useState(false);
-  const [editingInstructionType, setEditingInstructionType] = useState<'ai' | 'expected' | null>(
-    null,
-  );
+  const [isFileUploaderDialogOpen, setIsFileUploaderDialogOpen] =
+    useState(false);
+  const [isInstructionEditorDialogOpen, setIsInstructionEditorDialogOpen] =
+    useState(false);
+  const [editingInstructionType, setEditingInstructionType] = useState<
+    'ai' | 'expected' | null
+  >(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null); // For MUI Menu
 
   useEffect(() => {
@@ -121,11 +128,15 @@ const PromptGenerator: React.FC = () => {
     }
   }, [currentProjectPath, projectInput]);
 
-  const handleInstructionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInstructionChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setInstruction(event.target.value);
   };
 
-  const handleProjectInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProjectInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setProjectInput(event.target.value);
   };
 
@@ -153,7 +164,9 @@ const PromptGenerator: React.FC = () => {
   };
 
   const handleRemoveScanPath = (pathToRemove: string) => {
-    updateScanPaths(currentScanPathsArray.filter((path) => path !== pathToRemove));
+    updateScanPaths(
+      currentScanPathsArray.filter((path) => path !== pathToRemove),
+    );
   };
 
   const handleLoadProject = () => {
@@ -207,7 +220,9 @@ const PromptGenerator: React.FC = () => {
       console.log(aiResponse, 'aiResponse');
       setLastLlmResponse(aiResponse);
     } catch (err) {
-      setError(`Failed to generate code: ${err instanceof Error ? err.message : String(err)}`);
+      setError(
+        `Failed to generate code: ${err instanceof Error ? err.message : String(err)}`,
+      );
     } finally {
       setLoading(false);
     }
@@ -265,7 +280,8 @@ const PromptGenerator: React.FC = () => {
     setIsInstructionEditorDialogOpen(false);
   };
 
-  const commonDisabled = !isLoggedIn || applyingChanges || isFetchingFileContent;
+  const commonDisabled =
+    !isLoggedIn || applyingChanges || isFetchingFileContent;
 
   return (
     <Paper
@@ -292,7 +308,11 @@ const PromptGenerator: React.FC = () => {
           }}
         >
           {currentScanPathsArray.length === 0 && !showAddScanPathInput ? (
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 1, my: 0.5 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ ml: 1, my: 0.5 }}
+            >
               No scan paths. Add some.
             </Typography>
           ) : (
@@ -322,7 +342,9 @@ const PromptGenerator: React.FC = () => {
               freeSolo
               options={scanPathAutocompleteOptions}
               value={newScanPathValue}
-              onInputChange={(_event, newInputValue) => setNewScanPathValue(newInputValue)}
+              onInputChange={(_event, newInputValue) =>
+                setNewScanPathValue(newInputValue)
+              }
               onChange={(_event, newValue) => {
                 if (typeof newValue === 'string') {
                   handleAddScanPath(newValue);
@@ -353,7 +375,9 @@ const PromptGenerator: React.FC = () => {
                     }
                   }}
                   size="small"
-                  InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+                  InputLabelProps={{
+                    style: { color: theme.palette.text.secondary },
+                  }}
                   InputProps={{
                     ...params.InputProps,
                     style: { color: theme.palette.text.primary },
@@ -435,7 +459,11 @@ const PromptGenerator: React.FC = () => {
                 </Tooltip>
                 <Tooltip title="Clear All State">
                   <span>
-                    <IconButton onClick={clearState} disabled={commonDisabled} color="secondary">
+                    <IconButton
+                      onClick={clearState}
+                      disabled={commonDisabled}
+                      color="secondary"
+                    >
                       <ClearAllIcon />
                     </IconButton>
                   </span>
@@ -461,8 +489,15 @@ const PromptGenerator: React.FC = () => {
           </Tooltip>
 
           {/* RequestType Dropdown */}
-          <FormControl sx={{ minWidth: 160 }} size="small" disabled={commonDisabled}>
-            <InputLabel id="request-type-label" sx={{ color: theme.palette.text.secondary }}>
+          <FormControl
+            sx={{ minWidth: 160 }}
+            size="small"
+            disabled={commonDisabled}
+          >
+            <InputLabel
+              id="request-type-label"
+              sx={{ color: theme.palette.text.secondary }}
+            >
               Request Type
             </InputLabel>
             <Select
@@ -485,7 +520,11 @@ const PromptGenerator: React.FC = () => {
           {/* Context Menu for Instructions */}
           <Tooltip title="Edit AI Instructions & Expected Output">
             <span>
-              <IconButton onClick={handleMenuClick} disabled={commonDisabled} color="primary">
+              <IconButton
+                onClick={handleMenuClick}
+                disabled={commonDisabled}
+                color="primary"
+              >
                 <EditNoteIcon />
               </IconButton>
             </span>
@@ -528,7 +567,9 @@ const PromptGenerator: React.FC = () => {
           onSave={handleSaveInstruction}
           instructionType={editingInstructionType}
           initialContent={
-            editingInstructionType === 'ai' ? aiInstruction : expectedOutputInstruction
+            editingInstructionType === 'ai'
+              ? aiInstruction
+              : expectedOutputInstruction
           }
         />
       )}
@@ -562,7 +603,9 @@ const PromptGenerator: React.FC = () => {
         }
         sx={{ mt: 3, py: 1.5, px: 4, fontSize: '1.05rem' }}
       >
-        {loading ? <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> : null}
+        {loading ? (
+          <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+        ) : null}
         Generate/Modify Code
       </Button>
       {error && (
