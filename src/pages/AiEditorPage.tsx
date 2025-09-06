@@ -6,7 +6,7 @@ import {
   setOpenedFile,
   setLastLlmResponse,
 } from '@/stores/aiEditorStore';
-import { Box, Typography, Alert, Paper, Container, useTheme } from '@mui/material';
+import { Box, Typography, Alert, Paper, useTheme } from '@mui/material';
 import { FileTree } from '@/components/file-tree';
 import PromptGenerator from '@/components/PromptGenerator';
 import AiResponseDisplay from '@/components/AiResponseDisplay';
@@ -25,53 +25,56 @@ const AiEditorPage: React.FC = () => {
   }, [lastLlmResponse, currentProjectPath]);
 
   return (
-    <Container
-      maxWidth="xl"
-      className="p-6 sm:p-8 flex flex-col flex-grow min-h-full container-fluid overflow-auto h-[100vh-120px]"
+    // The main content area now directly fills the 'main' section of Layout.
+    // Removed Container and its height calculation.
+    <Paper
+      elevation={3}
+      // Adjusted classNames: Removed 'mb-8' and Container-specific classes like 'container-fluid h-[100vh-120px]'.
+      // Added 'w-full' to ensure it takes full width, and 'p-6 sm:p-8' for desired padding.
+      className="w-full p-6 sm:p-8 flex-grow flex flex-col min-h-0"
+      sx={{ bgcolor: theme.palette.background.paper }}
     >
-      <Paper
-        elevation={3}
-        className="mb-8 flex-grow flex flex-col min-h-0 p-6"
-        sx={{ bgcolor: theme.palette.background.paper }}
+      <Typography
+        variant="h4"
+        component="h1"
+        gutterBottom
+        className="!font-bold"
+        sx={{ color: theme.palette.text.primary }}
       >
-        <Typography
-          variant="h4"
-          component="h1"
-          gutterBottom
-          className="!font-bold"
-          sx={{ color: theme.palette.text.primary }}
-        >
-          AI Code Editor
-        </Typography>
-        <Typography variant="body1" color="text.secondary" className="mb-4">
-          Provide instructions to the AI to generate or modify code in your project. Start by
-          loading your project, and optionally browse files from the tree.
-        </Typography>
+        AI Code Editor
+      </Typography>
+      <Typography variant="body1" color="text.secondary" className="mb-4">
+        Provide instructions to the AI to generate or modify code in your project. Start by loading
+        your project, and optionally browse files from the tree.
+      </Typography>
 
-        <PromptGenerator />
+      {/* AI Proposed Changes Display - Moved above PromptGenerator */}
+      <AiResponseDisplay />
 
-        {/* General error display (can be set by PromptGenerator or other actions) */}
-        {error && (
-          <Alert severity="error" sx={{ mt: 3 }}>
-            {error}
-          </Alert>
-        )}
+      {/* General error display (can be set by PromptGenerator or other actions) */}
+      {error && (
+        <Alert severity="error" sx={{ mt: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-        <Box className="flex gap-4 mt-6 flex-grow min-h-0">
-          {/* File Tree Column */}
-          <FileTree projectRoot={currentProjectPath || ''} />
+      {/* Prompt Generator */}
+      <PromptGenerator />
 
-          {/* AI Editor & File Content Column */}
-          <Box className="flex-grow flex flex-col gap-4 min-h-0 max-h-[calc(100vh-280px)] overflow-auto">
-            {/* Opened File Content Editor (conditionally rendered) */}
-            {!lastLlmResponse && <OpenedFileViewer />}
+      <Box className="flex gap-4 mt-6 flex-grow min-h-0">
+        {/* File Tree Column */}
+        <FileTree projectRoot={currentProjectPath || ''} />
 
-            {/* AI Proposed Changes Display */}
-            <AiResponseDisplay />
-          </Box>
+        {/* AI Editor & File Content Column */}
+        <Box className="flex-grow flex flex-col gap-4 min-h-0 overflow-auto">
+          {/* Removed max-h-[calc(100vh-280px)] to allow flex-grow to manage height */}
+          {/* Opened File Content Editor (conditionally rendered) */}
+          {!lastLlmResponse && <OpenedFileViewer />}
+
+          {/* AiResponseDisplay was here, but has been moved above PromptGenerator */}
         </Box>
-      </Paper>
-    </Container>
+      </Box>
+    </Paper>
   );
 };
 

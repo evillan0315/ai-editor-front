@@ -27,7 +27,7 @@ const Layout: React.FC = () => {
           <LinearProgress />
         </Box>
       )}
-      <main className="flex-grow w-full flex flex-col min-h-screen overflow-hidden">
+      <main className="flex-grow w-full flex flex-col overflow-hidden">
         <Outlet />
       </main>
       <footer
