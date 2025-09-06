@@ -121,3 +121,4 @@ The AI Editor follows a classic client-server architecture:
 - **Customizable AI Behavior**: AI system instructions (`aiInstruction`) and expected output format (`expectedOutputInstruction`) are made configurable via dedicated state and UI, allowing users to fine-tune the AI's persona and response structure without code changes.
 - **Multi-modal Input Support**: Integration of file/image upload and `requestType` selection enables richer interactions with advanced LLMs capable of processing diverse input formats.
 - **Frontend-driven Path Selection**: The `FilePickerDialog` allows users to visually select `scanPaths`, enhancing user experience for defining AI context.
+- **Direct Git Command Execution**: The frontend can execute `git` commands suggested by the AI, displaying terminal output, for a more integrated development workflow.

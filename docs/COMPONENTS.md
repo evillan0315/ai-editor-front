@@ -17,6 +17,7 @@ src/
 │   ├── AiEditorPage.tsx    # Main AI editor interface
 │   ├── AuthCallback.tsx    # OAuth callback handling
 │   ├── LoginPage.tsx       # User login page
+│   ├── RegisterPage.tsx    # User registration page
 │   └── ...
 └── App.tsx                 # Main application component and router setup
 ```
@@ -54,8 +55,8 @@ src/
 - **Responsibility**: The central interface for interacting with the AI. It coordinates user prompts via `PromptGenerator`, displays AI-generated proposed changes, allows diff viewing, manages the application of selected changes, and provides a file tree for project navigation and viewing file content.
 - **Key Features**:
   - Integrates `PromptGenerator` for handling project root input, scan paths, AI instructions, **file/image uploads, and AI request type selection**.
-  - Displays AI's `summary` and `thoughtProcess` from `lastLlmResponse` via `AiResponseDisplay`.
-  - `AiResponseDisplay` is rendered **above** `PromptGenerator` and lists `ProposedFileChange` objects with checkboxes for selective application.
+  - Displays AI's `summary` and `thoughtProcess` from `lastLlmResponse` via `AiResponseDisplay`. `PromptGenerator` is rendered at the top of the main content area, followed by a flex container holding `FileTree` and either `AiResponseDisplay` or `OpenedFileViewer`.
+  - `AiResponseDisplay` lists `ProposedFileChange` objects with checkboxes for selective application.
   - Allows editing the `newContent` of `ADD`, `MODIFY`, or **`REPAIR`** changes directly in `CodeMirror` components within `ProposedChangeCard` before applying.
   - Provides a 'View Git Diff' button for `MODIFY`, `DELETE`, and **`REPAIR`** changes, displaying the diff using `getGitDiff` API.
   - Manages the application of selected changes using `applyProposedChanges` API, showing progress and messages.
