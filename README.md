@@ -51,6 +51,7 @@
 ## 🗺️ High-Level Architecture
 
 ```mermaid
+%%{init: {'theme': 'dark'}}%%
 graph LR
     subgraph "Frontend (Client - React / Vite / TS / MUI / Tailwind)"
         Browser[User Browser]

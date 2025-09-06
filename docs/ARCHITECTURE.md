@@ -5,6 +5,7 @@ This document outlines the high-level architecture of the AI Editor frontend app
 ## High-Level Architecture Diagram
 
 ```mermaid
+%%{init: {'theme': 'dark'}}%%
 graph LR
     subgraph "Frontend (Client - React / Vite / TS / MUI / Tailwind)"
         Browser[User Browser]
