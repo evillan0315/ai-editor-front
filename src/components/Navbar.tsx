@@ -48,10 +48,7 @@ const Navbar: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <ThemeToggle /> {/* Add ThemeToggle here */}
           {loading ? (
-            <CircularProgress
-              size={24}
-              sx={{ color: theme.palette.text.primary }}
-            />
+            <CircularProgress size={24} sx={{ color: theme.palette.text.primary }} />
           ) : isLoggedIn ? (
             <>
               <AccountCircle sx={{ color: theme.palette.text.primary }} />
@@ -73,14 +70,24 @@ const Navbar: React.FC = () => {
               </Button>
             </>
           ) : (
-            <Button
-              color="inherit"
-              component={Link}
-              to="/login"
-              sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
-            >
-              Login
-            </Button>
+            <>
+              <Button
+                color="inherit"
+                component={Link}
+                to="/login"
+                sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
+              >
+                Login
+              </Button>
+              <Button
+                color="inherit"
+                component={Link}
+                to="/register"
+                sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
+              >
+                Register
+              </Button>
+            </>
           )}
         </Box>
       </Toolbar>

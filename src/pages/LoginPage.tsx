@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useStore } from '@nanostores/react';
-import { authStore, loginSuccess, setError } from '@/stores/authStore';
-import { UserProfile } from '@/types/auth';
+import { authStore, loginSuccess, setError as setAuthError } from '@/stores/authStore';
+import { loginLocal } from '@/services/authService';
 
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
@@ -13,7 +13,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import GoogleIcon from '@mui/icons-material/Google';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import TextField from '@mui/material/TextField';
 import { useTheme } from '@mui/material/styles';
+
+import type { UserProfile } from '@/types/auth';
 
 const GOOGLE_AUTH_INIT_URL = '/api/auth/google'; // Backend endpoint to initiate Google OAuth
 const GITHUB_AUTH_INIT_URL = '/api/auth/github'; // Backend endpoint to initiate GitHub OAuth
@@ -21,8 +24,12 @@ const GITHUB_AUTH_INIT_URL = '/api/auth/github'; // Backend endpoint to initiate
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { loading, error, isLoggedIn } = useStore(authStore);
+  const { loading, error: authStoreError, isLoggedIn } = useStore(authStore);
   const theme = useTheme();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [localError, setLocalError] = useState<string | null>(null);
 
   // Handle OAuth callback parameters from URL on component mount
   useEffect(() => {
@@ -52,23 +59,29 @@ const LoginPage: React.FC = () => {
         role: (userRole as UserProfile['role']) || 'USER',
         username: username ? decodeURIComponent(username) : undefined,
         provider: (provider as UserProfile['provider']) || undefined,
-        accessToken,
+        // accessToken is not stored in user profile for HTTP-only cookie use case, but might be passed for CLI
       };
-      loginSuccess(user, accessToken);
+      loginSuccess(user, accessToken); // Pass token to loginSuccess if needed for client-side storage
       navigate('/', { replace: true }); // Redirect to home page upon successful login
     } else if (err) {
-      setError(decodeURIComponent(err)); // Display error message from backend
-      // No 'n;' at the end of the line, it seems to be an accidental character based on the resume-app source
+      setAuthError(decodeURIComponent(err)); // Display error message from backend
     } else if (
       !loading &&
       !isLoggedIn &&
-      !error &&
+      !authStoreError &&
       (searchParams.toString() === '' || searchParams.get('action') === null)
     ) {
       // Clear any previous error if navigating to login page without specific error/success params
-      setError(null);
+      setAuthError(null);
     }
-  }, [searchParams, navigate, loading, isLoggedIn, error]);
+  }, [searchParams, navigate, loading, isLoggedIn, authStoreError]);
+
+  // Clear local error when authStoreError changes
+  useEffect(() => {
+    if (authStoreError) {
+      setLocalError(null); // Prioritize authStoreError, clear local validation errors
+    }
+  }, [authStoreError]);
 
   // Function to initiate OAuth login by redirecting to backend endpoint
   const handleOAuthLogin = (url: string) => {
@@ -79,16 +92,36 @@ const LoginPage: React.FC = () => {
     window.location.href = finalUrl;
   };
 
+  const handleLocalLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLocalError(null); // Clear previous local errors
+    setAuthError(null); // Clear previous auth store errors
+
+    if (!email || !password) {
+      setLocalError('Email and password are required.');
+      return;
+    }
+
+    const result = await loginLocal({ email, password });
+
+    if (result.success) {
+      // Login successful, authStore should be updated and redirected by useEffect
+      // No explicit navigate here, let useEffect handle it for consistency
+    } else {
+      // Error message is already set in authStore via loginLocal
+      setLocalError(authStoreError); // Use authStoreError which is updated by the service
+    }
+  };
+
   if (loading) {
     return (
-      <Container
-        maxWidth="sm"
-        className="flex justify-center items-center min-h-[50vh]"
-      >
+      <Container maxWidth="sm" className="flex justify-center items-center min-h-[50vh]">
         <CircularProgress />
       </Container>
     );
   }
+
+  const displayError = localError || authStoreError;
 
   return (
     <Container maxWidth="sm" className="mt-8">
@@ -108,14 +141,75 @@ const LoginPage: React.FC = () => {
           variant="h5"
           sx={{ mb: 3, fontWeight: 'bold', color: theme.palette.text.primary }}
         >
-          Sign In
+          Sign In to AI Editor
         </Typography>
 
-        {error && (
+        {displayError && (
           <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-            {error}
+            {displayError}
           </Alert>
         )}
+
+        <Box component="form" onSubmit={handleLocalLogin} sx={{ mt: 1, width: '100%' }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+            InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+            InputProps={{ style: { color: theme.palette.text.primary } }}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+            InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+            InputProps={{ style: { color: theme.palette.text.primary } }}
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2, py: 1.5 }}
+            disabled={loading || !email || !password}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+          </Button>
+          <Link
+            to="/register"
+            className="block text-center mt-2"
+            style={{ color: theme.palette.text.secondary, textDecoration: 'underline' }}
+          >
+            Don't have an account? Register
+          </Link>
+        </Box>
+
+        <Divider
+          sx={{
+            width: '100%',
+            my: 3,
+            '&::before, &::after': { borderColor: theme.palette.divider },
+          }}
+        >
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+            OR CONTINUE WITH
+          </Typography>
+        </Divider>
 
         <Button
           variant="outlined"
@@ -128,6 +222,7 @@ const LoginPage: React.FC = () => {
           }}
           startIcon={<GoogleIcon />}
           onClick={() => handleOAuthLogin(GOOGLE_AUTH_INIT_URL)}
+          disabled={loading}
         >
           Sign in with Google
         </Button>
@@ -135,45 +230,17 @@ const LoginPage: React.FC = () => {
           variant="outlined"
           fullWidth
           sx={{
-            mb: 3,
+            mb: 0,
             py: 1.5,
             borderColor: theme.palette.divider,
             color: theme.palette.text.primary,
           }}
           startIcon={<GitHubIcon />}
           onClick={() => handleOAuthLogin(GITHUB_AUTH_INIT_URL)}
+          disabled={loading}
         >
           Sign in with GitHub
         </Button>
-
-        <Divider
-          sx={{
-            width: '100%',
-            mb: 3,
-            '&::before, &::after': { borderColor: theme.palette.divider },
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ color: theme.palette.text.secondary }}
-          >
-            OR
-          </Typography>
-        </Divider>
-
-        <Typography
-          variant="body2"
-          sx={{ color: theme.palette.text.secondary }}
-        >
-          Standard email/password login and registration are not yet implemented
-          on the frontend.
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{ color: theme.palette.text.secondary }}
-        >
-          Please use Google or GitHub to continue.
-        </Typography>
       </Box>
     </Container>
   );

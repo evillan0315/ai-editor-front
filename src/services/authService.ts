@@ -1,5 +1,5 @@
 import { loginSuccess, logout, setLoading, setError } from '@/stores/authStore';
-import { UserProfile } from '@/types/auth';
+import { UserProfile, LoginRequest, RegisterRequest } from '@/types/auth';
 
 const API_BASE_URL = '/api/auth'; // Using proxy defined in vite.config.ts
 
@@ -23,11 +23,7 @@ export const handleLogout = async () => {
 
     logout();
   } catch (err) {
-    setError(
-      err instanceof Error
-        ? err.message
-        : 'An unknown error occurred during logout.',
-    );
+    setError(err instanceof Error ? err.message : 'An unknown error occurred during logout.');
   } finally {
     setLoading(false);
   }
@@ -60,6 +56,77 @@ export const checkAuthStatus = async () => {
     console.error('Failed to check authentication status:', err);
     setError('Failed to check authentication status. Please try again.');
     logout(); // Assume not logged in on network error
+  } finally {
+    setLoading(false);
+  }
+};
+
+/**
+ * Handles local email/password login.
+ * @param credentials User's email and password.
+ */
+export const loginLocal = async (credentials: LoginRequest) => {
+  setLoading(true);
+  setError(null);
+  try {
+    // Corrected endpoint path to match backend AuthController
+    const response = await fetch(`${API_BASE_URL}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
+      n;
+    }
+
+    // Assuming the backend returns the user object and a token (if needed client-side)
+    const user: UserProfile = { ...data.user, provider: 'local' };
+    loginSuccess(user, data.access_token); // Use data.access_token as returned by backend
+    return { success: true };
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'An unknown error occurred during login.');
+    return { success: false, message: err instanceof Error ? err.message : 'Unknown error' };
+  } finally {
+    setLoading(false);
+  }
+};
+
+/**
+ * Handles local email/password registration.
+ * @param userData User's registration data (email, password, username).
+ */
+export const registerLocal = async (userData: RegisterRequest) => {
+  setLoading(true);
+  setError(null);
+  try {
+    // Corrected endpoint path to match backend AuthController
+    const response = await fetch(`${API_BASE_URL}/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Registration failed');
+    }
+
+    // Assuming the backend logs in the user directly after registration
+    const user: UserProfile = { ...data.user, provider: 'local' };
+    loginSuccess(user, data.access_token); // Use data.access_token as returned by backend
+    return { success: true };
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'An unknown error occurred during registration.');
+    return { success: false, message: err instanceof Error ? err.message : 'Unknown error' };
   } finally {
     setLoading(false);
   }
