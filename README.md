@@ -37,7 +37,7 @@
 - 📊 **Git Diff Visualization**: Inspect detailed git diffs for proposed modifications and deletions directly within the editor before applying changes, ensuring transparency and control.
 - 🏃 **Direct Git Command Execution**: Execute AI-generated `git` instructions (e.g., `git add .`, `git commit`) directly from the UI, with immediate display of terminal output and errors.
 - 🔒 **Secure Authentication**: Seamlessly log in using Google or GitHub OAuth2, or **with standard email/password**, for secure access to the editor, with user session management handled by the backend.
-- 📂 **Project Context & Scanning**: Specify a project root path and relevant scan paths for the AI to analyze, providing crucial context for intelligent code suggestions and understanding project structure. Includes an interactive file picker dialog for easy path selection.
+- 📂 **Project Context & Scanning**: Specify a project root path and relevant scan paths for the AI to analyze, providing crucial context for intelligent code suggestions and understanding project structure. Includes an **interactive file picker dialog** for easy path selection.
 - 🚀 **File Tree Navigation & Content Viewing**: Browse your project's file structure with an interactive file tree, allowing for easy exploration, selection of files, and direct viewing of their current content in a dedicated editor panel. You can manually edit the content of proposed AI changes, but **opened files from the file tree are currently read-only, and the viewer is hidden when AI responses are active to prioritize proposed changes**.
 - ⬆️ **File/Image Upload for AI Context**: Upload files or paste Base64 data (e.g., images, text files) to provide additional context to the AI, enabling multi-modal requests.
 - 📝 **Customizable AI Instructions & Output Format**: Modify the underlying AI system instructions and the expected output JSON schema directly within the UI, allowing for fine-tuned control over AI behavior.
@@ -132,7 +132,7 @@ ai-editor-front/
 │   │   └── ...         # Other general UI components (e.g., `Layout.tsx`, `Navbar.tsx`, `Loading.tsx`, `WelcomeMessage.tsx`, `PromptGenerator.tsx`, `FilePickerDialog.tsx`, `AiResponseDisplay.tsx`, `OpenedFileViewer.tsx`, `ProposedChangeCard.tsx`, `ThemeToggle.tsx`)
 │   ├── constants/      # Global constants, default AI instruction templates, and configuration values
 │   ├── pages/          # Top-level page components, defining the main views of the application (e.g., `AiEditorPage.tsx`, `LoginPage.tsx`, `AuthCallback.tsx`, `RegisterPage.tsx`)
-│   ├── routes/         # Application routing setup (currently defined in `App.tsx` using React Router DOM)
+│   ├── routes/         # Application routing setup (currently defined in `App.tsx` using React Router DOM, kept for future expansion)
 │   ├── services/       # Business logic for API calls, authentication state management, and other non-UI related operations (e.g., `authService.ts`)
 │   ├── stores/         # Nanostores for centralized, reactive global state management (e.g., `authStore.ts`, `aiEditorStore.ts`, `fileTreeStore.ts`, `themeStore.ts`)
 │   ├── types/          # TypeScript type definitions for API responses, application state, and domain models (`auth.ts`, `fileTree.ts`, `index.ts`)
