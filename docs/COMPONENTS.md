@@ -55,18 +55,23 @@ src/
 - **Key Features**:
   - Integrates `PromptGenerator` for handling project root input, scan paths, AI instructions, **file/image uploads, and AI request type selection**.
   - Displays AI's `summary` and `thoughtProcess` from `lastLlmResponse` via `AiResponseDisplay`.
-  - `AiResponseDisplay` lists `ProposedFileChange` objects with checkboxes for selective application.
+  - `AiResponseDisplay` is rendered **above** `PromptGenerator` and lists `ProposedFileChange` objects with checkboxes for selective application.
   - Allows editing the `newContent` of `ADD`, `MODIFY`, or **`REPAIR`** changes directly in `CodeMirror` components within `ProposedChangeCard` before applying.
-  - Provides a 'View Git Diff' button for `MODIFY` and `DELETE` changes, displaying the diff using `getGitDiff` API.
+  - Provides a 'View Git Diff' button for `MODIFY`, `DELETE`, and **`REPAIR`** changes, displaying the diff using `getGitDiff` API.
   - Manages the application of selected changes using `applyProposedChanges` API, showing progress and messages.
   - Embeds `FileTree` component for hierarchical project file navigation.
-  - Displays the content of a `selectedFile` from the `FileTree` in a dedicated `OpenedFileViewer` panel (currently read-only) **when no `lastLlmResponse` is active**.
+  - Displays the content of a `selectedFile` from the `FileTree` in a dedicated `OpenedFileViewer` panel (currently read-only) **only when no `lastLlmResponse` is active, to prioritize AI proposed changes**.
   - Handles general loading and error states for AI generation and change application.
 
 ### `LoginPage.tsx`
 
-- **Responsibility**: Provides options for user authentication, specifically via Google and GitHub OAuth.
-- **Key Features**: Initiates OAuth flows by redirecting to backend endpoints. Displays authentication errors. Redirects authenticated users to the main editor.
+- **Responsibility**: Provides options for user authentication, specifically via Google and GitHub OAuth **and local email/password login**.
+- **Key Features**: Initiates OAuth flows by redirecting to backend endpoints, **handles local form submission**, displays authentication errors. Redirects authenticated users to the main editor.
+
+### `RegisterPage.tsx`
+
+- **Responsibility**: Provides a form for new users to register with an email and password.
+- **Key Features**: Handles form submission for local registration, displays validation and API errors, and redirects to the main editor upon successful registration.
 
 ### `AuthCallback.tsx`
 
@@ -77,7 +82,7 @@ src/
 
 ### `@uiw/react-codemirror` Usage
 
-Instead of a custom `CodeMirrorEditor` component, the application directly utilizes the `@uiw/react-codemirror` library. This component is used in two primary contexts:
+Instead of a custom `CodeMirrorEditor` component, the application directly utilizes the `@uiw/react-codemirror` library. This component is used in three primary contexts:
 
 - **`ProposedChangeCard.tsx`**: For displaying and allowing live editing of the `newContent` for AI-proposed `ADD`, `MODIFY`, and `REPAIR` file changes.
 - **`OpenedFileViewer.tsx`**: For displaying the content of files selected from the file tree in a read-only mode.
@@ -89,7 +94,7 @@ It leverages `getCodeMirrorLanguage` utility to provide syntax highlighting base
 
 - **`FileTree.tsx`**:
   - **Responsibility**: The main component for displaying the hierarchical project file structure in the sidebar.
-  - **Key Features**: Fetches file data from the backend using `fileTreeStore` (with caching logic to prevent redundant fetches), constructs the tree, and renders `FileTreeItem` components. Manages file data, expansion states, and communicates selected files to `aiEditorStore` for content display. Includes a refresh button.
+  - **Key Features**: Fetches file data from the backend using `fileTreeStore` (with **caching logic to prevent redundant fetches based on `projectRoot` and `scanPaths`**), constructs the tree, and renders `FileTreeItem` components. Manages file data, expansion states, and communicates selected files to `aiEditorStore` for content display. Includes a refresh button.
 - **`FileTreeItem.tsx`**:
   - **Responsibility**: Represents a single file or directory within the file tree.
   - **Key Features**: Renders the name, appropriate icon (custom for common file types, Material Icon for others), and expansion toggle for a file or directory. Handles expanding/collapsing directories, and upon file selection, it calls `setSelectedFile` in `fileTreeStore` (which in turn updates `aiEditorStore` to show file content). Provides visual cues for selected and expanded states. Incorporates padding for hierarchical visualization.
@@ -102,7 +107,7 @@ It leverages `getCodeMirrorLanguage` utility to provide syntax highlighting base
   - Input for `scanPathsInput` (comma-separated relative paths), with an autocomplete feature populated from the file tree, an 'Add' button for manual entry, and a button to open `FilePickerDialog` for interactive selection.
   - Textarea for the main `instruction` (the user's prompt to the AI).
   - **'Upload File or Paste Base64' button**: Opens the `FileUploaderDialog` to provide image or file data as additional context to the AI.
-  - **'Request Type' dropdown**: Allows selection of the AI interaction model, such as `TEXT_ONLY`, `TEXT_WITH_IMAGE`, `TEXT_WITH_FILE`, etc., influencing how the backend processes the request.
+  - **'Request Type' dropdown**: Allows selection of the AI interaction model, such as `TEXT_ONLY`, `TEXT_WITH_IMAGE`, `TEXT_WITH_FILE`, `LLM_GENERATION`, etc., influencing how the backend processes the request.
   - **'Edit AI Instructions & Expected Output' menu**: Opens `InstructionEditorDialog` to allow users to modify the global AI system instruction (`aiInstruction`) and the JSON schema for the expected AI output (`expectedOutputInstruction`).
   - 'Generate/Modify Code' button to trigger the AI generation process via the `generateCode` API.
   - Displays loading indicators and error messages specific to the generation process.
@@ -120,21 +125,22 @@ It leverages `getCodeMirrorLanguage` utility to provide syntax highlighting base
 
 ### `src/components/AiResponseDisplay.tsx`
 
-- **Responsibility**: Displays the structured response from the AI, including a summary, thought process, and interactive proposed file changes.
+- **Responsibility**: Displays the structured response from the AI, including a summary, thought process, interactive proposed file changes, and optional Git instructions.
 - **Key Features**:
   - Shows AI's summary and an expandable section for its detailed thought process.
   - Provides 'Select All', 'Deselect All', and 'Apply Selected Changes' buttons for managing proposed changes.
   - Renders a list of `ProposedChangeCard` components for each individual AI-suggested change.
-  - Displays messages from the backend after attempting to apply changes.
+  - Displays messages from the backend after attempting to apply changes, with specific loading indicators.
+  - **Renders AI-generated `gitInstructions` with options to copy or execute commands directly, showing terminal output and errors.**
 
 ### `src/components/ProposedChangeCard.tsx`
 
 - **Responsibility**: Renders an individual AI-proposed file change, allowing users to review, selectively apply, edit content, and view diffs.
 - **Key Features**:
-  - Displays file path, action type (`ADD`, `MODIFY`, `DELETE`, `REPAIR`), and AI-generated reason.
+  - Displays file path, action type (`ADD`, `MODIFY`, `DELETE`, `REPAIR`, `ANALYZE`), and AI-generated reason.
   - Includes a checkbox to select/deselect the change for application.
-  - For `ADD`, `MODIFY`, and `REPAIR` actions, it displays the `newContent` in an editable `@uiw/react-codemirror` instance, allowing users to modify the AI's suggestion before applying.
-  - For `MODIFY` and `DELETE` actions, it provides a 'View Git Diff' button to fetch and display the raw `git diff` for transparency.
+  - For `ADD`, `MODIFY`, and **`REPAIR`** actions, it displays the `newContent` in an editable `@uiw/react-codemirror` instance, allowing users to modify the AI's suggestion before applying.
+  - For `MODIFY`, `DELETE`, and **`REPAIR`** actions, it provides a 'View Git Diff' button to fetch and display the raw `git diff` for transparency. `ADD` actions simulate a diff for review.
 
 ### `src/components/OpenedFileViewer.tsx`
 
@@ -143,7 +149,8 @@ It leverages `getCodeMirrorLanguage` utility to provide syntax highlighting base
   - Fetches and displays the content of the `openedFile` from the backend.
   - Utilizes `@uiw/react-codemirror` with `getCodeMirrorLanguage` for syntax highlighting and `themeStore` for theming.
   - Includes a 'Close File' button.
-  - Only renders when a file is selected from the file tree and no active `lastLlmResponse` is displayed.
+  - **Only renders when a file is selected from the file tree and no active `lastLlmResponse` is displayed**.
+  - Displays specific loading and error states for content fetching.
 
 ## `src/components/dialogs/`
 
@@ -158,6 +165,7 @@ This directory contains modal dialog components used across the application for 
   - Supports uploading a single file and extracts its Base64 content and MIME type.
   - Displays the currently uploaded file's MIME type and size.
   - Allows clearing the uploaded content.
+  - Communicates with `aiEditorStore` via the `onUpload` prop to store the Base64 data and MIME type.
 
 ### `InstructionEditorDialog.tsx`
 
@@ -169,6 +177,6 @@ This directory contains modal dialog components used across the application for 
 
 ## Styling Conventions
 
-- **Material-UI Components**: Used for structured, accessible UI elements. Customization often involves `sx` prop for inline styles or `createTheme` in `main.tsx` for global overrides.
-- **Tailwind CSS**: Applied using utility classes directly in JSX for layout, spacing, typography, and responsive adjustments. The `@tailwindcss/vite` plugin ensures proper processing.
+- **Material-UI v7 Components**: Used for structured, accessible UI elements. Customization often involves `sx` prop for inline styles or `createTheme` in `main.tsx` for global overrides.
+- **Tailwind CSS v4**: Applied using utility classes directly in JSX for layout, spacing, typography, and responsive adjustments. The `@tailwindcss/vite` plugin ensures proper processing.
 - **Theme Integration**: Both Material-UI and Tailwind CSS are configured to respect the `themeStore`'s dark/light mode, providing a cohesive visual experience by toggling a `dark` class on the `body` element.

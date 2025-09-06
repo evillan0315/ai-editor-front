@@ -35,9 +35,9 @@
 - 💡 **Interactive Proposed Changes**: View AI's proposed changes with detailed file paths, action types (ADD, MODIFY, DELETE, **REPAIR**, ANALYZE), and AI-generated reasons. Selectively apply or discard individual changes, and even **edit the proposed content before application**.
 - 📊 **Git Diff Visualization**: Inspect detailed git diffs for proposed modifications and deletions directly within the editor before applying changes, ensuring transparency and control.
 - 🏃 **Direct Git Command Execution**: Execute AI-generated `git` instructions (e.g., `git add .`, `git commit`) directly from the UI, with immediate display of terminal output and errors.
-- 🔒 **Secure Authentication**: Seamlessly log in using Google or GitHub OAuth2 for secure access to the editor, with user session management handled by the backend.
+- 🔒 **Secure Authentication**: Seamlessly log in using Google or GitHub OAuth2, or **with standard email/password**, for secure access to the editor, with user session management handled by the backend.
 - 📂 **Project Context & Scanning**: Specify a project root path and relevant scan paths for the AI to analyze, providing crucial context for intelligent code suggestions and understanding project structure. Includes an interactive file picker dialog for easy path selection.
-- 🚀 **File Tree Navigation & Content Viewing**: Browse your project's file structure with an interactive file tree, allowing for easy exploration, selection of files, and direct viewing of their current content in a dedicated editor panel. You can manually edit the content of proposed AI changes, but **opened files from the file tree are currently read-only, and the viewer is hidden when AI responses are active to prioritize proposed changes.**
+- 🚀 **File Tree Navigation & Content Viewing**: Browse your project's file structure with an interactive file tree, allowing for easy exploration, selection of files, and direct viewing of their current content in a dedicated editor panel. You can manually edit the content of proposed AI changes, but **opened files from the file tree are currently read-only, and the viewer is hidden when AI responses are active to prioritize proposed changes**.
 - ⬆️ **File/Image Upload for AI Context**: Upload files or paste Base64 data (e.g., images, text files) to provide additional context to the AI, enabling multi-modal requests.
 - 📝 **Customizable AI Instructions & Output Format**: Modify the underlying AI system instructions and the expected output JSON schema directly within the UI, allowing for fine-tuned control over AI behavior.
 - ⚙️ **Selectable AI Request Types**: Choose between various request types (e.g., `TEXT_ONLY`, `TEXT_WITH_IMAGE`, `TEXT_WITH_FILE`, `LLM_GENERATION`) to optimize AI interaction based on your input and desired outcome.
@@ -61,7 +61,7 @@ ai-editor-front/
 │   │   ├── ui/         # Wrapper components for Material-UI elements (e.g., `Button.tsx`, `TextField.tsx`, `CircularProgress.tsx`)
 │   │   └── ...         # Other general UI components (e.g., `Layout.tsx`, `Navbar.tsx`, `Loading.tsx`, `WelcomeMessage.tsx`, `PromptGenerator.tsx`, `FilePickerDialog.tsx`, `AiResponseDisplay.tsx`, `OpenedFileViewer.tsx`, `ProposedChangeCard.tsx`, `ThemeToggle.tsx`)
 │   ├── constants/      # Global constants, default AI instruction templates, and configuration values
-│   ├── pages/          # Top-level page components, defining the main views of the application (e.g., `AiEditorPage.tsx`, `LoginPage.tsx`, `AuthCallback.tsx`)
+│   ├── pages/          # Top-level page components, defining the main views of the application (e.g., `AiEditorPage.tsx`, `LoginPage.tsx`, `AuthCallback.tsx`, `RegisterPage.tsx`)
 │   ├── routes/         # Application routing setup (currently defined in `App.tsx` using React Router DOM)
 │   ├── services/       # Business logic for API calls, authentication state management, and other non-UI related operations (e.g., `authService.ts`)
 │   ├── stores/         # Nanostores for centralized, reactive global state management (e.g., `authStore.ts`, `aiEditorStore.ts`, `fileTreeStore.ts`, `themeStore.ts`)
@@ -118,6 +118,7 @@ pnpm run preview
 This frontend interacts with the `ai-editor` backend. Key endpoints include:
 
 - **`/api/auth/google`, `/api/auth/github`**: For OAuth2 authentication.
+- **`/api/auth/login`, `/api/auth/register`**: For local email/password authentication.
 - **`/api/auth/me`**: To check user session status.
 - **`/api/llm/generate-llm`**: To send user prompts and receive AI-generated code changes or multi-modal responses.
 - **`/api/file/scan`**: To fetch project file structure.
@@ -137,7 +138,7 @@ Create a `.env` file in the root directory of `ai-editor-front`. **Do not commit
 ```ini
 VITE_API_URL=http://localhost:3000          # The URL of your AI Editor backend API
 VITE_FRONTEND_URL=http://localhost:3001     # The URL where your frontend is hosted (e.g., for OAuth redirects from backend)
-VITE_BASE_DIR=/path/to/your/project/root    # **Optional**: Default project root to pre-fill in the editor. Can be overridden in the UI. If not set, the user must provide one.
+VITE_BASE_DIR=/path/to/your/project/root    # **Optional**: Default project root to pre-fill in the editor. Can be overridden in the UI. If not set, the user must provide one. This variable is useful for local development to avoid repeatedly typing the project path.
 # The following are used by the backend for constructing OAuth redirect URLs, but are included here for completeness.
 # The actual values for these environment variables should be configured in your backend service.
 # GITHUB_CALLBACK_URL=/auth/github/callback   # Relative path for GitHub OAuth callback (handled by backend)
@@ -243,7 +244,7 @@ Once your feature branch is ready and pushed, you can open a Pull Request.
 - [ ] **WebSocket Integration**: Implement real-time updates from the backend, such as file system changes, AI generation progress, and new notifications.
 - [ ] **Enhanced Error Handling & Feedback**: Improve user-facing error messages, loading indicators, and success notifications across the application.
 - [ ] **Dedicated Settings Page**: Develop a page for user preferences, AI model selection, API key configurations, and other configurable options.
-- [ ] **Local Authentication**: Implement standard email/password login and registration forms for users who prefer not to use OAuth providers.
+- [x] **Local Authentication**: Implement standard email/password login and registration forms for users who prefer not to use OAuth providers.
 - [ ] **UI/UX Refinements**: Continuous improvements to the user interface for a smoother and more intuitive experience.
 - [ ] **AI-driven Code Refactoring/Linting**: Implement features for the AI to suggest and apply refactoring, linting fixes, or code improvements without requiring a full code generation request.
 - [ ] **Robust Testing Suite**: Introduce comprehensive unit, integration, and end-to-end tests for critical functionalities.
