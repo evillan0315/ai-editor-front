@@ -6,7 +6,7 @@ import { aiEditorStore } from '@/stores/aiEditorStore';
 import { handleLogout } from '@/services/authService';
 import { runTerminalCommand, fetchProjectScripts } from '@/api/terminal';
 import ThemeToggle from './ThemeToggle';
-import ScriptButton from './ScriptButton';
+import RunScriptMenuItem from './RunScriptMenuItem'; // Changed from ScriptButton
 import Snackbar from './Snackbar';
 import {
   type PackageScript,
@@ -14,6 +14,7 @@ import {
   ScriptStatus,
   type PackageManager,
 } from '@/types';
+import { APP_NAME } from '@/constants'; // Import APP_NAME
 
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -23,6 +24,9 @@ import Box from '@mui/material/Box';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useTheme } from '@mui/material/styles';
+import Menu from '@mui/material/Menu';
+import TerminalIcon from '@mui/icons-material/Terminal';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 interface ScriptExecutionState {
   status: ScriptStatus;
@@ -44,9 +48,9 @@ const Navbar: React.FC = () => {
   >({});
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<
-    'success' | 'error' | 'info'
-  >('info');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info'>('info');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(anchorEl);
 
   useEffect(() => {
     if (currentProjectPath) {
@@ -74,6 +78,8 @@ const Navbar: React.FC = () => {
     } else {
       setPackageScripts([]);
       setPackageManager(null);
+      // Clear script execution status when project path is cleared
+      setScriptExecutionStatus({});
     }
   }, [currentProjectPath]);
 
@@ -82,10 +88,7 @@ const Navbar: React.FC = () => {
     navigate('/login');
   };
 
-  const handleRunScript = async (
-    scriptName: string,
-    rawScriptContent: string,
-  ) => {
+  const handleRunScript = async (scriptName: string, rawScriptContent: string) => {
     if (!currentProjectPath) {
       setSnackbarMessage('Error: Project root not set.');
       setSnackbarSeverity('error');
@@ -116,17 +119,12 @@ const Navbar: React.FC = () => {
         output: null,
       },
     }));
-    setSnackbarMessage(
-      `Running '${scriptName}' with ${packageManagerPrefix}...`,
-    );
+    setSnackbarMessage(`Running '${scriptName}' with ${packageManagerPrefix}...`);
     setSnackbarSeverity('info');
     setSnackbarOpen(true);
 
     try {
-      const result = await runTerminalCommand(
-        commandToExecute,
-        currentProjectPath,
-      );
+      const result = await runTerminalCommand(commandToExecute, currentProjectPath);
       if (result.exitCode === 0) {
         setScriptExecutionStatus((prev) => ({
           ...prev,
@@ -139,8 +137,7 @@ const Navbar: React.FC = () => {
         setSnackbarMessage(`'${scriptName}' executed successfully!`);
         setSnackbarSeverity('success');
       } else {
-        const errorMessage =
-          result.stderr || `Command exited with code ${result.exitCode}.`;
+        const errorMessage = result.stderr || `Command exited with code ${result.exitCode}.`;
         setScriptExecutionStatus((prev) => ({
           ...prev,
           [scriptName]: {
@@ -175,6 +172,14 @@ const Navbar: React.FC = () => {
     setSnackbarOpen(false);
   };
 
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
   const isAnyScriptRunning = Object.values(scriptExecutionStatus).some(
     (state) => state.status === ScriptStatus.RUNNING,
   );
@@ -199,49 +204,106 @@ const Navbar: React.FC = () => {
               fontWeight: 'bold',
             }}
           >
-            AI Editor
+            {APP_NAME}
           </Typography>
+
+          {/* New Navigation Links */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
+            <Button
+              color="inherit"
+              component={Link}
+              to="/editor"
+              sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
+            >
+              Editor
+            </Button>
+            <Button
+              color="inherit"
+              component={Link}
+              to="/dashboard"
+              sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
+            >
+              Dashboard
+            </Button>
+            <Button
+              color="inherit"
+              component={Link}
+              to="/apps"
+              sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
+            >
+              Apps
+            </Button>
+          </Box>
+
           <Box className="flex gap-1">
             {scriptsLoading ? (
-              <CircularProgress
-                size={20}
-                sx={{ color: theme.palette.text.secondary }}
-              />
-            ) : packageScripts.length > 0 ? (
-              packageScripts.map((script) => (
-                <ScriptButton
-                  key={script.name}
-                  name={script.name}
-                  command={script.script} // Raw script content for tooltip
-                  onClick={handleRunScript}
-                  status={
-                    scriptExecutionStatus[script.name]?.status ||
-                    ScriptStatus.IDLE
-                  }
-                  disabled={
-                    isAnyScriptRunning &&
-                    scriptExecutionStatus[script.name]?.status !==
-                      ScriptStatus.RUNNING
-                  }
-                />
-              ))
+              <CircularProgress size={20} sx={{ color: theme.palette.text.secondary }} />
             ) : (
-              currentProjectPath && (
-                <Typography variant="body2" color="text.secondary">
+              <Button
+                id="run-scripts-button"
+                aria-controls={menuOpen ? 'run-scripts-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={menuOpen ? 'true' : undefined}
+                onClick={handleMenuClick}
+                variant="text"
+                color="inherit"
+                size="small"
+                disabled={!currentProjectPath || packageScripts.length === 0 || isAnyScriptRunning}
+                sx={{
+                  color: theme.palette.text.primary,
+                  '&:hover': {
+                    bgcolor: theme.palette.action.hover,
+                  },
+                  minWidth: 'auto',
+                  px: 1,
+                  py: 0.5,
+                  fontSize: '0.75rem',
+                  whiteWhiteSpace: 'nowrap',
+                  fontWeight: 'bold',
+                }}
+                startIcon={<TerminalIcon fontSize="small" />}
+                endIcon={<KeyboardArrowDownIcon fontSize="small" />}
+              >
+                Run Scripts
+              </Button>
+            )}
+            <Menu
+              id="run-scripts-menu"
+              anchorEl={anchorEl}
+              open={menuOpen}
+              onClose={handleMenuClose}
+              MenuListProps={{
+                'aria-labelledby': 'run-scripts-button',
+                sx: { bgcolor: theme.palette.background.paper }, // Apply theme to menu list
+              }}
+            >
+              {packageScripts.length > 0 ? (
+                packageScripts.map((script) => (
+                  <RunScriptMenuItem
+                    key={script.name}
+                    name={script.name}
+                    command={script.script}
+                    onClick={(scriptName, rawScriptContent) => {
+                      handleRunScript(scriptName, rawScriptContent);
+                      handleMenuClose();
+                    }}
+                    status={scriptExecutionStatus[script.name]?.status || ScriptStatus.IDLE}
+                    disabled={isAnyScriptRunning} // Disable all other scripts if one is running
+                  />
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
                   No scripts found.
                 </Typography>
-              )
-            )}
+              )}
+            </Menu>
           </Box>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <ThemeToggle />
           {authLoading ? (
-            <CircularProgress
-              size={24}
-              sx={{ color: theme.palette.text.primary }}
-            />
+            <CircularProgress size={24} sx={{ color: theme.palette.text.primary }} />
           ) : isLoggedIn ? (
             <>
               <AccountCircle sx={{ color: theme.palette.text.primary }} />

@@ -20,7 +20,11 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 interface FileUploaderDialogProps {
   open: boolean;
   onClose: () => void;
-  onUpload: (base64Data: string | null, mimeType: string | null) => void;
+  onUpload: (
+    base64Data: string | null,
+    mimeType: string | null,
+    fileName: string | null,
+  ) => void; // Updated signature
   currentUploadedFile: string | null;
   currentUploadedMimeType: string | null;
 }
@@ -45,12 +49,12 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
         const reader = new FileReader();
         reader.onload = () => {
           const base64String = (reader.result as string).split(',')[1]; // Get base64 part
-          onUpload(base64String, file.type);
+          onUpload(base64String, file.type, file.name); // Pass file name
           setBase64Input(reader.result as string); // Show full data URL in textfield
         };
         reader.onerror = (error) => {
           setFileError(`Failed to read file: ${error}`);
-          onUpload(null, null);
+          onUpload(null, null, null);
         };
         reader.readAsDataURL(file);
       } else {
@@ -96,19 +100,23 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
       if (match) {
         const mimeType = match[1];
         const base64Data = match[2];
-        onUpload(base64Data, mimeType);
+        // Try to infer a generic file name for pasted data, or leave null
+        const inferredFileName = mimeType
+          ? `pasted_file.${mimeType.split('/').pop()}`
+          : 'pasted_file.bin';
+        onUpload(base64Data, mimeType, inferredFileName);
         setFileError(null);
       } else {
         setFileError('Invalid Base64 data URL format.');
-        onUpload(null, null);
+        onUpload(null, null, null);
       }
     } else {
-      onUpload(null, null);
+      onUpload(null, null, null);
     }
   };
 
   const handleClear = () => {
-    onUpload(null, null);
+    onUpload(null, null, null);
     setBase64Input('');
     setFileError(null);
   };

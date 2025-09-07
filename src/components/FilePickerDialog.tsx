@@ -166,7 +166,11 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
           Select Files and Folders
         </Typography>
-        <IconButton onClick={onClose} size="small" sx={{ color: theme.palette.text.secondary }}>
+        <IconButton
+          onClick={onClose}
+          size="small"
+          sx={{ color: theme.palette.text.secondary }}
+        >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -199,7 +203,9 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           sx={{ mb: 2 }}
           size="small"
         />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}>
+        <Box
+          sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}
+        >
           <Button
             variant="outlined"
             size="small"
@@ -221,7 +227,10 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         {isFetchingTree ? (
           <Box className="flex justify-center items-center h-48">
             <CircularProgress size={24} />
-            <Typography variant="body2" sx={{ ml: 2, color: theme.palette.text.secondary }}>
+            <Typography
+              variant="body2"
+              sx={{ ml: 2, color: theme.palette.text.secondary }}
+            >
               Loading files...
             </Typography>
           </Box>
@@ -231,7 +240,9 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           </Alert>
         ) : filteredFiles.length === 0 ? (
           <Alert severity="info" sx={{ mt: 2 }}>
-            {searchTerm ? 'No matching files found.' : 'No files available in the project root.'}
+            {searchTerm
+              ? 'No matching files found.'
+              : 'No files available in the project root.'}
           </Alert>
         ) : (
           <List
@@ -264,7 +275,9 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
                   },
                 }}
               >
-                <ListItemIcon>{getFileTypeIcon(fileEntry.name, fileEntry.type)}</ListItemIcon>
+                <ListItemIcon>
+                  {getFileTypeIcon(fileEntry.name, fileEntry.type)}
+                </ListItemIcon>
                 <ListItemText
                   id={`checkbox-list-label-${fileEntry.path}`}
                   primary={fileEntry.path}
@@ -284,11 +297,17 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           justifyContent: 'space-between',
         }}
       >
-        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.text.secondary }}
+        >
           Selected: {selectedPaths.size}
         </Typography>
         <Box>
-          <Button onClick={onClose} sx={{ mr: 1, color: theme.palette.text.secondary }}>
+          <Button
+            onClick={onClose}
+            sx={{ mr: 1, color: theme.palette.text.secondary }}
+          >
             Cancel
           </Button>
           <Button

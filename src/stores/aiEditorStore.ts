@@ -11,6 +11,7 @@ import {
   INSTRUCTION,
   ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
 } from '@/constants';
+import { applyProposedChanges as apiApplyProposedChanges } from '@/api/llm'; // Rename to avoid conflict
 
 export const aiEditorStore = map<AiEditorState>({
   instruction: '',
@@ -38,6 +39,7 @@ export const aiEditorStore = map<AiEditorState>({
   openedFileContent: null, // Content of the file currently opened
   isFetchingFileContent: false, // Loading state for fetching opened file content
   fetchFileContentError: null, // Error state for fetching opened file content
+  autoApplyChanges: false, // New: State for automatic application of changes
 });
 
 export const setInstruction = (instruction: string) => {
@@ -103,6 +105,7 @@ export const clearState = () => {
     openedFileContent: null,
     isFetchingFileContent: false,
     fetchFileContentError: null,
+    autoApplyChanges: false, // Reset to default
   });
 };
 
@@ -112,7 +115,7 @@ export const setScanPathsInput = (paths: string) => {
 
 export const setLastLlmResponse = (response: ModelResponse | null) => {
   aiEditorStore.setKey('lastLlmResponse', response);
-  // Auto-select all changes when a new response comes in
+  // Auto-select all changes when a new response comes in (for manual apply)
   if (response && response.changes) {
     const newSelectedChanges: Record<string, FileChange> = {};
     response.changes.forEach((change) => {
@@ -214,7 +217,7 @@ export const updateProposedChangeContent = (
     ) {
       // Type guard ensures 'selectedChange' is AddOrModifyFileChange here
       newSelectedChanges[filePath] = {
-        ...(selectedChange as AddOrModifyFileChange),
+        ...(selectedChange as AddOrModifyFileChange), // Corrected line: Removed the extra '{'
         newContent,
       };
     }
@@ -341,4 +344,52 @@ export const setCommandExecutionOutput = (
 
 export const setCommandExecutionError = (error: string | null) => {
   aiEditorStore.setKey('commandExecutionError', error);
+};
+
+export const setAutoApplyChanges = (value: boolean) => {
+  aiEditorStore.setKey('autoApplyChanges', value);
+};
+
+/**
+ * Applies all provided changes to the file system.
+ * This is typically used for automated application of AI responses.
+ * @param changes An array of FileChange objects to apply.
+ * @param projectRoot The root directory of the project.
+ */
+export const applyAllProposedChanges = async (
+  changes: FileChange[],
+  projectRoot: string,
+) => {
+  if (changes.length === 0) {
+    setError('No changes to apply.');
+    return;
+  }
+  if (!projectRoot) {
+    setError('Project root is not set for applying changes.');
+    return;
+  }
+
+  setApplyingChanges(true);
+  setError(null); // Clear previous error
+  setAppliedMessages([]);
+
+  try {
+    const result = await apiApplyProposedChanges(changes, projectRoot); // Use the aliased import
+    setAppliedMessages(result.messages);
+    if (!result.success) {
+      setError(
+        'Some changes failed to apply during automation. Check messages above.',
+      );
+    }
+    // Clear the AI response and selected changes after applying automatically
+    setLastLlmResponse(null); // Clear the full response
+    deselectAllChanges(); // Ensure selected changes are cleared
+    clearDiff();
+  } catch (err) {
+    setError(
+      `Failed to apply changes automatically: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  } finally {
+    setApplyingChanges(false);
+  }
 };

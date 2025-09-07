@@ -19,14 +19,17 @@ import {
   Select,
   MenuItem,
   Menu,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import DriveFolderUploadIcon from '@mui/icons-material/DriveFolderUpload';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
 import AddRoadIcon from '@mui/icons-material/AddRoad';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload'; // Changed to CloudUpload
-import EditNoteIcon from '@mui/icons-material/EditNote'; // New icon for instructions
-import TuneIcon from '@mui/icons-material/Tune'; // New icon for AI Options
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import EditNoteIcon from '@mui/icons-material/Edit';
+import TuneIcon from '@mui/icons-material/Tune';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import { RequestType, RequestTypeValues } from '@/types';
 import {
   aiEditorStore,
@@ -43,18 +46,17 @@ import {
   setExpectedOutputInstruction,
   setRequestType,
   setUploadedFile,
+  setAutoApplyChanges,
+  applyAllProposedChanges,
 } from '@/stores/aiEditorStore';
 import { authStore } from '@/stores/authStore';
-import { fileTreeStore, loadInitialTree } from '@/stores/fileTreeStore'; // Updated import
-import {
-  INSTRUCTION,
-  ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
-} from '@/constants';
+import { fileTreeStore, loadInitialTree } from '@/stores/fileTreeStore';
+import { INSTRUCTION, ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT } from '@/constants';
 import { generateCode, LlmGeneratePayload } from '@/api/llm';
 import { ModelResponse } from '@/types';
 import FilePickerDialog from '@/components/FilePickerDialog';
-import FileUploaderDialog from '@/components/dialogs/FileUploaderDialog'; // New Import
-import InstructionEditorDialog from '@/components/dialogs/InstructionEditorDialog'; // New Import
+import FileUploaderDialog from '@/components/dialogs/FileUploaderDialog';
+import InstructionEditorDialog from '@/components/dialogs/InstructionEditorDialog';
 
 // Helper function to truncate long paths for display in chips
 const truncatePath = (path: string, maxLength: number = 30): string => {
@@ -72,9 +74,7 @@ const truncatePath = (path: string, maxLength: number = 30): string => {
       // Ensure truncatedDirPath doesn't end with a partial path segment
       const lastSlashIndex = truncatedDirPath.lastIndexOf('/');
       const finalDirPath =
-        lastSlashIndex !== -1
-          ? truncatedDirPath.substring(0, lastSlashIndex)
-          : truncatedDirPath;
+        lastSlashIndex !== -1 ? truncatedDirPath.substring(0, lastSlashIndex) : truncatedDirPath;
       return `${finalDirPath ? finalDirPath + '/' : ''}.../${fileName}`;
     }
   }
@@ -96,6 +96,7 @@ const PromptGenerator: React.FC = () => {
     scanPathsInput,
     applyingChanges,
     isFetchingFileContent,
+    autoApplyChanges,
   } = useStore(aiEditorStore);
   const { isLoggedIn } = useStore(authStore);
   const { flatFileList } = useStore(fileTreeStore);
@@ -108,15 +109,12 @@ const PromptGenerator: React.FC = () => {
   const [showAddScanPathInput, setShowAddScanPathInput] = useState(false);
   const [newScanPathValue, setNewScanPathValue] = useState<string>('');
 
-  // State for new dialogs
-  const [isFileUploaderDialogOpen, setIsFileUploaderDialogOpen] =
-    useState(false);
-  const [isInstructionEditorDialogOpen, setIsInstructionEditorDialogOpen] =
-    useState(false);
-  const [editingInstructionType, setEditingInstructionType] = useState<
-    'ai' | 'expected' | null
-  >(null);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null); // For MUI Menu
+  const [isFileUploaderDialogOpen, setIsFileUploaderDialogOpen] = useState(false);
+  const [isInstructionEditorDialogOpen, setIsInstructionEditorDialogOpen] = useState(false);
+  const [editingInstructionType, setEditingInstructionType] = useState<'ai' | 'expected' | null>(
+    null,
+  );
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     if (currentProjectPath && projectInput !== currentProjectPath) {
@@ -128,15 +126,11 @@ const PromptGenerator: React.FC = () => {
     }
   }, [currentProjectPath, projectInput]);
 
-  const handleInstructionChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleInstructionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInstruction(event.target.value);
   };
 
-  const handleProjectInputChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleProjectInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setProjectInput(event.target.value);
   };
 
@@ -164,9 +158,7 @@ const PromptGenerator: React.FC = () => {
   };
 
   const handleRemoveScanPath = (pathToRemove: string) => {
-    updateScanPaths(
-      currentScanPathsArray.filter((path) => path !== pathToRemove),
-    );
+    updateScanPaths(currentScanPathsArray.filter((path) => path !== pathToRemove));
   };
 
   const handleLoadProject = () => {
@@ -177,7 +169,7 @@ const PromptGenerator: React.FC = () => {
     setAppliedMessages([]);
     setCurrentDiff(null, null);
     setOpenedFile(null);
-    loadInitialTree(projectInput); // Use the new loadInitialTree action
+    loadInitialTree(projectInput);
   };
 
   const handleGenerateCode = async () => {
@@ -207,22 +199,27 @@ const PromptGenerator: React.FC = () => {
         projectRoot: currentProjectPath,
         projectStructure: '',
         relevantFiles: [],
-        additionalInstructions: aiInstruction, // Use dynamic instruction
-        expectedOutputFormat: expectedOutputInstruction, // Use dynamic expected output
+        additionalInstructions: aiInstruction,
+        expectedOutputFormat: expectedOutputInstruction,
         scanPaths: currentScanPathsArray,
-        requestType: requestType, // The selected request type is passed here.
-        ...(uploadedFileData && { fileData: uploadedFileData }), // Include file data if present
-        ...(uploadedFileMimeType && { fileMimeType: uploadedFileMimeType }), // Include mime type if present
-        // backend handles if it's image or generic file based on mime type
+        requestType: requestType,
+        ...(uploadedFileData && { fileData: uploadedFileData }),
+        ...(uploadedFileMimeType && { fileMimeType: uploadedFileMimeType }),
       };
 
       const aiResponse: ModelResponse = await generateCode(payload);
       console.log(aiResponse, 'aiResponse');
       setLastLlmResponse(aiResponse);
+
+      if (autoApplyChanges && aiResponse.changes && aiResponse.changes.length > 0) {
+        if (currentProjectPath) {
+          await applyAllProposedChanges(aiResponse.changes, currentProjectPath);
+        } else {
+          setError('Cannot auto-apply: Project root not defined.');
+        }
+      }
     } catch (err) {
-      setError(
-        `Failed to generate code: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      setError(`Failed to generate code: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -276,21 +273,21 @@ const PromptGenerator: React.FC = () => {
       setAiInstruction(content);
     } else if (type === 'expected') {
       setExpectedOutputInstruction(content);
+    } else {
+      console.warn('Unknown instruction type for saving:', type);
     }
-  
+
     setIsInstructionEditorDialogOpen(false);
   };
 
-  const commonDisabled =
-    !isLoggedIn || applyingChanges || isFetchingFileContent;
+  const commonDisabled = !isLoggedIn || applyingChanges || isFetchingFileContent;
 
   return (
-    <Paper
-      elevation={2}
+    <Box // Replaced Paper with Box and removed layout-specific styling
       sx={{
-        p: 2,
-        flexGrow: 1,
-        bgcolor: theme.palette.background.paper,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2, // Internal spacing between elements
       }}
     >
       {/* Combined Top Row for Project Config and AI Options */}
@@ -309,11 +306,7 @@ const PromptGenerator: React.FC = () => {
           }}
         >
           {currentScanPathsArray.length === 0 && !showAddScanPathInput ? (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ ml: 1, my: 0.5 }}
-            >
+            <Typography variant="body2" color="text.secondary" sx={{ ml: 1, my: 0.5 }}>
               No scan paths. Add some.
             </Typography>
           ) : (
@@ -343,9 +336,7 @@ const PromptGenerator: React.FC = () => {
               freeSolo
               options={scanPathAutocompleteOptions}
               value={newScanPathValue}
-              onInputChange={(_event, newInputValue) =>
-                setNewScanPathValue(newInputValue)
-              }
+              onInputChange={(_event, newInputValue) => setNewScanPathValue(newInputValue)}
               onChange={(_event, newValue) => {
                 if (typeof newValue === 'string') {
                   handleAddScanPath(newValue);
@@ -426,8 +417,7 @@ const PromptGenerator: React.FC = () => {
                 sx={{ color: theme.palette.text.secondary }}
                 size="small"
               >
-                <CloudUploadIcon />{' '}
-                {/* Changed to CloudUploadIcon to indicate selection/upload kind of action */}
+                <CloudUploadIcon />
               </IconButton>
             </span>
           </Tooltip>
@@ -460,11 +450,7 @@ const PromptGenerator: React.FC = () => {
                 </Tooltip>
                 <Tooltip title="Clear All State">
                   <span>
-                    <IconButton
-                      onClick={clearState}
-                      disabled={commonDisabled}
-                      color="secondary"
-                    >
+                    <IconButton onClick={clearState} disabled={commonDisabled} color="secondary">
                       <ClearAllIcon />
                     </IconButton>
                   </span>
@@ -490,15 +476,8 @@ const PromptGenerator: React.FC = () => {
           </Tooltip>
 
           {/* RequestType Dropdown */}
-          <FormControl
-            sx={{ minWidth: 160 }}
-            size="small"
-            disabled={commonDisabled}
-          >
-            <InputLabel
-              id="request-type-label"
-              sx={{ color: theme.palette.text.secondary }}
-            >
+          <FormControl sx={{ minWidth: 160 }} size="small" disabled={commonDisabled}>
+            <InputLabel id="request-type-label" sx={{ color: theme.palette.text.secondary }}>
               Request Type
             </InputLabel>
             <Select
@@ -521,11 +500,7 @@ const PromptGenerator: React.FC = () => {
           {/* Context Menu for Instructions */}
           <Tooltip title="Edit AI Instructions & Expected Output">
             <span>
-              <IconButton
-                onClick={handleMenuClick}
-                disabled={commonDisabled}
-                color="primary"
-              >
+              <IconButton onClick={handleMenuClick} disabled={commonDisabled} color="primary">
                 <EditNoteIcon />
               </IconButton>
             </span>
@@ -546,6 +521,33 @@ const PromptGenerator: React.FC = () => {
         </Box>
       </Box>
 
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={autoApplyChanges}
+              onChange={(e) => setAutoApplyChanges(e.target.checked)}
+              disabled={commonDisabled || loading}
+              color="primary"
+            />
+          }
+          label={
+            <Typography
+              variant="body2"
+              sx={{ color: theme.palette.text.primary, fontWeight: 'medium' }}
+            >
+              Auto-apply changes
+            </Typography>
+          }
+          sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 0.5 } }}
+        />
+        <Tooltip title="If enabled, AI proposed changes will be automatically applied to your file system.">
+          <IconButton size="small" sx={{ color: theme.palette.text.secondary }}>
+            <AutoFixHighIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+
       <FilePickerDialog
         open={isPickerDialogOpen}
         onClose={() => setIsPickerDialogOpen(false)}
@@ -556,7 +558,7 @@ const PromptGenerator: React.FC = () => {
       <FileUploaderDialog
         open={isFileUploaderDialogOpen}
         onClose={() => setIsFileUploaderDialogOpen(false)}
-        onUpload={setUploadedFile} // Pass the action to update store
+        onUpload={(data, mimeType, fileName) => setUploadedFile(data, mimeType)}
         currentUploadedFile={uploadedFileData}
         currentUploadedMimeType={uploadedFileMimeType}
       />
@@ -568,9 +570,7 @@ const PromptGenerator: React.FC = () => {
           onSave={handleSaveInstruction}
           instructionType={editingInstructionType}
           initialContent={
-            editingInstructionType === 'ai'
-              ? aiInstruction
-              : expectedOutputInstruction
+            editingInstructionType === 'ai' ? aiInstruction : expectedOutputInstruction
           }
         />
       )}
@@ -604,9 +604,7 @@ const PromptGenerator: React.FC = () => {
         }
         sx={{ mt: 3, py: 1.5, px: 4, fontSize: '1.05rem' }}
       >
-        {loading ? (
-          <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
-        ) : null}
+        {loading ? <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> : null}
         Generate/Modify Code
       </Button>
       {error && (
@@ -614,7 +612,7 @@ const PromptGenerator: React.FC = () => {
           {error}
         </Alert>
       )}
-    </Paper>
+    </Box>
   );
 };
 

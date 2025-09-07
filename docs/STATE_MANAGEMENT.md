@@ -1,143 +1,111 @@
-# ♻️ State Management with Nanostores
+# 💡 State Management with Nanostores
 
-This document describes how global state is managed in the AI Editor frontend using [Nanostores](https://nanostores.github.io/). Nanostores is a small, fast, and unopinionated state manager that provides reactive, atomic stores for different parts of the application's state.
+This document describes the state management strategy employed in the AI Editor Frontend, which utilizes [Nanostores](https://nanostores.github.io/). Nanostores is a small, fast, and unopinionated state manager that leverages atomic stores and reactive updates.
 
-## Why Nanostores?
+## 🌟 Why Nanostores?
 
-- **Simplicity**: Minimal API, easy to understand and use.
-- **Reactivity**: Components automatically re-render when the stores they subscribe to change.
-- **Performance**: Optimized for speed with direct subscriptions.
-- **Scalability**: Easy to organize state into separate, focused stores.
-- **TypeScript-friendly**: Excellent TypeScript support for type-safe state.
+- **Simplicity**: Minimal API, easy to learn and use.
+- **Performance**: Optimized for reactivity and avoiding unnecessary re-renders.
+- **Flexibility**: Works well with React (via `@nanostores/react`) and other frameworks.
+- **TypeScript-first**: Excellent TypeScript support for fully type-safe state.
+- **Atomic Updates**: Each piece of state can be managed independently, making updates precise and predictable.
 
-## Core Concepts
+## 🏛️ Core Principles
 
-- **`map()`**: Used to create stores that hold objects (maps) of values. This is ideal for complex state objects.
-- **`useStore()` (from `@nanostores/react`)**: A React hook to subscribe to a store and get its current value. When the store updates, the component re-renders.
-- **`store.set(newValue)`**: Replaces the entire state of the store with `newValue`.
-- **`store.setKey(key, value)`**: Updates a specific key within a `map()` store.
+1.  **Centralized Stores**: Global application state is held in distinct Nanostore instances (`map` stores for complex objects, `atom` stores for single values).
+2.  **Explicit Actions**: State mutations are performed through dedicated functions (actions) that interact with the stores, ensuring predictable state transitions.
+3.  **Reactive UI**: React components subscribe to relevant parts of the state using the `useStore` hook from `@nanostores/react`, re-rendering only when the subscribed state changes.
 
-## Global Stores
+## 📦 Key Stores
 
-The application uses several global stores, each responsible for a specific domain of the application's state:
+The application's state is organized into several distinct Nanostores, each responsible for a specific domain.
 
-### 1. `authStore` (`src/stores/authStore.ts`)
+### 🔒 `authStore` (`src/stores/authStore.ts`)
 
-Manages the user's authentication status and profile information.
+Manages all authentication-related state.
 
-- **State**:
-  - `isLoggedIn: boolean`: Indicates if a user is currently authenticated.
-  - `user: UserProfile | null`: Contains user details (id, email, name, etc.) if logged in.
-  - `loading: boolean`: True when an authentication check or action is in progress. **Initialized to `true` to indicate that auth status is being determined on app load.**
-  - `error: string | null`: Stores any authentication-related error messages.
+- **State**: `isLoggedIn` (boolean), `user` (UserProfile | null), `loading` (boolean, for auth operations), `error` (string | null).
+- **Actions**: `loginSuccess`, `logout`, `setLoading`, `setError`.
+- **Usage**: Components like `Navbar`, `LoginPage`, `RegisterPage`, and `AuthCallback` consume and update this store.
 
-- **Actions**:
-  - `loginSuccess(user: UserProfile, token?: string)`: Sets the user as logged in, stores user data, and optionally saves the access token to `localStorage`.
-  - `logout()`: Clears user data, sets `isLoggedIn` to false, and removes the token from `localStorage`.
-  - `setLoading(isLoading: boolean)`: Updates the loading state.
-  - `setError(message: string | null)`: Sets an authentication error message.
-  - `getToken()`: Retrieves the access token from `localStorage`.
+### 🤖 `aiEditorStore` (`src/stores/aiEditorStore.ts`)
 
-- **Integration**: Used by `Navbar.tsx` to display login/logout options, `LoginPage.tsx` and `AuthCallback.tsx` to manage the login flow, and `Layout.tsx` to show global loading for auth status.
-
-### 2. `aiEditorStore` (`src/stores/aiEditorStore.ts`)
-
-Manages the state related to AI interactions, proposed code changes, and currently opened files.
+Handles all state related to the core AI code editing functionality.
 
 - **State**:
-  - `instruction: string`: The user's primary natural language prompt for the AI.
-  - `aiInstruction: string`: **The current global AI system instruction (editable by user) which defines the AI's persona and general rules. Initialized with a default value from `constants/index.ts`.**
-  - `expectedOutputInstruction: string`: **The current expected JSON schema/format for the AI's output (editable by user). Initialized with a default value from `constants/index.ts`.**
-  - `requestType: RequestType`: **The selected type of AI request (e.g., `TEXT_ONLY`, `TEXT_WITH_IMAGE`, `TEXT_WITH_FILE`, `LLM_GENERATION`), influencing the backend's LLM interaction. Initialized to `LLM_GENERATION`.**
-  - `uploadedFileData: string | null`: **Base64 encoded content of a file or image uploaded by the user to provide additional AI context.**
-  - `uploadedFileMimeType: string | null`: **The MIME type of the `uploadedFileData` (e.g., `image/png`, `text/plain`).**
-  - `currentProjectPath: string | null`: The absolute path of the project root being worked on, typically set from `VITE_BASE_DIR` or user input.
-  - `response: string | null`: The AI's last raw response string (legacy, superseded by `lastLlmResponse`).
-  - `loading: boolean`: General loading state for AI generation or other heavy operations specific to the AI Editor.
-  - `error: string | null`: General error message for AI Editor operations (e.g., failed AI generation, diff fetching errors).
-  - `scanPathsInput: string`: A comma-separated string of relative file/folder paths for the AI to focus its analysis. Initialized with default scan paths (`src,package.json,README.md`).
-  - `lastLlmResponse: ModelResponse | null`: The full structured response from the AI after code generation, including a summary, thought process, and an array of `FileChange` objects.
-  - `selectedChanges: Record<string, FileChange>`: A map where keys are `filePath` strings and values are `FileChange` objects, representing the AI-suggested changes that the user has selected to apply.
-  - `currentDiff: string | null`: The content of the git diff for the file currently being previewed (e.g., after clicking 'View Git Diff').
-  - `diffFilePath: string | null`: The `filePath` of the file whose diff is currently displayed in `currentDiff`.
-  - `applyingChanges: boolean`: Indicates if the process of applying selected proposed changes to the file system is currently in progress.
-  - `appliedMessages: string[]`: An array of messages received from the backend after attempting to apply changes, providing feedback on success or failure for each change.
-  - `gitInstructions: string[] | null`: **Optional git commands suggested by the AI to be executed after applying changes.**
-  - `runningGitCommandIndex: number | null`: **The index of the `gitInstruction` currently being executed, or `null` if none.**
-  - `commandExecutionOutput: TerminalCommandResponse | null`: **The `stdout`, `stderr`, and `exitCode` from the last executed Git command.**
-  - `commandExecutionError: string | null`: **Any error message encountered during the execution of a Git command.**
-  - `openedFile: string | null`: The absolute path of the file currently opened for viewing in the dedicated editor panel.
-  - `openedFileContent: string | null`: The actual content (string) of the `openedFile`.
-  - `isFetchingFileContent: boolean`: A boolean indicating if the content of the `openedFile` is currently being fetched from the backend.
-  - `fetchFileContentError: string | null`: Stores any error message if fetching `openedFileContent` fails.
+  - `instruction` (string): The user's main prompt.
+  - `aiInstruction` (string): Customizable system instructions for the AI.
+  - `expectedOutputInstruction` (string): Customizable JSON schema for AI output.
+  - `requestType` (RequestType): The selected mode for AI interaction (e.g., `TEXT_ONLY`, `LLM_GENERATION`).
+  - `uploadedFileData`, `uploadedFileMimeType` (string | null): For multi-modal inputs.
+  - `currentProjectPath` (string | null): The root directory of the project being edited.
+  - `lastLlmResponse` (ModelResponse | null): The full structured response from the AI.
+  - `selectedChanges` (Record<string, FileChange>): A map of selected AI-proposed file changes.
+  - `currentDiff`, `diffFilePath` (string | null): For displaying Git diffs.
+  - `loading`, `error`, `applyingChanges`, `appliedMessages` (boolean/string[]).
+  - `gitInstructions` (string[] | null), `runningGitCommandIndex`, `commandExecutionOutput`, `commandExecutionError`: For Git command execution within the UI.
+  - `openedFile`, `openedFileContent`, `isFetchingFileContent`, `fetchFileContentError`: For viewing files from the file tree.
+  - `autoApplyChanges` (boolean): Option to automatically apply changes after AI generation.
+- **Actions**: `setInstruction`, `setAiInstruction`, `setExpectedOutputInstruction`, `setRequestType`, `setUploadedFile`, `setLoading`, `setError`, `clearState`, `setScanPathsInput`, `setLastLlmResponse`, `toggleSelectedChange`, `selectAllChanges`, `deselectAllChanges`, `setCurrentDiff`, `clearDiff`, `setApplyingChanges`, `setAppliedMessages`, `updateProposedChangeContent`, `updateProposedChangePath`, `setOpenedFile`, `setOpenedFileContent`, `setIsFetchingFileContent`, `setFetchFileContentError`, `setRunningGitCommandIndex`, `setCommandExecutionOutput`, `setCommandExecutionError`, `setAutoApplyChanges`, `applyAllProposedChanges`.
+- **Usage**: Primarily used by `AiEditorPage`, `PromptGenerator`, `AiResponseDisplay`, `ProposedChangeCard`, and `OpenedFileViewer`.
 
-- **Actions**:
-  - `setInstruction(instruction: string)`: Updates the AI prompt string.
-  - `setAiInstruction(instruction: string)`: Updates the global AI system instruction.
-  - `setExpectedOutputInstruction(instruction: string)`: Updates the expected output JSON schema instruction.
-  - `setRequestType(type: RequestType)`: Sets the selected AI request type.
-  - `setUploadedFile(data: string | null, mimeType: string | null)`: Stores the Base64 file data and its MIME type.
-  - `setScanPathsInput(paths: string)`: Updates the comma-separated scan paths string.
-  - `setLastLlmResponse(response: ModelResponse | null)`: Stores the AI's full structured response and automatically selects all proposed changes for convenience. **Also sets `gitInstructions` from the response.**
-  - `toggleSelectedChange(change: FileChange)`: Adds or removes a `FileChange` from `selectedChanges`.
-  - `selectAllChanges()`: Selects all `FileChange` objects from `lastLlmResponse`.
-  - `deselectAllChanges()`: Clears all selected changes.
-  - `setCurrentDiff(filePath: string | null, diffContent: string | null)`: Sets the `diffFilePath` and `currentDiff` to display a specific file's diff.
-  - `clearDiff()`: Clears the currently displayed diff.
-  - `updateProposedChangeContent(filePath: string, newContent: string)`: Modifies the `newContent` for a specific proposed change, allowing users to edit AI suggestions.
-  - `setOpenedFile(filePath: string | null)`: Sets the `filePath` of the file to be opened in the editor panel, triggering content fetch and clearing previous file content/errors.
-  - `setOpenedFileContent(content: string | null)`: Sets the content for the `openedFile`.
-  - `setIsFetchingFileContent(isLoading: boolean)`: Updates the loading state for `openedFile` content fetching.
-  - `setFetchFileContentError(message: string | null)`: Sets an error message if fetching `openedFileContent` fails.
-  - `setRunningGitCommandIndex(index: number | null)`: **Sets the index of the Git command currently being run.**
-  - `setCommandExecutionOutput(output: TerminalCommandResponse | null)`: **Sets the output of the last Git command execution.**
-  - `setCommandExecutionError(error: string | null)`: **Sets any error message from Git command execution.**
-  - `setLoading(isLoading: boolean)` / `setError(message: string | null)` / `setApplyingChanges(isApplying: boolean)` / `setAppliedMessages(messages: string[])` / `clearState()`: General state management for the editor's various operational states.
+### 🌳 `fileTreeStore` (`src/stores/fileTreeStore.ts`)
 
-- **Integration**: Primarily consumed by `AiEditorPage.tsx` to drive the core AI interaction and file editing UI. Its actions are also called by `PromptGenerator.tsx` for initiating AI requests and by `fileTreeStore` via `setSelectedFile` to display file contents.
-
-### 3. `fileTreeStore` (`src/stores/fileTreeStore.ts`)
-
-Manages the state of the project file tree displayed in the sidebar.
+Manages the interactive file tree state.
 
 - **State**:
-  - `files: FileEntry[]`: The hierarchical structure of the project files, ready for rendering in a tree view.
-  - `flatFileList: ApiFileEntry[]`: The raw, flat list of files returned directly from the API before being transformed into a tree.
-  - `expandedDirs: Set<string>`: A set of `filePath` strings for currently expanded directories in the tree.
-  - `selectedFile: string | null`: The `filePath` of the file currently selected in the file tree.
-  - `isFetchingTree: boolean`: True when the file tree data is currently being fetched from the backend.
-  - `fetchTreeError: string | null`: Stores any error messages encountered during file tree fetching.
-  - `lastFetchedProjectRoot?: string | null`: **Tracks the `projectRoot` of the last _successful_ file tree fetch, used for caching and preventing unnecessary re-fetches.**
-  - `lastFetchedScanPaths?: string[]`: **Tracks the `scanPaths` (parsed array) of the last _successful_ file tree fetch, used for caching.**
+  - `files` (FileEntry[]): The hierarchical representation of the project's file structure.
+  - `flatFileList` (ApiFileScanResult[]): A flattened list of all scanned files, primarily for AI context.
+  - `expandedDirs` (Set<string>): Stores the paths of currently expanded directories.
+  - `selectedFile` (string | null): The path of the currently selected file.
+  - `isFetchingTree`, `fetchTreeError` (boolean/string | null): For loading status.
+  - `lastFetchedProjectRoot`, `lastFetchedScanPaths` (string | null / string[]).
+  - `loadingChildren` (Set<string>): Tracks which directories are currently fetching their children.
+- **Actions**: `setFiles`, `toggleDirExpansion`, `setSelectedFile`, `loadInitialTree`, `loadChildrenForDirectory`, `clearFileTree`.
+- **Usage**: `FileTree`, `FileTreeItem`, and `FilePickerDialog` interact with this store.
 
-- **Actions**:
-  - `fetchFiles(projectRoot: string, scanPaths: string[])`: Initiates an API call to fetch project files (`fetchProjectFiles`), constructs the hierarchical tree (`buildFileTree`), and updates the store. **It includes logic to prevent redundant fetches if the data is already fresh based on `lastFetchedProjectRoot` and `lastFetchedScanPaths`.**
-  - `setFiles(files: FileEntry[])`: Updates the hierarchical `files` list.
-  - `toggleDirExpansion(filePath: string)`: Toggles the expanded/collapsed state of a directory in `expandedDirs`.
-  - `setSelectedFile(filePath: string | null)`: Sets the `selectedFile` in this store and also calls `aiEditorStore.setOpenedFile()` to display the content of the selected file in the main editor panel.
-  - `clearFileTree()`: Resets the entire file tree state, including expanded directories and fetched data.
+### 🎨 `themeStore` (`src/stores/themeStore.ts`)
 
-- **Integration**: Used by `FileTree.tsx` and `FileTreeItem.tsx` to render and interact with the file tree. It also actively communicates with `aiEditorStore` to open selected files for content viewing.
+Manages the application's UI theme (light/dark mode).
 
-### 4. `themeStore` (`src/stores/themeStore.ts`)
+- **State**: `mode` ('light' | 'dark').
+- **Actions**: `toggleTheme`, `setTheme`.
+- **Usage**: `ThemeToggle` component and `main.tsx` (to apply Tailwind dark class) interact with this store.
 
-Manages the application's current theme mode (light or dark).
+### 🎵 `spotifyStore` (`src/stores/spotifyStore.ts`)
 
-- **State**:
-  - `mode: 'light' | 'dark'`: The currently active theme mode.
+Manages the state for the Spotify-like music player application.
 
-- **Actions**:
-  - `toggleTheme()`: Switches between 'light' and 'dark' modes and persists the preference in `localStorage`.
-  - `setTheme(mode: 'light' | 'dark')`: Explicitly sets the theme mode.
+- **State**: `currentTrack`, `isPlaying`, `progress`, `volume`, `shuffle`, `repeat`, `playlist`, `loading`, `error`.
+- **Actions**: `setCurrentTrack`, `togglePlayPause`, `setPlaybackProgress`, `setVolume`, `toggleShuffle`, `toggleRepeat`, `setLoading`, `setError`.
+- **Usage**: Components within `src/pages/spotify/` consume and update this store.
 
-- **Integration**: Used by `ThemeToggle.tsx` and `main.tsx` to apply the theme to both Material-UI and Tailwind CSS (by toggling a `dark` class on the `body` element).
+### 🌍 `translatorStore` (`src/stores/translatorStore.ts`)
 
-## Inter-Store Communication
+Manages the state for the AI Translator application.
 
-Stores can interact with each other by calling actions from other stores. This ensures a clear flow of data and updates across different parts of the application, maintaining consistency and reactivity. Key examples include:
+- **State**: `inputText`, `uploadedFileData`, `uploadedFileName`, `uploadedFileMimeType`, `targetLanguage`, `translatedContent`, `loading`, `error`.
+- **Actions**: `setInputText`, `setUploadedFile`, `setTargetLanguage`, `setTranslatedContent`, `setLoading`, `setError`, `clearTranslatorState`.
+- **Usage**: `TranslatorAppPage` uses this store for its functionality.
 
-- `fileTreeStore.setSelectedFile()` calls `aiEditorStore.setOpenedFile()` to trigger the display of the selected file's content in the main editor area.
-- `aiEditorStore.clearState()` also calls `setOpenedFile(null)` to ensure the editor panel is cleared when the main AI editor state is reset.
-- `PromptGenerator` updates `aiEditorStore` for all user inputs and triggers AI actions, including `setLastLlmResponse`, `setAiInstruction`, `setExpectedOutputInstruction`, `setRequestType`, and `setUploadedFile`.
-- `aiEditorStore` actions (like `setLastLlmResponse`) automatically update other parts of its own state (like `selectedChanges`).
-- `fileTreeStore.fetchFiles` includes logic to prevent redundant fetches based on `lastFetchedProjectRoot` and `lastFetchedScanPaths` stored in its state.
+## 🤝 Interacting with Stores
+
+- **Reading State in Components**: Use the `useStore` hook from `@nanostores/react`.
+
+  ```typescript
+  import { useStore } from '@nanostores/react';
+  import { authStore } from '@/stores/authStore';
+
+  const { isLoggedIn, user } = useStore(authStore);
+  ```
+
+- **Updating State (Actions)**: Call the exported action functions from the store modules.
+
+  ```typescript
+  import { authStore, loginSuccess } from '@/stores/authStore';
+
+  // ... in a function or useEffect
+  loginSuccess({ id: '1', email: 'test@example.com' }, 'token123');
+  ```
+
+This modular approach to state management keeps the application organized, maintainable, and highly performant.

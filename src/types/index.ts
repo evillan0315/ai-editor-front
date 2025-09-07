@@ -105,6 +105,18 @@ export interface AiEditorState {
   openedFileContent: string | null; // Content of the file currently opened
   isFetchingFileContent: boolean; // Loading state for fetching opened file content
   fetchFileContentError: string | null; // Error state for fetching opened file content
+  autoApplyChanges: boolean; // New: Automatically apply changes after generation
+}
+
+export interface TranslatorState {
+  inputText: string;
+  uploadedFileData: string | null;
+  uploadedFileName: string | null; // To display the name of the uploaded file
+  uploadedFileMimeType: string | null;
+  targetLanguage: string;
+  translatedContent: string | null;
+  loading: boolean;
+  error: string | null;
 }
 
 export {

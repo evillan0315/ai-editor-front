@@ -79,7 +79,10 @@ const updateFileEntryInTree = (
 /**
  * Recursively finds a FileEntry in the tree.
  */
-const findFileEntryInTree = (nodes: FileEntry[], targetPath: string): FileEntry | undefined => {
+const findFileEntryInTree = (
+  nodes: FileEntry[],
+  targetPath: string,
+): FileEntry | undefined => {
   for (const node of nodes) {
     if (node.path === targetPath) {
       return node;
@@ -131,7 +134,10 @@ export const loadInitialTree = async (projectRoot: string) => {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
-    const scannedFiles = await fetchScannedFilesForAI(projectRoot, parsedScanPaths);
+    const scannedFiles = await fetchScannedFilesForAI(
+      projectRoot,
+      parsedScanPaths,
+    );
     fileTreeStore.setKey('flatFileList', scannedFiles); // This is now correctly typed as ApiFileScanResult[]
     fileTreeStore.setKey('lastFetchedScanPaths', parsedScanPaths);
   } catch (err) {
@@ -162,7 +168,9 @@ export const loadChildrenForDirectory = async (parentPath: string) => {
   // Find the parent node to determine its depth and ensure it's a folder
   const parentNode = findFileEntryInTree(state.files, parentPath);
   if (!parentNode || parentNode.type !== 'folder') {
-    console.warn(`Attempted to load children for non-folder or non-existent path: ${parentPath}`);
+    console.warn(
+      `Attempted to load children for non-folder or non-existent path: ${parentPath}`,
+    );
     return;
   }
 
@@ -170,10 +178,14 @@ export const loadChildrenForDirectory = async (parentPath: string) => {
   newLoadingChildren.add(parentPath);
   fileTreeStore.set({ ...state, loadingChildren: newLoadingChildren });
   // Also update the specific node in the tree to reflect its loading state
-  const treeWithLoadingState = updateFileEntryInTree(state.files, parentPath, (node) => ({
-    ...node,
-    isChildrenLoading: true,
-  }));
+  const treeWithLoadingState = updateFileEntryInTree(
+    state.files,
+    parentPath,
+    (node) => ({
+      ...node,
+      isChildrenLoading: true,
+    }),
+  );
   fileTreeStore.setKey('files', treeWithLoadingState);
 
   try {
@@ -183,23 +195,30 @@ export const loadChildrenForDirectory = async (parentPath: string) => {
       ...node,
       depth: (parentNode.depth || 0) + 1,
       collapsed: node.type === 'folder', // All new folders are collapsed by default
-      relativePath: getRelativePath(node.path, state.lastFetchedProjectRoot || ''),
+      relativePath: getRelativePath(
+        node.path,
+        state.lastFetchedProjectRoot || '',
+      ),
       children: [], // Initialize children as empty FileEntry[]
       isChildrenLoaded: node.type === 'file', // Files have no children, new folders are not loaded yet
       isChildrenLoading: false,
     }));
 
-    const updatedTree = updateFileEntryInTree(state.files, parentPath, (node) => ({
-      ...node,
-      children: newChildren.sort((a, b) => {
-        // Sort directories first, then files, alphabetically
-        if (a.type === 'folder' && b.type !== 'folder') return -1;
-        if (a.type !== 'folder' && b.type === 'folder') return 1;
-        return a.name.localeCompare(b.name);
+    const updatedTree = updateFileEntryInTree(
+      state.files,
+      parentPath,
+      (node) => ({
+        ...node,
+        children: newChildren.sort((a, b) => {
+          // Sort directories first, then files, alphabetically
+          if (a.type === 'folder' && b.type !== 'folder') return -1;
+          if (a.type !== 'folder' && b.type === 'folder') return 1;
+          return a.name.localeCompare(b.name);
+        }),
+        isChildrenLoaded: true, // Mark children as loaded for this parent
+        isChildrenLoading: false, // Done loading
       }),
-      isChildrenLoaded: true, // Mark children as loaded for this parent
-      isChildrenLoading: false, // Done loading
-    }));
+    );
     fileTreeStore.setKey('files', updatedTree);
   } catch (err) {
     console.error(`Error loading children for directory ${parentPath}:`, err);

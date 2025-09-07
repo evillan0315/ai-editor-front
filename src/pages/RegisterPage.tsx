@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@nanostores/react';
 import { authStore, setError as setAuthError } from '@/stores/authStore';
 import { registerLocal } from '@/services/authService';
+import { APP_NAME } from '@/constants'; // Import APP_NAME
 
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
@@ -70,10 +71,7 @@ const RegisterPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Container
-        maxWidth="sm"
-        className="flex justify-center items-center min-h-[50vh]"
-      >
+      <Container maxWidth="sm" className="flex justify-center items-center min-h-[50vh]">
         <CircularProgress />
       </Container>
     );
@@ -97,7 +95,7 @@ const RegisterPage: React.FC = () => {
           variant="h5"
           sx={{ mb: 3, fontWeight: 'bold', color: theme.palette.text.primary }}
         >
-          Register for AI Editor
+          Register for {APP_NAME}
         </Typography>
 
         {(localError || authError) && (
@@ -106,11 +104,7 @@ const RegisterPage: React.FC = () => {
           </Alert>
         )}
 
-        <Box
-          component="form"
-          onSubmit={handleRegister}
-          sx={{ mt: 1, width: '100%' }}
-        >
+        <Box component="form" onSubmit={handleRegister} sx={{ mt: 1, width: '100%' }}>
           <TextField
             margin="normal"
             required
@@ -167,15 +161,9 @@ const RegisterPage: React.FC = () => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2, py: 1.5 }}
-            disabled={
-              loading || !email || !password || !confirmPassword || !username
-            }
+            disabled={loading || !email || !password || !confirmPassword || !username}
           >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Register'
-            )}
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Register'}
           </Button>
           <Link
             to="/login"

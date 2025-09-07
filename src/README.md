@@ -1,11 +1,11 @@
-# 🚀 AI Editor Frontend
+# 🚀 Project Board Frontend
 
 [![License](https://img.shields.io/github/license/evillan0315/ai-editor-front)](LICENSE)
 [![Issues](https://img.shields.io/github/issues/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/issues)
 [![Pull Requests](https://img.shields.io/github/issues-pr/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/pulls)
 [![Last Commit](https://img.shields.io/github/last-commit/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/commits)
 
-> A React frontend for the AI Editor backend, built with Vite, React, Nanostores, Tailwind CSS **v4**, and Material UI **v7**, focusing on intelligent code assistance and file system interaction.
+> A React frontend for the Project Board backend, built with Vite, React, Nanostores, Tailwind CSS **v4**, and Material UI **v7**, focusing on intelligent code assistance and file system interaction.
 
 ---
 

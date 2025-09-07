@@ -1,9 +1,19 @@
 import React from 'react';
-import { Box, Typography, IconButton, useTheme, CircularProgress } from '@mui/material'; // Import CircularProgress
+import {
+  Box,
+  Typography,
+  IconButton,
+  useTheme,
+  CircularProgress,
+} from '@mui/material'; // Import CircularProgress
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { FileEntry } from '@/types/fileTree';
-import { toggleDirExpansion, setSelectedFile, fileTreeStore } from '@/stores/fileTreeStore';
+import {
+  toggleDirExpansion,
+  setSelectedFile,
+  fileTreeStore,
+} from '@/stores/fileTreeStore';
 import { useStore } from '@nanostores/react';
 import { getFileTypeIcon } from '@/constants/fileIcons'; // Import the new utility
 
@@ -12,8 +22,12 @@ interface FileTreeItemProps {
   projectRoot: string;
 }
 
-const FileTreeItem: React.FC<FileTreeItemProps> = ({ fileEntry, projectRoot }) => {
-  const { expandedDirs, selectedFile, loadingChildren } = useStore(fileTreeStore); // Access loadingChildren
+const FileTreeItem: React.FC<FileTreeItemProps> = ({
+  fileEntry,
+  projectRoot,
+}) => {
+  const { expandedDirs, selectedFile, loadingChildren } =
+    useStore(fileTreeStore); // Access loadingChildren
   const theme = useTheme();
   const isExpanded = expandedDirs.has(fileEntry.path);
   const isSelected = selectedFile === fileEntry.path;
@@ -39,9 +53,13 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({ fileEntry, projectRoot }) =
 
   const textColor = theme.palette.text.primary;
   const selectedBgColor =
-    theme.palette.mode === 'dark' ? theme.palette.primary.dark : theme.palette.primary.light;
+    theme.palette.mode === 'dark'
+      ? theme.palette.primary.dark
+      : theme.palette.primary.light;
   const hoverBgColor =
-    theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[200];
+    theme.palette.mode === 'dark'
+      ? theme.palette.grey[800]
+      : theme.palette.grey[200];
 
   return (
     <Box>
@@ -75,7 +93,9 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({ fileEntry, projectRoot }) =
               size="small"
               onClick={handleToggleIconClick}
               sx={{
-                color: isSelected ? theme.palette.primary.contrastText : textColor,
+                color: isSelected
+                  ? theme.palette.primary.contrastText
+                  : textColor,
                 p: 0,
               }}
             >
@@ -103,7 +123,9 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({ fileEntry, projectRoot }) =
             justifyContent: 'center',
             mr: 0.5,
             flexShrink: 0,
-            color: isSelected ? theme.palette.primary.contrastText : theme.palette.text.secondary,
+            color: isSelected
+              ? theme.palette.primary.contrastText
+              : theme.palette.text.secondary,
           }}
         >
           {getFileTypeIcon(fileEntry.name, fileEntry.type, isExpanded)}
@@ -123,23 +145,37 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({ fileEntry, projectRoot }) =
           {fileEntry.name}
         </Typography>
       </Box>
-      {fileEntry.type === 'folder' && isExpanded && fileEntry.isChildrenLoaded && (
-        <Box sx={{ pl: 0 }}>
-          {' '}
-          {/* Children handle their own paddingLeft */}
-          {fileEntry.children.map((child) => (
-            <FileTreeItem key={child.path} fileEntry={child} projectRoot={projectRoot} />
-          ))}
-        </Box>
-      )}
+      {fileEntry.type === 'folder' &&
+        isExpanded &&
+        fileEntry.isChildrenLoaded && (
+          <Box sx={{ pl: 0 }}>
+            {' '}
+            {/* Children handle their own paddingLeft */}
+            {fileEntry.children.map((child) => (
+              <FileTreeItem
+                key={child.path}
+                fileEntry={child}
+                projectRoot={projectRoot}
+              />
+            ))}
+          </Box>
+        )}
       {fileEntry.type === 'folder' &&
         isExpanded &&
         !fileEntry.isChildrenLoaded &&
         isCurrentlyLoadingChildren && (
           <Box
-            sx={{ pl: `${levelPadding + 24}px`, py: 0.5, display: 'flex', alignItems: 'center' }}
+            sx={{
+              pl: `${levelPadding + 24}px`,
+              py: 0.5,
+              display: 'flex',
+              alignItems: 'center',
+            }}
           >
-            <CircularProgress size={16} sx={{ mr: 1, color: theme.palette.text.secondary }} />
+            <CircularProgress
+              size={16}
+              sx={{ mr: 1, color: theme.palette.text.secondary }}
+            />
             <Typography variant="caption" color="text.secondary">
               Loading...
             </Typography>
