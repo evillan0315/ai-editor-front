@@ -5,14 +5,32 @@ import {
   AddOrModifyFileChange,
   DeleteOrAnalyzeFileChange,
 } from '@/constants';
-import { FileEntry as TreeFileEntry } from './fileTree'; // Import for FileTree
 
-export interface FileEntry {
+/**
+ * Represents a file or folder entry returned by the backend's /api/file/list (non-recursive) endpoint.
+ * This interface mirrors the backend's FileTreeNode directly.
+ */
+export interface FileTreeNode {
   name: string;
-  filePath: string; // Changed from 'path' to 'filePath'
-  type: 'file' | 'directory';
+  path: string; // Absolute path to the file or folder
+  isDirectory: boolean;
+  type: 'file' | 'folder';
+  lang?: string;
+  mimeType?: string;
   size?: number;
-  lastModified?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  children: FileTreeNode[]; // Will be empty when recursive=false is used.
+}
+
+/**
+ * Represents a file entry returned by the backend's /api/file/scan endpoint.
+ * This is used for providing AI context and is a flat structure.
+ */
+export interface ApiFileScanResult {
+  filePath: string; // Absolute path to the file
+  relativePath: string; // Path relative to the project root (e.g., "src/components/MyComponent.tsx")
+  content: string;
 }
 
 export interface FileContentResponse {

@@ -1,5 +1,5 @@
 import { getToken } from '@/stores/authStore';
-import { FileEntry, FileContentResponse } from '@/types';
+import { ApiFileScanResult, FileTreeNode, FileContentResponse } from '@/types'; // Import new FileTreeNode
 
 const API_BASE_URL = `/api`;
 
@@ -27,10 +27,14 @@ const fetchWithAuth = async (url: string, options?: RequestInit) => {
   return fetch(url, { ...options, headers });
 };
 
-export const fetchProjectFiles = async (
+/**
+ * Fetches project files using the /api/file/scan endpoint, primarily for AI context building.
+ * Returns a flat list of scanned files.
+ */
+export const fetchScannedFilesForAI = async (
   projectRoot: string,
   scanPaths: string[],
-): Promise<FileEntry[]> => {
+): Promise<ApiFileScanResult[]> => {
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/file/scan`, {
       method: 'POST',
@@ -40,9 +44,31 @@ export const fetchProjectFiles = async (
         verbose: false,
       }),
     });
-    return handleResponse<FileEntry[]>(response);
+    return handleResponse<ApiFileScanResult[]>(response);
   } catch (error) {
-    console.error('Error fetching project files:', error);
+    console.error('Error fetching project files for AI scan:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetches a list of files and folders in a given directory, non-recursively.
+ * Returns an array of FileTreeNode for the direct children.
+ */
+export const fetchDirectoryContents = async (
+  directoryPath: string,
+): Promise<FileTreeNode[]> => {
+  try {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/file/list?directory=${encodeURIComponent(directoryPath)}&recursive=false`,
+      { method: 'GET' },
+    );
+    return handleResponse<FileTreeNode[]>(response);
+  } catch (error) {
+    console.error(
+      `Error fetching directory contents for ${directoryPath}:`,
+      error,
+    );
     throw error;
   }
 };

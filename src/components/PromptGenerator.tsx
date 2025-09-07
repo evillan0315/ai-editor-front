@@ -45,7 +45,7 @@ import {
   setUploadedFile,
 } from '@/stores/aiEditorStore';
 import { authStore } from '@/stores/authStore';
-import { fileTreeStore, fetchFiles } from '@/stores/fileTreeStore';
+import { fileTreeStore, loadInitialTree } from '@/stores/fileTreeStore'; // Updated import
 import {
   INSTRUCTION,
   ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
@@ -177,7 +177,7 @@ const PromptGenerator: React.FC = () => {
     setAppliedMessages([]);
     setCurrentDiff(null, null);
     setOpenedFile(null);
-    fetchFiles(projectInput, currentScanPathsArray);
+    loadInitialTree(projectInput); // Use the new loadInitialTree action
   };
 
   const handleGenerateCode = async () => {
@@ -277,6 +277,7 @@ const PromptGenerator: React.FC = () => {
     } else if (type === 'expected') {
       setExpectedOutputInstruction(content);
     }
+  
     setIsInstructionEditorDialogOpen(false);
   };
 

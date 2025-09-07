@@ -28,6 +28,9 @@ export function getCodeMirrorLanguage(
   }
 
   const ext = path.extname(filePath).toLowerCase();
+  // Handle files without extensions but with known names (e.g., Dockerfile)
+  const fileName = path.basename(filePath).toLowerCase();
+
   switch (ext) {
     case '.js':
     case '.jsx':
@@ -44,11 +47,19 @@ export function getCodeMirrorLanguage(
     case '.htm':
       return [html()];
     case '.css':
+    case '.scss':
+    case '.less':
       return [css()];
-    // For other languages not covered by @codemirror/lang-* packages in package.json, return an empty array.
-    // To add syntax highlighting for other languages (e.g., Python, Java, Go, etc.),
-    // ensure the corresponding `@codemirror/lang-*` package is installed and imported here.
+    // Add more extensions as needed for CodeMirror language support
     default:
+      // Handle specific filenames that might not have an extension but need language support
+      if (fileName === 'dockerfile') {
+        // return [dockerfileLanguage()]; // If you have a dockerfile language extension
+        return [];
+      } else if (fileName === 'makefile') {
+        // return [makeLanguage()]; // If you have a makefile language extension
+        return [];
+      }
       return []; // No specific language support, defaults to plain text
   }
 }

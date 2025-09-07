@@ -298,6 +298,7 @@ export const updateProposedChangePath = (
   }
 
   aiEditorStore.set({
+    // Set new full state
     ...state,
     lastLlmResponse: { ...state.lastLlmResponse, changes: updatedChanges },
     selectedChanges: newSelectedChanges,

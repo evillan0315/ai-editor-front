@@ -55,7 +55,6 @@
     "@types/react": "^19.x.x",
     "@types/react-dom": "^19.x.x",
     "@typescript-eslint/parser": "^8.37.0",
-    "@vitejs/plugin-react": "^4.6.0",
     "eslint": "^9.30.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",

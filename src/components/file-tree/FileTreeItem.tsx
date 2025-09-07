@@ -1,182 +1,46 @@
 import React from 'react';
 import { Box, Typography, IconButton, useTheme } from '@mui/material';
-import FolderIcon from '@mui/icons-material/FolderOutlined';
-import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
-import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { FileEntry } from '@/types/fileTree';
-import {
-  toggleDirExpansion,
-  setSelectedFile,
-  fileTreeStore,
-} from '@/stores/fileTreeStore';
+import { toggleDirExpansion, setSelectedFile, fileTreeStore } from '@/stores/fileTreeStore';
 import { useStore } from '@nanostores/react';
-import * as path from 'path-browserify';
+import { getFileTypeIcon } from '@/constants/fileIcons'; // Import the new utility
 
 interface FileTreeItemProps {
-  fileEntry: FileEntry;
+  fileEntry: FileEntry; // This is now correctly typed as FileEntry
   projectRoot: string;
 }
 
-// Determine icon based on file extension
-const getFileIcon = (fileName: string) => {
-  const ext = path.extname(fileName).toLowerCase();
-  switch (ext) {
-    case '.js':
-    case '.jsx':
-    case '.ts':
-    case '.tsx':
-      return (
-        <span className="text-blue-500 font-bold text-xs w-5 text-center">
-          JS/TS
-        </span>
-      );
-    case '.json':
-      return (
-        <span className="text-purple-500 font-bold text-xs w-5 text-center">
-          {}
-        </span>
-      );
-    case '.md':
-    case '.markdown':
-      return (
-        <span className="text-gray-500 font-bold text-xs w-5 text-center">
-          MD
-        </span>
-      );
-    case '.html':
-    case '.htm':
-      return (
-        <span className="text-orange-500 font-bold text-xs w-5 text-center">
-          &lt;/&gt;
-        </span>
-      );
-    case '.css':
-      return (
-        <span className="text-blue-400 font-bold text-xs w-5 text-center">
-          #
-        </span>
-      );
-    case '.xml':
-      return (
-        <span className="text-green-500 font-bold text-xs w-5 text-center">
-          &lt;?
-        </span>
-      );
-    case '.py':
-      return (
-        <span className="text-yellow-600 font-bold text-xs w-5 text-center">
-          PY
-        </span>
-      );
-    case '.java':
-      return (
-        <span className="text-red-500 font-bold text-xs w-5 text-center">
-          JV
-        </span>
-      );
-    case '.go':
-      return (
-        <span className="text-cyan-500 font-bold text-xs w-5 text-center">
-          GO
-        </span>
-      );
-    case '.rb':
-      return (
-        <span className="text-red-700 font-bold text-xs w-5 text-center">
-          RB
-        </span>
-      );
-    case '.php':
-      return (
-        <span className="text-indigo-500 font-bold text-xs w-5 text-center">
-          PHP
-        </span>
-      );
-    case '.c':
-    case '.cpp':
-    case '.h':
-      return (
-        <span className="text-gray-600 font-bold text-xs w-5 text-center">
-          C++
-        </span>
-      );
-    case '.sh':
-      return (
-        <span className="text-green-700 font-bold text-xs w-5 text-center">
-          SH
-        </span>
-      );
-    case '.yaml':
-    case '.yml':
-      return (
-        <span className="text-pink-500 font-bold text-xs w-5 text-center">
-          YML
-        </span>
-      );
-    case '.env':
-      return (
-        <span className="text-gray-700 font-bold text-xs w-5 text-center">
-          .ENV
-        </span>
-      );
-    case '.gitignore':
-      return (
-        <span className="text-gray-400 font-bold text-xs w-5 text-center">
-          .GIT
-        </span>
-      );
-    default:
-      return (
-        <InsertDriveFileOutlinedIcon
-          fontSize="small"
-          sx={{ color: 'text.secondary' }}
-        />
-      );
-  }
-};
-
-const FileTreeItem: React.FC<FileTreeItemProps> = ({
-  fileEntry,
-  projectRoot,
-}) => {
+const FileTreeItem: React.FC<FileTreeItemProps> = ({ fileEntry, projectRoot }) => {
   const { expandedDirs, selectedFile } = useStore(fileTreeStore);
   const theme = useTheme();
-  const isExpanded = expandedDirs.has(fileEntry.filePath);
-  const isSelected = selectedFile === fileEntry.filePath;
+  const isExpanded = expandedDirs.has(fileEntry.path);
+  const isSelected = selectedFile === fileEntry.path;
 
   const handleToggleIconClick = (event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent the parent Box's onClick from firing
-    if (fileEntry.type === 'directory') {
-      toggleDirExpansion(fileEntry.filePath);
-    } else {
-      setSelectedFile(fileEntry.filePath);
+    if (fileEntry.type === 'folder') {
+      toggleDirExpansion(fileEntry.path);
     }
+    // If it's a file, clicking the icon (which shouldn't be there visually) does nothing
   };
 
   const handleItemClick = () => {
-    if (fileEntry.type === 'directory') {
-      toggleDirExpansion(fileEntry.filePath);
+    if (fileEntry.type === 'folder') {
+      toggleDirExpansion(fileEntry.path);
     } else {
-      setSelectedFile(fileEntry.filePath);
+      setSelectedFile(fileEntry.path);
     }
   };
 
   const levelPadding = (fileEntry.depth || 0) * 16; // 16px per depth level
 
-  const textColor =
-    theme.palette.mode === 'dark'
-      ? theme.palette.grey[200]
-      : theme.palette.grey[800];
+  const textColor = theme.palette.text.primary;
   const selectedBgColor =
-    theme.palette.mode === 'dark'
-      ? theme.palette.primary.dark
-      : theme.palette.primary.light;
+    theme.palette.mode === 'dark' ? theme.palette.primary.dark : theme.palette.primary.light;
   const hoverBgColor =
-    theme.palette.mode === 'dark'
-      ? theme.palette.grey[800]
-      : theme.palette.grey[200];
+    theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[200];
 
   return (
     <Box>
@@ -205,11 +69,14 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
             flexShrink: 0,
           }}
         >
-          {fileEntry.type === 'directory' ? (
+          {fileEntry.type === 'folder' ? (
             <IconButton
               size="small"
               onClick={handleToggleIconClick}
-              sx={{ color: isSelected ? 'inherit' : textColor, p: 0 }} // Reduce padding for compact size
+              sx={{
+                color: isSelected ? theme.palette.primary.contrastText : textColor,
+                p: 0,
+              }} // Reduce padding for compact size
             >
               {isExpanded ? (
                 <ExpandMoreIcon fontSize="inherit" />
@@ -233,27 +100,10 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
             justifyContent: 'center',
             mr: 0.5,
             flexShrink: 0,
+            color: isSelected ? theme.palette.primary.contrastText : theme.palette.text.secondary,
           }}
         >
-          {fileEntry.type === 'directory' ? (
-            isExpanded ? (
-              <FolderOpenIcon
-                fontSize="small"
-                sx={{
-                  color: isSelected ? 'inherit' : theme.palette.text.secondary,
-                }}
-              />
-            ) : (
-              <FolderIcon
-                fontSize="small"
-                sx={{
-                  color: isSelected ? 'inherit' : theme.palette.text.secondary,
-                }}
-              />
-            )
-          ) : (
-            getFileIcon(fileEntry.name)
-          )}
+          {getFileTypeIcon(fileEntry.name, fileEntry.type, isExpanded)}
         </Box>
 
         {/* File/Folder Name */}
@@ -270,14 +120,14 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
           {fileEntry.name}
         </Typography>
       </Box>
-      {fileEntry.type === 'directory' && isExpanded && fileEntry.children && (
+      {fileEntry.type === 'folder' && isExpanded && fileEntry.children && (
         <Box sx={{ pl: 0 }}>
           {' '}
           {/* Children handle their own paddingLeft */}
           {fileEntry.children.map((child) => (
             <FileTreeItem
-              key={child.filePath}
-              fileEntry={child}
+              key={child.path}
+              fileEntry={child} // Child is now correctly typed as FileEntry
               projectRoot={projectRoot}
             />
           ))}

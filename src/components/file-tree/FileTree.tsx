@@ -12,7 +12,7 @@ import FileTreeItem from './FileTreeItem';
 import { useStore } from '@nanostores/react';
 import {
   fileTreeStore,
-  fetchFiles,
+  loadInitialTree, // Updated import
   clearFileTree,
 } from '@/stores/fileTreeStore';
 import { aiEditorStore } from '@/stores/aiEditorStore';
@@ -30,35 +30,22 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
     fetchTreeError,
     // Removed 'loading' and 'error' as 'isFetchingTree' and 'fetchTreeError' are more specific
   } = useStore(fileTreeStore);
-  const { scanPathsInput } = useStore(aiEditorStore);
+  const { scanPathsInput } = useStore(aiEditorStore); // scanPathsInput still used for AI context/dialog
   const theme = useTheme();
 
   useEffect(() => {
     if (projectRoot) {
-      fetchFiles(
-        projectRoot,
-        scanPathsInput
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean),
-      );
+      loadInitialTree(projectRoot); // Load initial tree, scanPathsInput is not used here for visual tree
     }
     return () => {
       clearFileTree(); // Clear tree state when projectRoot changes or unmounts
     };
-  }, [projectRoot, scanPathsInput]);
+  }, [projectRoot]); // Only re-fetch when projectRoot changes
 
   const handleRefreshTree = () => {
     if (projectRoot) {
-      // Force a fetch by ensuring the `fetchFiles` logic considers it not fresh
-      // This is handled by the fetchFiles logic now, no need to clear state explicitly here.
-      fetchFiles(
-        projectRoot,
-        scanPathsInput
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean),
-      );
+      // Force a fetch by ensuring the `loadInitialTree` logic considers it not fresh
+      loadInitialTree(projectRoot); // Pass projectRoot for re-initialization
     }
   };
 
@@ -125,14 +112,13 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
         </Alert>
       ) : treeFiles.length === 0 && projectRoot ? (
         <Alert severity="info" sx={{ mt: 2 }}>
-          No files found for project root: {projectRoot}. Check path and scan
-          paths.
+          No files found for project root: {projectRoot}. Check path.
         </Alert>
       ) : (
         <Box className="flex-grow">
           {treeFiles.map((entry) => (
             <FileTreeItem
-              key={entry.filePath}
+              key={entry.path}
               fileEntry={entry}
               projectRoot={projectRoot}
             />
