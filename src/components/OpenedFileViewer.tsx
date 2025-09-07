@@ -7,11 +7,18 @@ import {
   setIsFetchingFileContent,
   setFetchFileContentError,
 } from '@/stores/aiEditorStore';
-import { fileTreeStore } from '@/stores/fileTreeStore'; // Import fileTreeStore
 import { readFileContent } from '@/api/file';
 import CodeMirror from '@uiw/react-codemirror';
 // Language extensions are now handled by getCodeMirrorLanguage from utils
-import { Box, Typography, Button, CircularProgress, Alert, Paper, useTheme } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+  Alert,
+  Paper,
+  useTheme,
+} from '@mui/material';
 import { themeStore } from '@/stores/themeStore';
 import { getCodeMirrorLanguage } from '@/utils/index'; // Import from utils
 
@@ -20,12 +27,14 @@ interface OpenedFileViewerProps {
 }
 
 const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
-  const { openedFile, openedFileContent, isFetchingFileContent, fetchFileContentError } =
-    useStore(aiEditorStore);
-  const { flatFileList } = useStore(fileTreeStore); // Get flatFileList from fileTreeStore
+  const {
+    openedFile,
+    openedFileContent,
+    isFetchingFileContent,
+    fetchFileContentError,
+  } = useStore(aiEditorStore);
   const theme = useTheme();
   const { mode } = useStore(themeStore);
-
   useEffect(() => {
     const fetchContent = async () => {
       if (!openedFile) {
@@ -34,22 +43,10 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
         return;
       }
 
-      // Check if the openedFile is actually a directory
-      const fileEntry = flatFileList.find((entry) => entry.filePath === openedFile);
-      if (fileEntry && fileEntry.isDirectory) {
-        setIsFetchingFileContent(false);
-        setOpenedFileContent(
-          `This is a directory (${openedFile}). Directory contents cannot be displayed here.`,
-        );
-        setFetchFileContentError(null); // Clear any previous error
-        return;
-      }
-
       setIsFetchingFileContent(true);
       setFetchFileContentError(null);
 
       try {
-        // The original logic for fetching file content
         const content = await readFileContent(openedFile);
         setOpenedFileContent(content);
       } catch (err) {
@@ -64,7 +61,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
     };
 
     fetchContent();
-  }, [openedFile, flatFileList]); // Add flatFileList as a dependency
+  }, [openedFile]);
 
   if (!openedFile) return null; // Only render if a file is opened
 
@@ -106,7 +103,10 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
       {isFetchingFileContent ? (
         <Box className="flex justify-center items-center flex-grow">
           <CircularProgress size={24} />
-          <Typography variant="body2" sx={{ ml: 2, color: theme.palette.text.secondary }}>
+          <Typography
+            variant="body2"
+            sx={{ ml: 2, color: theme.palette.text.secondary }}
+          >
             Loading file content...
           </Typography>
         </Box>
