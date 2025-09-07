@@ -86,7 +86,6 @@ export const loginLocal = async (credentials: LoginRequest) => {
 
     if (!response.ok) {
       throw new Error(data.message || 'Login failed');
-   
     }
 
     // Assuming the backend returns the user object and a token (if needed client-side)

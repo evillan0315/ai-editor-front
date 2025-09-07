@@ -8,3 +8,27 @@ body {
   padding: 0;
   box-sizing: border-box;
 }
+
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 1.5s infinite ease-in-out;
+}
+
+.delay-0 {
+  animation-delay: 0s;
+}
+.delay-100 {
+  animation-delay: 0.1s;
+}
+.delay-200 {
+  animation-delay: 0.2s;
+}
