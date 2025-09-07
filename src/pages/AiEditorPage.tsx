@@ -7,13 +7,14 @@ import {
   setLastLlmResponse,
 } from '@/stores/aiEditorStore';
 import { Box, Typography, Alert, Paper, useTheme } from '@mui/material';
+import { FileTree } from '@/components/file-tree';
 import PromptGenerator from '@/components/PromptGenerator';
 import AiResponseDisplay from '@/components/AiResponseDisplay';
 import OpenedFileViewer from '@/components/OpenedFileViewer';
-import { FileTree } from '@/components/file-tree'; // New import
 
 const AiEditorPage: React.FC = () => {
-  const { error, currentProjectPath, lastLlmResponse } = useStore(aiEditorStore);
+  const { error, currentProjectPath, lastLlmResponse } =
+    useStore(aiEditorStore);
 
   const theme = useTheme();
 
@@ -44,8 +45,9 @@ const AiEditorPage: React.FC = () => {
         AI Code Editor
       </Typography>
       <Typography variant="body1" color="text.secondary" className="mb-4">
-        Provide instructions to the AI to generate or modify code in your project. Start by loading
-        your project, and optionally browse files from the tree.
+        Provide instructions to the AI to generate or modify code in your
+        project. Start by loading your project, and optionally browse files from
+        the tree.
       </Typography>
 
       {/* General error display (can be set by PromptGenerator or other actions) */}
@@ -58,7 +60,7 @@ const AiEditorPage: React.FC = () => {
       <PromptGenerator />
 
       <Box className="flex gap-4 mt-6 flex-grow min-h-0">
-        {/* File Tree Column - now rendered conditionally */}
+        {/* File Tree Column */}
         {currentProjectPath && <FileTree projectRoot={currentProjectPath} />}
 
         {/* AI Editor & File Content Column */}
