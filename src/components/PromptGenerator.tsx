@@ -117,14 +117,22 @@ const PromptGenerator: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
+    // 1. Sync local projectInput state with the global store's currentProjectPath if they differ.
+    // This handles cases where currentProjectPath is updated from other places (e.g., user interaction).
     if (currentProjectPath && projectInput !== currentProjectPath) {
       setProjectInput(currentProjectPath);
     }
-    if (!projectInput && import.meta.env.VITE_BASE_DIR) {
-      setProjectInput(import.meta.env.VITE_BASE_DIR);
+
+    // 2. On initial component mount or when VITE_BASE_DIR becomes available,
+    // if the global store's currentProjectPath is not yet set, set it from VITE_BASE_DIR.
+    // This ensures the FileTree and other parts of the app that rely on currentProjectPath
+    // from the store are initialized correctly.
+    if (import.meta.env.VITE_BASE_DIR && !currentProjectPath) {
       aiEditorStore.setKey('currentProjectPath', import.meta.env.VITE_BASE_DIR);
+      // Also update local projectInput state to reflect the value pushed to the store
+      setProjectInput(import.meta.env.VITE_BASE_DIR);
     }
-  }, [currentProjectPath, projectInput]);
+  }, [currentProjectPath, projectInput]); // Dependencies ensure this runs when relevant values change
 
   const handleInstructionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInstruction(event.target.value);
@@ -204,7 +212,7 @@ const PromptGenerator: React.FC = () => {
         scanPaths: currentScanPathsArray,
         requestType: requestType,
         ...(uploadedFileData && { fileData: uploadedFileData }),
-        ...(uploadedFileMimeType && { fileMimeType: uploadedFileMimeType }),
+        ...(uploadedFileMimeType && { fileMowedFileMimeType: uploadedFileMimeType }),
       };
 
       const aiResponse: ModelResponse = await generateCode(payload);
@@ -284,161 +292,170 @@ const PromptGenerator: React.FC = () => {
 
   return (
     <Box // Replaced Paper with Box and removed layout-specific styling
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2, // Internal spacing between elements
-      }}
+      className="flex  flex-col items-start gap-2"
     >
-      {/* Project Root Path Section */}
-      <TextField
-        label="Project Root Path"
-        value={projectInput}
-        onChange={handleProjectInputChange}
-        placeholder="e.g., /home/user/my-project"
-        disabled={commonDisabled}
-        fullWidth // Ensure it takes full width
-        size="small"
-        InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
-        InputProps={{
-          style: { color: theme.palette.text.primary },
-          endAdornment: (
-            <InputAdornment position="end">
-              <Tooltip title="Load Project">
-                <span>
-                  <IconButton
-                    onClick={handleLoadProject}
-                    disabled={commonDisabled || !projectInput}
-                    color="primary"
-                  >
-                    <DriveFolderUploadIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Tooltip title="Clear All State">
-                <span>
-                  <IconButton onClick={clearState} disabled={commonDisabled} color="secondary">
-                    <ClearAllIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </InputAdornment>
-          ),
-        }}
-      />
-
-      {/* Scan Paths Section - Autocomplete & Add/Picker Buttons */}
-      <Box
-        className="flex flex-wrap items-center gap-1 p-1 border rounded-md"
-        sx={{
-          borderColor: theme.palette.divider,
-          bgcolor: theme.palette.background.default,
-          width: '100%', // Ensure it takes full width
-        }}
+      <Box // Replaced Paper with Box and removed layout-specific styling
+        className="flex items-center justify-between gap-4 w-full"
       >
-        {currentScanPathsArray.length === 0 && !showAddScanPathInput ? (
-          <Typography variant="body2" color="text.secondary" sx={{ ml: 1, my: 0.5 }}>
-            No scan paths. Add some.
-          </Typography>
-        ) : (
-          currentScanPathsArray.map((path) => (
-            <Tooltip key={path} title={path} placement="top">
-              <Chip
-                label={truncatePath(path)}
-                onDelete={() => handleRemoveScanPath(path)}
-                disabled={commonDisabled}
-                deleteIcon={<CloseIcon />}
-                sx={{
-                  maxWidth: 180,
-                  '& .MuiChip-label': {
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  },
-                }}
-                size="small"
-              />
-            </Tooltip>
-          ))
-        )}
+        {/* Project Root Path Section */}
+        <TextField
+          label="Project Root Path"
+          value={projectInput}
+          sx={{
+            borderColor: theme.palette.divider,
+            bgcolor: theme.palette.background.default,
+          }}
+          onChange={handleProjectInputChange}
+          placeholder="e.g., /home/user/my-project"
+          disabled={commonDisabled}
+          fullWidth // Ensure it takes full width
+          size="small"
+          InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+          InputProps={{
+            style: { color: theme.palette.text.primary },
+            endAdornment: (
+              <InputAdornment position="end">
+                <Tooltip title="Load Project">
+                  <span>
+                    <IconButton
+                      onClick={handleLoadProject}
+                      disabled={commonDisabled || !projectInput}
+                      color="primary"
+                    >
+                      <DriveFolderUploadIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title="Clear All State">
+                  <span>
+                    <IconButton onClick={clearState} disabled={commonDisabled} color="secondary">
+                      <ClearAllIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </InputAdornment>
+            ),
+          }}
+        />
 
-        {showAddScanPathInput ? (
-          <Autocomplete
-            freeSolo
-            options={scanPathAutocompleteOptions}
-            value={newScanPathValue}
-            onInputChange={(_event, newInputValue) => setNewScanPathValue(newInputValue)}
-            onChange={(_event, newValue) => {
-              if (typeof newValue === 'string') {
-                handleAddScanPath(newValue);
-              } else if (newValue && (newValue as any).inputValue) {
-                handleAddScanPath((newValue as any).inputValue);
-              }
-            }}
-            onBlur={() => {
-              if (newScanPathValue === '') {
-                setShowAddScanPathInput(false);
-              }
-            }}
-            disabled={commonDisabled}
-            sx={{ minWidth: 150, flexGrow: 1 }} // Keep flexGrow for responsive input
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Add new path (e.g., src/utils)"
-                autoFocus
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && newScanPathValue) {
-                    handleAddScanPath(newScanPathValue);
-                    event.preventDefault();
+        {/* Scan Paths Section - Autocomplete & Add/Picker Buttons */}
+        <Box
+          className="flex items-center gap-1 pl-2 h-12 border rounded-md w-full"
+          sx={{
+            borderColor: theme.palette.divider,
+            bgcolor: theme.palette.background.default,
+          }}
+        >
+          {currentScanPathsArray.length === 0 && !showAddScanPathInput ? (
+            <Typography variant="body2" color="text.secondary" sx={{ ml: 1, my: 0.5 }}>
+              No scan paths. Add some.
+            </Typography>
+          ) : (
+            currentScanPathsArray.map((path) => (
+              <Tooltip key={path} title={path} placement="top">
+                <Chip
+                  label={truncatePath(path)}
+                  onDelete={() => handleRemoveScanPath(path)}
+                  disabled={commonDisabled}
+                  deleteIcon={<CloseIcon />}
+                  sx={{
+                    maxWidth: 180,
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    },
+                  }}
+                  size="small"
+                />
+              </Tooltip>
+            ))
+          )}
+
+          {showAddScanPathInput ? (
+            <Box className="flex items-center justify-between gap-2 w-full">
+              <Autocomplete
+                freeSolo
+                options={scanPathAutocompleteOptions}
+                value={newScanPathValue}
+                onInputChange={(_event, newInputValue) => setNewScanPathValue(newInputValue)}
+                onChange={(_event, newValue) => {
+                  if (typeof newValue === 'string') {
+                    handleAddScanPath(newValue);
+                  } else if (newValue && (newValue as any).inputValue) {
+                    handleAddScanPath((newValue as any).inputValue);
                   }
-                  if (event.key === 'Escape') {
+                }}
+                onBlur={() => {
+                  if (newScanPathValue === '') {
                     setShowAddScanPathInput(false);
-                    setNewScanPathValue('');
                   }
                 }}
-                size="small"
-                InputLabelProps={{
-                  style: { color: theme.palette.text.secondary },
-                }}
-                InputProps={{
-                  ...params.InputProps,
-                  style: { color: theme.palette.text.primary },
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      {newScanPathValue && (
-                        <IconButton
-                          onClick={() => setNewScanPathValue('')}
-                          edge="end"
-                          disabled={commonDisabled}
-                          size="small"
-                        >
-                          <CloseIcon fontSize="small" />
-                        </IconButton>
-                      )}
-                      {params.InputProps.endAdornment}
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            )}
-          />
-        ) : (
-          <Tooltip title="Add New Scan Path Manually">
-            <span>
-              <IconButton
-                onClick={() => setShowAddScanPathInput(true)}
-                edge="end"
                 disabled={commonDisabled}
-                sx={{ color: theme.palette.text.secondary }}
-                size="small"
-              >
-                <AddRoadIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-        )}
-
+                sx={{ minWidth: 150, flexGrow: 1 }} // Keep flexGrow for responsive input
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Add new path (e.g., src/utils)"
+                    autoFocus
+                    className="w-full text-xs p-0"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' && newScanPathValue) {
+                        handleAddScanPath(newScanPathValue);
+                        event.preventDefault();
+                      }
+                      if (event.key === 'Escape') {
+                        setShowAddScanPathInput(false);
+                        setNewScanPathValue('');
+                      }
+                    }}
+                    size="small"
+                    InputLabelProps={{
+                      style: { color: theme.palette.text.secondary },
+                    }}
+                    InputProps={{
+                      ...params.InputProps,
+                      style: {
+                        color: theme.palette.text.primary,
+                        width: `100%`,
+                      },
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          {newScanPathValue && (
+                            <IconButton
+                              onClick={() => setNewScanPathValue('')}
+                              edge="end"
+                              disabled={commonDisabled}
+                              size="small"
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          )}
+                          {params.InputProps.endAdornment}
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            </Box>
+          ) : (
+            <Box></Box>
+          )}
+        </Box>
+        <Tooltip title="Add New Scan Path Manually">
+          <span>
+            <IconButton
+              onClick={() => setShowAddScanPathInput(true)}
+              edge="end"
+              disabled={commonDisabled}
+              sx={{ color: theme.palette.text.secondary }}
+              size="small"
+            >
+              <AddRoadIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
         <Tooltip title="Select Paths from File Tree">
           <span>
             <IconButton
@@ -452,50 +469,48 @@ const PromptGenerator: React.FC = () => {
             </IconButton>
           </span>
         </Tooltip>
-      </Box>
-
-      <FilePickerDialog
-        open={isPickerDialogOpen}
-        onClose={() => setIsPickerDialogOpen(false)}
-        onSelect={handleFilePickerDialogSelect}
-        currentScanPaths={currentScanPathsArray}
-      />
-
-      <FileUploaderDialog
-        open={isFileUploaderDialogOpen}
-        onClose={() => setIsFileUploaderDialogOpen(false)}
-        onUpload={(data, mimeType, fileName) => setUploadedFile(data, mimeType, fileName)} // Pass fileName
-        currentUploadedFile={uploadedFileData}
-        currentUploadedMimeType={uploadedFileMimeType}
-      />
-
-      {editingInstructionType && (
-        <InstructionEditorDialog
-          open={isInstructionEditorDialogOpen}
-          onClose={() => setIsInstructionEditorDialogOpen(false)}
-          onSave={handleSaveInstruction}
-          instructionType={editingInstructionType}
-          initialContent={
-            editingInstructionType === 'ai' ? aiInstruction : expectedOutputInstruction
-          }
+        <FilePickerDialog
+          open={isPickerDialogOpen}
+          onClose={() => setIsPickerDialogOpen(false)}
+          onSelect={handleFilePickerDialogSelect}
+          currentScanPaths={currentScanPathsArray}
         />
-      )}
 
-      {/* Main AI Prompt Text Area */}
-      <TextField
-        label="AI Instructions (User Prompt)"
-        multiline
-        rows={6}
-        value={instruction}
-        onChange={handleInstructionChange}
-        placeholder="e.g., Implement a new user authentication module with JWT. Include login and register endpoints."
-        disabled={commonDisabled || loading}
-        fullWidth
-        margin="normal"
-        InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
-        InputProps={{ style: { color: theme.palette.text.primary } }}
-      />
+        <FileUploaderDialog
+          open={isFileUploaderDialogOpen}
+          onClose={() => setIsFileUploaderDialogOpen(false)}
+          onUpload={(data, mimeType, fileName) => setUploadedFile(data, mimeType, fileName)} // Pass fileName
+          currentUploadedFile={uploadedFileData}
+          currentUploadedMimeType={uploadedFileMimeType}
+        />
 
+        {editingInstructionType && (
+          <InstructionEditorDialog
+            open={isInstructionEditorDialogOpen}
+            onClose={() => setIsInstructionEditorDialogOpen(false)}
+            onSave={handleSaveInstruction}
+            instructionType={editingInstructionType}
+            initialContent={
+              editingInstructionType === 'ai' ? aiInstruction : expectedOutputInstruction
+            }
+          />
+        )}
+      </Box>
+      <>
+        <TextField
+          label="AI Instructions (User Prompt)"
+          multiline
+          rows={2}
+          value={instruction}
+          onChange={handleInstructionChange}
+          placeholder="e.g., Implement a new user authentication module with JWT. Include login and register endpoints."
+          disabled={commonDisabled || loading}
+          fullWidth
+          margin="normal"
+          InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+          InputProps={{ style: { color: theme.palette.text.primary } }}
+        />
+      </>
       {/* New Row for controls and Generate button */}
       <Box
         sx={{
@@ -507,7 +522,7 @@ const PromptGenerator: React.FC = () => {
         }}
       >
         {/* Left group of buttons/elements */}
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Box className="flex items-center justify-between gap-2">
           {/* File Upload/Paste Button */}
           <Tooltip title="Upload File or Paste Base64">
             <span>
@@ -571,7 +586,6 @@ const PromptGenerator: React.FC = () => {
             </MenuItem>
           </Menu>
 
-          {/* Auto-apply changes switch */}
           <FormControlLabel
             control={
               <Switch
