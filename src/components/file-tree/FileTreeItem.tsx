@@ -1,286 +1,338 @@
 import React from 'react';
-import { Box, Typography, IconButton, useTheme } from '@mui/material';
+import {
+  Box,
+  Typography,
+  IconButton,
+  useTheme,
+  ListItemButton,
+  CircularProgress,
+} from '@mui/material';
 import FolderIcon from '@mui/icons-material/FolderOutlined';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
+// Specific file type icons
+import CodeIcon from '@mui/icons-material/Code'; // For generic code files, JS, TS, Python, Java, Go, etc.
+import DataObjectIcon from '@mui/icons-material/DataObject'; // For JSON/YAML
+import ArticleIcon from '@mui/icons-material/Article'; // For Markdown/Text
+import HtmlIcon from '@mui/icons-material/Html'; // For HTML
+import CssIcon from '@mui/icons-material/Css'; // For CSS/SCSS/LESS
+import ImageIcon from '@mui/icons-material/Image'; // For images (jpg, png, svg)
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'; // For PDF
+import ArchiveIcon from '@mui/icons-material/Archive'; // For zip/rar/tar
+import SettingsEthernetIcon from '@mui/icons-material/SettingsEthernet'; // For config/env/xml
+import StorageIcon from '@mui/icons-material/Storage'; // For SQL/DB
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline'; // For video/audio
+
 import { FileEntry } from '@/types/fileTree';
-import {
-  toggleDirExpansion,
-  setSelectedFile,
-  fileTreeStore,
-} from '@/stores/fileTreeStore';
+import { toggleDirExpansion, setSelectedFile } from '@/stores/fileTreeStore';
 import { useStore } from '@nanostores/react';
 import * as path from 'path-browserify';
 
 interface FileTreeItemProps {
   fileEntry: FileEntry;
   projectRoot: string;
+  onFileClick?: (filePath: string) => void; // Optional callback for file clicks, used by dialog
 }
 
-// Determine icon based on file extension
-const getFileIcon = (fileName: string) => {
+/**
+ * Determines the appropriate Material Icon component and color based on file extension.
+ * Fallbacks to a generic file icon if no specific match is found.
+ * @param fileName The name of the file.
+ * @param defaultColor The default color to use if no specific iconColor is defined for the extension.
+ * @returns A React element representing the file icon.
+ */
+const getFileIconComponent = (fileName: string, defaultColor: string) => {
   const ext = path.extname(fileName).toLowerCase();
+  let IconComponent: React.ElementType = InsertDriveFileOutlinedIcon; // Default icon
+  let iconColor = defaultColor; // Default to the passed-in color
+
   switch (ext) {
     case '.js':
     case '.jsx':
     case '.ts':
     case '.tsx':
-      return (
-        <span className="text-blue-500 font-bold text-xs w-5 text-center">
-          JS/TS
-        </span>
-      );
+    case '.mjs':
+    case '.cjs':
+      IconComponent = CodeIcon;
+      iconColor = '#61DAFB'; // React/JS blue
+      break;
     case '.json':
-      return (
-        <span className="text-purple-500 font-bold text-xs w-5 text-center">
-          {}
-        </span>
-      );
+    case '.yml':
+    case '.yaml':
+      IconComponent = DataObjectIcon;
+      iconColor = '#E0B420'; // Yellowish for data objects
+      break;
     case '.md':
     case '.markdown':
-      return (
-        <span className="text-gray-500 font-bold text-xs w-5 text-center">
-          MD
-        </span>
-      );
+    case '.txt':
+      IconComponent = ArticleIcon;
+      iconColor = '#9E9E9E'; // Grey for text/docs
+      break;
     case '.html':
     case '.htm':
-      return (
-        <span className="text-orange-500 font-bold text-xs w-5 text-center">
-          &lt;/&gt;
-        </span>
-      );
+      IconComponent = HtmlIcon;
+      iconColor = '#E34C26'; // HTML orange
+      break;
     case '.css':
-      return (
-        <span className="text-blue-400 font-bold text-xs w-5 text-center">
-          #
-        </span>
-      );
+    case '.scss':
+    case '.less':
+      IconComponent = CssIcon;
+      iconColor = '#264DE4'; // CSS blue
+      break;
+    case '.jpg':
+    case '.jpeg':
+    case '.png':
+    case '.gif':
+    case '.svg':
+    case '.webp':
+      IconComponent = ImageIcon;
+      iconColor = '#4CAF50'; // Green for images
+      break;
+    case '.pdf':
+      IconComponent = PictureAsPdfIcon;
+      iconColor = '#B71C1C'; // Red for PDF
+      break;
+    case '.zip':
+    case '.rar':
+    case '.7z':
+    case '.tar':
+    case '.gz':
+      IconComponent = ArchiveIcon;
+      iconColor = '#607D8B'; // Blue-grey for archives
+      break;
+    case '.env':
+    case '.ini':
+    case '.config':
     case '.xml':
-      return (
-        <span className="text-green-500 font-bold text-xs w-5 text-center">
-          &lt;?
-        </span>
-      );
+      IconComponent = SettingsEthernetIcon;
+      iconColor = '#795548'; // Brown for config
+      break;
+    case '.sql':
+    case '.db':
+      IconComponent = StorageIcon;
+      iconColor = '#03A9F4'; // Light blue for databases
+      break;
+    case '.mp4':
+    case '.mov':
+    case '.webm':
+    case '.mp3':
+    case '.wav':
+      IconComponent = PlayCircleOutlineIcon;
+      iconColor = '#F44336'; // Red for media
+      break;
     case '.py':
-      return (
-        <span className="text-yellow-600 font-bold text-xs w-5 text-center">
-          PY
-        </span>
-      );
+      IconComponent = CodeIcon;
+      iconColor = '#FFD43B'; // Python yellow
+      break;
     case '.java':
-      return (
-        <span className="text-red-500 font-bold text-xs w-5 text-center">
-          JV
-        </span>
-      );
+      IconComponent = CodeIcon;
+      iconColor = '#E60000'; // Java red
+      break;
     case '.go':
-      return (
-        <span className="text-cyan-500 font-bold text-xs w-5 text-center">
-          GO
-        </span>
-      );
+      IconComponent = CodeIcon;
+      iconColor = '#00ADD8'; // Go blue
+      break;
     case '.rb':
-      return (
-        <span className="text-red-700 font-bold text-xs w-5 text-center">
-          RB
-        </span>
-      );
+      IconComponent = CodeIcon;
+      iconColor = '#CC342D'; // Ruby red
+      break;
     case '.php':
-      return (
-        <span className="text-indigo-500 font-bold text-xs w-5 text-center">
-          PHP
-        </span>
-      );
+      IconComponent = CodeIcon;
+      iconColor = '#8892BF'; // PHP purple
+      break;
     case '.c':
     case '.cpp':
     case '.h':
-      return (
-        <span className="text-gray-600 font-bold text-xs w-5 text-center">
-          C++
-        </span>
-      );
+      IconComponent = CodeIcon;
+      iconColor = '#00599C'; // C/C++ blue
+      break;
     case '.sh':
-      return (
-        <span className="text-green-700 font-bold text-xs w-5 text-center">
-          SH
-        </span>
-      );
-    case '.yaml':
-    case '.yml':
-      return (
-        <span className="text-pink-500 font-bold text-xs w-5 text-center">
-          YML
-        </span>
-      );
-    case '.env':
-      return (
-        <span className="text-gray-700 font-bold text-xs w-5 text-center">
-          .ENV
-        </span>
-      );
-    case '.gitignore':
-      return (
-        <span className="text-gray-400 font-bold text-xs w-5 text-center">
-          .GIT
-        </span>
-      );
+    case '.bash':
+      IconComponent = CodeIcon;
+      iconColor = '#4CAF50'; // Shell green
+      break;
     default:
-      return (
-        <InsertDriveFileOutlinedIcon
-          fontSize="small"
-          sx={{ color: 'text.secondary' }}
-        />
-      );
+      // For unknown extensions, use the default icon and the passed-in color
+      IconComponent = InsertDriveFileOutlinedIcon;
+      iconColor = defaultColor;
+      break;
   }
+  return <IconComponent fontSize="small" sx={{ color: iconColor }} />;
 };
 
-const FileTreeItem: React.FC<FileTreeItemProps> = ({
-  fileEntry,
-  projectRoot,
-}) => {
-  const { expandedDirs, selectedFile } = useStore(fileTreeStore);
+const FileTreeItem: React.FC<FileTreeItemProps> = ({ fileEntry, projectRoot, onFileClick }) => {
+  const { selectedFile } = useStore(fileTreeStore); // Only need selectedFile here
   const theme = useTheme();
-  const isExpanded = expandedDirs.has(fileEntry.filePath);
+
+  // Using fileEntry.isOpen and fileEntry.isLoadingChildren directly from the entry
+  // as they are now managed within the hierarchical `files` array in fileTreeStore.
+  const isExpanded = fileEntry.isOpen; // `isOpen` in FileEntry is now the source of truth for expansion
+  const isLoadingChildren = fileEntry.isLoadingChildren; // `isLoadingChildren` in FileEntry
+
   const isSelected = selectedFile === fileEntry.filePath;
 
-  const handleToggleIconClick = (event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent the parent Box's onClick from firing
-    if (fileEntry.type === 'directory') {
-      toggleDirExpansion(fileEntry.filePath);
+  const handleToggleExpansion = (event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent ListItemButton click from firing
+    if (fileEntry.type === 'folder') {
+      toggleDirExpansion(fileEntry.filePath); // Call the store action to toggle/fetch
+    }
+  };
+
+  const handleSelectionClick = () => {
+    // If onFileClick is provided (e.g., from FileBrowserDialog), use it.
+    // Otherwise, for the main tree, set selectedFile and openedFile in the editor.
+    if (onFileClick) {
+      onFileClick(fileEntry.filePath);
     } else {
       setSelectedFile(fileEntry.filePath);
     }
   };
 
-  const handleItemClick = () => {
-    if (fileEntry.type === 'directory') {
-      toggleDirExpansion(fileEntry.filePath);
-    } else {
-      setSelectedFile(fileEntry.filePath);
-    }
-  };
-
+  // Adjust padding for indentation
+  // The ListItemButton itself has some padding, so we might need to reduce it
+  // or apply the depth padding to the outer container.
   const levelPadding = (fileEntry.depth || 0) * 16; // 16px per depth level
 
-  const textColor =
-    theme.palette.mode === 'dark'
-      ? theme.palette.grey[200]
-      : theme.palette.grey[800];
+  const textColor = isSelected ? theme.palette.primary.contrastText : theme.palette.text.primary;
   const selectedBgColor =
-    theme.palette.mode === 'dark'
-      ? theme.palette.primary.dark
-      : theme.palette.primary.light;
+    theme.palette.mode === 'dark' ? theme.palette.primary.dark : theme.palette.primary.light;
   const hoverBgColor =
-    theme.palette.mode === 'dark'
-      ? theme.palette.grey[800]
-      : theme.palette.grey[200];
+    theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[200];
 
   return (
-    <Box>
-      <Box
-        className="flex items-center cursor-pointer select-none rounded-md"
-        sx={{
-          minHeight: '28px',
-          paddingLeft: `${levelPadding}px`,
-          bgcolor: isSelected ? selectedBgColor : 'transparent',
-          '&:hover': {
-            bgcolor: isSelected ? selectedBgColor : hoverBgColor,
-          },
-          color: isSelected ? theme.palette.primary.contrastText : textColor,
-          transition: 'background-color 0.15s ease-in-out',
-        }}
-        onClick={handleItemClick}
-      >
-        {/* Fixed-width slot for expand/collapse icon or a spacing placeholder */}
-        <Box
-          sx={{
-            width: 24, // Consistent width for the toggle/placeholder area
-            height: 24,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          {fileEntry.type === 'directory' ? (
-            <IconButton
-              size="small"
-              onClick={handleToggleIconClick}
-              sx={{ color: isSelected ? 'inherit' : textColor, p: 0 }} // Reduce padding for compact size
-            >
-              {isExpanded ? (
-                <ExpandMoreIcon fontSize="inherit" />
-              ) : (
-                <ChevronRightIcon fontSize="inherit" />
-              )}
-            </IconButton>
-          ) : (
-            // Files get a spacer to align their icons/names with directories
-            <Box sx={{ width: 24, height: 24 }} />
-          )}
-        </Box>
-
-        {/* Fixed-width slot for file/folder type icon */}
-        <Box
-          sx={{
-            width: 20, // Consistent width for the file/folder icon
-            height: 20,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            mr: 0.5,
-            flexShrink: 0,
-          }}
-        >
-          {fileEntry.type === 'directory' ? (
-            isExpanded ? (
-              <FolderOpenIcon
-                fontSize="small"
-                sx={{
-                  color: isSelected ? 'inherit' : theme.palette.text.secondary,
-                }}
-              />
+    <Box sx={{ pl: `${levelPadding}px` }}>
+      {' '}
+      {/* Apply depth padding here */}
+      <Box className="flex items-center">
+        {fileEntry.type === 'folder' ? (
+          <IconButton
+            size="small"
+            onClick={handleToggleExpansion}
+            sx={{
+              width: 24, // Fixed width for alignment
+              height: 24,
+              flexShrink: 0,
+              mr: 0.5,
+              color: textColor, // Use text color for expand/collapse icon
+            }}
+          >
+            {isExpanded ? (
+              <ExpandMoreIcon fontSize="small" />
             ) : (
-              <FolderIcon
-                fontSize="small"
-                sx={{
-                  color: isSelected ? 'inherit' : theme.palette.text.secondary,
-                }}
-              />
-            )
-          ) : (
-            getFileIcon(fileEntry.name)
-          )}
-        </Box>
+              <ChevronRightIcon fontSize="small" />
+            )}
+          </IconButton>
+        ) : (
+          <Box sx={{ width: 24, height: 24, flexShrink: 0, mr: 0.5 }} /> 
+        )}
 
-        {/* File/Folder Name */}
-        <Typography
-          variant="body2"
+        <ListItemButton
+          onClick={handleSelectionClick}
+          selected={isSelected}
           sx={{
-            ml: 0.5,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
             flexGrow: 1,
+            py: 0.5, // Reduced vertical padding
+            pr: 1, // Reduced right padding
+            borderRadius: 1,
+            '&.Mui-selected': {
+              bgcolor: selectedBgColor,
+              color: textColor,
+              '&:hover': { bgcolor: selectedBgColor },
+            },
+            '&:hover': { bgcolor: hoverBgColor },
+            display: 'flex',
+            alignItems: 'center',
+            // Override default ListItemButton padding to make it flow from the expand/collapse icon
+            paddingLeft: '0', // No default padding, handled by parent Box
           }}
         >
-          {fileEntry.name}
-        </Typography>
+          {/* File/Folder Type Icon */}
+          <Box
+            sx={{
+              width: 20, // Consistent width for the file/folder icon
+              height: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mr: 0.5, // Margin after the icon
+              flexShrink: 0,
+            }}
+          >
+            {fileEntry.type === 'folder' ? (
+              isExpanded ? (
+                <FolderOpenIcon
+                  fontSize="small"
+                  sx={{ color: isSelected ? 'inherit' : theme.palette.text.secondary }}
+                />
+              ) : (
+                <FolderIcon
+                  fontSize="small"
+                  sx={{ color: isSelected ? 'inherit' : theme.palette.text.secondary }}
+                />
+              )
+            ) : (
+              getFileIconComponent(fileEntry.name, textColor)
+            )}
+          </Box>
+
+          {/* File/Folder Name */}
+          <Typography
+            variant="body2"
+            sx={{
+              ml: 0.5, // Margin after the icon
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              flexGrow: 1,
+              color: textColor, // Ensure text color is consistent with selection
+            }}
+          >
+            {fileEntry.name}
+          </Typography>
+        </ListItemButton>
       </Box>
-      {fileEntry.type === 'directory' && isExpanded && fileEntry.children && (
+      {fileEntry.type === 'folder' && isExpanded && (
         <Box sx={{ pl: 0 }}>
           {' '}
           {/* Children handle their own paddingLeft */}
-          {fileEntry.children.map((child) => (
-            <FileTreeItem
-              key={child.filePath}
-              fileEntry={child}
-              projectRoot={projectRoot}
-            />
-          ))}
+          {isLoadingChildren ? (
+            <Box
+              sx={{
+                ml: `${levelPadding + 24 + 16}px`, // Indent loading text beyond parent's padding + icon + spacer
+                py: 0.5,
+                display: 'flex',
+                alignItems: 'center',
+                color: theme.palette.text.secondary,
+              }}
+            >
+              <CircularProgress size={16} sx={{ mr: 1 }} />
+              <Typography variant="body2">Loading...</Typography>
+            </Box>
+          ) : fileEntry.children && fileEntry.children.length > 0 ? (
+            fileEntry.children.map((child) => (
+              <FileTreeItem
+                key={child.filePath}
+                fileEntry={child}
+                projectRoot={projectRoot}
+                onFileClick={onFileClick}
+              />
+            ))
+          ) : (
+            <Typography
+              variant="body2"
+              sx={{
+                ml: `${levelPadding + 24 + 16}px`, // Indent empty text beyond parent's padding + icon + spacer
+                py: 0.5,
+                color: theme.palette.text.secondary,
+                fontStyle: 'italic',
+              }}
+            >
+              (empty)
+            </Typography>
+          )}
         </Box>
       )}
     </Box>

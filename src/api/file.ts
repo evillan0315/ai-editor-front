@@ -1,6 +1,6 @@
 import { getToken } from '@/stores/authStore';
-import { FileEntry, FileContentResponse, BackendFileTreeNode, FlatApiFileEntry } from '@/types'; // Update import
-import { flattenFileTreeResponse } from '@/utils/fileUtils'; // Import helper
+import { BackendFileTreeNode, FlatApiFileEntry } from '@/types'; // Update import
+import { FileEntry } from '@/types/fileTree'; // Use FileEntry from fileTree.ts for frontend consumption
 
 const API_BASE_URL = `/api`;
 
@@ -29,31 +29,28 @@ const fetchWithAuth = async (url: string, options?: RequestInit) => {
 };
 
 /**
- * Fetches the project file structure from the backend using the /api/file/list endpoint.
- * Retrieves a recursive listing and then flattens it into a frontend-compatible FileEntry list.
- * @param projectRoot The root directory of the project.
+ * Fetches project file structure from the backend using the /api/file/list endpoint.
+ * When `recursive=false`, it retrieves only the immediate children of the specified directory.
+ * @param directory The directory for which to fetch immediate children. (was projectRoot)
  * @param _scanPaths The scanPaths are currently not used for file listing, but passed for API compatibility if needed.
- * @returns A promise that resolves to a flat list of FileEntry objects (from types/fileTree.ts).
+ * @returns A promise that resolves to a flat list of FileEntry objects for the immediate children.
  */
 export const fetchProjectFiles = async (
-  projectRoot: string,
+  directory: string,
   _scanPaths: string[], // Scan paths are primarily for AI context, not direct file listing for tree
 ): Promise<FileEntry[]> => {
-  // Updated return type to FileEntry from fileTree.ts
   try {
     const url = new URL(`${API_BASE_URL}/file/list`, window.location.origin);
-    url.searchParams.append('directory', projectRoot);
-    url.searchParams.append('recursive', 'true'); // Always request recursive list for full tree
+    url.searchParams.append('directory', directory);
+    url.searchParams.append('recursive', 'false'); // Set recursive to false for lazy loading
 
     const response = await fetchWithAuth(url.toString(), {
-      method: 'GET', // Change to GET
+      method: 'GET',
     });
 
-    // The API returns BackendFileTreeNode[], which is a recursive structure.
-    const recursiveTree = await handleResponse<BackendFileTreeNode[]>(response);
-
-    // Flatten the recursive tree into a flat list of FlatApiFileEntry (from index.ts)
-    const flatApiEntries: FlatApiFileEntry[] = flattenFileTreeResponse(recursiveTree);
+    // When recursive=false, the backend is expected to return a flat array of file entries.
+    // We'll treat this as FlatApiFileEntry[] for consistency and then map to frontend FileEntry[].
+    const flatApiEntries = await handleResponse<FlatApiFileEntry[]>(response);
 
     // Map FlatApiFileEntry[] to FileEntry[] (from fileTree.ts) for frontend consumption
     const frontendFileEntries: FileEntry[] = flatApiEntries.map((apiEntry) => ({
@@ -66,14 +63,14 @@ export const fetchProjectFiles = async (
       size: apiEntry.size,
       createdAt: apiEntry.createdAt,
       updatedAt: apiEntry.updatedAt,
-      // UI specific properties like children, collapsed, depth, relativePath
-      // will be added by buildFileTree or other frontend logic.
-      // For a flat list, we don't need them initialized here.
+      children: [], // Initialize children, they will be fetched on demand if folder
+      isOpen: false,
+      isLoadingChildren: false,
     }));
 
     return frontendFileEntries; // Return the frontend-compatible FileEntry array
   } catch (error) {
-    console.error('Error fetching project files:', error);
+    console.error(`Error fetching files for directory ${directory}:`, error);
     throw error;
   }
 };
@@ -85,7 +82,7 @@ export const readFileContent = async (filePath: string): Promise<string> => {
       method: 'POST',
       body: JSON.stringify({ filePath: filePath }),
     });
-    const data = await handleResponse<FileContentResponse>(response);
+    const data = await handleResponse<{ content: string }>(response);
 
     return data.content;
   } catch (error) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -26,7 +26,7 @@ import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutl
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import { useStore } from '@nanostores/react';
-import { fileTreeStore, fetchFiles } from '@/stores/fileTreeStore';
+import { fileTreeStore, fetchInitialFiles } from '@/stores/fileTreeStore'; // Updated import to fetchInitialFiles
 import { aiEditorStore } from '@/stores/aiEditorStore';
 import { FileEntry } from '@/types/fileTree';
 import * as path from 'path-browserify';
@@ -52,12 +52,14 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
   onSelect,
   currentScanPaths,
 }) => {
-  const { flatFileList, isFetchingTree, fetchTreeError } =
-    useStore(fileTreeStore);
+  const { flatFileList, isFetchingTree, fetchTreeError } = useStore(fileTreeStore);
   const { currentProjectPath, scanPathsInput } = useStore(aiEditorStore);
   const theme = useTheme();
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Ref to ensure selectedPaths are initialized only once when the dialog opens
+  const initialSelectionDone = useRef(false);
 
   useEffect(() => {
     if (open && currentProjectPath) {
@@ -65,24 +67,28 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean);
-      fetchFiles(currentProjectPath, parsedScanPaths);
+      fetchInitialFiles(currentProjectPath, parsedScanPaths); // Updated to fetchInitialFiles
     }
   }, [open, currentProjectPath, scanPathsInput]);
 
+  // Effect for initializing selectedPaths and resetting on close
   useEffect(() => {
-    // Initialize selected paths when dialog opens based on currentScanPaths
     if (open) {
-      setSelectedPaths(new Set(currentScanPaths));
+      if (!initialSelectionDone.current) {
+        // Only initialize if the dialog just opened for this session
+        setSelectedPaths(new Set(currentScanPaths));
+        initialSelectionDone.current = true;
+      }
+    } else {
+      // Dialog is closed or `open` is false, reset state
+      if (initialSelectionDone.current) {
+        setSelectedPaths(new Set());
+        setSearchTerm('');
+        initialSelectionDone.current = false;
+      }
     }
-    // Clear selection when dialog closes (handled by an implicit effect reset or specific close logic)
-    // No explicit else branch here as the onConfirm/onClose will trigger parent logic
-  }, [open, currentScanPaths]);
-
-  useEffect(() => {
-    if (!open) {
-      setSelectedPaths(new Set());
-      setSearchTerm('');
-    }
+    // Only 'open' is a dependency. `currentScanPaths` is read during the 'open' transition,
+    // but not explicitly a dependency that would trigger re-runs *while* open.
   }, [open]);
 
   const handleTogglePath = (fullPath: string) => {
@@ -118,20 +124,13 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
     return flatFileList
       .map((entry) => {
         const fullPath = entry.filePath.replace(/\\/g, '/');
-        const relativePath = fullPath.startsWith(normalizedProjectRoot + '/')
+        return fullPath.startsWith(normalizedProjectRoot + '/')
           ? fullPath.substring(normalizedProjectRoot.length + 1)
           : fullPath === normalizedProjectRoot
             ? '.'
             : fullPath; // Fallback for outside project or root itself
-
-        return {
-          ...entry,
-          relativePath,
-        };
       })
-      .filter(
-        (entry) => entry.relativePath !== '.' || entry.type === 'directory',
-      ); // Exclude root file item itself if it's a file
+      .filter((entry) => entry.relativePath !== '.' || entry.type === 'directory'); // Exclude root file item itself if it's a file
   }, [flatFileList, currentProjectPath]);
 
   const filteredFiles = React.useMemo(() => {
@@ -181,11 +180,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
           Select Files and Folders
         </Typography>
-        <IconButton
-          onClick={onClose}
-          size="small"
-          sx={{ color: theme.palette.text.secondary }}
-        >
+        <IconButton onClick={onClose} size="small" sx={{ color: theme.palette.text.secondary }}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -218,9 +213,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           sx={{ mb: 2 }}
           size="small"
         />
-        <Box
-          sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}
-        >
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}>
           <Button
             variant="outlined"
             size="small"
@@ -242,10 +235,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         {isFetchingTree ? (
           <Box className="flex justify-center items-center h-48">
             <CircularProgress size={24} />
-            <Typography
-              variant="body2"
-              sx={{ ml: 2, color: theme.palette.text.secondary }}
-            >
+            <Typography variant="body2" sx={{ ml: 2, color: theme.palette.text.secondary }}>
               Loading files...
             </Typography>
           </Box>
@@ -255,9 +245,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           </Alert>
         ) : filteredFiles.length === 0 ? (
           <Alert severity="info" sx={{ mt: 2 }}>
-            {searchTerm
-              ? 'No matching files found.'
-              : 'No files available in the project root.'}
+            {searchTerm ? 'No matching files found.' : 'No files available in the project root.'}
           </Alert>
         ) : (
           <List
@@ -310,17 +298,11 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           justifyContent: 'space-between',
         }}
       >
-        <Typography
-          variant="body2"
-          sx={{ color: theme.palette.text.secondary }}
-        >
+        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
           Selected: {selectedPaths.size}
         </Typography>
         <Box>
-          <Button
-            onClick={onClose}
-            sx={{ mr: 1, color: theme.palette.text.secondary }}
-          >
+          <Button onClick={onClose} sx={{ mr: 1, color: theme.palette.text.secondary }}>
             Cancel
           </Button>
           <Button
