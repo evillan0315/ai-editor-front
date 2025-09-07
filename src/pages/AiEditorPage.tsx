@@ -19,7 +19,8 @@ import { RequestType } from '@/types';
 import { APP_NAME } from '@/constants'; // Import APP_NAME
 
 const AiEditorPage: React.FC = () => {
-  const { error, currentProjectPath, lastLlmResponse } = useStore(aiEditorStore);
+  const { error, currentProjectPath, lastLlmResponse } =
+    useStore(aiEditorStore);
   const theme = useTheme();
   const [searchParams] = useSearchParams();
 
@@ -33,8 +34,12 @@ const AiEditorPage: React.FC = () => {
   // Handle requestType from URL query parameters
   useEffect(() => {
     const requestTypeParam = searchParams.get('requestType');
-    if (requestTypeParam && RequestType[requestTypeParam as keyof typeof RequestType]) {
-      const newRequestType = RequestType[requestTypeParam as keyof typeof RequestType];
+    if (
+      requestTypeParam &&
+      RequestType[requestTypeParam as keyof typeof RequestType]
+    ) {
+      const newRequestType =
+        RequestType[requestTypeParam as keyof typeof RequestType];
       // Only update if it's a new request type from the URL
       if (aiEditorStore.get().requestType !== newRequestType) {
         setRequestType(newRequestType);
@@ -45,23 +50,16 @@ const AiEditorPage: React.FC = () => {
       }
     }
     // If no requestType param, default to LLM_GENERATION
-    if (!requestTypeParam && aiEditorStore.get().requestType !== RequestType.LLM_GENERATION) {
+    if (
+      !requestTypeParam &&
+      aiEditorStore.get().requestType !== RequestType.LLM_GENERATION
+    ) {
       setRequestType(RequestType.LLM_GENERATION);
     }
   }, [searchParams]);
 
   return (
-    <Paper
-      elevation={3}
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%', // Take full height of parent <main>
-        bgcolor: theme.palette.background.paper, // Main page background
-        overflow: 'hidden', // Prevent page-level scrollbars unless absolutely necessary
-        position: 'relative', // Establish positioning context for absolutely positioned children
-      }}
-    >
+    <Box>
       {/* Top fixed content: Title, Description, Error */}
       <Box sx={{ p: { xs: 3, sm: 4 }, flexShrink: 0 }}>
         <Typography
@@ -74,8 +72,9 @@ const AiEditorPage: React.FC = () => {
           {APP_NAME} Editor
         </Typography>
         <Typography variant="body1" color="text.secondary" className="mb-4">
-          Provide instructions to the AI to generate or modify code in your project. Start by
-          loading your project, and optionally browse files from the tree.
+          Provide instructions to the AI to generate or modify code in your
+          project. Start by loading your project, and optionally browse files
+          from the tree.
         </Typography>
         {error && (
           <Alert severity="error" sx={{ mt: 3 }}>
@@ -85,47 +84,24 @@ const AiEditorPage: React.FC = () => {
       </Box>
 
       {/* Scrollable content area: FileTree and AI Response/Viewer */}
-      <Box
-        sx={{
-          flexGrow: 1, // Takes all available space
-          overflowY: 'auto', // Enables scrolling for this section
-          display: 'flex',
-          gap: 3, // Gap between file tree and content
-          px: { xs: 3, sm: 4 }, // Horizontal padding for content, responsive
-          pb: '350px', // Add padding at the bottom to ensure content isn't hidden behind the prompt generator
-        }}
-      >
+      <Box className="flex items-start justiify-between min-h-0 w-full px-4">
         {currentProjectPath && <FileTree projectRoot={currentProjectPath} />}
 
-        <Box
-          sx={{
-            flexGrow: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 3,
-            minHeight: 0, // Allow content to shrink if needed
-          }}
-        >
-          {lastLlmResponse ? <AiResponseDisplay /> : <OpenedFileViewer />}
-        </Box>
+        {lastLlmResponse ? <AiResponseDisplay /> : <OpenedFileViewer />}
       </Box>
 
       {/* Sticky PromptGenerator at the bottom */}
       <Box
+        className="h-auto fixed bottom-10 w-full p-6 mx-auto z-100" // Removed Tailwind border classes
         sx={{
-          position: 'absolute', // Position absolutely relative to the parent Paper
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 100, // Ensure it's above scrollable content
-          bgcolor: theme.palette.background.paper, // Match main page background
-          borderTop: `1px solid ${theme.palette.divider}`, // Visual separator
-          p: 2, // Internal padding for the PromptGenerator
+          borderTop: 1,
+          borderColor: theme.palette.divider,
+          bgcolor: theme.palette.background.default,
         }}
       >
         <PromptGenerator />
       </Box>
-    </Paper>
+    </Box>
   );
 };
 
