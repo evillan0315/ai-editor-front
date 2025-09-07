@@ -56,10 +56,7 @@ const getFileActionChipColor = (action: FileAction) => {
   }
 };
 
-const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
-  change,
-  index,
-}) => {
+const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({ change, index }) => {
   const {
     selectedChanges,
     currentDiff,
@@ -91,10 +88,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
 
     try {
       let diffContent: string;
-      const filePathToSend = getRelativePath(
-        change.filePath,
-        currentProjectPath,
-      );
+      const filePathToSend = getRelativePath(change.filePath, currentProjectPath);
 
       if (change.action === 'add') {
         diffContent = `--- /dev/null\n+++ a/${filePathToSend}\n@@ -0,0 +1,${change.newContent?.split('\n').length || 1} @@\n${change.newContent
@@ -111,10 +105,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
       setError(
         `Failed to get diff for ${change.filePath}: ${err instanceof Error ? err.message : String(err)}`,
       );
-      setCurrentDiff(
-        change.filePath,
-        `Error: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      setCurrentDiff(change.filePath, `Error: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -144,14 +135,17 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
   const commonDisabled = loading || applyingChanges;
 
   return (
-    <Paper
-      key={index}
-      elevation={2}
-      sx={{ p: 2, bgcolor: theme.palette.background.paper }}
-    >
-      <Accordion expanded={!!selectedChanges[change.filePath]}>
+    <Paper key={index} elevation={2} sx={{ p: 2, bgcolor: theme.palette.background.paper }}>
+      <Accordion
+        expanded={!!selectedChanges[change.filePath]}
+        // ADDED: onChange handler for the controlled Accordion to prevent re-render loop
+        onChange={() => {
+          // Toggling the Accordion should toggle the selection state
+          toggleSelectedChange(change);
+        }}
+      >
         <AccordionSummary
-          component="div" // 👈 prevents <button> nesting
+          component="div" // Keep component="div" to avoid nested button warning with Checkbox
           expandIcon={<ExpandMoreIcon />}
           sx={{
             '& .MuiAccordionSummary-content': {
@@ -162,11 +156,11 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
           <Checkbox
             checked={!!selectedChanges[change.filePath]}
             onChange={(e) => {
-              e.stopPropagation();
+              e.stopPropagation(); // Prevent Accordion's onChange from firing due to checkbox click
               toggleSelectedChange(change);
             }}
             disabled={commonDisabled}
-            onClick={(e) => e.stopPropagation()}
+            // REMOVED: Redundant onClick, onChange handles event propagation and toggling
           />
           <Chip
             label={change.action.toUpperCase()}
@@ -198,11 +192,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
                 },
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      size="small"
-                      onClick={handleSaveFilePath}
-                      disabled={commonDisabled}
-                    >
+                    <IconButton size="small" onClick={handleSaveFilePath} disabled={commonDisabled}>
                       <SaveIcon fontSize="small" />
                     </IconButton>
                     <IconButton
@@ -270,11 +260,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
         >
           {' '}
           {change.reason && (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ pl: 0, mb: 0 }}
-            >
+            <Typography variant="body2" color="text.secondary" sx={{ pl: 0, mb: 0 }}>
               Reason: {change.reason}
             </Typography>
           )}
@@ -291,9 +277,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
               </Typography>
               <CodeMirror
                 value={change.newContent || ''}
-                onChange={(value) =>
-                  updateProposedChangeContent(change.filePath, value)
-                }
+                onChange={(value) => updateProposedChangeContent(change.filePath, value)}
                 extensions={getCodeMirrorLanguage(change.filePath)}
                 editable={!commonDisabled}
                 theme={mode}
