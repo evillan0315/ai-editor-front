@@ -151,7 +151,11 @@ const Loading: React.FC<LoadingProps> = ({
                 key={i}
                 variant={skeletonVariant}
                 width={skeletonWidth}
-                height={i === 0 ? skeletonHeight * 1.5 : skeletonHeight} // Make first one slightly taller
+                height={
+                  i === 0 && typeof skeletonHeight === 'number'
+                    ? skeletonHeight * 1.5
+                    : skeletonHeight
+                } // Make first one slightly taller if skeletonHeight is a number
                 sx={{ mb: 1, bgcolor: theme.palette.action.selected }} // Use selected for a subtle background
               />
             ))}
@@ -172,7 +176,7 @@ const Loading: React.FC<LoadingProps> = ({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh',
+        minHeight: '100%', // Changed from '100vh' to '100%'
         width: '100%',
         bgcolor: theme.palette.background.default,
         color: theme.palette.text.primary,

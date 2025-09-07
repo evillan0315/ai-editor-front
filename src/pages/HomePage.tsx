@@ -57,7 +57,9 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
     >
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Icon sx={{ fontSize: 40, color: theme.palette.primary.main, mr: 2 }} />
+          <Icon
+            sx={{ fontSize: 40, color: theme.palette.primary.main, mr: 2 }}
+          />
           <Typography variant="h6" component="h3" sx={{ fontWeight: 'bold' }}>
             {title}
           </Typography>
@@ -107,7 +109,8 @@ const HomePage: React.FC = () => {
     },
     {
       title: 'Multi-Modal AI Input',
-      description: 'Upload files or paste Base64 image data to provide rich context to the AI.',
+      description:
+        'Upload files or paste Base64 image data to provide rich context to the AI.',
       icon: CloudUploadIcon,
       link: '/editor',
       linkText: 'Provide Context',
@@ -213,7 +216,7 @@ const HomePage: React.FC = () => {
         </Typography>
         <Grid container spacing={4} justifyContent="center">
           {features.map((feature, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
+            <Grid item xs={12} sm={6} md={4} key={index} component="div">
               <FeatureCard {...feature} />
             </Grid>
           ))}

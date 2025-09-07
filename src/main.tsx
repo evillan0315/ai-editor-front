@@ -32,6 +32,9 @@ const Root = () => {
           secondary: {
             main: mode === 'dark' ? '#f48fb1' : '#dc004e', // Example: light pink for dark, default pink for light
           },
+          error: {
+            main: mode === 'dark' ? '#ef9a9a' : '#d32f2f', // Example: light red for dark, default red for light
+          },
           background: {
             default: mode === 'dark' ? '#121212' : '#ffffff',
             paper: mode === 'dark' ? '#1d1d1d' : '#f4f4f4',

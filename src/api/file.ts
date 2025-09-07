@@ -76,15 +76,39 @@ export const fetchDirectoryContents = async (
 export const readFileContent = async (filePath: string): Promise<string> => {
   try {
     // Ensure the filePath is sent in the body for the POST request
-    const response = await fetchWithAuth(`${API_BASE_URL}/file/read`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/file/open`, {
       method: 'POST',
       body: JSON.stringify({ filePath: filePath }),
     });
-    const data = await handleResponse<FileContentResponse>(response);
+    const data = await handleResponse<{ filePath: string; content: string }>(
+      response,
+    );
 
     return data.content;
   } catch (error) {
     console.error(`Error reading file ${filePath}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Writes (updates) the content of a file at the specified path.
+ * @param filePath The absolute or relative path to the file.
+ * @param content The new content to write to the file.
+ * @returns A promise that resolves to indicate success.
+ */
+export const writeFileContent = async (
+  filePath: string,
+  content: string,
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/file/write`, {
+      method: 'POST',
+      body: JSON.stringify({ filePath, content }),
+    });
+    return handleResponse<{ success: boolean; message: string }>(response);
+  } catch (error) {
+    console.error(`Error writing file ${filePath}:`, error);
     throw error;
   }
 };

@@ -72,7 +72,15 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
 
       <Grid container spacing={2}>
         {mockGenres.map((genre) => (
-          <Grid item xs={12} sm={6} md={3} lg={2} key={genre.id}>
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            lg={2}
+            key={genre.id}
+            component="div"
+          >
             <Card
               sx={{
                 height: 120,

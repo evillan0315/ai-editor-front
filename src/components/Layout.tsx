@@ -8,6 +8,10 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 
+// Constants for layout
+const NAVBAR_HEIGHT = 64; // Approximate height of MUI AppBar
+const FOOTER_HEIGHT = 30; // Estimated height for the footer
+
 const Layout: React.FC = () => {
   const { loading: authLoading } = useStore(authStore);
   const theme = useTheme();
@@ -18,7 +22,7 @@ const Layout: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="h-screen flex flex-col overflow-hidden" // Changed to h-screen and added overflow-hidden
       style={{ backgroundColor: theme.palette.background.default }}
     >
       <Navbar />
@@ -27,12 +31,18 @@ const Layout: React.FC = () => {
           <LinearProgress />
         </Box>
       )}
-      <main className="flex-grow w-full flex flex-col overflow-hidden">
+      <main
+        className="flex-grow w-full flex flex-col overflow-auto"
+        style={{
+          height: `calc(100vh - ${NAVBAR_HEIGHT}px - ${FOOTER_HEIGHT}px)`,
+        }}
+      >
         <Outlet />
       </main>
       <footer
-        className="w-full text-center text-sm py-4 sticky bottom-0 z-100" // Added sticky bottom classes
+        className="w-full text-center text-sm py-1 sticky bottom-0 z-100"
         style={{
+          height: `${FOOTER_HEIGHT}px`, // Explicit height for footer
           color: theme.palette.text.secondary,
           backgroundColor: theme.palette.background.paper,
           borderTop: `1px solid ${theme.palette.divider}`, // Added a top border for visual separation

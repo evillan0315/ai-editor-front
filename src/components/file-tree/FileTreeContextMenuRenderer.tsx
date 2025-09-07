@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useStore } from '@nanostores/react';
-import { fileTreeContextMenu, hideFileTreeContextMenu } from '@/stores/contextMenuStore';
+import {
+  fileTreeContextMenu,
+  hideFileTreeContextMenu,
+} from '@/stores/contextMenuStore';
 import {
   Box,
   Paper,
@@ -24,11 +27,9 @@ export interface FileTreeContextMenuRendererProps {
   setSnackbarOpen: (open: boolean) => void;
 }
 
-export const FileTreeContextMenuRenderer: React.FC<FileTreeContextMenuRendererProps> = ({
-  setSnackbarMessage,
-  setSnackbarSeverity,
-  setSnackbarOpen,
-}) => {
+export const FileTreeContextMenuRenderer: React.FC<
+  FileTreeContextMenuRendererProps
+> = ({ setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen }) => {
   const state = useStore(fileTreeContextMenu);
   const menuRef = useRef<HTMLDivElement>(null);
   const theme = useTheme();
@@ -119,7 +120,10 @@ export const FileTreeContextMenuRenderer: React.FC<FileTreeContextMenuRendererPr
               bgcolor: theme.palette.action.hover,
             }}
           >
-            <Typography variant="subtitle2" sx={{ color: theme.palette.text.secondary, mb: 0.5 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{ color: theme.palette.text.secondary, mb: 0.5 }}
+            >
               {state.targetFile.type === 'folder' ? 'Folder' : 'File'}:
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -159,7 +163,12 @@ export const FileTreeContextMenuRenderer: React.FC<FileTreeContextMenuRendererPr
           <List component="nav" disablePadding>
             {state.items.map((item, idx) => {
               if (item.type === 'divider') {
-                return <Divider key={idx} sx={{ my: 0.5, borderColor: theme.palette.divider }} />;
+                return (
+                  <Divider
+                    key={idx}
+                    sx={{ my: 0.5, borderColor: theme.palette.divider }}
+                  />
+                );
               }
               if (item.type === 'header') return null; // Header handled separately above
 
@@ -189,7 +198,9 @@ export const FileTreeContextMenuRenderer: React.FC<FileTreeContextMenuRendererPr
                   className={item.className}
                 >
                   {item.icon && (
-                    <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>{item.icon}</ListItemIcon>
+                    <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
+                      {item.icon}
+                    </ListItemIcon>
                   )}
                   <ListItemText primary={item.label} />
                 </MenuItem>

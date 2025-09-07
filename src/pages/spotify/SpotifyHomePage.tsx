@@ -110,7 +110,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
       {/* Quick Picks / Recently Played */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {mockAlbums.slice(0, 4).map((album) => (
-          <Grid item xs={12} sm={6} md={3} key={album.id}>
+          <Grid item xs={12} sm={6} md={3} key={album.id} component="div">
             <Card
               sx={{
                 display: 'flex',
@@ -165,7 +165,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
       </Typography>
       <Grid container spacing={3}>
         {mockAlbums.map((album) => (
-          <Grid item xs={12} sm={6} md={2} key={album.id}>
+          <Grid item xs={12} sm={6} md={2} key={album.id} component="div">
             <Card
               sx={{
                 bgcolor: theme.palette.background.paper,
@@ -222,7 +222,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
       </Typography>
       <Grid container spacing={3}>
         {mockArtists.map((artist) => (
-          <Grid item xs={12} sm={6} md={2} key={artist.id}>
+          <Grid item xs={12} sm={6} md={2} key={artist.id} component="div">
             <Card
               sx={{
                 bgcolor: theme.palette.background.paper,

@@ -32,6 +32,8 @@ const Snackbar: React.FC<CustomSnackbarProps> = ({
       autoHideDuration={autoHideDuration}
       onClose={onClose}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      // Prevent interaction with elements behind the snackbar if it has an action button or similar
+      // onClick={onClose} // uncomment if clicking anywhere on snackbar should close it
     >
       <Alert
         onClose={onClose}

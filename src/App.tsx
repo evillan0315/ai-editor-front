@@ -13,6 +13,10 @@ const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const SpotifyAppPage = lazy(() => import('./pages/SpotifyAppPage')); // New: Spotify-like app page
 const TranslatorAppPage = lazy(() => import('./pages/TranslatorAppPage')); // New: Translator app page
+const GeminiLiveAudioPage = lazy(() => import('./pages/GeminiLiveAudioPage')); // New: Gemini Live Audio Page
+const PreviewAppPage = lazy(() => import('./pages/PreviewAppPage')); // New: Preview Built App Page
+const OrganizationPage = lazy(() => import('./pages/OrganizationPage')); // New: Organization Management Page
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage')); // New: Project Management Page
 
 function App() {
   return (
@@ -72,6 +76,42 @@ function App() {
             </Suspense>
           }
         />
+        {/* New route for Gemini Live Audio */}
+        <Route
+          path="/apps/gemini-live-audio"
+          element={
+            <Suspense fallback={<Loading />}>
+              <GeminiLiveAudioPage />
+            </Suspense>
+          }
+        />
+        {/* New route for Preview Built App */}
+        <Route
+          path="/apps/preview"
+          element={
+            <Suspense fallback={<Loading />}>
+              <PreviewAppPage />
+            </Suspense>
+          }
+        />
+        {/* New routes for Project Management */}
+        <Route
+          path="/organizations"
+          element={
+            <Suspense fallback={<Loading />}>
+              <OrganizationPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/organizations/:organizationId/projects"
+          element={
+            <Suspense fallback={<Loading />}>
+              <ProjectsPage />
+            </Suspense>
+          }
+        />
+
         <Route
           path="/login"
           element={

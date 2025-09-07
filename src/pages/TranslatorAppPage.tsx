@@ -15,8 +15,10 @@ import {
   InputLabel,
   IconButton,
   Tooltip,
-  Snackbar,
+  // Removed Snackbar from @mui/material
 } from '@mui/material';
+import MuiSnackbar from '@mui/material/Snackbar'; // Renamed to avoid conflict
+import MuiAlert from '@mui/material/Alert'; // Renamed to avoid conflict
 import TranslateIcon from '@mui/icons-material/Translate';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
@@ -36,8 +38,9 @@ import { FileUploaderDialog } from '@/components/dialogs';
 import { translateContent } from '@/api/translation';
 import { authStore } from '@/stores/authStore';
 import CodeMirror from '@uiw/react-codemirror';
-import { getCodeMirrorLanguage } from '@/utils';
+import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils';
 import { themeStore } from '@/stores/themeStore';
+import CustomSnackbar from '@/components/Snackbar'; // Import custom Snackbar
 
 const supportedLanguages = [
   { code: 'en', name: 'English' },
@@ -66,7 +69,7 @@ const supportedLanguages = [
 ];
 
 const TranslatorAppPage: React.FC = () => {
-  const theme = useTheme();
+  const muiTheme = useTheme(); // Get MUI theme
   const { mode } = useStore(themeStore);
   const { isLoggedIn } = useStore(authStore);
   const {
@@ -109,7 +112,7 @@ const TranslatorAppPage: React.FC = () => {
       const result = await translateContent({
         content: inputText,
         fileData: uploadedFileData,
-        fileName: uploadedFileName,
+        fileName: uploadedFileName, // Pass fileName to the translation API
         fileMimeType: uploadedFileMimeType,
         targetLanguage: targetLanguage,
       });
@@ -125,7 +128,7 @@ const TranslatorAppPage: React.FC = () => {
     isLoggedIn,
     inputText,
     uploadedFileData,
-    uploadedFileName,
+    uploadedFileName, // Added to dependencies
     uploadedFileMimeType,
     targetLanguage,
   ]);
@@ -163,8 +166,8 @@ const TranslatorAppPage: React.FC = () => {
         my: 4,
         maxWidth: '1200px',
         width: '100%',
-        bgcolor: theme.palette.background.paper,
-        color: theme.palette.text.primary,
+        bgcolor: muiTheme.palette.background.paper,
+        color: muiTheme.palette.text.primary,
         display: 'flex',
         flexDirection: 'column',
         gap: 3,
@@ -215,7 +218,7 @@ const TranslatorAppPage: React.FC = () => {
             fullWidth
             placeholder="Enter text here..."
             InputLabelProps={{ shrink: true }}
-            InputProps={{ style: { color: theme.palette.text.primary } }}
+            InputProps={{ style: { color: muiTheme.palette.text.primary } }}
             sx={{ flexGrow: 1 }}
           />
 
@@ -260,8 +263,8 @@ const TranslatorAppPage: React.FC = () => {
               value={targetLanguage}
               label="Target Language"
               onChange={(e) => setTargetLanguage(e.target.value as string)}
-              sx={{ color: theme.palette.text.primary }}
-              inputProps={{ sx: { color: theme.palette.text.primary } }}
+              sx={{ color: muiTheme.palette.text.primary }}
+              inputProps={{ sx: { color: muiTheme.palette.text.primary } }}
             >
               {supportedLanguages.map((lang) => (
                 <MenuItem key={lang.code} value={lang.name}>
@@ -330,14 +333,17 @@ const TranslatorAppPage: React.FC = () => {
         </Typography>
         <CodeMirror
           value={translatedContent || 'Translation will appear here...'}
-          extensions={getCodeMirrorLanguage(uploadedFileName || '.txt')} // Attempt to guess language for highlighting
+          extensions={[
+            getCodeMirrorLanguage(uploadedFileName || '.txt'), // Language extensions
+            createCodeMirrorTheme(muiTheme), // Add custom theme here
+          ]}
           theme={mode}
           editable={false}
           minHeight="200px"
           maxHeight="50vh"
           style={{
-            borderRadius: theme.shape.borderRadius + 'px',
-            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: muiTheme.shape.borderRadius + 'px',
+            border: `1px solid ${muiTheme.palette.divider}`,
             overflow: 'hidden',
             fontSize: '0.9rem',
           }}
@@ -347,12 +353,14 @@ const TranslatorAppPage: React.FC = () => {
       <FileUploaderDialog
         open={isFileUploaderOpen}
         onClose={() => setIsFileUploaderOpen(false)}
-        onUpload={(data, mimeType) => handleUploadFile(data, mimeType, null)} // fileName will be handled by dialog
+        onUpload={(data, mimeType, fileName) =>
+          handleUploadFile(data, mimeType, fileName)
+        } // Pass fileName
         currentUploadedFile={uploadedFileData}
         currentUploadedMimeType={uploadedFileMimeType}
       />
 
-      <Snackbar
+      <CustomSnackbar // Use the custom Snackbar component
         open={snackbarOpen}
         message={snackbarMessage}
         severity="success"

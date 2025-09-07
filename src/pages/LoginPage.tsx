@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useStore } from '@nanostores/react';
-import { authStore, loginSuccess, setError as setAuthError } from '@/stores/authStore';
+import {
+  authStore,
+  loginSuccess,
+  setError as setAuthError,
+} from '@/stores/authStore';
 import { loginLocal } from '@/services/authService';
 import { APP_NAME } from '@/constants'; // Import APP_NAME
 
@@ -116,7 +120,10 @@ const LoginPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="sm" className="flex justify-center items-center min-h-[50vh]">
+      <Container
+        maxWidth="sm"
+        className="flex justify-center items-center min-h-[50vh]"
+      >
         <CircularProgress />
       </Container>
     );
@@ -151,7 +158,11 @@ const LoginPage: React.FC = () => {
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleLocalLogin} sx={{ mt: 1, width: '100%' }}>
+        <Box
+          component="form"
+          onSubmit={handleLocalLogin}
+          sx={{ mt: 1, width: '100%' }}
+        >
           <TextField
             margin="normal"
             required
@@ -185,7 +196,11 @@ const LoginPage: React.FC = () => {
             sx={{ mt: 3, mb: 2, py: 1.5 }}
             disabled={loading || !email || !password}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Sign In'
+            )}
           </Button>
           <Link
             to="/register"
@@ -206,7 +221,10 @@ const LoginPage: React.FC = () => {
             '&::before, &::after': { borderColor: theme.palette.divider },
           }}
         >
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+          <Typography
+            variant="body2"
+            sx={{ color: theme.palette.text.secondary }}
+          >
             OR CONTINUE WITH
           </Typography>
         </Divider>

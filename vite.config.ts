@@ -17,23 +17,26 @@ export default defineConfig(({ mode }) => {
     build: {
       chunkSizeWarningLimit: 1000,
     },
+  preview: {
+    port: 4173, // Default preview server port
+  },
     server: {
-      port: 3001, // Port for ai-editor-front
+      port: 3001,
       proxy: {
         '/api': {
-          target: env.VITE_API_URL || 'http://localhost:3000', // Default to 3000 for backend
+          target: env.VITE_API_URL,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
 
         '/socket.io': {
-          target: env.VITE_API_URL || 'http://localhost:3000',
+          target: env.VITE_WS_URL,
           changeOrigin: true,
           ws: true,
         },
       },
       cors: {
-        origin: ['*'], // Adjust for production environments
+        origin: ['*'],
         methods: ['GET', 'POST', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
@@ -44,10 +47,7 @@ export default defineConfig(({ mode }) => {
       'process.env.NODE_ENV': JSON.stringify(mode),
       'import.meta.env.GITHUB_CALLBACK_URL': JSON.stringify(env.GITHUB_CALLBACK_URL),
       'import.meta.env.GOOGLE_CALLBACK_URL': JSON.stringify(env.GOOGLE_CALLBACK_URL),
-      'import.meta.env.VITE_FRONTEND_URL': JSON.stringify(
-        env.VITE_FRONTEND_URL || 'http://localhost:3001',
-      ),
-      'import.meta.env.VITE_BASE_DIR': JSON.stringify(env.VITE_BASE_DIR || ''),
+      'import.meta.env.FRONTEND_URL': JSON.stringify(env.VITE_FRONTEND_URL), // Add frontend URL for backend redirects
     },
   };
 });

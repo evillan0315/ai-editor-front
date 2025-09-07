@@ -31,7 +31,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import * as path from 'path-browserify';
-import { getRelativePath, getCodeMirrorLanguage } from '@/utils/index';
+import {
+  getRelativePath,
+  getCodeMirrorLanguage,
+  createCodeMirrorTheme,
+} from '@/utils/index'; // Import createCodeMirrorTheme
 import { themeStore } from '@/stores/themeStore';
 
 interface ProposedChangeCardProps {
@@ -68,7 +72,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
     applyingChanges,
     currentProjectPath,
   } = useStore(aiEditorStore);
-  const theme = useTheme();
+  const muiTheme = useTheme(); // Get MUI theme
   const { mode } = useStore(themeStore);
 
   const [isEditingFilePath, setIsEditingFilePath] = useState(false);
@@ -147,7 +151,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
     <Paper
       key={index}
       elevation={2}
-      sx={{ p: 2, bgcolor: theme.palette.background.paper }}
+      sx={{ p: 2, bgcolor: muiTheme.palette.background.paper }}
     >
       <Accordion expanded={!!selectedChanges[change.filePath]}>
         <AccordionSummary
@@ -192,7 +196,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
               }}
               InputProps={{
                 style: {
-                  color: theme.palette.text.primary,
+                  color: muiTheme.palette.text.primary,
                   fontSize: '0.875rem',
                   fontFamily: 'monospace',
                 },
@@ -222,7 +226,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
               sx={{
                 fontFamily: 'monospace',
                 flexGrow: 1,
-                color: theme.palette.text.primary,
+                color: muiTheme.palette.text.primary,
                 mr: 1,
               }}
             >
@@ -239,7 +243,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
                 setIsEditingFilePath(true);
               }}
               disabled={commonDisabled}
-              sx={{ color: theme.palette.text.secondary }}
+              sx={{ color: muiTheme.palette.text.secondary }}
             >
               <EditIcon fontSize="small" />
             </IconButton>
@@ -285,7 +289,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
               <Typography
                 variant="subtitle2"
                 gutterBottom
-                sx={{ color: theme.palette.text.primary }}
+                sx={{ color: muiTheme.palette.text.primary }}
               >
                 Proposed Content:
               </Typography>
@@ -294,11 +298,14 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
                 onChange={(value) =>
                   updateProposedChangeContent(change.filePath, value)
                 }
-                extensions={getCodeMirrorLanguage(change.filePath)}
+                extensions={[
+                  getCodeMirrorLanguage(change.filePath),
+                  createCodeMirrorTheme(muiTheme), // Add custom theme here
+                ]}
                 editable={!commonDisabled}
                 theme={mode}
-                minHeight="150px" // Provide a reasonable minimum height
-                maxHeight="400px" // Limit maximum height to prevent one editor from taking too much space
+                minHeight="150px"
+                maxHeight="400px"
               />
             </Box>
           )}
@@ -307,28 +314,31 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
               sx={{
                 mt: 2,
                 p: 0,
-                bgcolor: theme.palette.background.default,
+                bgcolor: muiTheme.palette.background.default,
                 borderRadius: 1,
                 overflow: 'hidden',
-                border: '1px solid ' + theme.palette.divider,
+                border: '1px solid ' + muiTheme.palette.divider,
               }}
             >
               <Typography
                 variant="subtitle2"
                 sx={{
                   fontFamily: 'monospace',
-                  color: theme.palette.text.primary,
-                  bgcolor: theme.palette.action.hover,
+                  color: muiTheme.palette.text.primary,
+                  bgcolor: muiTheme.palette.action.hover,
                   p: 1,
-                  borderBottom: '1px solid ' + theme.palette.divider,
+                  borderBottom: '1px solid ' + muiTheme.palette.divider,
                 }}
               >
                 Git Diff for: {diffFilePath}
               </Typography>
               <CodeMirror
                 value={currentDiff || ''}
-                extensions={getCodeMirrorLanguage('', true)} // Apply diff language extension
-                editable={false} // Diff view should be read-only
+                extensions={[
+                  getCodeMirrorLanguage('', true),
+                  createCodeMirrorTheme(muiTheme, true), // Add custom theme here, with diff view flag
+                ]}
+                editable={false}
                 theme={mode}
                 minHeight="200px"
                 maxHeight="500px"

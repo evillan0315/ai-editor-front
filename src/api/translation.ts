@@ -2,10 +2,10 @@ import { generateCode, LlmGeneratePayload } from './llm';
 import { RequestType } from '@/types';
 
 interface TranslateOptions {
-  content?: string; // Text content to translate
-  fileData?: string; // Base64 encoded file data
-  fileName?: string; // Name of the uploaded file
-  fileMimeType?: string; // Mime type of the uploaded file
+  content?: string | null; // Text content to translate
+  fileData?: string | null; // Base64 encoded file data
+  fileName?: string | null; // Name of the uploaded file
+  fileMimeType?: string | null; // Mime type of the uploaded file
   targetLanguage: string;
 }
 
@@ -32,12 +32,12 @@ export const translateContent = async (
     requestType = RequestType.TEXT_WITH_FILE;
     userPrompt = `Translate the following file content to ${targetLanguage}. Preserve formatting as much as possible, especially for structured data like JSON or code. The file name is '${fileName}'.`;
     if (content) {
-      userPrompt += `\nAdditional text context: ${content}`; // Add optional text context if both provided
+      userPrompt += `\nAdditional text context: ${content}`;
     }
   } else if (content) {
     // If only text content, use LLM_GENERATION (default text input)
     requestType = RequestType.LLM_GENERATION;
-    userPrompt = `Translate the following text to ${targetLanguage}:\n\n${content}`; // Ensure explicit instruction for text translation
+    userPrompt = `Translate the following text to ${targetLanguage}:\n\n${content}`;
   } else {
     throw new Error(
       'Invalid translation request: No content or file data provided.',
@@ -49,8 +49,8 @@ export const translateContent = async (
     projectRoot: '.', // Not strictly needed for translation but required by payload, use current working dir or similar.
     projectStructure: '', // Not relevant for this task
     relevantFiles: [], // Not relevant for this task
-    additionalInstructions: `You are an expert translator. Provide only the translated content. Do not include any conversational filler, explanations, or JSON wrappers unless the original content was already in JSON format.`, // Specific instructions for translation output
-    expectedOutputFormat: `The translated text in ${targetLanguage}. If the input was a file, maintain its structure.`, // General expected format
+    additionalInstructions: `You are an expert translator. Provide only the translated content. Do not include any conversational filler, explanations, or JSON wrappers unless the original content was already in JSON format.`,
+    expectedOutputFormat: `The translated text in ${targetLanguage}. If the input was a file, maintain its structure.`,
     scanPaths: [], // No project file scanning needed for this task
     requestType: requestType,
     ...(fileData && { fileData: fileData }),

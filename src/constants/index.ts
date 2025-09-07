@@ -1,5 +1,6 @@
 export const APP_NAME = 'Project Board';
-export const APP_DESCRIPTION = 'Your AI-Powered Development Partner to manage and build projects.';
+export const APP_DESCRIPTION =
+  'Your AI-Powered Development Partner to manage and build projects.';
 export const APP_VERSION = '1.0.0';
 export const APP_URL = 'http://localhost:3001';
 
@@ -28,11 +29,12 @@ export const INSTRUCTION = `
   Output Rules:
   - The response MUST consist solely of a single JSON object — no explanations or extra text outside it.  
   - The JSON must strictly validate against the schema provided.  
-  - The response MUST be a single JSON object that validates against this JSON Schema:
   - If you applied changes, also provide relevant \`git\` commands for staging and committing, e.g., \`git add .\`, \`git commit -m "feat: your commit message"\`.
 `.replace(/^\s+/gm, '');
 
 export const ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT = `
+  The response MUST be a single JSON object that validates against this JSON Schema:
+  
   {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
@@ -118,7 +120,7 @@ export const ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT = `
       {
         "filePath": "src/components/Navbar.tsx",
         "action": "modify",
-        "newContent": "import React from 'react';\\nimport { Link } from 'react-router-dom';\\nimport { useStore } = '@nanostores/react';\\nimport { authStore } from '../auth/authStore';\\n\\nfunction Navbar() {\\n  const $auth = useStore(authStore);\\n  return (\\n    <nav className='bg-blue-500 p-4 text-white flex justify-between'>\\n      <Link to='/' className='font-bold text-lg'>My App</Link>\\n      <div>\\n        {$auth.isLoggedIn ? (\\n          <button onClick={() => authStore.setKey('isLoggedIn', false)} className='ml-4'>Logout</button>\\n        ) : (\\n          <>\\n            <Link to='/login' className='ml-4'>Login</Link>\\n            <Link to='/signup' className='ml-4'>Signup</Link>\\n          </>\\n        )}\\n      </div>\\n    </nav>\\n  );\\n}\\nexport default Navbar;",
+        "newContent": "import React from 'react';\\nimport { Link } = 'react-router-dom';\\nimport { useStore } = '@nanostores/react';\\nimport { authStore } from '../auth/authStore';\\n\\nfunction Navbar() {\\n  const $auth = useStore(authStore);\\n  return (\\n    <nav className='bg-blue-500 p-4 text-white flex justify-between'>\\n      <Link to='/' className='font-bold text-lg'>My App</Link>\\n      <div>\\n        {$auth.isLoggedIn ? (\\n          <button onClick={() => authStore.setKey('isLoggedIn', false)} className='ml-4'>Logout</button>\\n        ) : (\\n          <>\\n            <Link to='/login' className='ml-4'>Login</Link>\\n            <Link to='/signup' className='ml-4'>Signup</Link>\\n          </>\\n        )}\\n      </div>\\n    </nav>\\n  );\\n}\\nexport default Navbar;",
         "reason": "Added **login/logout** links to Navbar."
       },
       {
@@ -169,3 +171,6 @@ export interface ModelResponse {
   changes: FileChange[]; // List of file operations
   gitInstructions?: string[]; // Optional git commands to execute after applying changes
 }
+export * from './yaml-instruction';
+export * from './markdown-instruction';
+export * from './text-instruction';

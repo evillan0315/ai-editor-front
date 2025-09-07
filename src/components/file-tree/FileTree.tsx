@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useStore } from '@nanostores/react';
 import {
   Box,
   Typography,
@@ -7,14 +8,21 @@ import {
   Paper,
   IconButton,
   useTheme,
+  Chip, // New: Import Chip for dirty file indicator
 } from '@mui/material';
 import FileTreeItem from './FileTreeItem';
-import { useStore } from '@nanostores/react';
-import { fileTreeStore, loadInitialTree, clearFileTree } from '@/stores/fileTreeStore';
+import {
+  fileTreeStore,
+  loadInitialTree,
+  clearFileTree,
+} from '@/stores/fileTreeStore';
 import { aiEditorStore } from '@/stores/aiEditorStore';
 import { FileEntry } from '@/types/fileTree';
 import { ContextMenuItem } from '@/types';
-import { showFileTreeContextMenu, hideFileTreeContextMenu } from '@/stores/contextMenuStore';
+import {
+  showFileTreeContextMenu,
+  hideFileTreeContextMenu,
+} from '@/stores/contextMenuStore';
 import {
   ContentCopy as ContentCopyIcon,
   Edit as EditIcon,
@@ -37,19 +45,28 @@ interface FileTreeProps {
 }
 
 const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
-  const { files: treeFiles, isFetchingTree, fetchTreeError } = useStore(fileTreeStore);
+  const {
+    files: treeFiles,
+    isFetchingTree,
+    fetchTreeError,
+  } = useStore(fileTreeStore);
   const { scanPathsInput } = useStore(aiEditorStore);
   const theme = useTheme();
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info'>('info');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    'success' | 'error' | 'info'
+  >('info');
 
-  const showSnackbar = useCallback((message: string, severity: 'success' | 'error' | 'info') => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setSnackbarOpen(true);
-  }, []);
+  const showSnackbar = useCallback(
+    (message: string, severity: 'success' | 'error' | 'info') => {
+      setSnackbarMessage(message);
+      setSnackbarSeverity(severity);
+      setSnackbarOpen(true);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (projectRoot) {
@@ -119,21 +136,33 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
           // Rename
           label: 'Rename...',
           icon: <EditIcon fontSize="small" />,
-          action: () => showSnackbar('Rename feature coming soon. Requires backend API.', 'info'),
+          action: () =>
+            showSnackbar(
+              'Rename feature coming soon. Requires backend API.',
+              'info',
+            ),
           disabled: true,
         },
         {
           // Copy
           label: 'Copy...',
           icon: <FileCopyIcon fontSize="small" />,
-          action: () => showSnackbar('Copy feature coming soon. Requires backend API.', 'info'),
+          action: () =>
+            showSnackbar(
+              'Copy feature coming soon. Requires backend API.',
+              'info',
+            ),
           disabled: true,
         },
         {
           // Move
           label: 'Move...',
           icon: <DriveFileMoveIcon fontSize="small" />,
-          action: () => showSnackbar('Move feature coming soon. Requires backend API.', 'info'),
+          action: () =>
+            showSnackbar(
+              'Move feature coming soon. Requires backend API.',
+              'info',
+            ),
           disabled: true,
         },
         { type: 'divider' },
@@ -151,7 +180,10 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
           label: 'Open Terminal Here',
           icon: <TerminalIcon fontSize="small" />,
           action: (file) =>
-            showSnackbar(`Open Terminal in ${file.path} feature coming soon.`, 'info'),
+            showSnackbar(
+              `Open Terminal in ${file.path} feature coming soon.`,
+              'info',
+            ),
           disabled: true,
         },
         { type: 'divider' },
@@ -159,7 +191,11 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
           // Delete
           label: `Delete ${isFile ? 'File' : 'Folder'}...`,
           icon: <DeleteIcon fontSize="small" />,
-          action: () => showSnackbar('Delete feature coming soon. Requires backend API.', 'info'),
+          action: () =>
+            showSnackbar(
+              'Delete feature coming soon. Requires backend API.',
+              'info',
+            ),
           disabled: true,
           className: '!text-red-500 hover:!bg-red-900/50', // Tailwind class for red text
         },
@@ -232,7 +268,10 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
       {isFetchingTree ? (
         <Box className="flex justify-center items-center flex-grow">
           <CircularProgress size={24} />
-          <Typography variant="body2" sx={{ ml: 2, color: theme.palette.text.secondary }}>
+          <Typography
+            variant="body2"
+            sx={{ ml: 2, color: theme.palette.text.secondary }}
+          >
             Loading files...
           </Typography>
         </Box>

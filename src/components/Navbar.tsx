@@ -48,7 +48,9 @@ const Navbar: React.FC = () => {
   >({});
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info'>('info');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    'success' | 'error' | 'info'
+  >('info');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
 
@@ -79,7 +81,10 @@ const Navbar: React.FC = () => {
     navigate('/login');
   };
 
-  const handleRunScript = async (scriptName: string, rawScriptContent: string) => {
+  const handleRunScript = async (
+    scriptName: string,
+    rawScriptContent: string,
+  ) => {
     if (!currentProjectPath) {
       setSnackbarMessage('Error: Project root not set.');
       setSnackbarSeverity('error');
@@ -106,16 +111,21 @@ const Navbar: React.FC = () => {
       ...prev,
       [scriptName]: {
         status: ScriptStatus.RUNNING,
-        message: 'Running...',
+        message: 'Running...', // Keep message concise
         output: null,
       },
     }));
-    setSnackbarMessage(`Running '${scriptName}' with ${packageManagerPrefix}...`);
+    setSnackbarMessage(
+      `Running '${scriptName}' with ${packageManagerPrefix}...`,
+    );
     setSnackbarSeverity('info');
     setSnackbarOpen(true);
 
     try {
-      const result = await runTerminalCommand(commandToExecute, currentProjectPath);
+      const result = await runTerminalCommand(
+        commandToExecute,
+        currentProjectPath,
+      );
       if (result.exitCode === 0) {
         setScriptExecutionStatus((prev) => ({
           ...prev,
@@ -128,7 +138,8 @@ const Navbar: React.FC = () => {
         setSnackbarMessage(`'${scriptName}' executed successfully!`);
         setSnackbarSeverity('success');
       } else {
-        const errorMessage = result.stderr || `Command exited with code ${result.exitCode}.`;
+        const errorMessage =
+          result.stderr || `Command exited with code ${result.exitCode}.`;
         setScriptExecutionStatus((prev) => ({
           ...prev,
           [scriptName]: {
@@ -226,11 +237,23 @@ const Navbar: React.FC = () => {
             >
               Apps
             </Button>
+            {/* New: Organizations Link */}
+            <Button
+              color="inherit"
+              component={Link}
+              to="/organizations"
+              sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
+            >
+              Organizations
+            </Button>
           </Box>
 
           <Box className="flex gap-1">
             {scriptsLoading ? (
-              <CircularProgress size={20} sx={{ color: theme.palette.text.secondary }} />
+              <CircularProgress
+                size={20}
+                sx={{ color: theme.palette.text.secondary }}
+              />
             ) : (
               <Button
                 id="run-scripts-button"
@@ -241,7 +264,11 @@ const Navbar: React.FC = () => {
                 variant="text"
                 color="inherit"
                 size="small"
-                disabled={!currentProjectPath || packageScripts.length === 0 || isAnyScriptRunning}
+                disabled={
+                  !currentProjectPath ||
+                  packageScripts.length === 0 ||
+                  isAnyScriptRunning
+                }
                 sx={{
                   color: theme.palette.text.primary,
                   '&:hover': {
@@ -280,12 +307,19 @@ const Navbar: React.FC = () => {
                       handleRunScript(scriptName, rawScriptContent);
                       handleMenuClose();
                     }}
-                    status={scriptExecutionStatus[script.name]?.status || ScriptStatus.IDLE}
+                    status={
+                      scriptExecutionStatus[script.name]?.status ||
+                      ScriptStatus.IDLE
+                    }
                     disabled={isAnyScriptRunning} // Disable all other scripts if one is running
                   />
                 ))
               ) : (
-                <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ p: 2 }}
+                >
                   No scripts found.
                 </Typography>
               )}
@@ -296,7 +330,10 @@ const Navbar: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <ThemeToggle />
           {authLoading ? (
-            <CircularProgress size={24} sx={{ color: theme.palette.text.primary }} />
+            <CircularProgress
+              size={24}
+              sx={{ color: theme.palette.text.primary }}
+            />
           ) : isLoggedIn ? (
             <>
               <AccountCircle sx={{ color: theme.palette.text.primary }} />

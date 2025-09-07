@@ -1,111 +1,153 @@
-# 💡 State Management with Nanostores
+# 🧠 State Management with Nanostores
 
-This document describes the state management strategy employed in the AI Editor Frontend, which utilizes [Nanostores](https://nanostores.github.io/). Nanostores is a small, fast, and unopinionated state manager that leverages atomic stores and reactive updates.
+The Project Board Frontend utilizes [Nanostores](https://nanostores.github.io/) for centralized, reactive global state management. Nanostores are lightweight, framework-agnostic stores that provide a simple yet powerful way to manage application state.
 
-## 🌟 Why Nanostores?
+Each major domain or feature in the application has its own dedicated Nanostore, promoting modularity, clear ownership of data, and separation of concerns.
 
-- **Simplicity**: Minimal API, easy to learn and use.
-- **Performance**: Optimized for reactivity and avoiding unnecessary re-renders.
-- **Flexibility**: Works well with React (via `@nanostores/react`) and other frameworks.
-- **TypeScript-first**: Excellent TypeScript support for fully type-safe state.
-- **Atomic Updates**: Each piece of state can be managed independently, making updates precise and predictable.
+## Core Principles
 
-## 🏛️ Core Principles
+*   **Atomic Stores**: Each store manages a specific slice of the application state.
+*   **Read-Only State**: Stores expose their state as read-only, ensuring that state changes only occur through defined actions.
+*   **Explicit Actions**: State mutations are handled by explicit functions (actions) associated with each store, making state changes predictable and traceable.
+*   **React Integration**: The `@nanostores/react` library is used to integrate Nanostores with React components, allowing components to efficiently subscribe to and re-render only when the relevant parts of the state change.
 
-1.  **Centralized Stores**: Global application state is held in distinct Nanostore instances (`map` stores for complex objects, `atom` stores for single values).
-2.  **Explicit Actions**: State mutations are performed through dedicated functions (actions) that interact with the stores, ensuring predictable state transitions.
-3.  **Reactive UI**: React components subscribe to relevant parts of the state using the `useStore` hook from `@nanostores/react`, re-rendering only when the subscribed state changes.
+## Key Nanostores
 
-## 📦 Key Stores
+Here's an overview of the main Nanostores used in the application:
 
-The application's state is organized into several distinct Nanostores, each responsible for a specific domain.
+### 1. `authStore` (`stores/authStore.ts`)
 
-### 🔒 `authStore` (`src/stores/authStore.ts`)
+Manages user authentication state.
 
-Manages all authentication-related state.
+*   **State**:
+    *   `isLoggedIn: boolean`: Indicates if a user is currently logged in.
+    *   `user: UserProfile | null`: Contains user details (id, email, name, role, provider).
+    *   `loading: boolean`: Tracks if authentication status is being loaded (e.g., on app start or during login/logout).
+    *   `error: string | null`: Stores any authentication-related error messages.
+*   **Actions**: `loginSuccess`, `logout`, `setLoading`, `setError`, `getToken`.
+*   **Purpose**: Provides global access to the current user's authentication status and profile.
 
-- **State**: `isLoggedIn` (boolean), `user` (UserProfile | null), `loading` (boolean, for auth operations), `error` (string | null).
-- **Actions**: `loginSuccess`, `logout`, `setLoading`, `setError`.
-- **Usage**: Components like `Navbar`, `LoginPage`, `RegisterPage`, and `AuthCallback` consume and update this store.
+### 2. `aiEditorStore` (`stores/aiEditorStore.ts`)
 
-### 🤖 `aiEditorStore` (`src/stores/aiEditorStore.ts`)
+Manages the state for the AI Code Editor page. This is one of the most comprehensive stores.
 
-Handles all state related to the core AI code editing functionality.
+*   **State**:
+    *   `instruction: string`: The user's primary prompt for the AI.
+    *   `aiInstruction: string`: The editable system instruction provided to the AI.
+    *   `expectedOutputInstruction: string`: The editable instruction for the AI's expected output format.
+    *   `requestType: RequestType`: The type of AI request being made (e.g., `LLM_GENERATION`, `TEXT_WITH_IMAGE`).
+    *   `llmOutputFormat: LlmOutputFormat`: The desired output format from the LLM (e.g., `JSON`, `YAML`, `MARKDOWN`, `TEXT`).
+    *   `uploadedFileData: string | null`: Base64 content of an uploaded file/image for AI context.
+    *   `uploadedFileName: string | null`: Name of the uploaded file/image.
+    *   `uploadedFileMimeType: string | null`: MIME type of the uploaded file/image.
+    *   `currentProjectPath: string | null`: The root path of the project currently loaded in the editor.
+    *   `loading: boolean`: Indicates if the AI is processing a request.
+    *   `error: string | null`: Stores any AI-related error messages.
+    *   `scanPathsInput: string`: Comma-separated string of paths for AI to scan for context.
+    *   `lastLlmResponse: ModelResponse | null`: Stores the full structured response from the last AI generation.
+    *   `selectedChanges: Record<string, FileChange>`: A map of selected proposed file changes by their `filePath`.
+    *   `currentDiff: string | null`: The content of the git diff for the currently viewed file.
+    *   `diffFilePath: string | null`: The `filePath` of the file whose diff is currently displayed.
+    *   `applyingChanges: boolean`: Tracks if changes are being applied to the file system.
+    *   `appliedMessages: string[]`: Messages from the backend after applying changes.
+    *   `gitInstructions: string[] | null`: Optional git commands suggested by the LLM.
+    *   `runningGitCommandIndex: number | null`: Index of the git command currently being executed from `gitInstructions`.
+    *   `commandExecutionOutput: TerminalCommandResponse | null`: Output of the last executed git command.
+    *   `commandExecutionError: string | null`: Error from the last executed git command.
+    *   `openedFile: string | null`: Path of the file currently opened in the right editor panel.
+    *   `openedFileContent: string | null`: Content of the file currently opened.
+    *   `isFetchingFileContent: boolean`: Loading state for fetching `openedFileContent`.
+    *   `fetchFileContentError: string | null`: Error state for fetching `openedFileContent`.
+    *   `autoApplyChanges: boolean`: Flag to automatically apply changes after generation.
+*   **Actions**: `setInstruction`, `setAiInstruction`, `setExpectedOutputInstruction`, `setRequestType`, `setLlmOutputFormat`, `setUploadedFile`, `setResponse`, `setLoading`, `setError`, `clearState`, `setScanPathsInput`, `setLastLlmResponse`, `toggleSelectedChange`, `selectAllChanges`, `deselectAllChanges`, `setCurrentDiff`, `clearDiff`, `setApplyingChanges`, `setAppliedMessages`, `updateProposedChangeContent`, `updateProposedChangePath`, `setOpenedFile`, `setOpenedFileContent`, `setIsFetchingFileContent`, `setFetchFileContentError`, `setRunningGitCommandIndex`, `setCommandExecutionOutput`, `setCommandExecutionError`, `setAutoApplyChanges`, `applyAllProposedChanges`.
+*   **Purpose**: Manages all dynamic state related to the AI interaction, file tree, file viewing, and change application within the editor.
 
-- **State**:
-  - `instruction` (string): The user's main prompt.
-  - `aiInstruction` (string): Customizable system instructions for the AI.
-  - `expectedOutputInstruction` (string): Customizable JSON schema for AI output.
-  - `requestType` (RequestType): The selected mode for AI interaction (e.g., `TEXT_ONLY`, `LLM_GENERATION`).
-  - `uploadedFileData`, `uploadedFileMimeType` (string | null): For multi-modal inputs.
-  - `currentProjectPath` (string | null): The root directory of the project being edited.
-  - `lastLlmResponse` (ModelResponse | null): The full structured response from the AI.
-  - `selectedChanges` (Record<string, FileChange>): A map of selected AI-proposed file changes.
-  - `currentDiff`, `diffFilePath` (string | null): For displaying Git diffs.
-  - `loading`, `error`, `applyingChanges`, `appliedMessages` (boolean/string[]).
-  - `gitInstructions` (string[] | null), `runningGitCommandIndex`, `commandExecutionOutput`, `commandExecutionError`: For Git command execution within the UI.
-  - `openedFile`, `openedFileContent`, `isFetchingFileContent`, `fetchFileContentError`: For viewing files from the file tree.
-  - `autoApplyChanges` (boolean): Option to automatically apply changes after AI generation.
-- **Actions**: `setInstruction`, `setAiInstruction`, `setExpectedOutputInstruction`, `setRequestType`, `setUploadedFile`, `setLoading`, `setError`, `clearState`, `setScanPathsInput`, `setLastLlmResponse`, `toggleSelectedChange`, `selectAllChanges`, `deselectAllChanges`, `setCurrentDiff`, `clearDiff`, `setApplyingChanges`, `setAppliedMessages`, `updateProposedChangeContent`, `updateProposedChangePath`, `setOpenedFile`, `setOpenedFileContent`, `setIsFetchingFileContent`, `setFetchFileContentError`, `setRunningGitCommandIndex`, `setCommandExecutionOutput`, `setCommandExecutionError`, `setAutoApplyChanges`, `applyAllProposedChanges`.
-- **Usage**: Primarily used by `AiEditorPage`, `PromptGenerator`, `AiResponseDisplay`, `ProposedChangeCard`, and `OpenedFileViewer`.
+### 3. `fileTreeStore` (`stores/fileTreeStore.ts`)
 
-### 🌳 `fileTreeStore` (`src/stores/fileTreeStore.ts`)
+Manages the state of the interactive file tree.
 
-Manages the interactive file tree state.
+*   **State**:
+    *   `files: FileEntry[]`: The hierarchical file tree structure.
+    *   `flatFileList: ApiFileScanResult[]`: A flat list of all relevant files for AI context.
+    *   `expandedDirs: Set<string>`: A set of paths for currently expanded directories.
+    *   `selectedFile: string | null`: The path of the currently selected file in the tree.
+    *   `isFetchingTree: boolean`: Indicates if the initial file tree is being fetched.
+    *   `fetchTreeError: string | null`: Stores any errors during file tree fetching.
+    *   `lastFetchedProjectRoot: string | null`: The project root path for which the tree was last fetched.
+    *   `lastFetchedScanPaths: string[]`: The scan paths used for the last AI context fetch.
+    *   `loadingChildren: Set<string>`: A set of paths for directories whose children are currently being loaded.
+*   **Actions**: `setFiles`, `toggleDirExpansion`, `setSelectedFile`, `loadInitialTree`, `loadChildrenForDirectory`, `clearFileTree`.
+*   **Purpose**: Provides the data and logic for rendering and interacting with the project's file and folder structure.
 
-- **State**:
-  - `files` (FileEntry[]): The hierarchical representation of the project's file structure.
-  - `flatFileList` (ApiFileScanResult[]): A flattened list of all scanned files, primarily for AI context.
-  - `expandedDirs` (Set<string>): Stores the paths of currently expanded directories.
-  - `selectedFile` (string | null): The path of the currently selected file.
-  - `isFetchingTree`, `fetchTreeError` (boolean/string | null): For loading status.
-  - `lastFetchedProjectRoot`, `lastFetchedScanPaths` (string | null / string[]).
-  - `loadingChildren` (Set<string>): Tracks which directories are currently fetching their children.
-- **Actions**: `setFiles`, `toggleDirExpansion`, `setSelectedFile`, `loadInitialTree`, `loadChildrenForDirectory`, `clearFileTree`.
-- **Usage**: `FileTree`, `FileTreeItem`, and `FilePickerDialog` interact with this store.
+### 4. `themeStore` (`stores/themeStore.ts`)
 
-### 🎨 `themeStore` (`src/stores/themeStore.ts`)
+Manages the application's theme mode.
 
-Manages the application's UI theme (light/dark mode).
+*   **State**:
+    *   `mode: 'light' | 'dark'`: The current theme mode.
+*   **Actions**: `toggleTheme`, `setTheme`.
+*   **Purpose**: Allows users to switch between light and dark themes, persisting the preference in local storage.
 
-- **State**: `mode` ('light' | 'dark').
-- **Actions**: `toggleTheme`, `setTheme`.
-- **Usage**: `ThemeToggle` component and `main.tsx` (to apply Tailwind dark class) interact with this store.
-
-### 🎵 `spotifyStore` (`src/stores/spotifyStore.ts`)
+### 5. `spotifyStore` (`stores/spotifyStore.ts`)
 
 Manages the state for the Spotify-like music player application.
 
-- **State**: `currentTrack`, `isPlaying`, `progress`, `volume`, `shuffle`, `repeat`, `playlist`, `loading`, `error`.
-- **Actions**: `setCurrentTrack`, `togglePlayPause`, `setPlaybackProgress`, `setVolume`, `toggleShuffle`, `toggleRepeat`, `setLoading`, `setError`.
-- **Usage**: Components within `src/pages/spotify/` consume and update this store.
+*   **State**:
+    *   `currentTrack: object | null`: Details of the currently playing track.
+    *   `isPlaying: boolean`: Playback status.
+    *   `progress: number`: Current playback progress in seconds.
+    *   `volume: number`: Volume level (0-100).
+    *   `shuffle: boolean`: Shuffle mode status.
+    *   `repeat: 'off' | 'track' | 'context'`: Repeat mode status.
+    *   `playlist: any[]`: Current playlist or queue.
+    *   `loading: boolean`: Loading state for music operations.
+    *   `error: string | null`: Error messages.
+*   **Actions**: `setCurrentTrack`, `togglePlayPause`, `setPlaybackProgress`, `setVolume`, `toggleShuffle`, `toggleRepeat`, `setLoading`, `setError`.
+*   **Purpose**: Simulates a music player's playback and queue state.
 
-### 🌍 `translatorStore` (`src/stores/translatorStore.ts`)
+### 6. `translatorStore` (`stores/translatorStore.ts`)
 
 Manages the state for the AI Translator application.
 
-- **State**: `inputText`, `uploadedFileData`, `uploadedFileName`, `uploadedFileMimeType`, `targetLanguage`, `translatedContent`, `loading`, `error`.
-- **Actions**: `setInputText`, `setUploadedFile`, `setTargetLanguage`, `setTranslatedContent`, `setLoading`, `setError`, `clearTranslatorState`.
-- **Usage**: `TranslatorAppPage` uses this store for its functionality.
+*   **State**:
+    *   `inputText: string`: The text entered by the user for translation.
+    *   `uploadedFileData: string | null`: Base64 content of an uploaded file for translation.
+    *   `uploadedFileName: string | null`: Name of the uploaded file.
+    *   `uploadedFileMimeType: string | null`: MIME type of the uploaded file.
+    *   `targetLanguage: string`: The language to translate into.
+    *   `translatedContent: string | null`: The result of the AI translation.
+    *   `loading: boolean`: Indicates if translation is in progress.
+    *   `error: string | null`: Stores any translation-related error messages.
+*   **Actions**: `setInputText`, `setUploadedFile`, `setTargetLanguage`, `setTranslatedContent`, `setLoading`, `setError`, `clearTranslatorState`.
+*   **Purpose**: Handles the input, target language, and output for the AI translation service.
 
-## 🤝 Interacting with Stores
+### 7. `geminiLiveStore` (`stores/geminiLiveStore.ts`)
 
-- **Reading State in Components**: Use the `useStore` hook from `@nanostores/react`.
+Manages the state for the Gemini Live Audio chat application.
 
-  ```typescript
-  import { useStore } from '@nanostores/react';
-  import { authStore } from '@/stores/authStore';
+*   **State**:
+    *   `sessionId: string | null`: The active session ID for Gemini Live.
+    *   `isSessionActive: boolean`: Indicates if a live session is active.
+    *   `isRecording: boolean`: Indicates if microphone audio is currently being recorded and sent.
+    *   `microphonePermissionGranted: boolean`: Status of microphone permission.
+    *   `userTranscript: string`: Accumulated user transcription (if implemented client-side or received from backend).
+    *   `aiResponseText: string`: Accumulated text responses from Gemini AI.
+    *   `aiResponseAudioQueue: string[]`: A queue of Base64 audio data URLs for sequential playback of AI responses.
+    *   `currentInputText: string`: For sending initial text prompts or direct text input to Gemini.
+    *   `loading: boolean`: General loading state for session actions or AI turns.
+    *   `error: string | null`: Stores any Gemini Live-related error messages.
+*   **Actions**: `setSessionId`, `setIsSessionActive`, `setIsRecording`, `setMicrophonePermissionGranted`, `appendUserTranscript`, `setInitialUserText`, `appendAiResponseText`, `enqueueAiResponseAudio`, `dequeueAiResponseAudio`, `clearAiResponseAudioQueue`, `setLoading`, `setError`, `clearGeminiLiveState`.
+*   **Purpose**: Manages the real-time audio interaction state, including session control, recording status, and AI's audio/text responses.
 
-  const { isLoggedIn, user } = useStore(authStore);
-  ```
+### 8. `contextMenuStore` (`stores/contextMenuStore.ts`)
 
-- **Updating State (Actions)**: Call the exported action functions from the store modules.
+Manages the visibility and content of dynamic context menus, primarily for the file tree.
 
-  ```typescript
-  import { authStore, loginSuccess } from '@/stores/authStore';
-
-  // ... in a function or useEffect
-  loginSuccess({ id: '1', email: 'test@example.com' }, 'token123');
-  ```
-
-This modular approach to state management keeps the application organized, maintainable, and highly performant.
+*   **State**:
+    *   `visible: boolean`: Whether the context menu is currently open.
+    *   `x: number`: X-coordinate for positioning the menu.
+    *   `y: number`: Y-coordinate for positioning the menu.
+    *   `items: ContextMenuItem[]`: An array of menu items to display.
+    *   `targetFile: FileEntry | null`: The `FileEntry` that the context menu was opened for.
+*   **Actions**: `showFileTreeContextMenu`, `hideFileTreeContextMenu`.
+*   **Purpose**: Provides a centralized way to trigger and manage context menus, allowing dynamic definition of menu items based on the context (e.g., specific file type or location).

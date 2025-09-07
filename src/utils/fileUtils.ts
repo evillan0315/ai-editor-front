@@ -80,8 +80,10 @@ export function buildFileTree(
       path: entryPath, // ApiFileTreeNode's 'path' maps to FileEntry's 'path'
       relativePath: relativePath,
       children: [], // Initialize children as empty FileEntry[]
-      collapsed: true,
-      depth: 0,
+      collapsed: apiEntry.type === 'folder', // Default for folders
+      depth: 0, // Will be set by setDepthsAndSortChildren
+      isChildrenLoaded: apiEntry.type === 'file', // Files have no children to load. Folders need to load.
+      isChildrenLoading: false,
     };
     pathToNodeMap.set(entryPath, newEntry);
   });

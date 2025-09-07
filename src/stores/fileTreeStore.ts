@@ -2,7 +2,12 @@ import { map } from 'nanostores';
 import { FileTreeState, FileEntry } from '@/types/fileTree';
 import { FileTreeNode, ApiFileScanResult } from '@/types'; // Import FileTreeNode and ApiFileScanResult
 import { fetchDirectoryContents, fetchScannedFilesForAI } from '@/api/file'; // Updated import
-import { aiEditorStore, setOpenedFile } from './aiEditorStore'; // Import setOpenedFile
+import {
+  aiEditorStore,
+  setOpenedFile,
+  setIsOpenedFileDirty,
+  addOpenedTab,
+} from './aiEditorStore'; // Import setOpenedFile and addOpenedTab
 import { getRelativePath } from '@/utils'; // Import getRelativePath
 
 export const fileTreeStore = map<FileTreeState>({
@@ -47,9 +52,21 @@ export const toggleDirExpansion = async (dirPath: string) => {
 };
 
 export const setSelectedFile = (filePath: string | null) => {
+  const { isOpenedFileDirty } = aiEditorStore.get();
+  if (isOpenedFileDirty) {
+    // Alert user about unsaved changes. If they cancel, don't change selection.
+    const confirmDiscard = window.confirm(
+      'You have unsaved changes in the current file. Do you want to discard them and open a new file?',
+    );
+    if (!confirmDiscard) {
+      return; // Do not proceed with changing selected file
+    }
+    setIsOpenedFileDirty(false); // Reset dirty flag if user confirms discard
+  }
+
   fileTreeStore.setKey('selectedFile', filePath);
   // When a file is selected in the tree, also set it in aiEditorStore to display its content.
-  setOpenedFile(filePath);
+  setOpenedFile(filePath); // This action now also handles adding to openedTabs
 };
 
 /**
@@ -194,7 +211,7 @@ export const loadChildrenForDirectory = async (parentPath: string) => {
     const newChildren: FileEntry[] = childrenNodes.map((node) => ({
       ...node,
       depth: (parentNode.depth || 0) + 1,
-      collapsed: node.type === 'folder', // All new folders are collapsed by default
+      collapsed: node.type === 'folder',
       relativePath: getRelativePath(
         node.path,
         state.lastFetchedProjectRoot || '',

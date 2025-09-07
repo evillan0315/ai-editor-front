@@ -12,3 +12,5 @@ export { default as Snackbar } from './Snackbar'; // New Export
 export { default as ThemeToggle } from './ThemeToggle';
 export { default as WelcomeMessage } from './WelcomeMessage';
 export * from './dialogs'; // Export contents of the new dialogs folder
+export { FileTreeContextMenuRenderer } from './file-tree'; // Export the context menu renderer
+export { default as FileTabs } from './FileTabs'; // New: Export FileTabs component

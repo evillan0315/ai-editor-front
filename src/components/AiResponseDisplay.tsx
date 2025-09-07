@@ -13,6 +13,8 @@ import {
   setRunningGitCommandIndex,
   setCommandExecutionError,
   setCommandExecutionOutput,
+  setBuildOutput, // New: Import setBuildOutput
+  setIsBuilding, // New: Import setIsBuilding
 } from '@/stores/aiEditorStore';
 import {
   Button,
@@ -31,10 +33,10 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'; // New Import
-import { applyProposedChanges } from '@/api/llm';
+import { applyProposedChanges, reportErrorToLlm } from '@/api/llm'; // New: Import reportErrorToLlm
 import { runTerminalCommand } from '@/api/terminal'; // New Import
 import ProposedChangeCard from './ProposedChangeCard';
-import { ModelResponse, FileChange } from '@/types'; // Import FileChange here
+import { ModelResponse, FileChange, RequestType } from '@/types'; // Import FileChange here
 
 interface AiResponseDisplayProps {
   // No specific props needed, all state comes from aiEditorStore
@@ -52,6 +54,10 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
     runningGitCommandIndex,
     commandExecutionOutput,
     commandExecutionError,
+    isBuilding, // New: Get isBuilding state
+    buildOutput, // New: Get buildOutput state
+    lastLlmGeneratePayload, // New: Get lastLlmGeneratePayload for error reporting
+    scanPathsInput, // New: Get scanPathsInput for error reporting
   } = useStore(aiEditorStore);
   const theme = useTheme();
 
@@ -77,6 +83,7 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
     setApplyingChanges(true);
     setError(null); // Clear previous error
     setAppliedMessages([]);
+    setBuildOutput(null); // Clear previous build output
 
     try {
       const changesToApply = Object.values(selectedChanges);
@@ -87,6 +94,89 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
       setAppliedMessages(result.messages);
       if (!result.success) {
         setError('Some changes failed to apply. Check messages above.');
+        // New: Report error to LLM if changes failed to apply
+        if (lastLlmResponse && lastLlmGeneratePayload) {
+          await reportErrorToLlm({
+            error: 'Failed to apply selected changes.',
+            errorDetails: JSON.stringify(result.messages),
+            originalRequestType: lastLlmGeneratePayload.requestType,
+            previousLlmResponse: lastLlmResponse,
+            originalLlmGeneratePayload: lastLlmGeneratePayload,
+            projectRoot: currentProjectPath,
+            scanPaths: scanPathsInput
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          });
+        }
+      } else {
+        // If changes applied successfully, run the build script
+        setIsBuilding(true);
+        try {
+          const buildResult = await runTerminalCommand(
+            'pnpm run build',
+            currentProjectPath,
+          );
+          setBuildOutput(buildResult);
+          if (buildResult.exitCode !== 0) {
+            setError(
+              `Build failed with exit code ${buildResult.exitCode}. Check output.`,
+            );
+            // New: Report build failure to LLM
+            if (lastLlmResponse && lastLlmGeneratePayload) {
+              await reportErrorToLlm({
+                error: `Build failed after applying changes. Exit Code: ${buildResult.exitCode}.`,
+                errorDetails: buildResult.stderr || buildResult.stdout,
+                originalRequestType: lastLlmGeneratePayload.requestType,
+                previousLlmResponse: lastLlmResponse,
+                originalLlmGeneratePayload: lastLlmGeneratePayload,
+                projectRoot: currentProjectPath,
+                scanPaths: scanPathsInput
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean),
+                buildOutput: buildResult,
+              });
+            }
+          } else {
+            // Corrected: Directly pass the new array to setAppliedMessages
+            setAppliedMessages([
+              ...result.messages,
+              'Project built successfully.',
+            ]);
+          }
+        } catch (buildError) {
+          setBuildOutput({
+            stdout: '',
+            stderr: String(buildError),
+            exitCode: 1,
+          });
+          setError(
+            `Failed to run build script: ${buildError instanceof Error ? buildError.message : String(buildError)}`,
+          );
+          // New: Report build script execution error to LLM
+          if (lastLlmResponse && lastLlmGeneratePayload) {
+            await reportErrorToLlm({
+              error: `Failed to execute build script: ${buildError instanceof Error ? buildError.message : String(buildError)}`,
+              errorDetails: String(buildError),
+              originalRequestType: lastLlmGeneratePayload.requestType,
+              previousLlmResponse: lastLlmResponse,
+              originalLlmGeneratePayload: lastLlmGeneratePayload,
+              projectRoot: currentProjectPath,
+              scanPaths: scanPathsInput
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
+              buildOutput: {
+                stdout: '',
+                stderr: String(buildError),
+                exitCode: 1,
+              },
+            });
+          }
+        } finally {
+          setIsBuilding(false);
+        }
       }
       // Clear the response and selected changes after applying
       // Do NOT clear lastLlmResponse directly here, it will clear gitInstructions.
@@ -100,6 +190,21 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
       setError(
         `Failed to apply changes: ${err instanceof Error ? err.message : String(err)}`,
       );
+      // New: Report overall apply changes error to LLM
+      if (lastLlmResponse && lastLlmGeneratePayload) {
+        await reportErrorToLlm({
+          error: `Overall failure during application of changes: ${err instanceof Error ? err.message : String(err)}`,
+          errorDetails: String(err),
+          originalRequestType: lastLlmGeneratePayload.requestType,
+          previousLlmResponse: lastLlmResponse,
+          originalLlmGeneratePayload: lastLlmGeneratePayload,
+          projectRoot: currentProjectPath,
+          scanPaths: scanPathsInput
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean),
+        });
+      }
     } finally {
       setApplyingChanges(false);
     }
@@ -139,6 +244,7 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
         p: 3,
         bgcolor: theme.palette.background.paper,
         flexGrow: 1,
+        height: '100%', // Ensure it takes full height of parent
         maxHeight: '100%',
         overflowY: 'auto', // Allow scrolling for this panel
       }}
@@ -187,14 +293,14 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
         <Button
           variant="outlined"
           onClick={selectAllChanges}
-          disabled={loading || applyingChanges}
+          disabled={loading || applyingChanges || isBuilding}
         >
           Select All
         </Button>
         <Button
           variant="outlined"
           onClick={deselectAllChanges}
-          disabled={loading || applyingChanges}
+          disabled={loading || applyingChanges || isBuilding}
         >
           Deselect All
         </Button>
@@ -205,15 +311,20 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
           disabled={
             loading ||
             applyingChanges ||
+            isBuilding ||
             Object.keys(selectedChanges).length === 0
           }
           startIcon={
-            applyingChanges ? (
+            applyingChanges || isBuilding ? (
               <CircularProgress size={16} color="inherit" />
             ) : null
           }
         >
-          {applyingChanges ? 'Applying...' : 'Apply Selected Changes'}
+          {applyingChanges
+            ? 'Applying...'
+            : isBuilding
+              ? 'Building...'
+              : 'Apply Selected Changes'}
         </Button>
       </Box>
 
@@ -268,6 +379,66 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
             </Box>
           </Paper>
         )}
+
+      {isBuilding && (
+        <Alert severity="info" sx={{ mt: 3 }}>
+          Running build script...
+          <CircularProgress size={16} color="inherit" sx={{ ml: 1 }} />
+        </Alert>
+      )}
+
+      {buildOutput && (
+        <Box sx={{ mt: 3 }}>
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                Build Script Output
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {buildOutput.exitCode !== 0 && (
+                <Alert severity="error" sx={{ mb: 1 }}>
+                  Build failed with exit code {buildOutput.exitCode}.
+                </Alert>
+              )}
+              <Box
+                sx={{
+                  whiteSpace: 'pre-wrap',
+                  fontFamily: 'monospace',
+                  bgcolor: theme.palette.background.default,
+                  p: 1,
+                  borderRadius: 1,
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  border: `1px solid ${theme.palette.divider}`,
+                }}
+              >
+                {buildOutput.stdout && (
+                  <Typography
+                    variant="body2"
+                    sx={{ color: theme.palette.text.primary }}
+                  >
+                    {buildOutput.stdout}
+                  </Typography>
+                )}
+                {buildOutput.stderr && (
+                  <Typography variant="body2" color="error">
+                    {buildOutput.stderr}
+                  </Typography>
+                )}
+                {buildOutput.exitCode !== undefined && (
+                  <Typography
+                    variant="body2"
+                    sx={{ color: theme.palette.text.secondary }}
+                  >
+                    Exit Code: {buildOutput.exitCode}
+                  </Typography>
+                )}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        </Box>
+      )}
 
       {gitInstructions && gitInstructions.length > 0 && (
         <Accordion sx={{ mt: 3 }}>
@@ -412,9 +583,10 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
           flexGrow: 1,
         }}
       >
-        {lastLlmResponse.changes.map((change: FileChange, index: number) => (
-          <ProposedChangeCard key={index} change={change} index={index} />
-        ))}
+        {lastLlmResponse.changes &&
+          lastLlmResponse.changes.map((change: FileChange, index: number) => (
+            <ProposedChangeCard key={index} change={change} index={index} />
+          ))}
       </Box>
     </Paper>
   );

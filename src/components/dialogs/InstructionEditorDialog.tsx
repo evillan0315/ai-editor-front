@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -15,7 +15,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import CodeMirror from '@uiw/react-codemirror';
 import { useStore } from '@nanostores/react';
 import { themeStore } from '@/stores/themeStore';
-import { getCodeMirrorLanguage } from '@/utils/index';
+import { aiEditorStore } from '@/stores/aiEditorStore'; // Import aiEditorStore
+import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
+import { LlmOutputFormat } from '@/types'; // Import LlmOutputFormat
 
 interface InstructionEditorDialogProps {
   open: boolean;
@@ -32,8 +34,9 @@ const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
   instructionType,
   initialContent,
 }) => {
-  const theme = useTheme();
+  const muiTheme = useTheme(); // Get MUI theme
   const { mode } = useStore(themeStore);
+  const { llmOutputFormat } = useStore(aiEditorStore); // Get llmOutputFormat from store
   const [content, setContent] = useState(initialContent);
 
   useEffect(() => {
@@ -49,11 +52,26 @@ const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
       ? 'Edit AI Instruction'
       : 'Edit Expected Output Format';
 
-  // Determine language extensions for CodeMirror
-  const languageExtensions =
-    instructionType === 'ai'
-      ? getCodeMirrorLanguage('instruction.md') // Assuming AI instruction is often markdown
-      : getCodeMirrorLanguage('output.json'); // Expected output is JSON
+  // Determine language extensions for CodeMirror dynamically
+  const languageExtensions = useMemo(() => {
+    if (instructionType === 'ai') {
+      return getCodeMirrorLanguage('instruction.md'); // Default to markdown for AI instructions
+    } else {
+      // instructionType === 'expected'
+      switch (llmOutputFormat) {
+        case LlmOutputFormat.JSON:
+          return getCodeMirrorLanguage('output.json');
+        case LlmOutputFormat.YAML:
+          return getCodeMirrorLanguage('output.yaml');
+        case LlmOutputFormat.MARKDOWN:
+          return getCodeMirrorLanguage('output.md');
+        case LlmOutputFormat.TEXT:
+          return []; // No specific language for plain text
+        default:
+          return getCodeMirrorLanguage('output.json'); // Fallback to JSON
+      }
+    }
+  }, [instructionType, llmOutputFormat]);
 
   return (
     <Dialog
@@ -63,14 +81,14 @@ const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          bgcolor: theme.palette.background.paper,
-          color: theme.palette.text.primary,
+          bgcolor: muiTheme.palette.background.paper,
+          color: muiTheme.palette.text.primary,
         },
       }}
     >
       <DialogTitle
         sx={{
-          borderBottom: `1px solid ${theme.palette.divider}`,
+          borderBottom: `1px solid ${muiTheme.palette.divider}`,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -83,7 +101,7 @@ const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
         <IconButton
           onClick={onClose}
           size="small"
-          sx={{ color: theme.palette.text.secondary }}
+          sx={{ color: muiTheme.palette.text.secondary }}
         >
           <CloseIcon />
         </IconButton>
@@ -95,13 +113,16 @@ const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
           <CodeMirror
             value={content}
             onChange={setContent}
-            extensions={languageExtensions}
+            extensions={[
+              ...languageExtensions,
+              createCodeMirrorTheme(muiTheme),
+            ]}
             theme={mode}
             minHeight="400px" // Sufficient height for instructions
             maxHeight="70vh" // Max height to prevent overflow on smaller screens
             style={{
-              borderRadius: theme.shape.borderRadius + 'px',
-              border: `1px solid ${theme.palette.divider}`,
+              borderRadius: muiTheme.shape.borderRadius + 'px',
+              border: `1px solid ${muiTheme.palette.divider}`,
               overflow: 'hidden',
             }}
           />
@@ -109,12 +130,15 @@ const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
       </DialogContent>
       <DialogActions
         sx={{
-          borderTop: `1px solid ${theme.palette.divider}`,
+          borderTop: `1px solid ${muiTheme.palette.divider}`,
           p: 2,
           justifyContent: 'flex-end',
         }}
       >
-        <Button onClick={onClose} sx={{ color: theme.palette.text.secondary }}>
+        <Button
+          onClick={onClose}
+          sx={{ color: muiTheme.palette.text.secondary }}
+        >
           Cancel
         </Button>
         <Button onClick={handleSave} variant="contained" color="primary">

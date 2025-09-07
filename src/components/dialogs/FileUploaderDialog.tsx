@@ -1,4 +1,4 @@
-import React, { useState, useCallback, ChangeEvent } from 'react';
+import React, { useState, useCallback, ChangeEvent, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -105,6 +105,7 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
           ? `pasted_file.${mimeType.split('/').pop()}`
           : 'pasted_file.bin';
         onUpload(base64Data, mimeType, inferredFileName);
+        setBase64Input(base64Input); // Keep the data URL in the text field
         setFileError(null);
       } else {
         setFileError('Invalid Base64 data URL format.');
@@ -120,6 +121,20 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
     setBase64Input('');
     setFileError(null);
   };
+
+  // When dialog opens, populate base64Input with currentUploadedFile if available
+  useEffect(() => {
+    if (open && currentUploadedFile) {
+      setBase64Input(
+        `data:${currentUploadedMimeType || 'application/octet-stream'};base64,${currentUploadedFile}`,
+      );
+    } else if (!open) {
+      // Clear local state when dialog closes
+      setBase64Input('');
+      setFileError(null);
+      setDragActive(false);
+    }
+  }, [open, currentUploadedFile, currentUploadedMimeType]);
 
   return (
     <Dialog
@@ -215,11 +230,7 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
           label="Base64 Data URL"
           multiline
           rows={4}
-          value={
-            base64Input || currentUploadedFile
-              ? `data:${currentUploadedMimeType || 'application/octet-stream'};base64,${currentUploadedFile}`
-              : ''
-          }
+          value={base64Input}
           onChange={handleBase64InputChange}
           placeholder="e.g., data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="
           fullWidth
@@ -237,7 +248,7 @@ const FileUploaderDialog: React.FC<FileUploaderDialogProps> = ({
             variant="contained"
             color="primary"
             startIcon={<ContentPasteIcon />}
-            disabled={!base64Input && !currentUploadedFile}
+            disabled={!base64Input}
           >
             Apply Base64
           </Button>

@@ -1,87 +1,69 @@
-# ⚛️ Frontend Components Overview
+# 🏗️ Components Overview
 
-This document provides an overview of the key React components within the AI Editor frontend, categorized by their primary function. This helps in understanding the project structure and component responsibilities.
+This document outlines the main components and their organization within the Project Board Frontend. Components are grouped into logical categories to reflect their purpose and location in the `src/components` directory.
 
-## 📂 Project Structure
+## General UI Components
 
-```bash
-ai-editor-front/
-├── src/
-│   ├── components/
-│   │   ├── dialogs/        # Modal dialog components
-│   │   ├── file-tree/      # Components for displaying and interacting with the file tree
-│   │   ├── ui/             # Wrapper components for Material-UI primitives
-│   │   └── ...             # General purpose components
-│   ├── pages/              # Top-level page components
-│   │   ├── spotify/        # Components specific to the Spotify-like app
-│   │   └── ...             # Other main pages
-│   └── ...
-```
+These are core UI elements or structural components used across the application.
 
-## 🗺️ Component Categories
+*   **`Layout.tsx`**: The main layout component that wraps all pages, providing a consistent header (Navbar) and footer.
+*   **`Navbar.tsx`**: Displays global navigation links, user authentication status, theme toggle, and project-specific script execution menu.
+*   **`Loading.tsx`**: A versatile loading indicator component with various types (circular, linear, gradient, skeleton) and messages.
+*   **`Snackbar.tsx`**: A custom Material-UI Snackbar wrapper for displaying transient messages (success, error, info) to the user.
+*   **`ThemeToggle.tsx`**: Allows users to switch between light and dark themes.
+*   **`WelcomeMessage.tsx`**: A simple component displaying a welcome message on the home page.
 
-### 🌐 Layout & Navigation Components
+## AI Editor Specific Components
 
-These components define the overall structure and navigation of the application.
+These components are primarily used within the `AiEditorPage` to facilitate AI interaction and code management.
 
-- **`Layout.tsx`**: The main layout component that wraps all pages, including the `Navbar` and a common footer. It handles global concerns like initial authentication status checks.
-- **`Navbar.tsx`**: Displays the application's header, navigation links (Editor, Dashboard, Apps), user authentication status, theme toggle, and project script execution menu.
-- **`ThemeToggle.tsx`**: A simple button to switch between light and dark themes.
+*   **`PromptGenerator.tsx`**: The main input component where users enter AI instructions, select project paths, add scan paths, manage file uploads, and trigger AI code generation.
+*   **`AiResponseDisplay.tsx`**: Renders the AI's structured response, including summary, thought process, and proposed file changes. It also handles applying changes and displaying git instructions.
+*   **`ProposedChangeCard.tsx`**: Displays an individual file change proposed by the AI, including file path, action, reason, and an editable code mirror for `newContent`. It also allows viewing git diffs for existing files.
+*   **`FilePickerDialog.tsx`**: A dialog for selecting files and folders from the project's file tree to be included as AI scan paths.
+*   **`OpenedFileViewer.tsx`**: Displays the content of a file selected from the file tree in a read-only CodeMirror instance. It is hidden when an AI response is active to prioritize proposed changes.
 
-### 🤖 AI Editor Core Components
+## File Tree Components (`components/file-tree/`)
 
-These are central to the AI code generation and modification functionality.
+These components work together to render and manage the interactive project file tree.
 
-- **`AiEditorPage.tsx`** (Page): The primary page where users interact with the AI editor. It orchestrates `PromptGenerator`, `FileTree`, `AiResponseDisplay`, and `OpenedFileViewer`.
-- **`PromptGenerator.tsx`**: The main input area for AI instructions. It includes fields for the user prompt, project root, scan paths, request type selection, file/image upload, and the 'Generate Code' button.
-- **`AiResponseDisplay.tsx`**: Displays the AI's structured response, including summary, thought process, proposed file changes, and Git instructions. It allows for selective application of changes.
-- **`ProposedChangeCard.tsx`**: Renders an individual AI-proposed file change, allowing users to select/deselect it, view a Git diff, and edit the proposed content or file path.
-- **`OpenedFileViewer.tsx`**: Displays the content of a file selected from the `FileTree` in a read-only CodeMirror instance when no AI response is active.
+*   **`FileTree.tsx`**: The main component for displaying the hierarchical file and folder structure of the loaded project. It handles loading the initial tree and refreshing it.
+*   **`FileTreeItem.tsx`**: Represents a single file or folder entry in the tree, handling its expansion/collapse, selection, and displaying relevant icons. It also manages context menu events.
+*   **`FileTreeContextMenuRenderer.tsx`**: Renders a context menu (right-click menu) for file tree items, offering actions like 'Open File', 'Copy Path', 'Rename', 'Delete', etc.
 
-### 📂 File System Interaction Components
+## Dialog Components (`components/dialogs/`)
 
-Components for browsing and interacting with the project's file structure.
+A centralized location for all modal dialogs used throughout the application.
 
-- **`FileTree.tsx`**: Displays the hierarchical structure of the user's project files. It is responsible for loading the initial tree and delegating rendering to `FileTreeItem`.
-- **`FileTreeItem.tsx`**: Renders an individual file or folder within the `FileTree`, handling expansion/collapse of directories and selection of files.
-- **`FilePickerDialog.tsx`**: A modal dialog used for selecting multiple files and folders to be included as 'scan paths' for AI context.
+*   **`DirectoryPickerDialog.tsx`**: A dialog for browsing and selecting a directory to be set as the project root path.
+*   **`FileUploaderDialog.tsx`**: A versatile dialog for uploading files via drag-and-drop or browsing, or pasting Base64 data (e.g., images, text files) to be used as AI context.
+*   **`InstructionEditorDialog.tsx`**: A CodeMirror-based dialog for editing the AI's system instructions and the expected output format schema.
 
-### 💬 Dialog Components
+## Application-Specific Pages/Components (`pages/`)
 
-Reusable modal dialogs for various interactions.
+These are the top-level page components and their direct children that implement specific applications.
 
-- **`FileUploaderDialog.tsx`**: A dialog for uploading files or pasting Base64 encoded data to be sent as additional context to the AI.
-- **`InstructionEditorDialog.tsx`**: A dialog for editing the AI's system instructions and the expected output JSON schema, providing fine-grained control over AI behavior.
+*   **`HomePage.tsx`**: The landing page of the application, introducing its capabilities.
+*   **`DashboardPage.tsx`**: A placeholder for a user dashboard.
+*   **`AppsPage.tsx`**: Lists all available AI-powered applications and generators.
+*   **`AiEditorPage.tsx`**: The core AI code editing environment.
+*   **`LoginPage.tsx`**: Handles user login via local credentials or OAuth.
+*   **`RegisterPage.tsx`**: Handles user registration.
+*   **`AuthCallback.tsx`**: Processes OAuth callback responses from the backend.
+*   **`SpotifyAppPage.tsx`**: The container page for the Spotify-like music player application.
+    *   **`SpotifyMainContent.tsx`**: Renders the dynamic content area of the Spotify app (home, search, library).
+    *   **`SpotifyPlayerBar.tsx`**: The bottom player bar for music playback controls.
+    *   **`SpotifySidebar.tsx`**: The left-hand navigation sidebar for the Spotify app.
+    *   **`SpotifyHomePage.tsx`**: Displays curated music content (e.g., playlists, artists).
+    *   **`SpotifySearchPage.tsx`**: Provides search functionality and genre browsing.
+    *   **`SpotifyLibraryPage.tsx`**: Displays user's saved playlists, artists, albums, etc.
+*   **`TranslatorAppPage.tsx`**: The page for the AI-powered translation application, allowing text or file translation.
+*   **`GeminiLiveAudioPage.tsx`**: The page for real-time audio interaction with Gemini AI.
 
-### 🛠️ UI Primitives & Utilities
+## UI Primitives (`components/ui/`)
 
-Wrapper components for Material-UI elements and general utility components.
+Simple wrapper components around Material-UI elements to ensure consistent styling or add minor common functionalities.
 
-- **`ui/Button.tsx`**: A wrapper around Material-UI's `Button` to apply consistent styling (e.g., `!normal-case`).
-- **`ui/TextField.tsx`**: A wrapper around Material-UI's `TextField` to apply consistent styling for input fields, especially regarding dark/light mode and border colors.
-- **`ui/CircularProgress.tsx`**: A simple wrapper for Material-UI's `CircularProgress`.
-- **`Loading.tsx`**: A versatile loading indicator component with different animation types and customizable messages.
-- **`Snackbar.tsx`**: A global notification component for displaying success, error, or info messages.
-- **`WelcomeMessage.tsx`**: A simple card displaying a welcome message on the homepage or editor if no project is loaded.
-- **`RunScriptMenuItem.tsx`**: A `MenuItem` component specifically designed for displaying and running `package.json` scripts from the `Navbar`.
-
-### 📱 Application-Specific Pages
-
-Components that define distinct applications or views beyond the core AI Editor.
-
-- **`HomePage.tsx`** (Page): The landing page of the application, introducing its features and guiding users to main sections.
-- **`DashboardPage.tsx`** (Page): A placeholder for a future dashboard where users can view project overviews and activities.
-- **`AppsPage.tsx`** (Page): Lists all available AI-powered applications and tools within the platform, including different AI Editor generators, the Spotify-like app, and the Translator app.
-- **`LoginPage.tsx`** (Page): Provides user login functionality, supporting both local email/password and OAuth providers.
-- **`RegisterPage.tsx`** (Page): Provides user registration for local accounts.
-- **`AuthCallback.tsx`** (Page): Handles redirects from OAuth providers to process authentication tokens.
-- **`SpotifyAppPage.tsx`** (Page): The main container for the Spotify-like music player application.
-  - **`spotify/SpotifySidebar.tsx`**: The navigation sidebar for the Spotify app.
-  - **`spotify/SpotifyMainContent.tsx`**: Displays the main content area of the Spotify app based on the selected view (Home, Search, Library).
-  - **`spotify/SpotifyHomePage.tsx`**: The main 'Home' view of the Spotify app with featured playlists and artists.
-  - **`spotify/SpotifySearchPage.tsx`**: The 'Search' view of the Spotify app with a search bar and browseable genres.
-  - **`spotify/SpotifyLibraryPage.tsx`**: The 'Your Library' view of the Spotify app with playlists, artists, and albums.
-  - **`spotify/SpotifyPlayerBar.tsx`**: The fixed player bar at the bottom of the Spotify app.
-- **`TranslatorAppPage.tsx`** (Page): Provides an interface for translating text or files using AI.
-
-This breakdown helps in quickly locating and understanding the purpose of each component within the larger application context.
+*   **`Button.tsx`**: A wrapper for `MuiButton`.
+*   **`TextField.tsx`**: A wrapper for `MuiTextField` with consistent theming.
+*   **`CircularProgress.tsx`**: A wrapper for `MuiCircularProgress`.

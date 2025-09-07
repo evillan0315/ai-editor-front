@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -20,14 +20,16 @@ import { getFileTypeIcon } from '@/constants/fileIcons'; // Import the new utili
 interface FileTreeItemProps {
   fileEntry: FileEntry; // This is now correctly typed as FileEntry
   projectRoot: string;
+  onContextMenu: (event: React.MouseEvent, node: FileEntry) => void; // Add context menu prop
 }
 
 const FileTreeItem: React.FC<FileTreeItemProps> = ({
   fileEntry,
   projectRoot,
+  onContextMenu,
 }) => {
   const { expandedDirs, selectedFile, loadingChildren } =
-    useStore(fileTreeStore); // Access loadingChildren
+    useStore(fileTreeStore);
   const theme = useTheme();
   const isExpanded = expandedDirs.has(fileEntry.path);
   const isSelected = selectedFile === fileEntry.path;
@@ -41,13 +43,20 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
     // If it's a file, clicking the icon (which shouldn't be there visually) does nothing
   };
 
-  const handleItemClick = () => {
+  const handleItemClick = useCallback(() => {
     if (fileEntry.type === 'folder') {
       toggleDirExpansion(fileEntry.path);
     } else {
       setSelectedFile(fileEntry.path);
     }
-  };
+  }, [fileEntry.type, fileEntry.path]);
+
+  const handleContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      onContextMenu(event, fileEntry);
+    },
+    [onContextMenu, fileEntry],
+  );
 
   const levelPadding = (fileEntry.depth || 0) * 16; // 16px per depth level
 
@@ -76,6 +85,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
           transition: 'background-color 0.15s ease-in-out',
         }}
         onClick={handleItemClick}
+        onContextMenu={handleContextMenu} // Attach context menu handler
       >
         {/* Fixed-width slot for expand/collapse icon or a spacing placeholder */}
         <Box
@@ -156,6 +166,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
                 key={child.path}
                 fileEntry={child}
                 projectRoot={projectRoot}
+                onContextMenu={onContextMenu} // Pass context menu handler to children
               />
             ))}
           </Box>

@@ -52,7 +52,7 @@ export default tseslint.config(
     plugins: {
       react: pluginReact,
       'react-hooks': eslintPluginReactHooks,
-      'react-refresh': eslintPluginReactRefresh,
+      //'react-refresh': eslintPluginReactRefresh,
       'unused-imports': eslintPluginUnusedImports,
       // Add eslint-plugin-prettier directly
       prettier: pluginPrettier,

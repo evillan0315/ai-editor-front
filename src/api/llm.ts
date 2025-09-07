@@ -1,5 +1,15 @@
 import { getToken } from '@/stores/authStore';
-import { ModelResponse, FileChange, RequestType } from '@/types'; // Import new LLM types and FileChange, RequestType
+import {
+  ModelResponse,
+  FileChange,
+  RequestType,
+  LlmOutputFormat,
+  LlmGeneratePayload,
+  // NEW IMPORTS FOR ERROR REPORTING PAYLOAD
+  LlmReportErrorPayload as FrontendLlmReportErrorPayload, // Alias the existing frontend type
+  LlmReportErrorApiPayload, // New type that matches backend DTO structure
+  TerminalCommandResponse, // Needed for buildOutput
+} from '@/types'; // Import new LLM types and FileChange, RequestType, LlmOutputFormat, LlmGeneratePayload, LlmReportErrorPayload
 
 const API_BASE_URL = `/api`; // Changed to relative path for Vite proxy consistency
 
@@ -26,23 +36,57 @@ const fetchWithAuth = async (url: string, options?: RequestInit) => {
 
   return fetch(url, { ...options, headers });
 };
+export function extractCodeFromMarkdown(text: string): string {
+  // Match a fenced code block: ```lang\n ... \n```
+  const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)\n```/;
+  const match = text.match(codeBlockRegex);
 
-/**
- * Sends a request to the LLM backend to generate code based on user prompt and project context.
- * The backend will handle reading relevant files and building the project structure.
- * @param data The payload containing user prompt, project root, scan paths, and instructions.
- * @returns A promise that resolves to the LLM's structured response with proposed file changes.
- */
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  return text.trim();
+}
+
+export const convertYamlToJson = async (data: string): Promise<any> => {
+  try {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/utils/json-yaml/to-json?save=false`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ yaml: data }),
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
+    return handleResponse<any>(response);
+  } catch (error) {
+    console.error('Error converting YAML to JSON:', error);
+    throw error;
+  }
+};
+
 export const generateCode = async (
   data: LlmGeneratePayload,
 ): Promise<ModelResponse> => {
   try {
-    // projectRoot is now part of LlmGeneratePayload, no need for it as a query parameter.
     const response = await fetchWithAuth(`${API_BASE_URL}/llm/generate-llm`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return handleResponse<ModelResponse>(response);
+
+    // get raw string response
+    const rawText = await response.text();
+
+    // try extracting fenced code block
+    const text = extractCodeFromMarkdown(rawText);
+
+    if (data.output === 'yaml') {
+      const json = await convertYamlToJson(text);
+      return json.json;
+    }
+
+    // otherwise treat as JSON response
+    return JSON.parse(text) as ModelResponse;
   } catch (error) {
     console.error('Error generating code:', error);
     throw error;
@@ -100,22 +144,47 @@ export const getGitDiff = async (
   }
 };
 
-export interface LlmRelevantFile {
-  filePath: string;
-  relativePath: string;
-  content: string;
-}
+/**
+ * Reports an error, typically a build failure after applying AI changes, to the LLM for analysis.
+ * @param payload The error details and contextual information.
+ * @returns A promise that resolves when the error is reported.
+ */
+export const reportErrorToLlm = async (
+  payload: FrontendLlmReportErrorPayload, // Use the aliased frontend type
+): Promise<ModelResponse | void> => {
+  try {
+    // Construct the payload that matches the backend DTO structure
+    const backendPayload: LlmReportErrorApiPayload = {
+      errorDetails: [
+        payload.error, // Frontend `error` field is the primary error message
+        payload.errorDetails, // Frontend `errorDetails` is often stack trace or more info
+        payload.buildOutput ? `Build Output:\n${payload.buildOutput.stderr || payload.buildOutput.stdout}` : null,
+      ].filter(Boolean).join('\n\n'), // Combine non-empty parts
 
-export interface LlmGeneratePayload {
-  userPrompt: string;
-  projectRoot: string;
-  projectStructure: string;
-  relevantFiles: LlmRelevantFile[];
-  additionalInstructions: string; // Corresponds to `systemInstruction` in GeminiRequest
-  expectedOutputFormat: string;
-  scanPaths: string[];
-  requestType: RequestType; // New: AI Request Type
-  imageData?: string; // New: Base64 image data
-  fileData?: string; // New: Base64 file data
-  fileMimeType?: string; // New: Mime type of the uploaded file/image
-}
+      projectRoot: payload.projectRoot,
+      scanPaths: payload.scanPaths, // This is optional on backend DTO, but required on frontend payload, so it's fine.
+      context: {
+        originalUserPrompt: payload.originalLlmGeneratePayload?.userPrompt,
+        systemInstruction: payload.originalLlmGeneratePayload?.additionalInstructions,
+        failedChanges: payload.previousLlmResponse?.changes || [],
+        originalFilePaths: payload.previousLlmResponse?.changes?.map(c => c.filePath) || [],
+      },
+    };
+
+    const response = await fetchWithAuth(`${API_BASE_URL}/llm/report-error`, {
+      method: 'POST',
+      body: JSON.stringify(backendPayload),
+    });
+
+    // Assuming the backend always returns a ModelResponse (JSON) for error analysis.
+    // The parsing logic for different output formats like YAML/Markdown/Text
+    // is typically applied to the *main* generation API, not auxiliary ones like error reporting.
+    return handleResponse<ModelResponse>(response);
+  } catch (error) {
+    console.error('Error reporting to LLM:', error);
+    // Do not re-throw, as this is an error reporting mechanism itself.
+    // We want the primary error (e.g., build failure) to still propagate.
+  }
+};
+
+export type { LlmGeneratePayload }; // Export LlmGeneratePayload for use in other files
