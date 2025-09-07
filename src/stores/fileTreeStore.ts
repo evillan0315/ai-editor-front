@@ -14,6 +14,7 @@ export const fileTreeStore = map<FileTreeState>({
   fetchTreeError: null,
   lastFetchedProjectRoot: null,
   lastFetchedScanPaths: [], // Retained for AI context scan paths, not directly for visual tree
+  loadingChildren: new Set(), // Initialize new state for loading children
 });
 
 export const setFiles = (files: FileEntry[]) => {
@@ -21,25 +22,28 @@ export const setFiles = (files: FileEntry[]) => {
 };
 
 export const toggleDirExpansion = async (dirPath: string) => {
-  const state = fileTreeStore.get(); // Get current state
+  const state = fileTreeStore.get();
   const newExpandedDirs = new Set(state.expandedDirs);
   const isCurrentlyExpanded = newExpandedDirs.has(dirPath);
 
   if (isCurrentlyExpanded) {
     newExpandedDirs.delete(dirPath);
+    fileTreeStore.set({ ...state, expandedDirs: newExpandedDirs });
   } else {
     newExpandedDirs.add(dirPath);
-    // If expanding and children are not loaded, fetch them
+    fileTreeStore.set({ ...state, expandedDirs: newExpandedDirs });
+
+    // If expanding and children are not loaded AND not already loading, fetch them
     const dirNode = findFileEntryInTree(state.files, dirPath);
     if (
       dirNode &&
       dirNode.type === 'folder' &&
-      (!dirNode.children || dirNode.children?.length === 0)
+      !dirNode.isChildrenLoaded &&
+      !state.loadingChildren.has(dirPath)
     ) {
       await loadChildrenForDirectory(dirPath); // Await children loading
     }
   }
-  fileTreeStore.set({ ...state, expandedDirs: newExpandedDirs }); // Set new full state
 };
 
 export const setSelectedFile = (filePath: string | null) => {
@@ -93,13 +97,6 @@ const findFileEntryInTree = (nodes: FileEntry[], targetPath: string): FileEntry 
  * Loads the initial tree for the project root. This should be called on project load/change.
  */
 export const loadInitialTree = async (projectRoot: string) => {
-  const currentStore = fileTreeStore.get();
-  // For initial tree load, we just want the top level files. No scanPaths needed for this specific action.
-  // This function also populates flatFileList for AI context.
-
-  // If we want to use 'lastFetchedProjectRoot' for caching, we'd need to compare if projectRoot is same.
-  // For now, assume a fresh fetch for the initial view.
-
   fileTreeStore.setKey('isFetchingTree', true);
   fileTreeStore.setKey('fetchTreeError', null);
   fileTreeStore.setKey('files', []); // Clear existing tree
@@ -114,6 +111,8 @@ export const loadInitialTree = async (projectRoot: string) => {
       collapsed: node.type === 'folder', // All new folders are collapsed by default
       relativePath: getRelativePath(node.path, projectRoot), // Calculate relative path
       children: [], // Initialize children as empty FileEntry[] for consistency
+      isChildrenLoaded: node.type === 'file', // Files have no children to load, folders are not loaded yet
+      isChildrenLoading: false, // Not currently loading children for this node
     }));
 
     // Sort folders first, then files
@@ -153,8 +152,10 @@ export const loadInitialTree = async (projectRoot: string) => {
  */
 export const loadChildrenForDirectory = async (parentPath: string) => {
   const state = fileTreeStore.get();
+  const newLoadingChildren = new Set(state.loadingChildren);
+
   // Prevent re-fetching if already fetching children for this path
-  if (state.isFetchingTree) {
+  if (newLoadingChildren.has(parentPath)) {
     return;
   }
 
@@ -165,8 +166,15 @@ export const loadChildrenForDirectory = async (parentPath: string) => {
     return;
   }
 
-  fileTreeStore.setKey('isFetchingTree', true); // Set global fetching state
-  // No specific error key per folder yet, global fetchTreeError will be used for now.
+  // Mark this specific folder as loading its children
+  newLoadingChildren.add(parentPath);
+  fileTreeStore.set({ ...state, loadingChildren: newLoadingChildren });
+  // Also update the specific node in the tree to reflect its loading state
+  const treeWithLoadingState = updateFileEntryInTree(state.files, parentPath, (node) => ({
+    ...node,
+    isChildrenLoading: true,
+  }));
+  fileTreeStore.setKey('files', treeWithLoadingState);
 
   try {
     const childrenNodes = await fetchDirectoryContents(parentPath);
@@ -177,6 +185,8 @@ export const loadChildrenForDirectory = async (parentPath: string) => {
       collapsed: node.type === 'folder', // All new folders are collapsed by default
       relativePath: getRelativePath(node.path, state.lastFetchedProjectRoot || ''),
       children: [], // Initialize children as empty FileEntry[]
+      isChildrenLoaded: node.type === 'file', // Files have no children, new folders are not loaded yet
+      isChildrenLoading: false,
     }));
 
     const updatedTree = updateFileEntryInTree(state.files, parentPath, (node) => ({
@@ -187,6 +197,8 @@ export const loadChildrenForDirectory = async (parentPath: string) => {
         if (a.type !== 'folder' && b.type === 'folder') return 1;
         return a.name.localeCompare(b.name);
       }),
+      isChildrenLoaded: true, // Mark children as loaded for this parent
+      isChildrenLoading: false, // Done loading
     }));
     fileTreeStore.setKey('files', updatedTree);
   } catch (err) {
@@ -195,8 +207,20 @@ export const loadChildrenForDirectory = async (parentPath: string) => {
       'fetchTreeError',
       `Failed to load children for ${parentPath}: ${err instanceof Error ? err.message : String(err)}`,
     );
+    // On error, mark node as not loaded but not loading either
+    const treeWithErrorState = updateFileEntryInTree(
+      fileTreeStore.get().files,
+      parentPath,
+      (node) => ({
+        ...node,
+        isChildrenLoaded: false, // Optionally reset if load failed
+        isChildrenLoading: false,
+      }),
+    );
+    fileTreeStore.setKey('files', treeWithErrorState);
   } finally {
-    fileTreeStore.setKey('isFetchingTree', false);
+    newLoadingChildren.delete(parentPath);
+    fileTreeStore.setKey('loadingChildren', newLoadingChildren);
   }
 };
 
@@ -210,6 +234,7 @@ export const clearFileTree = () => {
     fetchTreeError: null,
     lastFetchedProjectRoot: null, // Clear these on full tree clear
     lastFetchedScanPaths: [], // Clear these on full tree clear
+    loadingChildren: new Set(), // Clear loading children as well
   });
   // Also clear any opened file content in aiEditorStore
   setOpenedFile(null);

@@ -9,6 +9,8 @@ export interface FileEntry extends FileTreeNode {
   depth: number; // Frontend-specific: depth in the tree hierarchy for indentation
   relativePath: string; // Frontend-specific: path relative to the project root for display/selection
   children: FileEntry[]; // Crucial change: Children are also FileEntry, for recursive definition
+  isChildrenLoaded: boolean; // New: Tracks if children for this folder have been explicitly fetched
+  isChildrenLoading: boolean; // New: Tracks if children for this specific folder are currently being fetched
 }
 
 export interface FileTreeState {
@@ -20,4 +22,5 @@ export interface FileTreeState {
   fetchTreeError: string | null;
   lastFetchedProjectRoot?: string | null; // Tracks the project root for the last successful initial fetch
   lastFetchedScanPaths?: string[]; // Tracks the scan paths for the last successful AI context fetch
+  loadingChildren: Set<string>; // New: Set of paths for folders currently loading their children
 }

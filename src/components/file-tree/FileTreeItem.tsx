@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, IconButton, useTheme } from '@mui/material';
+import { Box, Typography, IconButton, useTheme, CircularProgress } from '@mui/material'; // Import CircularProgress
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { FileEntry } from '@/types/fileTree';
@@ -13,10 +13,11 @@ interface FileTreeItemProps {
 }
 
 const FileTreeItem: React.FC<FileTreeItemProps> = ({ fileEntry, projectRoot }) => {
-  const { expandedDirs, selectedFile } = useStore(fileTreeStore);
+  const { expandedDirs, selectedFile, loadingChildren } = useStore(fileTreeStore); // Access loadingChildren
   const theme = useTheme();
   const isExpanded = expandedDirs.has(fileEntry.path);
   const isSelected = selectedFile === fileEntry.path;
+  const isCurrentlyLoadingChildren = loadingChildren.has(fileEntry.path); // Check if this specific folder's children are loading
 
   const handleToggleIconClick = (event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent the parent Box's onClick from firing
@@ -76,9 +77,11 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({ fileEntry, projectRoot }) =
               sx={{
                 color: isSelected ? theme.palette.primary.contrastText : textColor,
                 p: 0,
-              }} // Reduce padding for compact size
+              }}
             >
-              {isExpanded ? (
+              {isCurrentlyLoadingChildren ? (
+                <CircularProgress size={16} color="inherit" /> // Show spinner if loading children
+              ) : isExpanded ? (
                 <ExpandMoreIcon fontSize="inherit" />
               ) : (
                 <ChevronRightIcon fontSize="inherit" />
@@ -120,19 +123,28 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({ fileEntry, projectRoot }) =
           {fileEntry.name}
         </Typography>
       </Box>
-      {fileEntry.type === 'folder' && isExpanded && fileEntry.children && (
+      {fileEntry.type === 'folder' && isExpanded && fileEntry.isChildrenLoaded && (
         <Box sx={{ pl: 0 }}>
           {' '}
           {/* Children handle their own paddingLeft */}
           {fileEntry.children.map((child) => (
-            <FileTreeItem
-              key={child.path}
-              fileEntry={child} // Child is now correctly typed as FileEntry
-              projectRoot={projectRoot}
-            />
+            <FileTreeItem key={child.path} fileEntry={child} projectRoot={projectRoot} />
           ))}
         </Box>
       )}
+      {fileEntry.type === 'folder' &&
+        isExpanded &&
+        !fileEntry.isChildrenLoaded &&
+        isCurrentlyLoadingChildren && (
+          <Box
+            sx={{ pl: `${levelPadding + 24}px`, py: 0.5, display: 'flex', alignItems: 'center' }}
+          >
+            <CircularProgress size={16} sx={{ mr: 1, color: theme.palette.text.secondary }} />
+            <Typography variant="caption" color="text.secondary">
+              Loading...
+            </Typography>
+          </Box>
+        )}
     </Box>
   );
 };
