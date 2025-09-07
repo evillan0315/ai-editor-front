@@ -1,6 +1,6 @@
 import * as path from 'path-browserify';
-import { FlatApiFileEntry, BackendFileTreeNode } from '@/types'; // Import new types from index
-import { FileEntry } from '@/types/fileTree'; // Import UI FileEntry
+import { FileEntry as ApiFileEntry } from '@/types';
+import { FileEntry } from '@/types/fileTree';
 
 export function joinPaths(...paths: string[]): string {
   // Basic join for web paths. Not as robust as node's path.join across all OS.
@@ -11,7 +11,10 @@ export function joinPaths(...paths: string[]): string {
     .replace(/\/\/+/g, '/');
 }
 
-export function getRelativePath(absolutePath: string, basePath: string): string {
+export function getRelativePath(
+  absolutePath: string,
+  basePath: string,
+): string {
   // Ensure paths use forward slashes for consistency
   const normalizedAbsolutePath = absolutePath.replace(/\\/g, '/');
   const normalizedBasePath = basePath.replace(/\\/g, '/');
@@ -37,62 +40,48 @@ export function getRelativePath(absolutePath: string, basePath: string): string 
 }
 
 /**
- * Flattens a recursive tree of BackendFileTreeNode into a flat array of FlatApiFileEntry.
- */
-export function flattenFileTreeResponse(nodes: BackendFileTreeNode[]): FlatApiFileEntry[] {
-  const flatList: FlatApiFileEntry[] = [];
-  const stack: BackendFileTreeNode[] = [...nodes];
-
-  while (stack.length > 0) {
-    const node = stack.shift();
-
-    if (node) {
-      // Deconstruct to omit 'children' and directly use 'path' (from BackendFileTreeNode)
-      const { children, ...flatNode } = node;
-      flatList.push(flatNode);
-
-      if (children && children.length > 0) {
-        stack.unshift(...children); // DFS order
-      }
-    }
-  }
-  return flatList;
-}
-
-/**
- * Transforms a flat list of FileEntry objects (from fileTree.ts) into a hierarchical tree structure for UI.
- * @param flatList The flat list of FileEntry objects to build the tree from. (Has `filePath` property)
- * @param projectRoot The root path of the project, used to make paths relative and filter.
+ * Transforms a flat list of FileEntry objects into a hierarchical tree structure.
+ * @param flatList The flat list of FileEntry objects from the API.
+ * @param projectRoot The root path of the project, used to make paths relative.
  * @returns An array of FileEntry objects representing the top-level items of the tree.
  */
 export function buildFileTree(
-  flatList: FileEntry[], // Input is now FileEntry[] from fileTree.ts
+  flatList: ApiFileEntry[],
   projectRoot: string,
 ): FileEntry[] {
   const normalizedProjectRoot = projectRoot.replace(/\\/g, '/');
-  const pathToNodeMap = new Map<string, FileEntry>(); // Map uses absolute path (string) to UI FileEntry
+  const pathToNodeMap = new Map<string, FileEntry>();
 
   // 1. Create all nodes and map them by their full path.
-  flatList.forEach((entry) => {
-    const entryPath = entry.filePath
-      ? entry.filePath.replace(/\\/g, '/')
-      : `/invalid-path/${entry.name || 'unknown'}`;
+  flatList.forEach((apiEntry) => {
+    // Ensure `filePath` is a string, provide fallback for robustness.
+    const entryPath = apiEntry.filePath
+      ? apiEntry.filePath.replace(/\\/g, '/')
+      : `/invalid-path/${apiEntry.name || 'unknown'}`;
 
+    // Skip entries with invalid paths (e.g., empty or non-string paths)
     if (!entryPath || entryPath.includes('/invalid-path/')) {
-      console.warn('FileTree: Skipping entry due to invalid path:', entry);
+      console.warn('FileTree: Skipping entry due to invalid path:', apiEntry);
       return;
     }
 
-    const relativePath = getRelativePath(entryPath, normalizedProjectRoot);
+    // If apiEntry.name is falsy, derive it from the basename of the filePath
+    const entryName = apiEntry.name || path.basename(entryPath);
+
+    const relativePath = entryPath.startsWith(normalizedProjectRoot + '/')
+      ? entryPath.substring(normalizedProjectRoot.length + 1)
+      : entryPath === normalizedProjectRoot
+        ? '.' // Project root itself
+        : entryPath; // Fallback if path doesn't start with project root
 
     const newEntry: FileEntry = {
-      // Create a new object to ensure immutability and add UI state
-      ...entry, // Spread existing properties
-      filePath: entryPath, // Ensure filePath is normalized and consistent
+      ...apiEntry,
+      name: entryName, // Ensure 'name' is always a string
+      filePath: entryPath, // Ensure 'filePath' is always a string and normalized
       relativePath: relativePath,
-      children: [], // Initialize children
-      collapsed: true, // Default UI state
-      depth: 0, // Default UI state
+      children: [],
+      collapsed: true,
+      depth: 0,
     };
     pathToNodeMap.set(entryPath, newEntry);
   });
@@ -111,8 +100,8 @@ export function buildFileTree(
 
     // If the node itself represents the project root directory, its children will be the top-level items.
     // We don't add the project root directory node itself to `topLevelNodes` directly.
-    if (node.filePath === normalizedProjectRoot && node.type === 'folder') {
-      return; // This is the root folder itself, its children will be added to topLevelNodes
+    if (fullPath === normalizedProjectRoot && node.type === 'directory') {
+      return;
     }
 
     const parentPath = path.dirname(fullPath);
@@ -149,14 +138,19 @@ export function buildFileTree(
 
       node.children?.sort((a, b) => {
         // Double-check for undefined/null/malformed entries during sorting for ultimate safety.
-        if (!a || !b || typeof a.name !== 'string' || typeof b.name !== 'string') {
+        if (
+          !a ||
+          !b ||
+          typeof a.name !== 'string' ||
+          typeof b.name !== 'string'
+        ) {
           console.warn(
             `FileTree: Malformed entry found during children sorting. Skipping: a=${JSON.stringify(a)}, b=${JSON.stringify(b)}`,
           );
           return 0; // Maintain relative order if comparison cannot be made.
         }
-        if (a.type === 'folder' && b.type !== 'folder') return -1; // Use 'folder' consistently
-        if (a.type !== 'folder' && b.type === 'folder') return 1;
+        if (a.type === 'directory' && b.type !== 'directory') return -1;
+        if (a.type !== 'directory' && b.type === 'directory') return 1;
         return a.name.localeCompare(b.name);
       });
 
@@ -179,8 +173,8 @@ export function buildFileTree(
       );
       return 0;
     }
-    if (a.type === 'folder' && b.type !== 'folder') return -1;
-    if (a.type !== 'folder' && b.type === 'folder') return 1;
+    if (a.type === 'directory' && b.type !== 'directory') return -1;
+    if (a.type !== 'directory' && b.type === 'directory') return 1;
     return a.name.localeCompare(b.name);
   });
 }

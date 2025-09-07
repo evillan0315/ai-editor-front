@@ -5,12 +5,11 @@ import {
   AddOrModifyFileChange,
   DeleteOrAnalyzeFileChange,
 } from '@/constants';
-// NO LONGER IMPORTING FileEntry from here to avoid conflicts
+import { FileEntry as TreeFileEntry } from './fileTree'; // Import for FileTree
 
 export interface FileEntry {
-  // This `FileEntry` is used by `FileContentResponse` etc., keeps `filePath`
   name: string;
-  filePath: string;
+  filePath: string; // Changed from 'path' to 'filePath'
   type: 'file' | 'directory';
   size?: number;
   lastModified?: string;
@@ -18,28 +17,7 @@ export interface FileEntry {
 
 export interface FileContentResponse {
   content: string;
-  filePath: string; // Keep as filePath to match backend ReadFileResponseDto
-  filename?: string;
-  mimeType?: string;
-  language?: string;
-}
-
-export interface FlatApiFileEntry {
-  // Represents a flattened API file entry, has `path`
-  name: string;
-  path: string; // Absolute path as returned by backend
-  isDirectory: boolean;
-  type: 'file' | 'folder'; // 'file' or 'folder'
-  lang?: string;
-  mimeType?: string;
-  size?: number;
-  createdAt?: string; // ISO string
-  updatedAt?: string; // ISO string
-}
-
-// Type matching the exact recursive response structure from the backend /api/file/list
-export interface BackendFileTreeNode extends FlatApiFileEntry {
-  children: BackendFileTreeNode[]; // Recursive structure
+  filePath: string;
 }
 
 export interface TerminalCommandResponse {

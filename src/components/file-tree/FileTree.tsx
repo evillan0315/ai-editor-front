@@ -12,7 +12,7 @@ import FileTreeItem from './FileTreeItem';
 import { useStore } from '@nanostores/react';
 import {
   fileTreeStore,
-  fetchInitialFiles, // Renamed from fetchFiles
+  fetchFiles,
   clearFileTree,
 } from '@/stores/fileTreeStore';
 import { aiEditorStore } from '@/stores/aiEditorStore';
@@ -24,13 +24,18 @@ interface FileTreeProps {
 }
 
 const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
-  const { files: treeFiles, isFetchingTree, fetchTreeError } = useStore(fileTreeStore);
+  const {
+    files: treeFiles,
+    isFetchingTree,
+    fetchTreeError,
+    // Removed 'loading' and 'error' as 'isFetchingTree' and 'fetchTreeError' are more specific
+  } = useStore(fileTreeStore);
   const { scanPathsInput } = useStore(aiEditorStore);
   const theme = useTheme();
 
   useEffect(() => {
     if (projectRoot) {
-      fetchInitialFiles(
+      fetchFiles(
         projectRoot,
         scanPathsInput
           .split(',')
@@ -45,8 +50,9 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
 
   const handleRefreshTree = () => {
     if (projectRoot) {
-      // Force a fetch by ensuring the `fetchInitialFiles` logic considers it not fresh
-      fetchInitialFiles(
+      // Force a fetch by ensuring the `fetchFiles` logic considers it not fresh
+      // This is handled by the fetchFiles logic now, no need to clear state explicitly here.
+      fetchFiles(
         projectRoot,
         scanPathsInput
           .split(',')
@@ -106,7 +112,10 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
       {isFetchingTree ? (
         <Box className="flex justify-center items-center flex-grow">
           <CircularProgress size={24} />
-          <Typography variant="body2" sx={{ ml: 2, color: theme.palette.text.secondary }}>
+          <Typography
+            variant="body2"
+            sx={{ ml: 2, color: theme.palette.text.secondary }}
+          >
             Loading files...
           </Typography>
         </Box>
@@ -116,15 +125,21 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
         </Alert>
       ) : treeFiles.length === 0 && projectRoot ? (
         <Alert severity="info" sx={{ mt: 2 }}>
-          No files found for project root: {projectRoot}. Check path and scan paths.
+          No files found for project root: {projectRoot}. Check path and scan
+          paths.
         </Alert>
       ) : (
         <Box className="flex-grow">
           {treeFiles.map((entry) => (
-            <FileTreeItem key={entry.filePath} fileEntry={entry} projectRoot={projectRoot} />
+            <FileTreeItem
+              key={entry.filePath}
+              fileEntry={entry}
+              projectRoot={projectRoot}
+            />
           ))}
         </Box>
       )}
+      {/* Removed general loading/error display as 'isFetchingTree' and 'fetchTreeError' are now the dedicated states for file tree fetching. */}
     </Paper>
   );
 };

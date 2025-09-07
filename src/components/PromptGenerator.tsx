@@ -24,10 +24,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import DriveFolderUploadIcon from '@mui/icons-material/DriveFolderUpload';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
 import AddRoadIcon from '@mui/icons-material/AddRoad';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import EditNoteIcon from '@mui/icons-material/EditNote';
-import TuneIcon from '@mui/icons-material/Tune';
-import SourceIcon from '@mui/icons-material/Source'; // New import for File Browser button
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'; // Changed to CloudUpload
+import EditNoteIcon from '@mui/icons-material/EditNote'; // New icon for instructions
+import TuneIcon from '@mui/icons-material/Tune'; // New icon for AI Options
 import { RequestType, RequestTypeValues } from '@/types';
 import {
   aiEditorStore,
@@ -46,14 +45,16 @@ import {
   setUploadedFile,
 } from '@/stores/aiEditorStore';
 import { authStore } from '@/stores/authStore';
-import { fileTreeStore, fetchInitialFiles } from '@/stores/fileTreeStore'; // Updated import to fetchInitialFiles
-import { INSTRUCTION, ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT } from '@/constants';
+import { fileTreeStore, fetchFiles } from '@/stores/fileTreeStore';
+import {
+  INSTRUCTION,
+  ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
+} from '@/constants';
 import { generateCode, LlmGeneratePayload } from '@/api/llm';
 import { ModelResponse } from '@/types';
 import FilePickerDialog from '@/components/FilePickerDialog';
-import FileUploaderDialog from '@/components/dialogs/FileUploaderDialog';
-import InstructionEditorDialog from '@/components/dialogs/InstructionEditorDialog';
-import FileBrowserDialog from '@/components/dialogs/FileBrowserDialog'; // New Import
+import FileUploaderDialog from '@/components/dialogs/FileUploaderDialog'; // New Import
+import InstructionEditorDialog from '@/components/dialogs/InstructionEditorDialog'; // New Import
 
 // Helper function to truncate long paths for display in chips
 const truncatePath = (path: string, maxLength: number = 30): string => {
@@ -71,7 +72,9 @@ const truncatePath = (path: string, maxLength: number = 30): string => {
       // Ensure truncatedDirPath doesn't end with a partial path segment
       const lastSlashIndex = truncatedDirPath.lastIndexOf('/');
       const finalDirPath =
-        lastSlashIndex !== -1 ? truncatedDirPath.substring(0, lastSlashIndex) : truncatedDirPath;
+        lastSlashIndex !== -1
+          ? truncatedDirPath.substring(0, lastSlashIndex)
+          : truncatedDirPath;
       return `${finalDirPath ? finalDirPath + '/' : ''}.../${fileName}`;
     }
   }
@@ -106,13 +109,13 @@ const PromptGenerator: React.FC = () => {
   const [newScanPathValue, setNewScanPathValue] = useState<string>('');
 
   // State for new dialogs
-  const [isFileUploaderDialogOpen, setIsFileUploaderDialogOpen] = useState(false);
-  const [isInstructionEditorDialogOpen, setIsInstructionEditorDialogOpen] = useState(false);
-  const [isFileBrowserDialogOpen, setIsFileBrowserDialogOpen] = useState(false); // New state for FileBrowserDialog
-
-  const [editingInstructionType, setEditingInstructionType] = useState<'ai' | 'expected' | null>(
-    null,
-  );
+  const [isFileUploaderDialogOpen, setIsFileUploaderDialogOpen] =
+    useState(false);
+  const [isInstructionEditorDialogOpen, setIsInstructionEditorDialogOpen] =
+    useState(false);
+  const [editingInstructionType, setEditingInstructionType] = useState<
+    'ai' | 'expected' | null
+  >(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null); // For MUI Menu
 
   useEffect(() => {
@@ -125,11 +128,15 @@ const PromptGenerator: React.FC = () => {
     }
   }, [currentProjectPath, projectInput]);
 
-  const handleInstructionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInstructionChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setInstruction(event.target.value);
   };
 
-  const handleProjectInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProjectInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setProjectInput(event.target.value);
   };
 
@@ -157,7 +164,9 @@ const PromptGenerator: React.FC = () => {
   };
 
   const handleRemoveScanPath = (pathToRemove: string) => {
-    updateScanPaths(currentScanPathsArray.filter((path) => path !== pathToRemove));
+    updateScanPaths(
+      currentScanPathsArray.filter((path) => path !== pathToRemove),
+    );
   };
 
   const handleLoadProject = () => {
@@ -168,7 +177,7 @@ const PromptGenerator: React.FC = () => {
     setAppliedMessages([]);
     setCurrentDiff(null, null);
     setOpenedFile(null);
-    fetchInitialFiles(projectInput, currentScanPathsArray); // Updated to fetchInitialFiles
+    fetchFiles(projectInput, currentScanPathsArray);
   };
 
   const handleGenerateCode = async () => {
@@ -198,19 +207,22 @@ const PromptGenerator: React.FC = () => {
         projectRoot: currentProjectPath,
         projectStructure: '',
         relevantFiles: [],
-        additionalInstructions: aiInstruction,
-        expectedOutputFormat: expectedOutputInstruction,
+        additionalInstructions: aiInstruction, // Use dynamic instruction
+        expectedOutputFormat: expectedOutputInstruction, // Use dynamic expected output
         scanPaths: currentScanPathsArray,
-        requestType: requestType,
-        ...(uploadedFileData && { fileData: uploadedFileData }),
-        ...(uploadedFileMimeType && { fileMimeType: uploadedFileMimeType }),
+        requestType: requestType, // The selected request type is passed here.
+        ...(uploadedFileData && { fileData: uploadedFileData }), // Include file data if present
+        ...(uploadedFileMimeType && { fileMimeType: uploadedFileMimeType }), // Include mime type if present
+        // backend handles if it's image or generic file based on mime type
       };
 
       const aiResponse: ModelResponse = await generateCode(payload);
       console.log(aiResponse, 'aiResponse');
       setLastLlmResponse(aiResponse);
     } catch (err) {
-      setError(`Failed to generate code: ${err instanceof Error ? err.message : String(err)}`);
+      setError(
+        `Failed to generate code: ${err instanceof Error ? err.message : String(err)}`,
+      );
     } finally {
       setLoading(false);
     }
@@ -268,7 +280,8 @@ const PromptGenerator: React.FC = () => {
     setIsInstructionEditorDialogOpen(false);
   };
 
-  const commonDisabled = !isLoggedIn || applyingChanges || isFetchingFileContent;
+  const commonDisabled =
+    !isLoggedIn || applyingChanges || isFetchingFileContent;
 
   return (
     <Paper
@@ -295,7 +308,11 @@ const PromptGenerator: React.FC = () => {
           }}
         >
           {currentScanPathsArray.length === 0 && !showAddScanPathInput ? (
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 1, my: 0.5 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ ml: 1, my: 0.5 }}
+            >
               No scan paths. Add some.
             </Typography>
           ) : (
@@ -325,7 +342,9 @@ const PromptGenerator: React.FC = () => {
               freeSolo
               options={scanPathAutocompleteOptions}
               value={newScanPathValue}
-              onInputChange={(_event, newInputValue) => setNewScanPathValue(newInputValue)}
+              onInputChange={(_event, newInputValue) =>
+                setNewScanPathValue(newInputValue)
+              }
               onChange={(_event, newValue) => {
                 if (typeof newValue === 'string') {
                   handleAddScanPath(newValue);
@@ -406,7 +425,8 @@ const PromptGenerator: React.FC = () => {
                 sx={{ color: theme.palette.text.secondary }}
                 size="small"
               >
-                <CloudUploadIcon />
+                <CloudUploadIcon />{' '}
+                {/* Changed to CloudUploadIcon to indicate selection/upload kind of action */}
               </IconButton>
             </span>
           </Tooltip>
@@ -439,7 +459,11 @@ const PromptGenerator: React.FC = () => {
                 </Tooltip>
                 <Tooltip title="Clear All State">
                   <span>
-                    <IconButton onClick={clearState} disabled={commonDisabled} color="secondary">
+                    <IconButton
+                      onClick={clearState}
+                      disabled={commonDisabled}
+                      color="secondary"
+                    >
                       <ClearAllIcon />
                     </IconButton>
                   </span>
@@ -451,19 +475,6 @@ const PromptGenerator: React.FC = () => {
 
         {/* New Buttons/Dropdowns (Right) */}
         <Box className="flex gap-2 items-center flex-shrink-0">
-          {/* File Browser Button */}
-          <Tooltip title="Browse Project Files">
-            <span>
-              <IconButton
-                onClick={() => setIsFileBrowserDialogOpen(true)}
-                disabled={commonDisabled || !currentProjectPath}
-                color="primary"
-              >
-                <SourceIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-
           {/* File Upload/Paste Button */}
           <Tooltip title="Upload File or Paste Base64">
             <span>
@@ -478,8 +489,15 @@ const PromptGenerator: React.FC = () => {
           </Tooltip>
 
           {/* RequestType Dropdown */}
-          <FormControl sx={{ minWidth: 160 }} size="small" disabled={commonDisabled}>
-            <InputLabel id="request-type-label" sx={{ color: theme.palette.text.secondary }}>
+          <FormControl
+            sx={{ minWidth: 160 }}
+            size="small"
+            disabled={commonDisabled}
+          >
+            <InputLabel
+              id="request-type-label"
+              sx={{ color: theme.palette.text.secondary }}
+            >
               Request Type
             </InputLabel>
             <Select
@@ -502,7 +520,11 @@ const PromptGenerator: React.FC = () => {
           {/* Context Menu for Instructions */}
           <Tooltip title="Edit AI Instructions & Expected Output">
             <span>
-              <IconButton onClick={handleMenuClick} disabled={commonDisabled} color="primary">
+              <IconButton
+                onClick={handleMenuClick}
+                disabled={commonDisabled}
+                color="primary"
+              >
                 <EditNoteIcon />
               </IconButton>
             </span>
@@ -533,7 +555,7 @@ const PromptGenerator: React.FC = () => {
       <FileUploaderDialog
         open={isFileUploaderDialogOpen}
         onClose={() => setIsFileUploaderDialogOpen(false)}
-        onUpload={setUploadedFile}
+        onUpload={setUploadedFile} // Pass the action to update store
         currentUploadedFile={uploadedFileData}
         currentUploadedMimeType={uploadedFileMimeType}
       />
@@ -545,15 +567,12 @@ const PromptGenerator: React.FC = () => {
           onSave={handleSaveInstruction}
           instructionType={editingInstructionType}
           initialContent={
-            editingInstructionType === 'ai' ? aiInstruction : expectedOutputInstruction
+            editingInstructionType === 'ai'
+              ? aiInstruction
+              : expectedOutputInstruction
           }
         />
       )}
-
-      <FileBrowserDialog
-        open={isFileBrowserDialogOpen}
-        onClose={() => setIsFileBrowserDialogOpen(false)}
-      />
 
       {/* Main AI Prompt Text Area */}
       <TextField
@@ -584,7 +603,9 @@ const PromptGenerator: React.FC = () => {
         }
         sx={{ mt: 3, py: 1.5, px: 4, fontSize: '1.05rem' }}
       >
-        {loading ? <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> : null}
+        {loading ? (
+          <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+        ) : null}
         Generate/Modify Code
       </Button>
       {error && (
