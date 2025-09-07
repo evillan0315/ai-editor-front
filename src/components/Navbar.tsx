@@ -61,15 +61,6 @@ const Navbar: React.FC = () => {
             await fetchProjectScripts(currentProjectPath);
           setPackageScripts(scripts);
           setPackageManager(detectedPackageManager);
-        } catch (err) {
-          console.error('Failed to load package scripts:', err);
-          setSnackbarMessage(
-            `Failed to load package scripts: ${err instanceof Error ? err.message : String(err)}`,
-          );
-          setSnackbarSeverity('error');
-          setSnackbarOpen(true);
-          setPackageScripts([]);
-          setPackageManager(null);
         } finally {
           setScriptsLoading(false);
         }
@@ -186,8 +177,10 @@ const Navbar: React.FC = () => {
 
   return (
     <AppBar
-      position="static"
+      position="sticky" // Changed from "static" to "sticky"
       sx={{
+        top: 0, // Added to stick to the top
+        zIndex: 1100, // Added z-index to ensure it stays on top
         bgcolor: theme.palette.background.paper,
         borderBottom: `1px solid ${theme.palette.divider}`,
       }}

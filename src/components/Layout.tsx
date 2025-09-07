@@ -31,10 +31,11 @@ const Layout: React.FC = () => {
         <Outlet />
       </main>
       <footer
-        className="w-full mt-auto text-center text-sm py-4"
+        className="w-full text-center text-sm py-4 sticky bottom-0 z-100" // Added sticky bottom classes
         style={{
           color: theme.palette.text.secondary,
           backgroundColor: theme.palette.background.paper,
+          borderTop: `1px solid ${theme.palette.divider}`, // Added a top border for visual separation
         }}
       >
         © 2025 AI Editor. All rights reserved.

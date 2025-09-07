@@ -290,261 +290,167 @@ const PromptGenerator: React.FC = () => {
         gap: 2, // Internal spacing between elements
       }}
     >
-      {/* Combined Top Row for Project Config and AI Options */}
-      <Box
-        className="mb-6 flex flex-wrap items-stretch justify-start gap-2"
-        sx={{ alignItems: 'flex-start' }}
-      >
-        {/* Scan Paths Section (Left) - Autocomplete & Add/Picker Buttons */}
-        <Box
-          className="flex flex-wrap items-center gap-1 p-1 border rounded-md"
-          sx={{
-            borderColor: theme.palette.divider,
-            bgcolor: theme.palette.background.default,
-            minWidth: { xs: '100%', sm: '300px' },
-            flexGrow: 1,
-          }}
-        >
-          {currentScanPathsArray.length === 0 && !showAddScanPathInput ? (
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 1, my: 0.5 }}>
-              No scan paths. Add some.
-            </Typography>
-          ) : (
-            currentScanPathsArray.map((path) => (
-              <Tooltip key={path} title={path} placement="top">
-                <Chip
-                  label={truncatePath(path)}
-                  onDelete={() => handleRemoveScanPath(path)}
-                  disabled={commonDisabled}
-                  deleteIcon={<CloseIcon />}
-                  sx={{
-                    maxWidth: 180,
-                    '& .MuiChip-label': {
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    },
-                  }}
-                  size="small"
-                />
+      {/* Project Root Path Section */}
+      <TextField
+        label="Project Root Path"
+        value={projectInput}
+        onChange={handleProjectInputChange}
+        placeholder="e.g., /home/user/my-project"
+        disabled={commonDisabled}
+        fullWidth // Ensure it takes full width
+        size="small"
+        InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+        InputProps={{
+          style: { color: theme.palette.text.primary },
+          endAdornment: (
+            <InputAdornment position="end">
+              <Tooltip title="Load Project">
+                <span>
+                  <IconButton
+                    onClick={handleLoadProject}
+                    disabled={commonDisabled || !projectInput}
+                    color="primary"
+                  >
+                    <DriveFolderUploadIcon />
+                  </IconButton>
+                </span>
               </Tooltip>
-            ))
-          )}
+              <Tooltip title="Clear All State">
+                <span>
+                  <IconButton onClick={clearState} disabled={commonDisabled} color="secondary">
+                    <ClearAllIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </InputAdornment>
+          ),
+        }}
+      />
 
-          {showAddScanPathInput ? (
-            <Autocomplete
-              freeSolo
-              options={scanPathAutocompleteOptions}
-              value={newScanPathValue}
-              onInputChange={(_event, newInputValue) => setNewScanPathValue(newInputValue)}
-              onChange={(_event, newValue) => {
-                if (typeof newValue === 'string') {
-                  handleAddScanPath(newValue);
-                } else if (newValue && (newValue as any).inputValue) {
-                  handleAddScanPath((newValue as any).inputValue);
-                }
-              }}
-              onBlur={() => {
-                if (newScanPathValue === '') {
-                  setShowAddScanPathInput(false);
-                }
-              }}
-              disabled={commonDisabled}
-              sx={{ minWidth: 150, flexGrow: 1 }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="Add new path (e.g., src/utils)"
-                  autoFocus
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' && newScanPathValue) {
-                      handleAddScanPath(newScanPathValue);
-                      event.preventDefault();
-                    }
-                    if (event.key === 'Escape') {
-                      setShowAddScanPathInput(false);
-                      setNewScanPathValue('');
-                    }
-                  }}
-                  size="small"
-                  InputLabelProps={{
-                    style: { color: theme.palette.text.secondary },
-                  }}
-                  InputProps={{
-                    ...params.InputProps,
-                    style: { color: theme.palette.text.primary },
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        {newScanPathValue && (
-                          <IconButton
-                            onClick={() => setNewScanPathValue('')}
-                            edge="end"
-                            disabled={commonDisabled}
-                            size="small"
-                          >
-                            <CloseIcon fontSize="small" />
-                          </IconButton>
-                        )}
-                        {params.InputProps.endAdornment}
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
-            />
-          ) : (
-            <Tooltip title="Add New Scan Path Manually">
-              <span>
-                <IconButton
-                  onClick={() => setShowAddScanPathInput(true)}
-                  edge="end"
-                  disabled={commonDisabled}
-                  sx={{ color: theme.palette.text.secondary }}
-                  size="small"
-                >
-                  <AddRoadIcon />
-                </IconButton>
-              </span>
+      {/* Scan Paths Section - Autocomplete & Add/Picker Buttons */}
+      <Box
+        className="flex flex-wrap items-center gap-1 p-1 border rounded-md"
+        sx={{
+          borderColor: theme.palette.divider,
+          bgcolor: theme.palette.background.default,
+          width: '100%', // Ensure it takes full width
+        }}
+      >
+        {currentScanPathsArray.length === 0 && !showAddScanPathInput ? (
+          <Typography variant="body2" color="text.secondary" sx={{ ml: 1, my: 0.5 }}>
+            No scan paths. Add some.
+          </Typography>
+        ) : (
+          currentScanPathsArray.map((path) => (
+            <Tooltip key={path} title={path} placement="top">
+              <Chip
+                label={truncatePath(path)}
+                onDelete={() => handleRemoveScanPath(path)}
+                disabled={commonDisabled}
+                deleteIcon={<CloseIcon />}
+                sx={{
+                  maxWidth: 180,
+                  '& .MuiChip-label': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  },
+                }}
+                size="small"
+              />
             </Tooltip>
-          )}
+          ))
+        )}
 
-          <Tooltip title="Select Paths from File Tree">
+        {showAddScanPathInput ? (
+          <Autocomplete
+            freeSolo
+            options={scanPathAutocompleteOptions}
+            value={newScanPathValue}
+            onInputChange={(_event, newInputValue) => setNewScanPathValue(newInputValue)}
+            onChange={(_event, newValue) => {
+              if (typeof newValue === 'string') {
+                handleAddScanPath(newValue);
+              } else if (newValue && (newValue as any).inputValue) {
+                handleAddScanPath((newValue as any).inputValue);
+              }
+            }}
+            onBlur={() => {
+              if (newScanPathValue === '') {
+                setShowAddScanPathInput(false);
+              }
+            }}
+            disabled={commonDisabled}
+            sx={{ minWidth: 150, flexGrow: 1 }} // Keep flexGrow for responsive input
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Add new path (e.g., src/utils)"
+                autoFocus
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && newScanPathValue) {
+                    handleAddScanPath(newScanPathValue);
+                    event.preventDefault();
+                  }
+                  if (event.key === 'Escape') {
+                    setShowAddScanPathInput(false);
+                    setNewScanPathValue('');
+                  }
+                }}
+                size="small"
+                InputLabelProps={{
+                  style: { color: theme.palette.text.secondary },
+                }}
+                InputProps={{
+                  ...params.InputProps,
+                  style: { color: theme.palette.text.primary },
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      {newScanPathValue && (
+                        <IconButton
+                          onClick={() => setNewScanPathValue('')}
+                          edge="end"
+                          disabled={commonDisabled}
+                          size="small"
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                      {params.InputProps.endAdornment}
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
+          />
+        ) : (
+          <Tooltip title="Add New Scan Path Manually">
             <span>
               <IconButton
-                onClick={() => setIsPickerDialogOpen(true)}
+                onClick={() => setShowAddScanPathInput(true)}
                 edge="end"
                 disabled={commonDisabled}
                 sx={{ color: theme.palette.text.secondary }}
                 size="small"
               >
-                <CloudUploadIcon />
+                <AddRoadIcon />
               </IconButton>
             </span>
           </Tooltip>
-        </Box>
+        )}
 
-        {/* Project Root Path Section (Middle) */}
-        <TextField
-          label="Project Root Path"
-          value={projectInput}
-          onChange={handleProjectInputChange}
-          placeholder="e.g., /home/user/my-project"
-          disabled={commonDisabled}
-          sx={{ flexShrink: 0, minWidth: { xs: '100%', sm: '300px' } }}
-          size="small"
-          InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
-          InputProps={{
-            style: { color: theme.palette.text.primary },
-            endAdornment: (
-              <InputAdornment position="end">
-                <Tooltip title="Load Project">
-                  <span>
-                    <IconButton
-                      onClick={handleLoadProject}
-                      disabled={commonDisabled || !projectInput}
-                      color="primary"
-                    >
-                      <DriveFolderUploadIcon />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-                <Tooltip title="Clear All State">
-                  <span>
-                    <IconButton onClick={clearState} disabled={commonDisabled} color="secondary">
-                      <ClearAllIcon />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              </InputAdornment>
-            ),
-          }}
-        />
-
-        {/* New Buttons/Dropdowns (Right) */}
-        <Box className="flex gap-2 items-center flex-shrink-0">
-          {/* File Upload/Paste Button */}
-          <Tooltip title="Upload File or Paste Base64">
-            <span>
-              <IconButton
-                onClick={() => setIsFileUploaderDialogOpen(true)}
-                disabled={commonDisabled}
-                color="primary"
-              >
-                <CloudUploadIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-
-          {/* RequestType Dropdown */}
-          <FormControl sx={{ minWidth: 160 }} size="small" disabled={commonDisabled}>
-            <InputLabel id="request-type-label" sx={{ color: theme.palette.text.secondary }}>
-              Request Type
-            </InputLabel>
-            <Select
-              labelId="request-type-label"
-              id="request-type-select"
-              value={requestType}
-              label="Request Type"
-              onChange={(e) => setRequestType(e.target.value as RequestType)}
-              sx={{ color: theme.palette.text.primary }}
-              inputProps={{ sx: { color: theme.palette.text.primary } }}
+        <Tooltip title="Select Paths from File Tree">
+          <span>
+            <IconButton
+              onClick={() => setIsPickerDialogOpen(true)}
+              edge="end"
+              disabled={commonDisabled}
+              sx={{ color: theme.palette.text.secondary }}
+              size="small"
             >
-              {RequestTypeValues.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type.replace(/_/g, ' ')}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Context Menu for Instructions */}
-          <Tooltip title="Edit AI Instructions & Expected Output">
-            <span>
-              <IconButton onClick={handleMenuClick} disabled={commonDisabled} color="primary">
-                <EditNoteIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-            MenuListProps={{ sx: { bgcolor: theme.palette.background.paper } }}
-          >
-            <MenuItem onClick={() => handleEditInstruction('ai')}>
-              <TuneIcon sx={{ mr: 1 }} /> Edit AI Instruction
-            </MenuItem>
-            <MenuItem onClick={() => handleEditInstruction('expected')}>
-              <EditNoteIcon sx={{ mr: 1 }} /> Edit Expected Output Format
-            </MenuItem>
-          </Menu>
-        </Box>
-      </Box>
-
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={autoApplyChanges}
-              onChange={(e) => setAutoApplyChanges(e.target.checked)}
-              disabled={commonDisabled || loading}
-              color="primary"
-            />
-          }
-          label={
-            <Typography
-              variant="body2"
-              sx={{ color: theme.palette.text.primary, fontWeight: 'medium' }}
-            >
-              Auto-apply changes
-            </Typography>
-          }
-          sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 0.5 } }}
-        />
-        <Tooltip title="If enabled, AI proposed changes will be automatically applied to your file system.">
-          <IconButton size="small" sx={{ color: theme.palette.text.secondary }}>
-            <AutoFixHighIcon fontSize="small" />
-          </IconButton>
+              <CloudUploadIcon />
+            </IconButton>
+          </span>
         </Tooltip>
       </Box>
 
@@ -558,7 +464,7 @@ const PromptGenerator: React.FC = () => {
       <FileUploaderDialog
         open={isFileUploaderDialogOpen}
         onClose={() => setIsFileUploaderDialogOpen(false)}
-        onUpload={(data, mimeType, fileName) => setUploadedFile(data, mimeType)}
+        onUpload={(data, mimeType, fileName) => setUploadedFile(data, mimeType, fileName)} // Pass fileName
         currentUploadedFile={uploadedFileData}
         currentUploadedMimeType={uploadedFileMimeType}
       />
@@ -590,23 +496,134 @@ const PromptGenerator: React.FC = () => {
         InputProps={{ style: { color: theme.palette.text.primary } }}
       />
 
-      <Button
-        variant="contained"
-        color="success"
-        onClick={handleGenerateCode}
-        disabled={
-          loading ||
-          !instruction ||
-          !isLoggedIn ||
-          !currentProjectPath ||
-          applyingChanges ||
-          isFetchingFileContent
-        }
-        sx={{ mt: 3, py: 1.5, px: 4, fontSize: '1.05rem' }}
+      {/* New Row for controls and Generate button */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 2,
+          mt: 2,
+        }}
       >
-        {loading ? <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> : null}
-        Generate/Modify Code
-      </Button>
+        {/* Left group of buttons/elements */}
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          {/* File Upload/Paste Button */}
+          <Tooltip title="Upload File or Paste Base64">
+            <span>
+              <IconButton
+                onClick={() => setIsFileUploaderDialogOpen(true)}
+                disabled={commonDisabled}
+                color="primary"
+                size="small" // Make icons small
+              >
+                <CloudUploadIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          {/* RequestType Dropdown */}
+          <FormControl sx={{ minWidth: 120 }} size="small" disabled={commonDisabled}>
+            <InputLabel id="request-type-label" sx={{ color: theme.palette.text.secondary }}>
+              Type
+            </InputLabel>
+            <Select
+              labelId="request-type-label"
+              id="request-type-select"
+              value={requestType}
+              label="Type"
+              onChange={(e) => setRequestType(e.target.value as RequestType)}
+              sx={{ color: theme.palette.text.primary }}
+              inputProps={{ sx: { color: theme.palette.text.primary } }}
+            >
+              {RequestTypeValues.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type.replace(/_/g, ' ')}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Context Menu for Instructions */}
+          <Tooltip title="Edit AI Instructions & Expected Output">
+            <span>
+              <IconButton
+                onClick={handleMenuClick}
+                disabled={commonDisabled}
+                color="primary"
+                size="small"
+              >
+                <EditNoteIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            MenuListProps={{ sx: { bgcolor: theme.palette.background.paper } }}
+          >
+            <MenuItem onClick={() => handleEditInstruction('ai')} disabled={commonDisabled}>
+              <TuneIcon sx={{ mr: 1 }} fontSize="small" /> Edit AI Instruction
+            </MenuItem>
+            <MenuItem onClick={() => handleEditInstruction('expected')} disabled={commonDisabled}>
+              <EditNoteIcon sx={{ mr: 1 }} fontSize="small" /> Edit Expected Output Format
+            </MenuItem>
+          </Menu>
+
+          {/* Auto-apply changes switch */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={autoApplyChanges}
+                onChange={(e) => setAutoApplyChanges(e.target.checked)}
+                disabled={commonDisabled || loading}
+                color="primary"
+                size="small" // Make switch small
+              />
+            }
+            label={
+              <Typography
+                variant="caption" // Make label smaller
+                sx={{
+                  color: theme.palette.text.primary,
+                  fontWeight: 'medium',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Auto-apply
+              </Typography>
+            }
+            sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 0.5 } }}
+          />
+          <Tooltip title="If enabled, AI proposed changes will be automatically applied to your file system.">
+            <IconButton size="small" sx={{ color: theme.palette.text.secondary }}>
+              <AutoFixHighIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+
+        {/* Right group: Generate/Modify Code Button */}
+        <Button
+          variant="contained"
+          color="success"
+          onClick={handleGenerateCode}
+          disabled={
+            loading ||
+            !instruction ||
+            !isLoggedIn ||
+            !currentProjectPath ||
+            applyingChanges ||
+            isFetchingFileContent
+          }
+          size="small" // Make it small
+          sx={{ py: 1, px: 2, fontSize: '0.9rem', whiteSpace: 'nowrap' }} // Adjust padding and font size for small button
+        >
+          {loading ? <CircularProgress size={16} color="inherit" sx={{ mr: 1 }} /> : null}
+          Generate/Modify Code
+        </Button>
+      </Box>
+
       {error && (
         <Alert severity="error" sx={{ mt: 3 }}>
           {error}
