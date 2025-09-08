@@ -35,18 +35,21 @@
 - 🤖 **AI-Powered Code Generation & Modification**: Interact with a powerful AI to generate new files, modify existing ones, **repair code with suggestions**, or delete files based on natural language instructions.
 - 💡 **Interactive Proposed Changes**: View AI's proposed changes with detailed file paths, action types (ADD, MODIFY, DELETE, **REPAIR**, ANALYZE), and AI-generated reasons. Selectively apply or discard individual changes, and even **edit the proposed content before application**.
 - 📊 **Git Diff Visualization**: Inspect detailed git diffs for proposed modifications and deletions directly within the editor before applying changes, ensuring transparency and control.
-- 🏃 **Direct Git Command Execution**: Execute AI-generated `git` instructions (e.g., `git add .`, `git commit`) directly from the UI, with immediate display of terminal output and errors. Also, **run project-specific `npm`, `yarn`, or `pnpm` scripts directly from the Navbar**.
+- 🏃 **Direct Terminal Command Execution**: Execute AI-generated `git` instructions (e.g., `git add .`, `git commit`) directly from the UI, with immediate display of terminal output and errors. Also, **run project-specific `npm`, `yarn`, or `pnpm` scripts directly from the Navbar**.
 - 🔒 **Secure Authentication**: Seamlessly log in using Google or GitHub OAuth2, or **with standard email/password**, for secure access to the editor, with user session management handled by the backend.
 - 📂 **Project Context & Scanning**: Specify a project root path and relevant scan paths for the AI to analyze, providing crucial context for intelligent code suggestions and understanding project structure. Includes an **interactive file picker dialog** for easy path selection and an **interactive directory picker dialog** for choosing the project root.
-- 🚀 **File Tree Navigation & Content Viewing with Tabs**: Browse your project's file structure with an interactive file tree. Open multiple files into **tabs**, switch between them, and view/edit their content in a dedicated editor panel. You can manually edit the content of proposed AI changes, but **opened files from the file tree are currently read-only, and the viewer is hidden when AI responses are active to prioritize proposed changes**.
+- 🚀 **File Tree Navigation & Content Viewing with Tabs**: Browse your project's file structure with an interactive file tree. Open multiple files into **tabs**, switch between them, and view/edit their content in a dedicated editor panel. You can manually edit the content of proposed AI changes, and **the file viewer remains editable when AI responses are active to allow for manual adjustments alongside AI suggestions**.
 - ⬆️ **File/Image Upload for AI Context**: Upload files or paste Base64 data (e.g., images, text files) to provide additional context to the AI, enabling multi-modal requests.
 - 📝 **Customizable AI Instructions & Output Format**: Modify the underlying AI system instructions, the expected output **JSON schema, YAML, Markdown, or plain text format** directly within the UI, allowing for fine-tuned control over AI behavior.
-- ⚙️ **Selectable AI Request Types**: Choose between various request types (e.g., `TEXT_ONLY`, `TEXT_WITH_IMAGE`, `TEXT_WITH_FILE`, `LLM_GENERATION`, `LIVE_API`, `RESUME_GENERATION`, `VIDEO_GENERATION`, `IMAGE_GENERATION`, etc.) to optimize AI interaction based on your input and desired outcome.
+- ⚙️ **Selectable AI Request Types**: Choose between various request types (e.g., `TEXT_ONLY`, `TEXT_WITH_IMAGE`, `TEXT_WITH_FILE`, `LLM_GENERATION`, `LIVE_API`, `RESUME_GENERATION`, `VIDEO_GENERATION`, `IMAGE_GENERATION`, `ERROR_REPORT`, etc.) to optimize AI interaction based on your input and desired outcome.
 - ⚡ **Auto-Apply Proposed Changes**: Option to automatically apply AI-generated changes to the file system immediately after generation, streamlining repetitive tasks.
 - 🎵 **Spotify-like Music Player**: An integrated application for a simulated music streaming experience.
 - 🌐 **AI Translator App**: Translate text content or uploaded files into any language using AI.
 - 🎙️ **Gemini Live Audio Chat**: Interact with Gemini AI using real-time audio input and output for conversational experiences.
 - 📦 **Built Application Preview**: Preview a successfully built frontend application by embedding it via a configurable URL in an iframe.
+- 🌍 **Project Management**: Create and manage organizations and their associated projects.
+- ⚙️ **Project Settings**: Manage project configurations, AI models, and API keys. (Coming Soon)
+- 🐛 **Bug Report**: Submit bug reports and track issues within your projects. (Coming Soon)
 - 🌍 **Modern UI/UX**: Built with React, Material-UI **v7**, and Tailwind CSS **v4** for a responsive, accessible, and intuitive user experience.
 - ⚡ **Vite Development**: Fast development and build times powered by Vite, providing a modern and efficient development workflow.
 - 🌗 **Dark/Light Theme Toggle**: Effortlessly switch between dark and light modes, enhancing readability and user comfort.
@@ -61,8 +64,8 @@ graph LR
     subgraph "Frontend (Client - React / Vite / TS / MUI / Tailwind)"
         Browser[User Browser]
         UI[React UI Components]
-        Pages(Pages - HomePage, DashboardPage, AppsPage, AiEditorPage, LoginPage, SpotifyAppPage, TranslatorAppPage, GeminiLiveAudioPage, PreviewAppPage etc.)
-        State(Nanostores - aiEditorStore, authStore, fileTreeStore, themeStore, spotifyStore, translatorStore, geminiLiveStore, contextMenuStore)
+        Pages(Pages - HomePage, DashboardPage, AppsPage, AiEditorPage, LoginPage, RegisterPage, SpotifyAppPage, TranslatorAppPage, GeminiLiveAudioPage, PreviewAppPage, OrganizationPage, ProjectsPage etc.)
+        State(Nanostores - aiEditorStore, authStore, fileTreeStore, themeStore, spotifyStore, translatorStore, geminiLiveStore, contextMenuStore, organizationStore, projectStore)
         Services(Frontend Services / API Clients)
         Router[React Router DOM]
     end
@@ -75,6 +78,8 @@ graph LR
         Terminal(Terminal Execution Service)
         Translation(Translation Service)
         GeminiLive(Gemini Live WebSocket Gateway)
+        Organization(Organization Service)
+        Project(Project Service)
         DB[(Database)]
         AI_Provider[AI Provider &lpar;e.g., Gemini&rpar;]
         FS[Project File System]
@@ -92,6 +97,8 @@ graph LR
     API -- Delegates --> File
     API -- Delegates --> Terminal
     API -- Delegates --> Translation
+    API -- Delegates --> Organization
+    API -- Delegates --> Project
     Auth -- Reads/Writes --> DB
     LLM -- Requests/Responses --> AI_Provider
     Translation -- Requests/Responses --> AI_Provider
@@ -103,11 +110,11 @@ graph LR
     Services -- Data --> State
     Router -- Navigates --> Pages
 
-    style Frontend fill:#111,stroke:#333,stroke-width:2px
-    style Backend fill:#222,stroke:#333,stroke-width:2px
-    style State fill:#000,stroke:#333,stroke-width:1px
-    style Services fill:#000,stroke:#333,stroke-width:1px
-    style API fill:#000,stroke:#333,stroke-width:1px
+    style Frontend fill:#111,stroke:#333,stroke-width:2px;
+    style Backend fill:#222,stroke:#333,stroke-width:2px;
+    style State fill:#000,stroke:#333,stroke-width:1px;
+    style Services fill:#000,stroke:#333,stroke-width:1px;
+    style API fill:#000,stroke:#333,stroke-width:1px;
     linkStyle 0 stroke:#0a0,stroke-width:2px;
     linkStyle 1 stroke:#0a0,stroke-width:2px;
     linkStyle 2 stroke:#0a0,stroke-width:2px;
@@ -126,6 +133,8 @@ graph LR
     linkStyle 15 stroke:#f60,stroke-width:2px;
     linkStyle 16 stroke:#f60,stroke-width:2px;
     linkStyle 17 stroke:#f60,stroke-width:2px;
+    linkStyle 18 stroke:#f60,stroke-width:2px;
+    linkStyle 19 stroke:#f60,stroke-width:2px;
 ```
 
 ---
@@ -136,7 +145,7 @@ graph LR
 project-board-front/
 ├── public/             # Static assets (e.g., vite.svg)
 ├── src/                # Source code for the React application
-│   ├── api/            # API client functions for interacting with the backend (e.g., `auth.ts`, `file.ts`, `llm.ts`, `terminal.ts`, `translation.ts`, `geminiLive.ts` for operations like authentication, file management, LLM requests, terminal commands, AI translation, and Gemini Live WebSocket communication)
+│   ├── api/            # API client functions for interacting with the backend (e.g., `auth.ts`, `file.ts`, `llm.ts`, `organization.ts`, `project.ts`, `terminal.ts`, `translation.ts`, `geminiLive.ts` for operations like authentication, file management, LLM requests, project management, terminal commands, AI translation, and Gemini Live WebSocket communication)
 │   ├── assets/         # Static assets like images/icons (e.g., react.svg)
 │   ├── components/     # Reusable React components
 │   │   ├── dialogs/    # Modal dialog components (e.g., `DirectoryPickerDialog.tsx`, `FileUploaderDialog.tsx`, `InstructionEditorDialog.tsx`, `index.ts` for exports)
@@ -146,14 +155,16 @@ project-board-front/
 │   ├── constants/      # Global constants, default AI instruction templates, and configuration values (e.g., `fileIcons.tsx`, `requestTypeIcons.ts`, `scriptIcons.ts`, `markdown-instruction.ts`, `text-instruction.ts`, `yaml-instruction.ts`)
 │   ├── pages/          # Top-level page components, defining the main views of the application
 │   │   ├── spotify/    # Components specific to the Spotify-like app (e.g., `SpotifyHomePage.tsx`, `SpotifyLibraryPage.tsx`, `SpotifyMainContent.tsx`, `SpotifyPlayerBar.tsx`, `SpotifySearchPage.tsx`, `SpotifySidebar.tsx`)
-│   │   └── ...         # Other pages (e.g., `HomePage.tsx`, `DashboardPage.tsx`, `AppsPage.tsx`, `AiEditorPage.tsx`, `LoginPage.tsx`, `AuthCallback.tsx`, `RegisterPage.tsx`, `SpotifyAppPage.tsx`, `TranslatorAppPage.tsx`, `GeminiLiveAudioPage.tsx`, `PreviewAppPage.tsx`)
+│   │   └── ...         # Other pages (e.g., `HomePage.tsx`, `DashboardPage.tsx`, `AppsPage.tsx`, `AiEditorPage.tsx`, `LoginPage.tsx`, `AuthCallback.tsx`, `RegisterPage.tsx`, `OrganizationPage.tsx`, `ProjectsPage.tsx`, `SpotifyAppPage.tsx`, `TranslatorAppPage.tsx`, `GeminiLiveAudioPage.tsx`, `PreviewAppPage.tsx`)
 │   ├── routes/         # Application routing setup (currently defined in `App.tsx` using React Router DOM, kept for future expansion)
 │   ├── services/       # Business logic for API calls, authentication state management, and other non-UI related operations (e.g., `authService.ts`)
-│   ├── stores/         # Nanostores for centralized, reactive global state management (e.g., `authStore.ts`, `aiEditorStore.ts`, `fileTreeStore.ts`, `themeStore.ts`, `spotifyStore.ts`, `translatorStore.ts`, `geminiLiveStore.ts`, `contextMenuStore.ts`)
-│   ├── types/          # TypeScript type definitions for API responses, application state, and domain models (`auth.ts`, `fileTree.ts`, `index.ts` including `FileTreeNode`, `ApiFileScanResult`, `GeminiLiveAudioState`)
+│   ├── stores/         # Nanostores for centralized, reactive global state management (e.g., `authStore.ts`, `aiEditorStore.ts`, `fileTreeStore.ts`, `themeStore.ts`, `spotifyStore.ts`, `translatorStore.ts`, `geminiLiveStore.ts`, `contextMenuStore.ts`, `organizationStore.ts`, `projectStore.ts`)
+│   ├── types/          # TypeScript type definitions for API responses, application state, and domain models (`auth.ts`, `fileTree.ts`, `index.ts` including `FileTreeNode`, `ApiFileScanResult`, `GeminiLiveAudioState`, `Organization`, `Project`)
 │   └── utils/          # General utility functions (e.g., `fileUtils.ts` for path manipulation and file tree building, `codemirrorTheme.ts` for CodeMirror styling, `diffLanguage.ts` for diff highlighting, `index.ts` for CodeMirror language extensions, debounce)
 ├── .env                # Environment variables (local overrides for development, not committed)
 ├── .env.local          # Local environment variables (sensitive data, not committed to VCS)
+├── docs/               # Project documentation files (e.g., ARCHITECTURE.md, COMPONENTS.md, STATE_MANAGEMENT.md)
+├── ecosystem.config.cjs # PM2 process file
 ├── eslint.config.ts    # ESLint configuration for code quality and style
 ├── index.html          # Main HTML entry point for the single-page application
 ├── package.json        # Project dependencies, scripts, and metadata
@@ -206,14 +217,18 @@ This frontend interacts with the Project Board backend. Key endpoints and WebSoc
 - **`/api/auth/login`, `/api/auth/register`**: For local email/password authentication.
 - **`/api/auth/me`**: To check user session status.
 - **`/api/llm/generate-llm`**: To send user prompts and receive AI-generated code changes or multi-modal responses.
+- **`/api/llm/report-error`**: To send build/runtime errors for AI analysis.
 - **`/api/file/scan`**: To fetch project file structure for AI context.
 - **`/api/file/list`**: To fetch directory contents for the interactive file tree.
-- **`/api/file/read`**: To read the content of a specific file.
+- **`/api/file/open`**: To read the content of a specific file.
 - **`/api/file/apply-changes`**: To apply selected AI-proposed file modifications to the file system.
 - **`/api/file/git-diff`**: To retrieve git diffs for proposed changes against the current working tree.
 - **`/api/terminal/run`**: To execute arbitrary shell commands on the backend (e.g., for `git` operations or project scripts).
 - **`/api/terminal/package-scripts`**: To fetch package.json scripts and detect package manager.
+- **`/api/utils/json-yaml/to-json`**: To convert YAML content to JSON.
 - **`/api/translation/translate`**: To translate text or files using AI.
+- **`/api/organization`**: CRUD operations for organizations.
+- **`/api/project`**: CRUD operations for projects, linked to organizations.
 - **`/gemini` (WebSocket)**: For real-time Gemini Live Audio interactions (starting sessions, sending audio, receiving AI responses).
 
 Please refer to the backend documentation for detailed API schemas and additional endpoints for authentication, AI generation, and file/terminal operations.
@@ -343,9 +358,10 @@ Once your feature branch is ready and pushed, you can open a Pull Request.
 - [x] **Customizable AI Instructions & Output Format**: Allow modifying system instructions and expected output JSON, YAML, Markdown, or plain text formats.
 - [x] **Full Spotify App Functionality**: Integrate with a real Spotify API or expand mock data to a more interactive experience.
 - [x] **Built Application Preview**: Preview a successfully built frontend application by embedding it via a configurable URL in an iframe.
-- [ ] **Advanced AI Translator Features**: Add features like batch translation, language detection, and context-aware translation.
+- [x] **Advanced AI Translator Features**: Add features like batch translation, language detection, and context-aware translation.
 - [x] **File Tree with Tabs**: Implement a tabbed interface for easily switching between multiple open files in the editor.
-- [ ] **Gemini Live Advanced Controls**: Implement more granular control over Gemini Live sessions, e.g., switching models, different voice options.
+- [x] **Gemini Live Advanced Controls**: Implement more granular control over Gemini Live sessions, e.g., switching models, different voice options.
+- [x] **Project Management**: Create and manage organizations and their associated projects.
 
 ---
 

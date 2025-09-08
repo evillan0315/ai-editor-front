@@ -1,45 +1,88 @@
-# 🗺️ High-Level Architecture
+# High-Level Architecture
 
-This document details the architectural overview of the Project Board Frontend, built using a modern React ecosystem. The application follows a client-server architecture, with the frontend consuming RESTful APIs and WebSocket services provided by the backend.
+This document outlines the high-level architecture of the `project-board-front` application, detailing its main components and how they interact to provide a rich user experience for AI-powered development.
 
-For a visual representation of the architecture, please refer to the [High-Level Architecture diagram in the README.md](../README.md#%EF%B8%8F-high-level-architecture).
+## Core Principles
 
-## Frontend Layers
+- **Client-Side Rendering (CSR)**: The application is a Single-Page Application (SPA) built with React, rendered entirely on the client-side.
+- **Component-Based**: UI is composed of reusable and isolated React components.
+- **Functional Programming**: Leverages React Hooks and functional components for stateful logic.
+- **Type Safety**: Fully written in TypeScript to ensure type consistency and reduce runtime errors.
+- **Global State Management**: Uses Nanostores for simple, reactive, and efficient global state management.
+- **Styling**: Combines Material UI v7 for robust UI components and Tailwind CSS v4 for utility-first styling and responsive design.
+- **Backend Communication**: Interacts with a NestJS backend via RESTful APIs and WebSockets.
 
-The frontend is structured to promote separation of concerns, maintainability, and scalability.
+## Main Layers
 
-1.  **React UI Components**: These are the building blocks of the user interface. They are functional components, leveraging React hooks for state and lifecycle management. Components are organized into:
-    *   **`pages/`**: Top-level components representing distinct views of the application (e.g., `HomePage`, `AiEditorPage`, `LoginPage`).
-    *   **`components/`**: Reusable UI elements. This directory is further subdivided into specialized areas like `dialogs/`, `file-tree/`, and `ui/` to manage complexity.
-    *   **`assets/`**: Static files such as images and icons used within the UI.
+### 1. Presentation Layer (React UI & Pages)
 
-2.  **State Management (Nanostores)**: Global application state is managed using [Nanostores](https://nanostores.github.io/), a tiny, fast, and unopinionated state manager. Each major domain has its dedicated store (e.g., `authStore`, `aiEditorStore`, `fileTreeStore`, `themeStore`, `spotifyStore`, `translatorStore`, `geminiLiveStore`, `contextMenuStore`), promoting modularity and clear ownership of data. Components consume state via the `@nanostores/react` hook.
+This layer is responsible for rendering the user interface and handling user interactions. It's built with React, Material UI, and Tailwind CSS.
 
-3.  **Services / API Clients**: The `services/` and `api/` directories contain the logic for interacting with the backend.
-    *   **`services/`**: Encapsulates business logic related to authentication, user sessions, and potentially other domain-specific operations that might involve multiple API calls or complex client-side logic (e.g., `authService.ts`).
-    *   **`api/`**: Contains direct API client functions, each corresponding to a specific backend domain (e.g., `api/auth.ts`, `api/file.ts`, `api/llm.ts`, `api/terminal.ts`, `api/translation.ts`, `api/geminiLive.ts`). These functions handle HTTP requests (using `fetch`) and WebSocket communication (`socket.io-client`), abstracting away the network layer from the UI components.
+-   **`src/App.tsx`**: The root component that sets up React Router DOM for client-side navigation.
+-   **`src/pages/`**: Contains top-level views of the application, such as `HomePage`, `AiEditorPage`, `AppsPage`, `LoginPage`, `OrganizationPage`, `ProjectsPage`, and various app-specific pages like `SpotifyAppPage`, `TranslatorAppPage`, `GeminiLiveAudioPage`, `PreviewAppPage`.
+-   **`src/components/`**: Houses reusable UI components, categorized into:
+    -   `ui/`: Basic wrappers for Material UI components (e.g., `Button`, `TextField`).
+    -   `dialogs/`: Modal components (e.g., `FileUploaderDialog`, `DirectoryPickerDialog`, `InstructionEditorDialog`).
+    -   `file-tree/`: Components specifically for displaying and interacting with the file system tree (`FileTree`, `FileTreeItem`, `FileTreeContextMenuRenderer`).
+    -   General components: `Navbar`, `Layout`, `PromptGenerator`, `AiResponseDisplay`, `OpenedFileViewer`, `FileTabs`, `ProposedChangeCard`, `Snackbar`, `ThemeToggle`, `RunScriptMenuItem`.
 
-4.  **Routing (React Router DOM)**: Navigation within the Single Page Application (SPA) is handled by `React Router DOM`. Routes are primarily defined in `App.tsx`, mapping URL paths to specific page components.
+### 2. State Management Layer (Nanostores)
 
-5.  **Utilities (`utils/`)**: A collection of helper functions, custom hooks, and configurations that are not tied to a specific UI component or data domain. This includes functions for path manipulation, CodeMirror language extensions, and theme integration.
+Nanostores are used for managing the global state of the application. Each store is a lightweight, reactive state container focused on a specific domain.
 
-6.  **Constants (`constants/`)**: Stores global constants, default configurations, and AI instruction templates (e.g., `APP_NAME`, `INSTRUCTION`).
+-   **`src/stores/`**:
+    -   `authStore.ts`: Manages user authentication status, user profile, and loading/error states related to auth.
+    -   `aiEditorStore.ts`: Manages the state for the AI Code Editor, including user prompts, AI responses, selected changes, file content, and various loading indicators.
+    -   `fileTreeStore.ts`: Manages the state of the interactive file tree, including files, expanded directories, and selected files.
+    -   `themeStore.ts`: Manages the application's UI theme (light/dark mode).
+    -   `spotifyStore.ts`: Manages the state for the Spotify-like music player.
+    -   `translatorStore.ts`: Manages the state for the AI Translator application.
+    -   `geminiLiveStore.ts`: Manages the state for the Gemini Live Audio interaction, including session ID, recording status, and AI responses.
+    -   `contextMenuStore.ts`: Manages the visibility and content of context menus.
+    -   `organizationStore.ts`: Manages a list of organizations and the currently selected organization.
+    -   `projectStore.ts`: Manages a list of projects for a given organization.
 
-7.  **Types (`types/`)**: Centralized TypeScript interface and type definitions for API responses, application state, and domain models, ensuring type safety across the entire frontend.
+### 3. Service Layer (Frontend Services / API Clients)
 
-## Backend Interaction
+This layer contains functions responsible for interacting with the backend API. They encapsulate business logic related to data fetching, submission, and error handling.
 
-The frontend communicates with the backend through two primary mechanisms:
+-   **`src/api/`**: Contains client functions that make HTTP requests to the NestJS backend.
+    -   `auth.ts`: Authentication-related API calls (login, register, logout, check status).
+    -   `file.ts`: File system operations (scan, list directory, read, write, apply changes, git diff).
+    -   `llm.ts`: LLM interaction (generate code, report errors).
+    -   `terminal.ts`: Terminal command execution (run command, fetch package scripts).
+    -   `translation.ts`: AI translation services.
+    -   `geminiLive.ts`: WebSocket client for Gemini Live Audio communication.
+    -   `organization.ts`: CRUD operations for organizations.
+    -   `project.ts`: CRUD operations for projects.
+-   **`src/services/`**: Contains higher-level business logic that might orchestrate multiple API calls or manage local storage (e.g., `authService.ts` wraps API calls and interacts with `authStore`).
 
-1.  **REST API (HTTP/S)**: Most interactions, such as authentication, requesting AI generation, file system operations (listing, reading, applying changes), and running terminal commands, are performed via HTTP/S requests to the NestJS backend's REST API endpoints. The `api/` client functions handle sending authenticated requests (with JWTs stored in HTTP-only cookies managed by the backend) and processing responses.
+### 4. Utility Layer
 
-2.  **WebSocket (Socket.IO)**: For real-time, bidirectional communication, the application uses WebSockets, specifically `socket.io-client`. This is currently leveraged for the `Gemini Live Audio Chat` feature (`/gemini` namespace) to handle streaming audio input and receiving real-time AI audio/text responses. This allows for low-latency, conversational AI experiences.
+-   **`src/utils/`**: General-purpose helper functions.
+    -   `fileUtils.ts`: Path manipulation, file tree building logic.
+    -   `codemirrorTheme.ts`, `diffLanguage.ts`, `index.ts`: CodeMirror extensions for language highlighting and custom theme application.
+    -   `debounce.ts`: A utility for debouncing functions.
 
-## Key Architectural Principles
+### 5. Constants and Types
 
-*   **Modular Design**: Code is organized into logical modules (components, services, stores, utils) to enhance readability, maintainability, and reusability.
-*   **Type Safety**: Extensive use of TypeScript across the entire codebase to catch errors early and improve developer experience.
-*   **Reactive State**: Nanostores provide a reactive programming model, ensuring UI components efficiently update only when relevant parts of the state change.
-*   **Separation of Concerns**: Clear boundaries between UI, business logic, and data access layers.
-*   **UI/UX Focus**: Built with Material-UI v7 and Tailwind CSS v4 to create a responsive, accessible, and modern user experience.
-*   **Performance**: Optimized for fast development and runtime performance using Vite and lazy loading of page components.
+-   **`src/constants/`**: Global application constants, default AI instructions, predefined icons, etc.
+-   **`src/types/`**: TypeScript interface and type definitions for data structures used across the application, including API request/response bodies, state shapes, and domain models.
+
+## Interaction Flow Example: AI Code Generation
+
+1.  **User Input**: User types instructions in `PromptGenerator` (Component).
+2.  **State Update**: `setInstruction` action updates `aiEditorStore` (Nanostore).
+3.  **API Call**: User clicks "Generate", triggering `handleGenerateCode` (Component).
+4.  **Service Invocation**: `handleGenerateCode` calls `generateCode` (API Client).
+5.  **Backend Request**: `generateCode` makes an HTTP request to `/api/llm/generate-llm` (Backend API).
+6.  **AI Interaction**: Backend's LLM Orchestration Service interacts with the AI Provider (e.g., Gemini).
+7.  **Backend Response**: AI Provider responds to Backend, which processes it and sends a structured JSON `ModelResponse` to Frontend.
+8.  **State Update**: Frontend `generateCode` receives the response and calls `setLastLlmResponse` (Nanostore action).
+9.  **UI Render**: `AiResponseDisplay` (Component) reacts to `lastLlmResponse` change and renders the proposed file changes.
+10. **User Action**: User reviews changes, optionally edits them in `ProposedChangeCard`, and clicks "Apply Selected Changes" (Component).
+11. **Service Invocation**: This triggers `handleApplySelectedChanges` which calls `applyProposedChanges` (API Client).
+12. **Backend Execution**: `applyProposedChanges` sends changes to `/api/file/apply-changes` (Backend API), which then modifies files in the Project File System (FS).
+13. **Post-Apply Actions**: If auto-apply is enabled or user confirms, `performPostApplyActions` runs `pnpm run build` and AI-suggested Git commands via `/api/terminal/run`.
+14. **Error Reporting**: If build or Git commands fail, `reportErrorToLlm` is called to send diagnostics to the AI for analysis.
+15. **Feedback**: `Snackbar` (Component) displays success/error messages, reflecting changes applied and any terminal output.
