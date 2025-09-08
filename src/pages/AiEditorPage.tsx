@@ -7,7 +7,7 @@ import {
   setOpenedFile,
   setLastLlmResponse,
   setRequestType,
-  setLlmOutputFormat, // New: Import setLlmOutputFormat
+  setLlmOutputFormat,
   setInstruction,
   setUploadedFile,
 } from '@/stores/aiEditorStore';
@@ -18,17 +18,17 @@ import {
   Paper,
   useTheme,
   IconButton,
-  LinearProgress, // Import LinearProgress
+  LinearProgress,
 } from '@mui/material';
 import { FileTree } from '@/components/file-tree';
 import PromptGenerator from '@/components/PromptGenerator';
 import AiResponseDisplay from '@/components/AiResponseDisplay';
 import OpenedFileViewer from '@/components/OpenedFileViewer';
-import { RequestType, LlmOutputFormat } from '@/types'; // Import LlmOutputFormat
-import { APP_NAME } from '@/constants'; // Import APP_NAME
+import { RequestType, LlmOutputFormat } from '@/types';
+import { APP_NAME } from '@/constants';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import FileTabs from '@/components/FileTabs'; // New: Import FileTabs
+import FileTabs from '@/components/FileTabs';
 
 // Constants for layout.
 const FILE_TREE_WIDTH = 300; // Fixed width for the file tree when visible
@@ -37,7 +37,7 @@ const MAIN_CONTENT_PX_PADDING = 0; // Padding around the main content area (top,
 const FILE_TABS_HEIGHT = 41; // Approximate height of the new file tabs component
 
 const AiEditorPage: React.FC = () => {
-  const { error, currentProjectPath, lastLlmResponse, loading, applyingChanges, isBuilding } = // Add loading, applyingChanges, isBuilding
+  const { error, currentProjectPath, lastLlmResponse, loading, applyingChanges, isBuilding } =
     useStore(aiEditorStore);
   const theme = useTheme();
   const [searchParams] = useSearchParams();
@@ -57,7 +57,7 @@ const AiEditorPage: React.FC = () => {
   // Handle requestType and llmOutputFormat from URL query parameters
   useEffect(() => {
     const requestTypeParam = searchParams.get('requestType');
-    const outputFormatParam = searchParams.get('output'); // New: Get output format
+    const outputFormatParam = searchParams.get('output');
 
     if (
       requestTypeParam &&
@@ -70,12 +70,13 @@ const AiEditorPage: React.FC = () => {
         setRequestType(newRequestType);
         // Optionally clear the main instruction and uploaded files when a new generator is selected
         setInstruction('');
-        setUploadedFile(null, null, null); // Reset uploaded file/mimeType
+        setUploadedFile(null, null, null);
         setLastLlmResponse(null); // Clear previous AI response if coming from a different generator
         setOpenedFile(null); // Close any currently viewed file when switching generator types
       }
     }
     // If no requestType param, default to LLM_GENERATION
+    // This check also prevents unnecessary store updates if it's already LLM_GENERATION.
     if (
       !requestTypeParam &&
       aiEditorStore.get().requestType !== RequestType.LLM_GENERATION
@@ -95,6 +96,7 @@ const AiEditorPage: React.FC = () => {
       }
     }
     // If no outputFormat param, default to YAML (matching store default)
+    // This check also prevents unnecessary store updates if it's already YAML.
     if (
       !outputFormatParam &&
       aiEditorStore.get().llmOutputFormat !== LlmOutputFormat.YAML
@@ -104,58 +106,55 @@ const AiEditorPage: React.FC = () => {
   }, [searchParams]);
 
   return (
-    <Box // Root container for AiEditorPage, fills main area of Layout
+    <Box
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%', // Fills parent <main> in Layout (which has defined height)
+        height: '100%',
         width: '100%',
-        bgcolor: theme.palette.background.default, // Match page background
+        bgcolor: theme.palette.background.default,
         color: theme.palette.text.primary,
-        position: 'relative', // Establish a positioning context for absolute children
-        overflow: 'hidden', // Prevent page-level scrollbars
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
       {isAIGeneratingOrModifying && (
         <LinearProgress sx={{ width: '100%', position: 'sticky', top: 0, zIndex: 1200 }} />
       )}
-      {/* Top section for title, description, and errors (flex-shrink-0) */}
       <Box sx={{ flexShrink: 0, p: 0, pb: 0 }}></Box>
 
-      {/* Main content area: FileTree, Toggle Button, and Editor/Response/PromptGenerator */}
       <Box
         sx={{
           display: 'flex',
-          flexDirection: 'row', // Horizontal layout for FileTree and Editor/Response stack
-          flexGrow: 1, // Takes all available vertical space in this container
+          flexDirection: 'row',
+          flexGrow: 1,
           width: '100%',
-          minHeight: 0, // Crucial for flex children to correctly calculate 100% height and scroll
-          p: MAIN_CONTENT_PX_PADDING, // Apply padding around this section
+          minHeight: 0,
+          p: MAIN_CONTENT_PX_PADDING,
 
-          position: 'relative', // For positioning of file tree and toggle button
-          overflow: 'hidden', // Hide scrollbar of this box; children handle their own
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        {/* File Tree Section (Absolutely positioned and animated) */}
         <Box
           sx={{
-            position: 'absolute', // Positioned relative to its parent main content box
+            position: 'absolute',
             top: MAIN_CONTENT_PX_PADDING,
             bottom: MAIN_CONTENT_PX_PADDING,
             left: MAIN_CONTENT_PX_PADDING,
             width: showFileTree ? `${FILE_TREE_WIDTH}px` : '0px',
-            transition: 'width 0.2s ease-in-out', // Smooth transition for width
-            zIndex: 10, // Ensure it's above other content in its layer
-            overflow: 'hidden', // Hide its own scrollbar, FileTree component manages it internally
-            pointerEvents: showFileTree ? 'auto' : 'none', // Disable interaction when hidden
-            display: 'flex', // Use flex to ensure FileTree fills its container
-            flexDirection: 'column', // FileTree content itself is a column
+            transition: 'width 0.2s ease-in-out',
+            zIndex: 10,
+            overflow: 'hidden',
+            pointerEvents: showFileTree ? 'auto' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           {currentProjectPath && (
             <Box
               sx={{
-                width: `${FILE_TREE_WIDTH}px`, // Ensure the FileTree component is always rendered at its full width internally
+                width: `${FILE_TREE_WIDTH}px`,
                 height: '100%',
                 flexShrink: 0,
               }}
@@ -165,23 +164,22 @@ const AiEditorPage: React.FC = () => {
           )}
         </Box>
 
-        {/* File Tree Toggle Button */}
         <IconButton
           onClick={() => setShowFileTree(!showFileTree)}
           sx={{
             position: 'absolute',
-            top: `calc(${MAIN_CONTENT_PX_PADDING}px + 0px)`, // A bit of padding from the top edge of the main content box
+            top: `calc(${MAIN_CONTENT_PX_PADDING}px + 0px)`,
             left: showFileTree
               ? `${MAIN_CONTENT_PX_PADDING + FILE_TREE_WIDTH + CONTENT_HORIZONTAL_GAP / 2}px`
-              : `${MAIN_CONTENT_PX_PADDING}px`, // Position right of tree + half gap, or at left edge + main padding
-            zIndex: 11, // Above file tree
+              : `${MAIN_CONTENT_PX_PADDING}px`,
+            zIndex: 11,
             backgroundColor: theme.palette.background.paper,
-            borderRadius: '0 8px 8px 0', // Rounded on right side
+            borderRadius: '0 8px 8px 0',
             border: `1px solid ${theme.palette.divider}`,
             borderLeft: 'none',
-            p: '4px', // Smaller padding for a more compact button
+            p: '4px',
             transition: 'left 0.2s ease-in-out, background-color 0.2s',
-            boxShadow: theme.shadows[1], // Small shadow to make it pop
+            boxShadow: theme.shadows[1],
             color: theme.palette.text.secondary,
             '&:hover': {
               backgroundColor: theme.palette.action.hover,
@@ -195,42 +193,36 @@ const AiEditorPage: React.FC = () => {
           )}
         </IconButton>
 
-        {/* Editor/Response Section + PromptGenerator (Main flexible content area) */}
         <Box
           sx={{
             flexGrow: 1,
-            height: '100%', // Take full height of parent flex container
-            minWidth: 0, // Allow flex item to shrink
+            height: '100%',
+            minWidth: 0,
             display: 'flex',
-            flexDirection: 'column', // Stack content vertically
-            gap: MAIN_CONTENT_PX_PADDING, // Gap between editor/response and prompt generator
-            // Shift content when file tree is visible. Account for file tree width and gap.
+            flexDirection: 'column',
+            gap: MAIN_CONTENT_PX_PADDING,
             marginLeft: showFileTree
               ? `${FILE_TREE_WIDTH + CONTENT_HORIZONTAL_GAP}px`
               : '0px',
-            transition: 'margin-left 0.2s ease-in-out', // Smooth transition for margin
-            p: 0, // Individual components will handle their own padding
+            transition: 'margin-left 0.2s ease-in-out',
+            p: 0,
           }}
         >
-          {/* File Tabs */}
           <FileTabs />
 
-          {/* Editor/Response Display (scrollable) */}
           <Box
             sx={{
-              flexGrow: 1, // Takes all available space above the prompt generator
-              minHeight: 0, // Crucial for inner scrollable content
-              // AiResponseDisplay and OpenedFileViewer handle their own Paper/padding
+              flexGrow: 1,
+              minHeight: 0,
             }}
           >
             {lastLlmResponse ? <AiResponseDisplay /> : <OpenedFileViewer />}
           </Box>
 
-          {/* PromptGenerator (takes auto height) */}
           <Paper
-            elevation={2} // Add elevation to the prompt generator container
+            elevation={2}
             sx={{
-              flexShrink: 0, // Prevent prompt generator from shrinking
+              flexShrink: 0,
               p: 2,
               bgcolor: theme.palette.background.paper,
               border: `1px solid ${theme.palette.divider}`,
