@@ -8,6 +8,10 @@ import { runTerminalCommand, fetchProjectScripts } from '@/api/terminal';
 import ThemeToggle from './ThemeToggle';
 import RunScriptMenuItem from './RunScriptMenuItem'; // Changed from ScriptButton
 import Snackbar from './Snackbar';
+import AppsMenuContent from './AppsMenuContent'; // New: Import AppsMenuContent
+import ProfileMenuContent from './ProfileMenuContent'; // New: Import ProfileMenuContent
+import { appDefinitions } from '@/constants/appDefinitions'; // New: Import app definitions
+import { profileMenuDefinitions } from '@/constants/profileMenuDefinitions'; // New: Import profile menu definitions
 import {
   type PackageScript,
   type TerminalCommandResponse,
@@ -25,8 +29,12 @@ import AccountCircle from '@mui/icons-material/AccountCircle';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useTheme } from '@mui/material/styles';
 import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem'; // New: Import MenuItem for general menu
 import TerminalIcon from '@mui/icons-material/Terminal';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import LinearProgress from '@mui/material/LinearProgress'; // New: Import LinearProgress
+import AppsIcon from '@mui/icons-material/Apps'; // New: Import AppsIcon
+import IconButton from '@mui/material/IconButton'; // Explicitly import IconButton
 
 interface ScriptExecutionState {
   status: ScriptStatus;
@@ -51,8 +59,15 @@ const Navbar: React.FC = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState<
     'success' | 'error' | 'info'
   >('info');
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const menuOpen = Boolean(anchorEl);
+  const [scriptMenuAnchorEl, setScriptMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [appsMenuAnchorEl, setAppsMenuAnchorEl] = useState<null | HTMLElement>(
+    null,
+  ); // New state for apps menu anchor
+  const [profileMenuAnchorEl, setProfileMenuAnchorEl] = useState<null | HTMLElement>(null); // State for profile menu anchor
+
+  const isScriptMenuOpen = Boolean(scriptMenuAnchorEl);
+  const isAppsMenuOpen = Boolean(appsMenuAnchorEl);
+  const isProfileMenuOpen = Boolean(profileMenuAnchorEl); // State for profile menu
 
   useEffect(() => {
     if (currentProjectPath) {
@@ -79,6 +94,7 @@ const Navbar: React.FC = () => {
   const onLogout = async () => {
     await handleLogout();
     navigate('/login');
+    handleProfileMenuClose(); // Close menu after logout
   };
 
   const handleRunScript = async (
@@ -174,70 +190,134 @@ const Navbar: React.FC = () => {
     setSnackbarOpen(false);
   };
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
+  const handleScriptMenuClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    setScriptMenuAnchorEl(event.currentTarget);
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
+  const handleScriptMenuClose = () => {
+    setScriptMenuAnchorEl(null);
+  };
+
+  const handleAppsMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAppsMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleAppsMenuClose = () => {
+    setAppsMenuAnchorEl(null);
+  };
+
+  const handleProfileMenuClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    setProfileMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setProfileMenuAnchorEl(null);
   };
 
   const isAnyScriptRunning = Object.values(scriptExecutionStatus).some(
     (state) => state.status === ScriptStatus.RUNNING,
   );
 
+  // Curate a subset of apps for the Navbar dropdown, e.g., the first few AI-related and main apps.
+  const navbarApps = appDefinitions.filter((app) =>
+    [
+      'ai-code-editor',
+      'llm-code-generator',
+      'ai-translator',
+      'gemini-live-audio',
+      'music-player',
+      'project-management',
+    ].includes(app.id),
+  );
+
   return (
     <AppBar
       position="sticky" // Changed from "static" to "sticky"
       sx={{
-        top: 0, // Added to stick to the top
-        zIndex: 1100, // Added z-index to ensure it stays on top
+        top: 0,
+        zIndex: 1100,
         bgcolor: theme.palette.background.paper,
         borderBottom: `1px solid ${theme.palette.divider}`,
       }}
     >
-      <Toolbar className="flex justify-between items-center mx-auto w-full px-4 sm:px-6 lg:px-8">
+      {/* New: Linear loader for script execution */}
+      {isAnyScriptRunning && (
+        <Box sx={{ width: '100%', position: 'absolute', top: 0, left: 0 }}>
+          <LinearProgress />
+        </Box>
+      )}
+      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mx: 'auto', width: '100%', px: { xs: 2, sm: 3, lg: 4 } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography
             variant="h6"
             component={Link}
             to="/"
-            sx={{
-              textDecoration: 'none',
-              color: theme.palette.text.primary,
-              fontWeight: 'bold',
-            }}
+            sx={{ textDecoration: 'none', color: theme.palette.text.primary, fontWeight: 'bold' }}
           >
             {APP_NAME}
           </Typography>
 
           {/* New Navigation Links */}
           <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
+            {/* Apps Button with Dropdown Menu */}
             <Button
-              color="inherit"
-              component={Link}
-              to="/editor"
-              sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
-            >
-              Editor
-            </Button>
-            <Button
-              color="inherit"
-              component={Link}
-              to="/dashboard"
-              sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
-            >
-              Dashboard
-            </Button>
-            <Button
-              color="inherit"
-              component={Link}
-              to="/apps"
+              id="apps-menu-button"
+              aria-controls={isAppsMenuOpen ? 'apps-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={isAppsMenuOpen ? 'true' : undefined}
+              onClick={handleAppsMenuClick}
+              startIcon={<AppsIcon />}
+              endIcon={<KeyboardArrowDownIcon />}
               sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
             >
               Apps
             </Button>
-            {/* New: Organizations Link */}
+            <Menu
+              id="apps-menu"
+              anchorEl={appsMenuAnchorEl}
+              open={isAppsMenuOpen}
+              onClose={handleAppsMenuClose}
+              MenuListProps={{
+                'aria-labelledby': 'apps-menu-button',
+              }}
+              PaperProps={{
+                sx: { bgcolor: theme.palette.background.paper, p: 0 },
+              }}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'left',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'left',
+              }}
+            >
+              <AppsMenuContent
+                apps={navbarApps}
+                onClose={handleAppsMenuClose}
+              />
+              <MenuItem
+                component={Link}
+                to="/apps"
+                onClick={handleAppsMenuClose}
+                sx={{
+                  borderTop: `1px solid ${theme.palette.divider}`,
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  color: theme.palette.primary.main,
+                  py: 1,
+                  '&:hover': { bgcolor: theme.palette.action.hover },
+                }}
+              >
+                View All Apps
+              </MenuItem>
+            </Menu>
+
+            {/* Organizations Link */}
             <Button
               color="inherit"
               component={Link}
@@ -248,7 +328,7 @@ const Navbar: React.FC = () => {
             </Button>
           </Box>
 
-          <Box className="flex gap-1">
+          <Box sx={{ display: 'flex', gap: 1 }}>
             {scriptsLoading ? (
               <CircularProgress
                 size={20}
@@ -257,10 +337,12 @@ const Navbar: React.FC = () => {
             ) : (
               <Button
                 id="run-scripts-button"
-                aria-controls={menuOpen ? 'run-scripts-menu' : undefined}
+                aria-controls={
+                  isScriptMenuOpen ? 'run-scripts-menu' : undefined
+                }
                 aria-haspopup="true"
-                aria-expanded={menuOpen ? 'true' : undefined}
-                onClick={handleMenuClick}
+                aria-expanded={isScriptMenuOpen ? 'true' : undefined}
+                onClick={handleScriptMenuClick}
                 variant="text"
                 color="inherit"
                 size="small"
@@ -271,14 +353,12 @@ const Navbar: React.FC = () => {
                 }
                 sx={{
                   color: theme.palette.text.primary,
-                  '&:hover': {
-                    bgcolor: theme.palette.action.hover,
-                  },
+                  '&:hover': { bgcolor: theme.palette.action.hover },
                   minWidth: 'auto',
                   px: 1,
                   py: 0.5,
                   fontSize: '0.75rem',
-                  whiteWhiteSpace: 'nowrap',
+                  whiteSpace: 'nowrap',
                   fontWeight: 'bold',
                 }}
                 startIcon={<TerminalIcon fontSize="small" />}
@@ -289,12 +369,14 @@ const Navbar: React.FC = () => {
             )}
             <Menu
               id="run-scripts-menu"
-              anchorEl={anchorEl}
-              open={menuOpen}
-              onClose={handleMenuClose}
+              anchorEl={scriptMenuAnchorEl}
+              open={isScriptMenuOpen}
+              onClose={handleScriptMenuClose}
               MenuListProps={{
                 'aria-labelledby': 'run-scripts-button',
-                sx: { bgcolor: theme.palette.background.paper }, // Apply theme to menu list
+              }}
+              PaperProps={{
+                sx: { bgcolor: theme.palette.background.paper },
               }}
             >
               {packageScripts.length > 0 ? (
@@ -305,7 +387,7 @@ const Navbar: React.FC = () => {
                     command={script.script}
                     onClick={(scriptName, rawScriptContent) => {
                       handleRunScript(scriptName, rawScriptContent);
-                      handleMenuClose();
+                      handleScriptMenuClose();
                     }}
                     status={
                       scriptExecutionStatus[script.name]?.status ||
@@ -336,23 +418,46 @@ const Navbar: React.FC = () => {
             />
           ) : isLoggedIn ? (
             <>
-              <AccountCircle sx={{ color: theme.palette.text.primary }} />
-              <Typography
-                variant="body1"
-                sx={{
-                  display: { xs: 'none', sm: 'block' },
-                  color: theme.palette.text.primary,
+              <IconButton
+                id="profile-menu-button"
+                aria-controls={isProfileMenuOpen ? 'profile-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={isProfileMenuOpen ? 'true' : undefined}
+                onClick={handleProfileMenuClick}
+                color="inherit"
+                sx={{ p: 0, color: theme.palette.text.primary }}
+              >
+                <AccountCircle sx={{ fontSize: 32 }} />
+                {/* Removed Typography for user name/email */}
+                <KeyboardArrowDownIcon />
+              </IconButton>
+              <Menu
+                id="profile-menu"
+                anchorEl={profileMenuAnchorEl}
+                open={isProfileMenuOpen}
+                onClose={handleProfileMenuClose}
+                MenuListProps={{
+                  'aria-labelledby': 'profile-menu-button',
+                }}
+                PaperProps={{
+                  sx: { bgcolor: theme.palette.background.paper, p: 0 },
+                }}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
                 }}
               >
-                {user?.name || user?.email || 'User'}
-              </Typography>
-              <Button
-                color="inherit"
-                onClick={onLogout}
-                sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
-              >
-                Logout
-              </Button>
+                <ProfileMenuContent
+                  profileItems={profileMenuDefinitions}
+                  onClose={handleProfileMenuClose}
+                  onLogout={onLogout}
+                  user={user}
+                />
+              </Menu>
             </>
           ) : (
             <>
