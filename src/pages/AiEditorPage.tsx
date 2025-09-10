@@ -14,7 +14,7 @@ import {
 import {
   Box,
   Typography,
-  Alert,
+  Alert, // Added for error display
   Paper,
   useTheme,
   IconButton,
@@ -25,33 +25,39 @@ import PromptGenerator from '@/components/PromptGenerator';
 import AiResponseDisplay from '@/components/AiResponseDisplay';
 import OpenedFileViewer from '@/components/OpenedFileViewer';
 import { RequestType, LlmOutputFormat } from '@/types';
-import { APP_NAME } from '@/constants';
+// import { APP_NAME } from '@/constants'; // Not used in the original component, keeping commented.
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import FileTabs from '@/components/FileTabs';
+import ChevronDownIcon from '@mui/icons-material/ExpandMore';
+import ChevronUpIcon from '@mui/icons-material/ExpandLess';
+import FileTabs from '@/components/FileTabs'; // Now used
 
 // Constants for layout.
 const FILE_TREE_WIDTH = 300; // Fixed width for the file tree when visible
-const CONTENT_HORIZONTAL_GAP = 0; // The gap between FileTree and Editor/Response
-const MAIN_CONTENT_PX_PADDING = 0; // Padding around the main content area (top, right, bottom, left)
-const FILE_TABS_HEIGHT = 41; // Approximate height of the new file tabs component
+const FILE_TABS_HEIGHT = 48; // Approximate height of the new file tabs component (can be theme-driven later)
+const PROMPT_GENERATOR_HEIGHT_MIN = 60; // Minimum height for prompt generator when collapsed
+const HEADER_HEIGHT = 0; // If you had a fixed header, define it here. Currently 0.
 
 const AiEditorPage: React.FC = () => {
-  const { error, currentProjectPath, lastLlmResponse, loading, applyingChanges, isBuilding } =
-    useStore(aiEditorStore);
+  const {
+    error,
+    currentProjectPath,
+    lastLlmResponse,
+    loading,
+    applyingChanges,
+    isBuilding,
+    openedFile, // Added to show the OpenedFileViewer when a file is open even without LLM response
+  } = useStore(aiEditorStore);
   const theme = useTheme();
   const [searchParams] = useSearchParams();
   const [showFileTree, setShowFileTree] = useState(true);
-
+  const [showPromptGenerator, setShowPromptGenerator] = useState(true);
   // New derived state for the loader
   const isAIGeneratingOrModifying = loading || applyingChanges || isBuilding;
 
   useEffect(() => {
     // Clear diff when project or response changes
     clearDiff();
-    // Clear the opened file *content* and its dirty state, but not necessarily close the tab.
-    // The tabs are managed independently now.
-    // setOpenedFile(null); // This would also remove from openedTabs, let the tabs component manage if a file is explicitly closed.
   }, [lastLlmResponse, currentProjectPath]);
 
   // Handle requestType and llmOutputFormat from URL query parameters
@@ -59,32 +65,27 @@ const AiEditorPage: React.FC = () => {
     const requestTypeParam = searchParams.get('requestType');
     const outputFormatParam = searchParams.get('output');
 
+    // Update RequestType from URL
     if (
       requestTypeParam &&
       RequestType[requestTypeParam as keyof typeof RequestType]
     ) {
       const newRequestType =
         RequestType[requestTypeParam as keyof typeof RequestType];
-      // Only update if it's a new request type from the URL
       if (aiEditorStore.get().requestType !== newRequestType) {
         setRequestType(newRequestType);
-        // Optionally clear the main instruction and uploaded files when a new generator is selected
+        // Clear related states when switching generator types via URL
         setInstruction('');
         setUploadedFile(null, null, null);
-        setLastLlmResponse(null); // Clear previous AI response if coming from a different generator
+        setLastLlmResponse(null);
         setOpenedFile(null); // Close any currently viewed file when switching generator types
       }
-    }
-    // If no requestType param, default to LLM_GENERATION
-    // This check also prevents unnecessary store updates if it's already LLM_GENERATION.
-    if (
-      !requestTypeParam &&
-      aiEditorStore.get().requestType !== RequestType.LLM_GENERATION
-    ) {
+    } else if (aiEditorStore.get().requestType !== RequestType.LLM_GENERATION) {
+      // If no requestType param, default to LLM_GENERATION
       setRequestType(RequestType.LLM_GENERATION);
     }
 
-    // New: Handle outputFormat from URL parameter
+    // Update LlmOutputFormat from URL
     if (
       outputFormatParam &&
       LlmOutputFormat[outputFormatParam as keyof typeof LlmOutputFormat]
@@ -94,13 +95,8 @@ const AiEditorPage: React.FC = () => {
       if (aiEditorStore.get().llmOutputFormat !== newLlmOutputFormat) {
         setLlmOutputFormat(newLlmOutputFormat);
       }
-    }
-    // If no outputFormat param, default to YAML (matching store default)
-    // This check also prevents unnecessary store updates if it's already YAML.
-    if (
-      !outputFormatParam &&
-      aiEditorStore.get().llmOutputFormat !== LlmOutputFormat.YAML
-    ) {
+    } else if (aiEditorStore.get().llmOutputFormat !== LlmOutputFormat.YAML) {
+      // If no outputFormat param, default to YAML (matching store default)
       setLlmOutputFormat(LlmOutputFormat.YAML);
     }
   }, [searchParams]);
@@ -110,125 +106,165 @@ const AiEditorPage: React.FC = () => {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
+        height: '100dvh', // Use 100dvh for better mobile/browser toolbar handling
         width: '100%',
         bgcolor: theme.palette.background.default,
         color: theme.palette.text.primary,
-        position: 'relative',
-        overflow: 'hidden',
+        overflow: 'hidden', // Prevent outer scrollbars
       }}
     >
       {isAIGeneratingOrModifying && (
-        <LinearProgress sx={{ width: '100%', position: 'sticky', top: 0, zIndex: 1200 }} />
+        <LinearProgress sx={{ width: '100%', flexShrink: 0, zIndex: 1200 }} />
       )}
-      <Box sx={{ flexShrink: 0, p: 0, pb: 0 }}></Box>
 
+      {error && (
+        <Alert
+          severity="error"
+          sx={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 1100,
+            borderRadius: 0,
+            flexShrink: 0,
+          }}
+        >
+          <Typography variant="body2">{error}</Typography>
+        </Alert>
+      )}
+
+      {/* Main content area: FileTree + Editor/Response + PromptGenerator */}
       <Box
         sx={{
           display: 'flex',
           flexDirection: 'row',
-          flexGrow: 1,
+          flexGrow: 1, // Allow this box to take up remaining vertical space
           width: '100%',
-          minHeight: 0,
-          p: MAIN_CONTENT_PX_PADDING,
-
-          position: 'relative',
-          overflow: 'hidden',
+          minHeight: 0, // Crucial for flex containers
+          position: 'relative', // For absolutely positioned elements inside if needed
         }}
       >
+        {/* File Tree Panel */}
         <Box
           sx={{
-            position: 'absolute',
-            top: MAIN_CONTENT_PX_PADDING,
-            bottom: MAIN_CONTENT_PX_PADDING,
-            left: MAIN_CONTENT_PX_PADDING,
-            width: showFileTree ? `${FILE_TREE_WIDTH}px` : '0px',
-            transition: 'width 0.2s ease-in-out',
-            zIndex: 10,
-            overflow: 'hidden',
-            pointerEvents: showFileTree ? 'auto' : 'none',
+            width: showFileTree ? FILE_TREE_WIDTH : 0,
+            flexShrink: 0,
+            overflow: 'hidden', // Hide content when collapsed
+            transition: 'width 0.2s ease-in-out, border-right 0.2s ease-in-out',
             display: 'flex',
             flexDirection: 'column',
+            bgcolor: theme.palette.background.paper,
+            borderRight: showFileTree
+              ? `1px solid ${theme.palette.divider}`
+              : 'none',
           }}
         >
-          {currentProjectPath && (
-            <Box
-              sx={{
-                width: `${FILE_TREE_WIDTH}px`,
-                height: '100%',
-                flexShrink: 0,
-              }}
-            >
-              <FileTree projectRoot={currentProjectPath} />
+          {currentProjectPath ? (
+            <FileTree projectRoot={currentProjectPath} />
+          ) : (
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                No project opened.
+              </Typography>
             </Box>
           )}
         </Box>
 
-        <IconButton
-          onClick={() => setShowFileTree(!showFileTree)}
-          sx={{
-            position: 'absolute',
-            top: `calc(${MAIN_CONTENT_PX_PADDING}px + 0px)`,
-            left: showFileTree
-              ? `${MAIN_CONTENT_PX_PADDING + FILE_TREE_WIDTH + CONTENT_HORIZONTAL_GAP / 2}px`
-              : `${MAIN_CONTENT_PX_PADDING}px`,
-            zIndex: 11,
-            backgroundColor: theme.palette.background.paper,
-            borderRadius: '0 8px 8px 0',
-            border: `1px solid ${theme.palette.divider}`,
-            borderLeft: 'none',
-            p: '4px',
-            transition: 'left 0.2s ease-in-out, background-color 0.2s',
-            boxShadow: theme.shadows[1],
-            color: theme.palette.text.secondary,
-            '&:hover': {
-              backgroundColor: theme.palette.action.hover,
-            },
-          }}
-        >
-          {showFileTree ? (
-            <ChevronLeftIcon fontSize="small" />
-          ) : (
-            <ChevronRightIcon fontSize="small" />
-          )}
-        </IconButton>
-
+        {/* Main Editor/Response Area */}
         <Box
           sx={{
             flexGrow: 1,
-            height: '100%',
-            minWidth: 0,
+            minWidth: 0, // Allow shrinking
             display: 'flex',
             flexDirection: 'column',
-            gap: MAIN_CONTENT_PX_PADDING,
-            marginLeft: showFileTree
-              ? `${FILE_TREE_WIDTH + CONTENT_HORIZONTAL_GAP}px`
-              : '0px',
-            transition: 'margin-left 0.2s ease-in-out',
-            p: 0,
+            position: 'relative', // For toggle buttons
+            bgcolor: theme.palette.background.default,
           }}
         >
-          <FileTabs />
+          {/* File Tree Toggle Button */}
+          <IconButton
+            onClick={() => setShowFileTree(!showFileTree)}
+            sx={{
+              position: 'absolute',
+              top: 0, // Align with the top of the main content area
+              left: 0,
+              zIndex: 11,
+              bgcolor: theme.palette.background.paper, // Match paper background for a floating effect
+              borderRadius: '0 0 4px 0', // Rounded bottom-right corner
+              borderRight: `1px solid ${theme.palette.divider}`,
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              p: 0.5, // Smaller padding for icon button
+              color: theme.palette.text.secondary,
+              '&:hover': {
+                bgcolor: theme.palette.action.hover,
+              },
+            }}
+          >
+            {showFileTree ? (
+              <ChevronLeftIcon fontSize="small" />
+            ) : (
+              <ChevronRightIcon fontSize="small" />
+            )}
+          </IconButton>
 
+          {/* File Tabs */}
+          <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
+
+          {/* AI Response Display / Opened File Viewer */}
           <Box
             sx={{
               flexGrow: 1,
-              minHeight: 0,
+              minHeight: 0, // Allow content to shrink vertically
+              overflow: 'auto', // Enable scrolling for the editor/response area
+              bgcolor: theme.palette.background.default,
             }}
           >
             {lastLlmResponse ? <AiResponseDisplay /> : <OpenedFileViewer />}
           </Box>
 
+          {/* Prompt Generator Panel */}
           <Paper
-            elevation={2}
+            elevation={3}
             sx={{
               flexShrink: 0,
-              p: 2,
+              p: showPromptGenerator ? 2 : 0, // Only apply padding when expanded
+              height: showPromptGenerator
+                ? 'auto'
+                : PROMPT_GENERATOR_HEIGHT_MIN,
+              overflow: 'hidden', // Hide content when collapsed
               bgcolor: theme.palette.background.paper,
-              border: `1px solid ${theme.palette.divider}`,
+              borderTop: `1px solid ${theme.palette.divider}`,
+              borderRadius: 0, // Sharp corners
+              position: 'relative', // For toggle button
+              transition: 'height 0.2s ease-in-out, padding 0.2s ease-in-out',
             }}
           >
-            <PromptGenerator />
+            {/* Prompt Generator Toggle Button */}
+            <IconButton
+              onClick={() => setShowPromptGenerator(!showPromptGenerator)}
+              sx={{
+                position: 'absolute',
+                top: -1, // Adjust to sit on the border
+                right: theme.spacing(2), // Align with padding
+                zIndex: 12,
+                bgcolor: theme.palette.background.paper,
+                borderRadius: '4px 4px 0 0', // Rounded top corners
+                border: `1px solid ${theme.palette.divider}`,
+                borderBottom: 'none',
+                p: 0.5, // Smaller padding
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  bgcolor: theme.palette.action.hover,
+                },
+              }}
+            >
+              {showPromptGenerator ? (
+                <ChevronDownIcon fontSize="small" />
+              ) : (
+                <ChevronUpIcon fontSize="small" />
+              )}
+            </IconButton>
+            {/* Conditionally render PromptGenerator to save resources when hidden */}
+            {showPromptGenerator && <PromptGenerator />}
           </Paper>
         </Box>
       </Box>

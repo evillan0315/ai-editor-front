@@ -5,11 +5,8 @@ import {
   RequestType,
   LlmOutputFormat,
   LlmGeneratePayload,
-  // NEW IMPORTS FOR ERROR REPORTING PAYLOAD
-  LlmReportErrorPayload as FrontendLlmReportErrorPayload, // Alias the existing frontend type
-  LlmReportErrorApiPayload, // New type that matches backend DTO structure
-  TerminalCommandResponse, // Needed for buildOutput
-} from '@/types'; // Import new LLM types and FileChange, RequestType, LlmOutputFormat, LlmGeneratePayload, LlmReportErrorPayload
+  TerminalCommandResponse,
+} from '@/types'; // Import new LLM types and FileChange, RequestType, LlmOutputFormat, LlmGeneratePayload
 
 const API_BASE_URL = `/api`; // Changed to relative path for Vite proxy consistency
 
@@ -136,54 +133,11 @@ export const getGitDiff = async (
       }),
     });
     const data = await handleResponse<{ diff: string }>(response);
-    console.log(data, 'data');
+
     return data.diff;
   } catch (error) {
     console.error(`Error fetching git diff for ${filePath}:`, error);
     throw error;
-  }
-};
-
-/**
- * Reports an error, typically a build failure after applying AI changes, to the LLM for analysis.
- * @param payload The error details and contextual information.
- * @returns A promise that resolves when the error is reported.
- */
-export const reportErrorToLlm = async (
-  payload: FrontendLlmReportErrorPayload, // Use the aliased frontend type
-): Promise<ModelResponse | void> => {
-  try {
-    // Construct the payload that matches the backend DTO structure
-    const backendPayload: LlmReportErrorApiPayload = {
-      errorDetails: [
-        payload.error, // Frontend `error` field is the primary error message
-        payload.errorDetails, // Frontend `errorDetails` is often stack trace or more info
-        payload.buildOutput ? `Build Output:\n${payload.buildOutput.stderr || payload.buildOutput.stdout}` : null,
-      ].filter(Boolean).join('\n\n'), // Combine non-empty parts
-
-      projectRoot: payload.projectRoot,
-      scanPaths: payload.scanPaths, // This is optional on backend DTO, but required on frontend payload, so it's fine.
-      context: {
-        originalUserPrompt: payload.originalLlmGeneratePayload?.userPrompt,
-        systemInstruction: payload.originalLlmGeneratePayload?.additionalInstructions,
-        failedChanges: payload.previousLlmResponse?.changes || [],
-        originalFilePaths: payload.previousLlmResponse?.changes?.map(c => c.filePath) || [],
-      },
-    };
-
-    const response = await fetchWithAuth(`${API_BASE_URL}/llm/report-error`, {
-      method: 'POST',
-      body: JSON.stringify(backendPayload),
-    });
-
-    // Assuming the backend always returns a ModelResponse (JSON) for error analysis.
-    // The parsing logic for different output formats like YAML/Markdown/Text
-    // is typically applied to the *main* generation API, not auxiliary ones like error reporting.
-    return handleResponse<ModelResponse>(response);
-  } catch (error) {
-    console.error('Error reporting to LLM:', error);
-    // Do not re-throw, as this is an error reporting mechanism itself.
-    // We want the primary error (e.g., build failure) to still propagate.
   }
 };
 

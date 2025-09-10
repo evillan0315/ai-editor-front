@@ -7,6 +7,7 @@ export interface UserProfile {
   username?: string; // Add username for local registration/profile
   provider?: 'google' | 'github' | 'local'; // Added 'local' provider
   accessToken?: string; // Only for client-side use if needed, backend sets HTTP-only cookie
+  organization?: string; // New: User's primary organization for display purposes
 }
 
 export interface AuthState {

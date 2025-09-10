@@ -17,8 +17,6 @@ import {
   Tooltip,
   // Removed Snackbar from @mui/material
 } from '@mui/material';
-import MuiSnackbar from '@mui/material/Snackbar'; // Renamed to avoid conflict
-import MuiAlert from '@mui/material/Alert'; // Renamed to avoid conflict
 import TranslateIcon from '@mui/icons-material/Translate';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
@@ -40,7 +38,7 @@ import { authStore } from '@/stores/authStore';
 import CodeMirror from '@uiw/react-codemirror';
 import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils';
 import { themeStore } from '@/stores/themeStore';
-import CustomSnackbar from '@/components/Snackbar'; // Import custom Snackbar
+import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore'; // Import global snackbar
 
 const supportedLanguages = [
   { code: 'en', name: 'English' },
@@ -84,8 +82,6 @@ const TranslatorAppPage: React.FC = () => {
   } = useStore(translatorStore);
 
   const [isFileUploaderOpen, setIsFileUploaderOpen] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   useEffect(() => {
     // Clear state on component unmount or if not logged in (optional based on app flow)
@@ -152,8 +148,7 @@ const TranslatorAppPage: React.FC = () => {
   const handleCopyToClipboard = useCallback(() => {
     if (translatedContent) {
       navigator.clipboard.writeText(translatedContent);
-      setSnackbarMessage('Translated content copied to clipboard!');
-      setSnackbarOpen(true);
+      showGlobalSnackbar('Translated content copied to clipboard!', 'success'); // Use global snackbar
     }
   }, [translatedContent]);
 
@@ -358,14 +353,6 @@ const TranslatorAppPage: React.FC = () => {
         } // Pass fileName
         currentUploadedFile={uploadedFileData}
         currentUploadedMimeType={uploadedFileMimeType}
-      />
-
-      <CustomSnackbar // Use the custom Snackbar component
-        open={snackbarOpen}
-        message={snackbarMessage}
-        severity="success"
-        onClose={() => setSnackbarOpen(false)}
-        autoHideDuration={3000}
       />
     </Paper>
   );

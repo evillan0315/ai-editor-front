@@ -13,8 +13,9 @@ import {
   setRunningGitCommandIndex,
   setCommandExecutionError,
   setCommandExecutionOutput,
-  setBuildOutput, // New: Import setBuildOutput
-  setIsBuilding, // New: Import setIsBuilding
+  setBuildOutput,
+  setIsBuilding,
+  performPostApplyActions, // New: Import the unified action
 } from '@/stores/aiEditorStore';
 import {
   Button,
@@ -32,11 +33,12 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow'; // New Import
-import { applyProposedChanges, reportErrorToLlm } from '@/api/llm'; // New: Import reportErrorToLlm
-import { runTerminalCommand } from '@/api/terminal'; // New Import
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import { applyProposedChanges } from '@/api/llm';
+import { runTerminalCommand } from '@/api/terminal';
 import ProposedChangeCard from './ProposedChangeCard';
-import { ModelResponse, FileChange, RequestType } from '@/types'; // Import FileChange here
+import OutputLogger from './OutputLogger'; // New: Import OutputLogger
+import { ModelResponse, FileChange, RequestType } from '@/types';
 
 interface AiResponseDisplayProps {
   // No specific props needed, all state comes from aiEditorStore
@@ -54,10 +56,11 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
     runningGitCommandIndex,
     commandExecutionOutput,
     commandExecutionError,
-    isBuilding, // New: Get isBuilding state
-    buildOutput, // New: Get buildOutput state
-    lastLlmGeneratePayload, // New: Get lastLlmGeneratePayload for error reporting
-    scanPathsInput, // New: Get scanPathsInput for error reporting
+    isBuilding,
+    buildOutput,
+    lastLlmGeneratePayload,
+    scanPathsInput,
+    error: globalError, // Rename to avoid conflict with local scope 'error'
   } = useStore(aiEditorStore);
   const theme = useTheme();
 
@@ -79,134 +82,58 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
       setError('Project root is not set.');
       return;
     }
+    if (!lastLlmGeneratePayload) {
+      setError('Original AI generation payload missing. Cannot report errors.');
+      return;
+    }
 
+    // Start the overall application process indicator
     setApplyingChanges(true);
     setError(null); // Clear previous error
     setAppliedMessages([]);
     setBuildOutput(null); // Clear previous build output
+    setIsBuilding(false); // Ensure building state is reset before starting any new process
+    // Clear any previous individual git command outputs as we are starting a new sequence
+    setCommandExecutionError(null);
+    setCommandExecutionOutput(null);
 
     try {
       const changesToApply = Object.values(selectedChanges);
-      const result = await applyProposedChanges(
+      const applyResult = await applyProposedChanges(
         changesToApply,
         currentProjectPath,
       );
-      setAppliedMessages(result.messages);
-      if (!result.success) {
+      setAppliedMessages(applyResult.messages);
+
+      if (!applyResult.success) {
         setError('Some changes failed to apply. Check messages above.');
-        // New: Report error to LLM if changes failed to apply
+        // Removed reportErrorToLlm call here
+      } else {
+        // If changes applied successfully, proceed to post-apply actions (build + git)
         if (lastLlmResponse && lastLlmGeneratePayload) {
-          await reportErrorToLlm({
-            error: 'Failed to apply selected changes.',
-            errorDetails: JSON.stringify(result.messages),
-            originalRequestType: lastLlmGeneratePayload.requestType,
-            previousLlmResponse: lastLlmResponse,
-            originalLlmGeneratePayload: lastLlmGeneratePayload,
-            projectRoot: currentProjectPath,
-            scanPaths: scanPathsInput
+          await performPostApplyActions(
+            currentProjectPath,
+            lastLlmResponse,
+            lastLlmGeneratePayload,
+            scanPathsInput
               .split(',')
               .map((s) => s.trim())
               .filter(Boolean),
-          });
-        }
-      } else {
-        // If changes applied successfully, run the build script
-        setIsBuilding(true);
-        try {
-          const buildResult = await runTerminalCommand(
-            'pnpm run build',
-            currentProjectPath,
           );
-          setBuildOutput(buildResult);
-          if (buildResult.exitCode !== 0) {
-            setError(
-              `Build failed with exit code ${buildResult.exitCode}. Check output.`,
-            );
-            // New: Report build failure to LLM
-            if (lastLlmResponse && lastLlmGeneratePayload) {
-              await reportErrorToLlm({
-                error: `Build failed after applying changes. Exit Code: ${buildResult.exitCode}.`,
-                errorDetails: buildResult.stderr || buildResult.stdout,
-                originalRequestType: lastLlmGeneratePayload.requestType,
-                previousLlmResponse: lastLlmResponse,
-                originalLlmGeneratePayload: lastLlmGeneratePayload,
-                projectRoot: currentProjectPath,
-                scanPaths: scanPathsInput
-                  .split(',')
-                  .map((s) => s.trim())
-                  .filter(Boolean),
-                buildOutput: buildResult,
-              });
-            }
-          } else {
-            // Corrected: Directly pass the new array to setAppliedMessages
-            setAppliedMessages([
-              ...result.messages,
-              'Project built successfully.',
-            ]);
-          }
-        } catch (buildError) {
-          setBuildOutput({
-            stdout: '',
-            stderr: String(buildError),
-            exitCode: 1,
-          });
-          setError(
-            `Failed to run build script: ${buildError instanceof Error ? buildError.message : String(buildError)}`,
-          );
-          // New: Report build script execution error to LLM
-          if (lastLlmResponse && lastLlmGeneratePayload) {
-            await reportErrorToLlm({
-              error: `Failed to execute build script: ${buildError instanceof Error ? buildError.message : String(buildError)}`,
-              errorDetails: String(buildError),
-              originalRequestType: lastLlmGeneratePayload.requestType,
-              previousLlmResponse: lastLlmResponse,
-              originalLlmGeneratePayload: lastLlmGeneratePayload,
-              projectRoot: currentProjectPath,
-              scanPaths: scanPathsInput
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean),
-              buildOutput: {
-                stdout: '',
-                stderr: String(buildError),
-                exitCode: 1,
-              },
-            });
-          }
-        } finally {
-          setIsBuilding(false);
         }
       }
-      // Clear the response and selected changes after applying
-      // Do NOT clear lastLlmResponse directly here, it will clear gitInstructions.
-      // Instead, explicitly clear components of lastLlmResponse that should be reset.
-      // For now, let's keep lastLlmResponse so gitInstructions can be seen.
-      deselectAllChanges(); // Clear selected changes, but keep the full response visible
+
+      // Clear the response and selected changes after applying (and building/git)
+      setLastLlmResponse(null);
+      deselectAllChanges();
       clearDiff();
-      // Note: If you want to explicitly clear git instructions after application, you'd add an action to aiEditorStore and call it here.
-      // For now, they remain tied to lastLlmResponse.
     } catch (err) {
       setError(
-        `Failed to apply changes: ${err instanceof Error ? err.message : String(err)}`,
+        `Overall failure during application of changes: ${err instanceof Error ? err.message : String(err)}`,
       );
-      // New: Report overall apply changes error to LLM
-      if (lastLlmResponse && lastLlmGeneratePayload) {
-        await reportErrorToLlm({
-          error: `Overall failure during application of changes: ${err instanceof Error ? err.message : String(err)}`,
-          errorDetails: String(err),
-          originalRequestType: lastLlmGeneratePayload.requestType,
-          previousLlmResponse: lastLlmResponse,
-          originalLlmGeneratePayload: lastLlmGeneratePayload,
-          projectRoot: currentProjectPath,
-          scanPaths: scanPathsInput
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean),
-        });
-      }
+      // Removed reportErrorToLlm call here
     } finally {
-      setApplyingChanges(false);
+      setApplyingChanges(false); // End overall loading indicator
     }
   };
 
@@ -244,9 +171,9 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
         p: 3,
         bgcolor: theme.palette.background.paper,
         flexGrow: 1,
-        height: '100%', // Ensure it takes full height of parent
+        height: '100%',
         maxHeight: '100%',
-        overflowY: 'auto', // Allow scrolling for this panel
+        overflowY: 'auto',
       }}
     >
       <Typography
@@ -323,122 +250,69 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
           {applyingChanges
             ? 'Applying...'
             : isBuilding
-              ? 'Building...'
+              ? 'Processing...'
               : 'Apply Selected Changes'}
         </Button>
       </Box>
 
-      {applyingChanges && ( // Show applying changes indicator
+      {applyingChanges && (
         <Alert severity="info" sx={{ mt: 3 }}>
           Applying selected changes...
           <CircularProgress size={16} color="inherit" sx={{ ml: 1 }} />
         </Alert>
       )}
 
-      {appliedMessages &&
-        appliedMessages.length > 0 && ( // Show messages after applying changes
-          <Paper
-            elevation={1}
+      {appliedMessages && appliedMessages.length > 0 && (
+        <Paper
+          elevation={1}
+          sx={{
+            mt: 3,
+            p: 2,
+            bgcolor: theme.palette.background.paper,
+            border: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Typography
+            variant="h6"
+            className="!font-semibold"
+            sx={{ color: theme.palette.text.primary }}
+            gutterBottom
+          >
+            Application Summary:
+          </Typography>
+          <Box
             sx={{
-              mt: 3,
-              p: 2,
-              bgcolor: theme.palette.background.paper,
-              border: `1px solid ${theme.palette.divider}`,
+              whiteSpace: 'pre-wrap',
+              fontFamily: 'monospace',
+              fontSize: '0.875rem',
+              maxHeight: '200px',
+              overflowY: 'auto',
+              p: 1,
+              bgcolor: theme.palette.background.default,
+              borderRadius: 1,
+              color: theme.palette.text.primary,
             }}
           >
-            <Typography
-              variant="h6"
-              className="!font-semibold"
-              sx={{ color: theme.palette.text.primary }}
-              gutterBottom
-            >
-              Application Summary:
-            </Typography>
-            <Box
-              sx={{
-                whiteSpace: 'pre-wrap',
-                fontFamily: 'monospace',
-                fontSize: '0.875rem',
-                maxHeight: '200px',
-                overflowY: 'auto',
-                p: 1,
-                bgcolor: theme.palette.background.default,
-                borderRadius: 1,
-                color: theme.palette.text.primary,
-              }}
-            >
-              {appliedMessages.map((msg, index) => (
-                <Typography
-                  key={index}
-                  component="div"
-                  sx={{ mb: 0.5, color: theme.palette.text.primary }}
-                >
-                  {msg}
-                </Typography>
-              ))}
-            </Box>
-          </Paper>
-        )}
-
-      {isBuilding && (
-        <Alert severity="info" sx={{ mt: 3 }}>
-          Running build script...
-          <CircularProgress size={16} color="inherit" sx={{ ml: 1 }} />
-        </Alert>
-      )}
-
-      {buildOutput && (
-        <Box sx={{ mt: 3 }}>
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                Build Script Output
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              {buildOutput.exitCode !== 0 && (
-                <Alert severity="error" sx={{ mb: 1 }}>
-                  Build failed with exit code {buildOutput.exitCode}.
-                </Alert>
-              )}
-              <Box
-                sx={{
-                  whiteSpace: 'pre-wrap',
-                  fontFamily: 'monospace',
-                  bgcolor: theme.palette.background.default,
-                  p: 1,
-                  borderRadius: 1,
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  border: `1px solid ${theme.palette.divider}`,
-                }}
+            {appliedMessages.map((msg, index) => (
+              <Typography
+                key={index}
+                component="div"
+                sx={{ mb: 0.5, color: theme.palette.text.primary }}
               >
-                {buildOutput.stdout && (
-                  <Typography
-                    variant="body2"
-                    sx={{ color: theme.palette.text.primary }}
-                  >
-                    {buildOutput.stdout}
-                  </Typography>
-                )}
-                {buildOutput.stderr && (
-                  <Typography variant="body2" color="error">
-                    {buildOutput.stderr}
-                  </Typography>
-                )}
-                {buildOutput.exitCode !== undefined && (
-                  <Typography
-                    variant="body2"
-                    sx={{ color: theme.palette.text.secondary }}
-                  >
-                    Exit Code: {buildOutput.exitCode}
-                  </Typography>
-                )}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
-        </Box>
+                {msg}
+              </Typography>
+            ))}
+          </Box>
+        </Paper>
       )}
+
+      {/* Refactored Build Output */}
+      <OutputLogger
+        title="Build Script Output"
+        output={buildOutput}
+        isLoading={isBuilding}
+        defaultExpanded={buildOutput?.exitCode !== 0}
+      />
 
       {gitInstructions && gitInstructions.length > 0 && (
         <Accordion sx={{ mt: 3 }}>
@@ -510,60 +384,17 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
                 </Box>
               ))}
             </Box>
-            {(commandExecutionOutput || commandExecutionError) && (
-              <Box sx={{ mt: 2 }}>
-                <Accordion defaultExpanded>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                      Command Execution Output
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    {commandExecutionError && (
-                      <Alert severity="error" sx={{ mb: 1 }}>
-                        {commandExecutionError}
-                      </Alert>
-                    )}
-                    {commandExecutionOutput && (
-                      <Box
-                        sx={{
-                          whiteSpace: 'pre-wrap',
-                          fontFamily: 'monospace',
-                          bgcolor: theme.palette.background.default,
-                          p: 1,
-                          borderRadius: 1,
-                          maxHeight: '200px',
-                          overflowY: 'auto',
-                          border: `1px solid ${theme.palette.divider}`,
-                        }}
-                      >
-                        {commandExecutionOutput.stdout && (
-                          <Typography
-                            variant="body2"
-                            sx={{ color: theme.palette.text.primary }}
-                          >
-                            {commandExecutionOutput.stdout}
-                          </Typography>
-                        )}
-                        {commandExecutionOutput.stderr && (
-                          <Typography variant="body2" color="error">
-                            {commandExecutionOutput.stderr}
-                          </Typography>
-                        )}
-                        {commandExecutionOutput.exitCode !== undefined && (
-                          <Typography
-                            variant="body2"
-                            sx={{ color: theme.palette.text.secondary }}
-                          >
-                            Exit Code: {commandExecutionOutput.exitCode}
-                          </Typography>
-                        )}
-                      </Box>
-                    )}
-                  </AccordionDetails>
-                </Accordion>
-              </Box>
-            )}
+            {/* Refactored Command Execution Output */}
+            <OutputLogger
+              title="Command Execution Output"
+              output={commandExecutionOutput}
+              error={commandExecutionError}
+              isLoading={runningGitCommandIndex !== null}
+              defaultExpanded={
+                commandExecutionOutput?.exitCode !== 0 ||
+                !!commandExecutionError
+              }
+            />
           </AccordionDetails>
         </Accordion>
       )}

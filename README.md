@@ -32,7 +32,7 @@
 
 ## ✨ Features
 
-- 🤖 **AI-Powered Code Generation & Modification**: Interact with a powerful AI to generate new files, modify existing ones, **repair code with suggestions**, or delete files based on natural language instructions.
+- 🤖 **AI-Powered Code Generation & Modification**: Interact with a powerful AI to generate new files, modify existing ones, **repair code**, or delete files based on natural language instructions.
 - 💡 **Interactive Proposed Changes**: View AI's proposed changes with detailed file paths, action types (ADD, MODIFY, DELETE, **REPAIR**, ANALYZE), and AI-generated reasons. Selectively apply or discard individual changes, and even **edit the proposed content before application**.
 - 📊 **Git Diff Visualization**: Inspect detailed git diffs for proposed modifications and deletions directly within the editor before applying changes, ensuring transparency and control.
 - 🏃 **Direct Terminal Command Execution**: Execute AI-generated `git` instructions (e.g., `git add .`, `git commit`) directly from the UI, with immediate display of terminal output and errors. Also, **run project-specific `npm`, `yarn`, or `pnpm` scripts directly from the Navbar**.
@@ -41,7 +41,7 @@
 - 🚀 **File Tree Navigation & Content Viewing with Tabs**: Browse your project's file structure with an interactive file tree. Open multiple files into **tabs**, switch between them, and view/edit their content in a dedicated editor panel. You can manually edit the content of proposed AI changes, and **the file viewer remains editable when AI responses are active to allow for manual adjustments alongside AI suggestions**.
 - ⬆️ **File/Image Upload for AI Context**: Upload files or paste Base64 data (e.g., images, text files) to provide additional context to the AI, enabling multi-modal requests.
 - 📝 **Customizable AI Instructions & Output Format**: Modify the underlying AI system instructions, the expected output **JSON schema, YAML, Markdown, or plain text format** directly within the UI, allowing for fine-tuned control over AI behavior.
-- ⚙️ **Selectable AI Request Types**: Choose between various request types (e.g., `TEXT_ONLY`, `TEXT_WITH_IMAGE`, `TEXT_WITH_FILE`, `LLM_GENERATION`, `LIVE_API`, `RESUME_GENERATION`, `VIDEO_GENERATION`, `IMAGE_GENERATION`, `ERROR_REPORT`, etc.) to optimize AI interaction based on your input and desired outcome.
+- ⚙️ **Selectable AI Request Types**: Choose between various request types (e.g., `TEXT_ONLY`, `TEXT_WITH_IMAGE`, `TEXT_WITH_FILE`, `LLM_GENERATION`, `LIVE_API`, `RESUME_GENERATION`, `VIDEO_GENERATION`, `IMAGE_GENERATION`, `RESUME_OPTIMIZATION`, `RESUME_ENHANCEMENT`, etc.) to optimize AI interaction based on your input and desired outcome.
 - ⚡ **Auto-Apply Proposed Changes**: Option to automatically apply AI-generated changes to the file system immediately after generation, streamlining repetitive tasks.
 - 🎵 **Spotify-like Music Player**: An integrated application for a simulated music streaming experience.
 - 🌐 **AI Translator App**: Translate text content or uploaded files into any language using AI.
@@ -64,7 +64,7 @@ graph LR
     subgraph "Frontend (Client - React / Vite / TS / MUI / Tailwind)"
         Browser[User Browser]
         UI[React UI Components]
-        Pages(Pages - HomePage, DashboardPage, AppsPage, AiEditorPage, LoginPage, RegisterPage, SpotifyAppPage, TranslatorAppPage, GeminiLiveAudioPage, PreviewAppPage, OrganizationPage, ProjectsPage etc.)
+        Pages(Pages - HomePage, AppsPage, AiEditorPage, LoginPage, RegisterPage, SpotifyAppPage, TranslatorAppPage, GeminiLiveAudioPage, PreviewAppPage, OrganizationPage, ProjectsPage etc.)
         State(Nanostores - aiEditorStore, authStore, fileTreeStore, themeStore, spotifyStore, translatorStore, geminiLiveStore, contextMenuStore, organizationStore, projectStore)
         Services(Frontend Services / API Clients)
         Router[React Router DOM]
@@ -151,15 +151,15 @@ project-board-front/
 │   │   ├── dialogs/    # Modal dialog components (e.g., `DirectoryPickerDialog.tsx`, `FileUploaderDialog.tsx`, `InstructionEditorDialog.tsx`, `index.ts` for exports)
 │   │   ├── file-tree/  # Components for rendering and interacting with the project's file tree (`FileTree.tsx`, `FileTreeItem.tsx`, `FileTreeContextMenuRenderer.tsx`, `index.ts` for exports)
 │   │   ├── ui/         # Wrapper components for Material-UI elements (e.g., `Button.tsx`, `TextField.tsx`, `CircularProgress.tsx`)
-│   │   └── ...         # Other general UI components (e.g., `Layout.tsx`, `Navbar.tsx`, `Loading.tsx`, `WelcomeMessage.tsx`, `PromptGenerator.tsx`, `FilePickerDialog.tsx`, `AiResponseDisplay.tsx`, `OpenedFileViewer.tsx`, `ProposedChangeCard.tsx`, `ThemeToggle.tsx`, `Snackbar.tsx`, `RunScriptMenuItem.tsx`, `FileTabs.tsx`)
-│   ├── constants/      # Global constants, default AI instruction templates, and configuration values (e.g., `fileIcons.tsx`, `requestTypeIcons.ts`, `scriptIcons.ts`, `markdown-instruction.ts`, `text-instruction.ts`, `yaml-instruction.ts`)
+│   │   └── ...         # Other general UI components (e.g., `Layout.tsx`, `Navbar.tsx`, `Loading.tsx`, `WelcomeMessage.tsx`, `PromptGenerator.tsx`, `FilePickerDialog.tsx`, `AiResponseDisplay.tsx`, `OpenedFileViewer.tsx`, `ProposedChangeCard.tsx`, `ThemeToggle.tsx`, `Snackbar.tsx`, `RunScriptMenuItem.tsx`, `FileTabs.tsx`, `AppsMenuContent.tsx`)
+│   ├── constants/      # Global constants, default AI instruction templates, and configuration values (e.g., `fileIcons.tsx`, `requestTypeIcons.ts`, `scriptIcons.ts`, `appDefinitions.ts`, `markdown-instruction.ts`, `text-instruction.ts`, `yaml-instruction.ts`)
 │   ├── pages/          # Top-level page components, defining the main views of the application
 │   │   ├── spotify/    # Components specific to the Spotify-like app (e.g., `SpotifyHomePage.tsx`, `SpotifyLibraryPage.tsx`, `SpotifyMainContent.tsx`, `SpotifyPlayerBar.tsx`, `SpotifySearchPage.tsx`, `SpotifySidebar.tsx`)
 │   │   └── ...         # Other pages (e.g., `HomePage.tsx`, `DashboardPage.tsx`, `AppsPage.tsx`, `AiEditorPage.tsx`, `LoginPage.tsx`, `AuthCallback.tsx`, `RegisterPage.tsx`, `OrganizationPage.tsx`, `ProjectsPage.tsx`, `SpotifyAppPage.tsx`, `TranslatorAppPage.tsx`, `GeminiLiveAudioPage.tsx`, `PreviewAppPage.tsx`)
 │   ├── routes/         # Application routing setup (currently defined in `App.tsx` using React Router DOM, kept for future expansion)
 │   ├── services/       # Business logic for API calls, authentication state management, and other non-UI related operations (e.g., `authService.ts`)
 │   ├── stores/         # Nanostores for centralized, reactive global state management (e.g., `authStore.ts`, `aiEditorStore.ts`, `fileTreeStore.ts`, `themeStore.ts`, `spotifyStore.ts`, `translatorStore.ts`, `geminiLiveStore.ts`, `contextMenuStore.ts`, `organizationStore.ts`, `projectStore.ts`)
-│   ├── types/          # TypeScript type definitions for API responses, application state, and domain models (`auth.ts`, `fileTree.ts`, `index.ts` including `FileTreeNode`, `ApiFileScanResult`, `GeminiLiveAudioState`, `Organization`, `Project`)
+│   ├── types/          # TypeScript type definitions for API responses, application state, and domain models (`auth.ts`, `fileTree.ts`, `index.ts` including `FileTreeNode`, `ApiFileScanResult`, `GeminiLiveAudioState`, `Organization`, `Project`, `AppDefinition`)
 │   └── utils/          # General utility functions (e.g., `fileUtils.ts` for path manipulation and file tree building, `codemirrorTheme.ts` for CodeMirror styling, `diffLanguage.ts` for diff highlighting, `index.ts` for CodeMirror language extensions, debounce)
 ├── .env                # Environment variables (local overrides for development, not committed)
 ├── .env.local          # Local environment variables (sensitive data, not committed to VCS)
@@ -217,7 +217,6 @@ This frontend interacts with the Project Board backend. Key endpoints and WebSoc
 - **`/api/auth/login`, `/api/auth/register`**: For local email/password authentication.
 - **`/api/auth/me`**: To check user session status.
 - **`/api/llm/generate-llm`**: To send user prompts and receive AI-generated code changes or multi-modal responses.
-- **`/api/llm/report-error`**: To send build/runtime errors for AI analysis.
 - **`/api/file/scan`**: To fetch project file structure for AI context.
 - **`/api/file/list`**: To fetch directory contents for the interactive file tree.
 - **`/api/file/open`**: To read the content of a specific file.
@@ -245,11 +244,6 @@ VITE_WS_URL=ws://localhost:3000             # The URL of your Project Board back
 VITE_FRONTEND_URL=http://localhost:3001     # The URL where your frontend is hosted (e.g., for OAuth redirects from backend)
 VITE_BASE_DIR=/path/to/your/project/root    # **Optional**: Default project root to pre-fill in the editor's project path input. Can be overridden in the UI. If not set, the user must provide one. This variable is useful for local development to avoid repeatedly typing the project path.
 VITE_PREVIEW_APP_URL=http://localhost:8080  # **Optional**: URL of a built frontend application to preview in an iframe. e.g., points to a server serving /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/dist
-
-# The following variables are configured directly in your backend service and are NOT needed in the frontend's .env.
-# They are included here for context to clarify backend requirements for OAuth.
-# GITHUB_CALLBACK_URL=/auth/github/callback   # Relative path for GitHub OAuth callback (handled by backend)
-# GOOGLE_CALLBACK_URL=/auth/google/callback   # Relative path for Google OAuth callback (handled by backend)
 ```
 
 ---

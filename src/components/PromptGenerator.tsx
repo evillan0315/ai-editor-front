@@ -8,7 +8,7 @@ import {
   CircularProgress,
   Alert,
   Paper,
-  InputAdornment,
+  InputAdornment, // Added InputAdornment import
   IconButton,
   useTheme,
   Autocomplete,
@@ -32,8 +32,8 @@ import EditNoteIcon from '@mui/icons-material/Edit';
 import TuneIcon from '@mui/icons-material/Tune';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import {
-  RequestType, // Retain import for hardcoding below
-  RequestTypeValues, // Retain import even if dropdown is removed, for consistency
+  RequestType,
+  RequestTypeValues,
   ApiFileScanResult,
   LlmOutputFormat,
   LlmOutputFormatValues,
@@ -60,6 +60,7 @@ import {
   setIsBuilding, // New: Import setIsBuilding
   setBuildOutput, // New: Import setBuildOutput
   setLastLlmGeneratePayload, // New: Import setLastLlmGeneratePayload
+  showGlobalSnackbar, // Import global snackbar
 } from '@/stores/aiEditorStore';
 import { authStore } from '@/stores/authStore';
 import { fileTreeStore, loadInitialTree } from '@/stores/fileTreeStore';
@@ -108,7 +109,7 @@ const PromptGenerator: React.FC = () => {
     instruction,
     aiInstruction,
     expectedOutputInstruction,
-    requestType, // Still destructure, but won't be used for payload directly
+    requestType,
     llmOutputFormat, // New: Get llmOutputFormat from store
     uploadedFileData,
     uploadedFileMimeType,
@@ -245,19 +246,29 @@ const PromptGenerator: React.FC = () => {
     setIsBuilding(false); // Clear build state on project change
     setBuildOutput(null); // Clear build output on project change
     loadInitialTree(projectInput);
+    showGlobalSnackbar(`Project "${projectInput}" loaded.`, 'success');
   };
 
   const handleGenerateCode = async () => {
     if (!instruction) {
       setError('Please provide instructions for the AI.');
+      showGlobalSnackbar('Please provide instructions for the AI.', 'error');
       return;
     }
     if (!isLoggedIn) {
       setError('You must be logged in to use the AI Editor.');
+      showGlobalSnackbar(
+        'You must be logged in to use the AI Editor.',
+        'error',
+      );
       return;
     }
     if (!currentProjectPath) {
       setError('Please load a project first by entering a path above.');
+      showGlobalSnackbar(
+        'Please load a project first by entering a path above.',
+        'error',
+      );
       return;
     }
 
@@ -279,7 +290,7 @@ const PromptGenerator: React.FC = () => {
         additionalInstructions: aiInstruction,
         expectedOutputFormat: expectedOutputInstruction,
         scanPaths: currentScanPathsArray, // Pass as is, backend handles resolution
-        requestType: RequestType.LLM_GENERATION, // Hardcoded to LLM_GENERATION as per request
+        requestType: requestType, // Use requestType from store
         output: llmOutputFormat, // New: Pass selected output format
         ...(uploadedFileData && { fileData: uploadedFileData }),
         ...(uploadedFileMimeType && {
@@ -292,6 +303,7 @@ const PromptGenerator: React.FC = () => {
       const aiResponse: ModelResponse = await generateCode(payload);
       console.log(aiResponse, 'aiResponse');
       setLastLlmResponse(aiResponse);
+      showGlobalSnackbar('AI response generated!', 'success');
 
       if (
         autoApplyChanges &&
@@ -304,9 +316,9 @@ const PromptGenerator: React.FC = () => {
         // Moved else block to applyAllProposedChanges for consistent error handling
       }
     } catch (err) {
-      setError(
-        `Failed to generate code: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      const errorMessage = `Failed to generate code: ${err instanceof Error ? err.message : String(err)}`;
+      setError(errorMessage);
+      showGlobalSnackbar(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -338,6 +350,7 @@ const PromptGenerator: React.FC = () => {
     const currentPathsSet = new Set(currentScanPathsArray);
     selectedPathsFromDialog.forEach((p) => currentPathsSet.add(p));
     updateScanPaths(Array.from(currentPathsSet));
+    showGlobalSnackbar('Scan paths updated.', 'info');
   };
 
   const handleProjectRootSelected = (selectedPath: string) => {
@@ -353,6 +366,7 @@ const PromptGenerator: React.FC = () => {
     setBuildOutput(null); // Clear build output on project change
     loadInitialTree(selectedPath);
     setIsProjectRootPickerDialogOpen(false);
+    showGlobalSnackbar(`Project "${selectedPath}" loaded.`, 'success');
   };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -372,8 +386,10 @@ const PromptGenerator: React.FC = () => {
   const handleSaveInstruction = (type: 'ai' | 'expected', content: string) => {
     if (type === 'ai') {
       setAiInstruction(content);
+      showGlobalSnackbar('AI instruction updated.', 'success');
     } else if (type === 'expected') {
       setExpectedOutputInstruction(content);
+      showGlobalSnackbar('Expected output format updated.', 'success');
     } else {
       console.warn('Unknown instruction type for saving:', type);
     }
@@ -386,8 +402,22 @@ const PromptGenerator: React.FC = () => {
     applyingChanges ||
     isFetchingFileContent ||
     isBuilding ||
-    isSavingFileContent ||
-    isOpenedFileDirty;
+    isSavingFileContent || // New: Get new state
+    isOpenedFileDirty; // New: Get new state
+
+  const getInstructionPlaceholder = useMemo(() => {
+    switch (requestType) {
+      case RequestType.TEXT_WITH_IMAGE:
+        return 'Describe the image or ask to extract text (e.g., "Extract all text from this image").';
+      case RequestType.TEXT_WITH_FILE:
+        return 'Provide instructions for the uploaded file (e.g., "Summarize this document" or "Refactor the code in this file").';
+      case RequestType.TEXT_ONLY:
+        return 'Engage in a text-only conversation with the AI. No file context provided.';
+      case RequestType.LLM_GENERATION:
+      default:
+        return 'e.g., Implement a new user authentication module with JWT. Include login and register endpoints.';
+    }
+  }, [requestType]);
 
   return (
     <Box
@@ -648,7 +678,7 @@ const PromptGenerator: React.FC = () => {
         rows={2}
         value={instruction}
         onChange={handleInstructionChange}
-        placeholder="e.g., Implement a new user authentication module with JWT. Include login and register endpoints."
+        placeholder={getInstructionPlaceholder}
         disabled={commonDisabled || loading || isOpenedFileDirty}
         fullWidth
         size="small"
@@ -683,6 +713,20 @@ const PromptGenerator: React.FC = () => {
                 <CloudUploadIcon fontSize="small" />
               </IconButton>
             </span>
+          </Tooltip>
+
+          {/* Display Request Type */}
+          <Tooltip title={`Current AI Request Type: ${requestType}`}>
+            <Chip
+              label={requestType.replace(/_/g, ' ')}
+              size="small"
+              color="primary"
+              sx={{
+                height: 24,
+                '& .MuiChip-label': { px: 0.8, fontSize: '0.75rem' },
+                fontWeight: 'bold',
+              }}
+            />
           </Tooltip>
 
           {/* New: Output Format Dropdown */}

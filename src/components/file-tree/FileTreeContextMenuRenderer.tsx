@@ -22,14 +22,12 @@ import FolderIcon from '@mui/icons-material/FolderOutlined'; // Generic folder i
 import { getFileTypeIcon } from '@/constants/fileIcons'; // For specific file icons
 
 export interface FileTreeContextMenuRendererProps {
-  setSnackbarMessage: (message: string) => void;
-  setSnackbarSeverity: (severity: 'success' | 'error' | 'info') => void;
-  setSnackbarOpen: (open: boolean) => void;
+  // Removed snackbar props, now handled globally via aiEditorStore
 }
 
 export const FileTreeContextMenuRenderer: React.FC<
   FileTreeContextMenuRendererProps
-> = ({ setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen }) => {
+> = () => {
   const state = useStore(fileTreeContextMenu);
   const menuRef = useRef<HTMLDivElement>(null);
   const theme = useTheme();
@@ -106,7 +104,7 @@ export const FileTreeContextMenuRenderer: React.FC<
           style={{
             top: adjustedTop,
             left: adjustedLeft,
-            minWidth: '220px',
+            minWidth: '110px',
             backgroundColor: theme.palette.background.paper,
             borderColor: theme.palette.divider,
           }}

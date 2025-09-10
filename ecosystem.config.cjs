@@ -1,7 +1,7 @@
   module.exports = {
   apps: [
     {
-      name: "ai-editor-front",
+      name: "project-board-front",
       script: "node dist/index.html",
       instances: 1,
       exec_mode: "fork",

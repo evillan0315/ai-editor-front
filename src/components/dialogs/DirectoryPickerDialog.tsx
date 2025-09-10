@@ -15,7 +15,7 @@ import {
   IconButton,
   Typography,
   TextField as MuiTextField,
-  InputAdornment,
+  InputAdornment, // Added InputAdornment import
   useTheme,
   Tooltip,
 } from '@mui/material';

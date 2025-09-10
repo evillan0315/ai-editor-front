@@ -1,38 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import {
   aiEditorStore,
-  setOpenedFile,
   setOpenedFileContent,
   setIsFetchingFileContent,
   setFetchFileContentError,
-  setIsSavingFileContent, // New: Import new action
-  setSaveFileContentError, // New: Import new action
-  setIsOpenedFileDirty, // New: Import new action
-  removeOpenedTab, // New: Import removeOpenedTab for closing
+  setIsOpenedFileDirty, // Existing, but now set based on store's snapshot
+  setInitialFileContentSnapshot, // New: To set initial content in store
+  saveActiveFile, // Import the new save action
 } from '@/stores/aiEditorStore';
-import { readFileContent, writeFileContent } from '@/api/file'; // New: Import writeFileContent
+import { readFileContent } from '@/api/file';
 import CodeMirror from '@uiw/react-codemirror';
-import CustomSnackbar from '@/components/Snackbar'; // New: Import custom Snackbar
-// Language extensions are now handled by getCodeMirrorLanguage from utils
 import {
   Box,
   Typography,
-  Button,
   CircularProgress,
   Alert,
   Paper,
   useTheme,
-  IconButton,
-  Tooltip,
-  Chip,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close'; // New: Import CloseIcon
-import SaveIcon from '@mui/icons-material/Save'; // New: Import SaveIcon
-import UndoIcon from '@mui/icons-material/Undo'; // New: Import UndoIcon (for discard)
 import { themeStore } from '@/stores/themeStore';
 import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index'; // Import createCodeMirrorTheme
-import { getFileTypeIcon } from '@/constants/fileIcons'; // New: Import getFileTypeIcon
+import { keymap } from '@codemirror/view'; // Import keymap
 
 interface OpenedFileViewerProps {
   // No specific props needed, all state comes from aiEditorStore
@@ -42,23 +31,14 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   const {
     openedFile,
     openedFileContent,
+    initialFileContentSnapshot, // New: Get from store
     isFetchingFileContent,
     fetchFileContentError,
-    isSavingFileContent, // New: Get new state
-    saveFileContentError, // New: Get new state
-    isOpenedFileDirty, // New: Get new state
+    isOpenedFileDirty, // Get from store
+    isSavingFileContent, // New: Get saving status from store
   } = useStore(aiEditorStore);
   const muiTheme = useTheme(); // Get MUI theme
   const { mode } = useStore(themeStore);
-
-  const [initialContentSnapshot, setInitialContentSnapshot] = useState<
-    string | null
-  >(null);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<
-    'success' | 'error' | 'info'
-  >('info');
 
   // Effect to fetch file content when `openedFile` changes
   useEffect(() => {
@@ -66,21 +46,19 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
       if (!openedFile) {
         // Reset all relevant states when file is closed
         setOpenedFileContent(null);
+        setInitialFileContentSnapshot(null); // Clear snapshot in store
         setFetchFileContentError(null);
-        setInitialContentSnapshot(null); // Clear snapshot
         setIsOpenedFileDirty(false); // No longer dirty
-        setSaveFileContentError(null); // Clear any save error
         return;
       }
 
       setIsFetchingFileContent(true);
       setFetchFileContentError(null);
-      setSaveFileContentError(null); // Clear previous save errors when opening a new file
 
       try {
         const content = await readFileContent(openedFile);
-        setOpenedFileContent(content); // This also sets isOpenedFileDirty to true temporarily
-        setInitialContentSnapshot(content); // Store original content
+        setOpenedFileContent(content);
+        setInitialFileContentSnapshot(content); // Store original content in store
         setIsOpenedFileDirty(false); // Reset dirty flag after initial load
       } catch (err) {
         console.error(`Error reading file ${openedFile}:`, err);
@@ -88,7 +66,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
           `Failed to read file: ${err instanceof Error ? err.message : String(err)}`,
         );
         setOpenedFileContent(null);
-        setInitialContentSnapshot(null);
+        setInitialFileContentSnapshot(null);
       } finally {
         setIsFetchingFileContent(false);
       }
@@ -97,15 +75,15 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
     fetchContent();
   }, [openedFile]);
 
-  // Effect to update `isOpenedFileDirty` based on `openedFileContent` vs `initialContentSnapshot`
+  // Effect to update `isOpenedFileDirty` based on `openedFileContent` vs `initialFileContentSnapshot`
   useEffect(() => {
     // Only compare if a file is actually opened and not in the process of fetching
     if (
       openedFile &&
       !isFetchingFileContent &&
-      initialContentSnapshot !== null
+      initialFileContentSnapshot !== null
     ) {
-      const isDirty = openedFileContent !== initialContentSnapshot;
+      const isDirty = openedFileContent !== initialFileContentSnapshot;
       if (isDirty !== isOpenedFileDirty) {
         setIsOpenedFileDirty(isDirty);
       }
@@ -115,80 +93,19 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   }, [
     openedFile,
     openedFileContent,
-    initialContentSnapshot,
+    initialFileContentSnapshot,
     isFetchingFileContent,
     isOpenedFileDirty,
   ]);
 
-  const handleSave = async () => {
-    if (!openedFile || openedFileContent === null) {
-      setSaveFileContentError('No file or content to save.');
-      return;
-    }
-
-    setIsSavingFileContent(true);
-    setSaveFileContentError(null);
-    setSnackbarOpen(false); // Close any existing snackbar
-
-    try {
-      const result = await writeFileContent(openedFile, openedFileContent);
-      if (result.success) {
-        setInitialContentSnapshot(openedFileContent); // Update snapshot to new saved content
-        setIsOpenedFileDirty(false); // Mark as clean after saving
-        setSnackbarMessage(`File saved: ${openedFile}`);
-        setSnackbarSeverity('success');
-        setSnackbarOpen(true);
-      } else {
-        setSaveFileContentError(result.message || 'Failed to save file.');
-        setSnackbarMessage(`Failed to save: ${result.message || openedFile}`);
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setSaveFileContentError(`Failed to save file: ${errorMessage}`);
-      setSnackbarMessage(`Error saving: ${errorMessage}`);
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-    } finally {
-      setIsSavingFileContent(false);
-    }
-  };
-
-  const handleDiscardChanges = () => {
-    if (
-      window.confirm(
-        'Are you sure you want to discard unsaved changes? This action cannot be undone.',
-      )
-    ) {
-      setOpenedFileContent(initialContentSnapshot); // Revert to snapshot
-      setIsOpenedFileDirty(false); // Mark as clean
-      setSaveFileContentError(null); // Clear any save errors
-      setSnackbarMessage('Changes discarded.');
-      setSnackbarSeverity('info');
-      setSnackbarOpen(true);
-    }
-  };
-
   const handleContentChange = (value: string) => {
-    setOpenedFileContent(value); // This action handles setting `isOpenedFileDirty`
-  };
-
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
-  };
-
-  const handleCloseViewer = () => {
-    if (openedFile) {
-      removeOpenedTab(openedFile); // Use removeOpenedTab to manage closing and active tab switching
-    }
+    setOpenedFileContent(value); // This action handles setting `isOpenedFileDirty` implicitly or through the effect above
   };
 
   if (!openedFile) return null; // Only render if a file is opened
 
-  const isLoadingContent = isFetchingFileContent || isSavingFileContent;
-  const isDisabled = isLoadingContent;
-  const fileName = openedFile.split('/').pop() || ''; // Get file name for icon
+  const isLoadingContent = isFetchingFileContent;
+  const isDisabled = isLoadingContent || isSavingFileContent; // Disable editing if saving or fetching
 
   return (
     <Paper
@@ -204,99 +121,9 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
         position: 'relative', // For absolute positioning of snackbar
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          px: 2,
-          minHeight: '40px', // Explicitly set to match file tabs height
-          borderBottom: `1px solid ${muiTheme.palette.divider}`,
-          bgcolor: muiTheme.palette.action.hover,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}> {/* Reduced gap to 0.5 */}
-          <Box sx={{ color: 'inherit' }}>{getFileTypeIcon(fileName, 'file', false)}</Box> {/* Added file type icon */}
-          <Typography
-            variant="subtitle1" // Changed typography variant from h6 to subtitle1
-            className="!font-semibold"
-            sx={{ color: muiTheme.palette.text.primary, mr: 1 }}
-          >
-            {fileName}
-          </Typography>
-          {isOpenedFileDirty && (
-            <Chip
-              label="Unsaved changes"
-              size="small"
-              color="warning"
-              sx={{ height: 20, '& .MuiChip-label': { px: 0.8 } }}
-            />
-          )}
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}> {/* Reduced gap to 0.5 */}
-          {isOpenedFileDirty && (
-            <Tooltip title="Discard unsaved changes">
-              <span>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={handleDiscardChanges}
-                  disabled={isDisabled}
-                  startIcon={<UndoIcon />}
-                  sx={{
-                    color: muiTheme.palette.error.main,
-                    borderColor: muiTheme.palette.error.light,
-                    '&:hover': {
-                      borderColor: muiTheme.palette.error.dark,
-                      bgcolor: muiTheme.palette.error.light + '10',
-                    },
-                  }}
-                >
-                  Discard
-                </Button>
-              </span>
-            </Tooltip>
-          )}
-
-          <Button
-            variant="contained"
-            color="primary"
-            size="small"
-            onClick={handleSave}
-            disabled={isDisabled || !isOpenedFileDirty}
-            startIcon={
-              isSavingFileContent ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <SaveIcon />
-              )
-            }
-          >
-            {isSavingFileContent ? 'Saving...' : 'Save'}
-          </Button>
-
-          <Tooltip title="Close File">
-            <IconButton
-              size="small"
-              onClick={handleCloseViewer}
-              sx={{ color: muiTheme.palette.text.secondary }}
-              disabled={isDisabled}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Box>
-
       {fetchFileContentError && (
         <Alert severity="error" sx={{ m: 2 }}>
           {fetchFileContentError}
-        </Alert>
-      )}
-      {saveFileContentError && (
-        <Alert severity="error" sx={{ m: 2 }}>
-          {saveFileContentError}
         </Alert>
       )}
 
@@ -318,21 +145,23 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
             extensions={[
               getCodeMirrorLanguage(openedFile),
               createCodeMirrorTheme(muiTheme), // Add custom theme here
+              keymap.of([
+                {
+                  key: 'Mod-s',
+                  run: () => {
+                    saveActiveFile(); // Trigger save action
+                    return true; // Mark event as handled
+                  },
+                },
+              ]),
             ]}
             theme={mode}
-            editable={!isDisabled} // Allow editing unless loading
+            editable={!isDisabled} // Allow editing unless loading or saving
             minHeight="100%" // Take all available height in this container
             maxHeight="100%"
           />
         </Box>
       )}
-      <CustomSnackbar
-        open={snackbarOpen}
-        message={snackbarMessage}
-        severity={snackbarSeverity}
-        onClose={handleSnackbarClose}
-        autoHideDuration={3000}
-      />
     </Paper>
   );
 };

@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@nanostores/react';
 import { authStore } from '@/stores/authStore';
-import { aiEditorStore } from '@/stores/aiEditorStore';
+import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore'; // Import showGlobalSnackbar
 import { handleLogout } from '@/services/authService';
 import { runTerminalCommand, fetchProjectScripts } from '@/api/terminal';
 import ThemeToggle from './ThemeToggle';
 import RunScriptMenuItem from './RunScriptMenuItem'; // Changed from ScriptButton
-import Snackbar from './Snackbar';
 import AppsMenuContent from './AppsMenuContent'; // New: Import AppsMenuContent
 import ProfileMenuContent from './ProfileMenuContent'; // New: Import ProfileMenuContent
 import { appDefinitions } from '@/constants/appDefinitions'; // New: Import app definitions
@@ -54,16 +53,14 @@ const Navbar: React.FC = () => {
   const [scriptExecutionStatus, setScriptExecutionStatus] = useState<
     Record<string, ScriptExecutionState>
   >({});
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<
-    'success' | 'error' | 'info'
-  >('info');
-  const [scriptMenuAnchorEl, setScriptMenuAnchorEl] = useState<null | HTMLElement>(null);
+
+  const [scriptMenuAnchorEl, setScriptMenuAnchorEl] =
+    useState<null | HTMLElement>(null);
   const [appsMenuAnchorEl, setAppsMenuAnchorEl] = useState<null | HTMLElement>(
     null,
   ); // New state for apps menu anchor
-  const [profileMenuAnchorEl, setProfileMenuAnchorEl] = useState<null | HTMLElement>(null); // State for profile menu anchor
+  const [profileMenuAnchorEl, setProfileMenuAnchorEl] =
+    useState<null | HTMLElement>(null); // State for profile menu anchor
 
   const isScriptMenuOpen = Boolean(scriptMenuAnchorEl);
   const isAppsMenuOpen = Boolean(appsMenuAnchorEl);
@@ -102,9 +99,7 @@ const Navbar: React.FC = () => {
     rawScriptContent: string,
   ) => {
     if (!currentProjectPath) {
-      setSnackbarMessage('Error: Project root not set.');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      showGlobalSnackbar('Error: Project root not set.', 'error');
       return;
     }
 
@@ -113,9 +108,10 @@ const Navbar: React.FC = () => {
       (state) => state.status === ScriptStatus.RUNNING,
     );
     if (isAnyScriptRunning) {
-      setSnackbarMessage('Another script is already running. Please wait.');
-      setSnackbarSeverity('info');
-      setSnackbarOpen(true);
+      showGlobalSnackbar(
+        'Another script is already running. Please wait.',
+        'info',
+      );
       return;
     }
 
@@ -131,11 +127,10 @@ const Navbar: React.FC = () => {
         output: null,
       },
     }));
-    setSnackbarMessage(
+    showGlobalSnackbar(
       `Running '${scriptName}' with ${packageManagerPrefix}...`,
+      'info',
     );
-    setSnackbarSeverity('info');
-    setSnackbarOpen(true);
 
     try {
       const result = await runTerminalCommand(
@@ -151,8 +146,7 @@ const Navbar: React.FC = () => {
             output: result,
           },
         }));
-        setSnackbarMessage(`'${scriptName}' executed successfully!`);
-        setSnackbarSeverity('success');
+        showGlobalSnackbar(`'${scriptName}' executed successfully!`, 'success');
       } else {
         const errorMessage =
           result.stderr || `Command exited with code ${result.exitCode}.`;
@@ -164,8 +158,10 @@ const Navbar: React.FC = () => {
             output: result,
           },
         }));
-        setSnackbarMessage(`Error running '${scriptName}': ${errorMessage}`);
-        setSnackbarSeverity('error');
+        showGlobalSnackbar(
+          `Error running '${scriptName}': ${errorMessage}`,
+          'error',
+        );
       }
       console.log(`Script '${scriptName}' output:`, result);
     } catch (err) {
@@ -178,16 +174,14 @@ const Navbar: React.FC = () => {
           output: null,
         },
       }));
-      setSnackbarMessage(`Failed to run '${scriptName}': ${errorMessage}`);
-      setSnackbarSeverity('error');
+      showGlobalSnackbar(
+        `Failed to run '${scriptName}': ${errorMessage}`,
+        'error',
+      );
       console.error(`Failed to run script '${scriptName}':`, err);
     } finally {
-      setSnackbarOpen(true);
+      // Snackbar is shown via state updates above
     }
-  };
-
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
   };
 
   const handleScriptMenuClick = (
@@ -250,13 +244,26 @@ const Navbar: React.FC = () => {
           <LinearProgress />
         </Box>
       )}
-      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mx: 'auto', width: '100%', px: { xs: 2, sm: 3, lg: 4 } }}>
+      <Toolbar
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mx: 'auto',
+          width: '100%',
+          px: { xs: 2, sm: 3, lg: 4 },
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography
             variant="h6"
             component={Link}
             to="/"
-            sx={{ textDecoration: 'none', color: theme.palette.text.primary, fontWeight: 'bold' }}
+            sx={{
+              textDecoration: 'none',
+              color: theme.palette.text.primary,
+              fontWeight: 'bold',
+            }}
           >
             {APP_NAME}
           </Typography>
@@ -481,12 +488,6 @@ const Navbar: React.FC = () => {
           )}
         </Box>
       </Toolbar>
-      <Snackbar
-        open={snackbarOpen}
-        message={snackbarMessage}
-        severity={snackbarSeverity}
-        onClose={handleSnackbarClose}
-      />
     </AppBar>
   );
 };

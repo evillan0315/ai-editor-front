@@ -60,7 +60,11 @@ const AppsMenuContent: React.FC<AppsMenuContentProps> = ({ apps, onClose }) => {
                   }}
                 >
                   <app.icon
-                    sx={{ fontSize: 30, color: theme.palette.primary.main, mb: 0.5 }}
+                    sx={{
+                      fontSize: 30,
+                      color: theme.palette.primary.main,
+                      mb: 0.5,
+                    }}
                   />
                   <Typography
                     variant="caption"

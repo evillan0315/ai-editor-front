@@ -4,13 +4,13 @@ This document outlines the high-level architecture of the `project-board-front` 
 
 ## Core Principles
 
-- **Client-Side Rendering (CSR)**: The application is a Single-Page Application (SPA) built with React, rendered entirely on the client-side.
-- **Component-Based**: UI is composed of reusable and isolated React components.
-- **Functional Programming**: Leverages React Hooks and functional components for stateful logic.
-- **Type Safety**: Fully written in TypeScript to ensure type consistency and reduce runtime errors.
-- **Global State Management**: Uses Nanostores for simple, reactive, and efficient global state management.
-- **Styling**: Combines Material UI v7 for robust UI components and Tailwind CSS v4 for utility-first styling and responsive design.
-- **Backend Communication**: Interacts with a NestJS backend via RESTful APIs and WebSockets.
+-   **Client-Side Rendering (CSR)**: The application is a Single-Page Application (SPA) built with React, rendered entirely on the client-side.
+-   **Component-Based**: UI is composed of reusable and isolated React components.
+-   **Functional Programming**: Leverages React Hooks and functional components for stateful logic.
+-   **Type Safety**: Fully written in TypeScript to ensure type consistency and reduce runtime errors.
+-   **Global State Management**: Uses Nanostores for simple, reactive, and efficient global state management.
+-   **Styling**: Combines Material UI v7 for robust UI components and Tailwind CSS v4 for utility-first styling and responsive design.
+-   **Backend Communication**: Interacts with a NestJS backend via RESTful APIs and WebSockets.
 
 ## Main Layers
 
@@ -31,8 +31,8 @@ This layer is responsible for rendering the user interface and handling user int
 Nanostores are used for managing the global state of the application. Each store is a lightweight, reactive state container focused on a specific domain.
 
 -   **`src/stores/`**:
-    -   `authStore.ts`: Manages user authentication status, user profile, and loading/error states related to auth.
-    -   `aiEditorStore.ts`: Manages the state for the AI Code Editor, including user prompts, AI responses, selected changes, file content, and various loading indicators.
+    -   `authStore.ts`: Manages user authentication status (`isLoggedIn`, `user`, `loading`, `error`). Actions include `loginSuccess`, `logout`, `setLoading`, `setError`.
+    -   `aiEditorStore.ts`: Manages the state for the AI Code Editor, including user prompts, AI's system instructions (`aiInstruction`, `expectedOutputInstruction`), various AI request parameters (`requestType`, `llmOutputFormat`, `uploadedFile`), AI responses (`lastLlmResponse`, `selectedChanges`, `currentDiff`), file application process (`applyingChanges`, `appliedMessages`, `gitInstructions`), and the opened file viewer (`openedFile`, `openedFileContent`, `isOpenedFileDirty`).
     -   `fileTreeStore.ts`: Manages the state of the interactive file tree, including files, expanded directories, and selected files.
     -   `themeStore.ts`: Manages the application's UI theme (light/dark mode).
     -   `spotifyStore.ts`: Manages the state for the Spotify-like music player.
@@ -49,7 +49,7 @@ This layer contains functions responsible for interacting with the backend API. 
 -   **`src/api/`**: Contains client functions that make HTTP requests to the NestJS backend.
     -   `auth.ts`: Authentication-related API calls (login, register, logout, check status).
     -   `file.ts`: File system operations (scan, list directory, read, write, apply changes, git diff).
-    -   `llm.ts`: LLM interaction (generate code, report errors).
+    -   `llm.ts`: LLM interaction (generate code).
     -   `terminal.ts`: Terminal command execution (run command, fetch package scripts).
     -   `translation.ts`: AI translation services.
     -   `geminiLive.ts`: WebSocket client for Gemini Live Audio communication.
@@ -84,5 +84,4 @@ This layer contains functions responsible for interacting with the backend API. 
 11. **Service Invocation**: This triggers `handleApplySelectedChanges` which calls `applyProposedChanges` (API Client).
 12. **Backend Execution**: `applyProposedChanges` sends changes to `/api/file/apply-changes` (Backend API), which then modifies files in the Project File System (FS).
 13. **Post-Apply Actions**: If auto-apply is enabled or user confirms, `performPostApplyActions` runs `pnpm run build` and AI-suggested Git commands via `/api/terminal/run`.
-14. **Error Reporting**: If build or Git commands fail, `reportErrorToLlm` is called to send diagnostics to the AI for analysis.
-15. **Feedback**: `Snackbar` (Component) displays success/error messages, reflecting changes applied and any terminal output.
+14. **Feedback**: `Snackbar` (Component) displays success/error messages, reflecting changes applied and any terminal output.

@@ -1,5 +1,19 @@
-import { FileTreeNode, ApiFileScanResult } from './index'; // Import ApiFileScanResult
-
+/**
+ * Represents a file or folder entry returned by the backend's /api/file/list (non-recursive) endpoint.
+ * This interface mirrors the backend's FileTreeNode directly.
+ */
+export interface FileTreeNode {
+  name: string;
+  path: string; // Absolute path to the file or folder
+  isDirectory: boolean;
+  type: 'file' | 'folder';
+  lang?: string;
+  mimeType?: string;
+  size?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+  children: FileTreeNode[]; // Will be empty when recursive=false is used.
+}
 /**
  * Represents a file or folder entry in the frontend's interactive file tree.
  * Extends FileTreeNode from the backend to include UI-specific state.
@@ -23,4 +37,14 @@ export interface FileTreeState {
   lastFetchedProjectRoot?: string | null; // Tracks the project root for the last successful initial fetch
   lastFetchedScanPaths?: string[]; // Tracks the scan paths for the last successful AI context fetch
   loadingChildren: Set<string>; // New: Set of paths for folders currently loading their children
+}
+
+/**
+ * Represents a file entry returned by the backend's /api/file/scan endpoint.
+ * This is used for providing AI context and is a flat structure.
+ */
+export interface ApiFileScanResult {
+  filePath: string; // Absolute path to the file
+  relativePath: string; // Path relative to the project root (e.g., "src/components/MyComponent.tsx")
+  content: string;
 }

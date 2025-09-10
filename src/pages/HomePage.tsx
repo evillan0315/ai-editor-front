@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import TerminalIcon from '@mui/icons-material/Terminal';
-import DashboardIcon from '@mui/icons-material/Dashboard';
+import DashboardIcon from '@mui/icons-material/Dashboard'; // Keeping this icon, but text changed
 import AppsIcon from '@mui/icons-material/Apps';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'; // For AI generation
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows'; // For diff/changes
@@ -185,16 +185,17 @@ const HomePage: React.FC = () => {
           >
             Start Coding
           </Button>
+          {/* Changed Dashboard to Organizations, matching Navbar changes */}
           <Button
             variant="outlined"
             color="secondary"
             size="large"
             component={Link}
-            to="/dashboard"
+            to="/organizations"
             startIcon={<DashboardIcon />}
             sx={{ py: 1.5, px: 3, fontSize: '1.1rem' }}
           >
-            View Dashboard
+            Manage Organizations
           </Button>
           <Button
             variant="outlined"

@@ -104,7 +104,8 @@ const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
     }
     setFormError(null);
 
-    const dto: CreateProjectDto = { // Ensure type is CreateProjectDto
+    const dto: CreateProjectDto = {
+      // Ensure type is CreateProjectDto
       name,
       description,
       path,
@@ -129,7 +130,9 @@ const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
       }
       onClose(); // Close dialog on successful submission
     } catch (error) {
-      setFormError(`Submission failed: ${error instanceof Error ? error.message : String(error)}`);
+      setFormError(
+        `Submission failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   };
 
@@ -298,7 +301,8 @@ const ProjectsPage: React.FC = () => {
     try {
       const newProj = await createProject(dto);
       addProject(newProj);
-      if (organizationId) { // Ensure organizationId is not null before fetching
+      if (organizationId) {
+        // Ensure organizationId is not null before fetching
         fetchProjects(organizationId); // Re-fetch to ensure list is accurate
       }
     } catch (err) {

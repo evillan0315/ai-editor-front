@@ -50,7 +50,7 @@ import {
   CreateMediaDto,
   AllowedMediaFormat,
   allowedMediaFormats,
-  CreatePlaylistPayload, // Corrected import
+  PlaylistCreationRequest, // Corrected import from CreatePlaylistPayload
   Playlist, // Imported from '@/types'
   Track, // Imported from '@/types'
 } from '@/types';
@@ -267,7 +267,6 @@ const MediaExtractionFormDialog: React.FC<MediaExtractionFormDialogProps> = ({
         <Button onClick={onClose} disabled={isExtracting}>
           Cancel
         </Button>
-        {/* Regenerated Button for potential hidden char fix */}
         <Button
           onClick={handleSubmit}
           color="primary"
@@ -334,7 +333,8 @@ const CreatePlaylistFormDialog: React.FC<CreatePlaylistFormDialogProps> = ({
     setIsCreating(true);
     setCreateError(null);
 
-    const payload: CreatePlaylistPayload = {
+    const payload: PlaylistCreationRequest = {
+      // Corrected type here
       name: name.trim(),
       description: description.trim() || undefined,
       isPublic,
@@ -463,7 +463,6 @@ const CreatePlaylistFormDialog: React.FC<CreatePlaylistFormDialogProps> = ({
         />
 
         {availableTracks.length > 0 && (
-          // Regenerated FormControl for potential hidden char fix
           <FormControl
             fullWidth
             margin="dense"
@@ -546,7 +545,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
   // Now using the global snackbar provided by `aiEditorStore`
   const showSnackbar = useCallback(
     (message: string, severity: 'success' | 'error' | 'info') => {
-      showGlobalSnackbar(message, severity); // Use global snackbar
+      showGlobalSnackbar(message, severity);
     },
     [],
   );

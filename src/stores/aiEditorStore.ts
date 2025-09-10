@@ -4,61 +4,64 @@ import {
   FileChange,
   ModelResponse,
   AddOrModifyFileChange,
-  DeleteOrAnalyzeFileChange,
   RequestType,
   LlmOutputFormat,
-  LlmGeneratePayload, // New: Import for lastLlmGeneratePayload
-  LlmReportErrorPayload, // New: Import for error reporting
-} from '@/types/index';
+  LlmGeneratePayload,
+} from '@/types';
 import {
   INSTRUCTION,
   ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
-  MARKDOWN_ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
-  YAML_ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
-  TEXT_ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
 } from '@/constants';
 import {
   applyProposedChanges as apiApplyProposedChanges,
-  reportErrorToLlm,
-} from '@/api/llm'; // Rename to avoid conflict, New: Import reportErrorToLlm
-import { runTerminalCommand } from '@/api/terminal'; // New: Import for running build script
+  LlmReportErrorApiPayload,
+  LlmReportErrorContext,
+} from '@/api/llm'; // Import LlmReportErrorApiPayload and Context
+import { runTerminalCommand } from '@/api/terminal';
+import { writeFileContent } from '@/api/file';
 
 export const aiEditorStore = map<AiEditorState>({
   instruction: '',
-  aiInstruction: INSTRUCTION, // Initialize with default INSTRUCTION
-  expectedOutputInstruction: ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT, // Initialize with default (JSON)
-  requestType: RequestType.LLM_GENERATION, // Default request type changed to LLM_GENERATION
-  llmOutputFormat: LlmOutputFormat.YAML, // New: Default LLM output format changed to YAML
+  aiInstruction: INSTRUCTION,
+  expectedOutputInstruction: ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
+  requestType: RequestType.LLM_GENERATION,
+  llmOutputFormat: LlmOutputFormat.YAML,
   uploadedFileData: null,
   uploadedFileMimeType: null,
-  uploadedFileName: null, // New: Add uploadedFileName to state
-  currentProjectPath: null, // Initialized to null, will be set from VITE_BASE_DIR or user input
+  uploadedFileName: null,
+  currentProjectPath: null,
   response: null,
   loading: false,
   error: null,
-  scanPathsInput: 'src,package.json,README.md', // Initialize with default scan paths
-  lastLlmResponse: null, // Stores the full structured response from LLM
-  lastLlmGeneratePayload: null, // New: Stores the last payload sent to generateCode
-  selectedChanges: {}, // Map of filePath to FileChange for selected items
-  currentDiff: null, // The content of the diff for the currently viewed file
-  diffFilePath: null, // The filePath of the file whose diff is currently displayed
-  applyingChanges: false, // New state for tracking if changes are being applied
-  appliedMessages: [], // Messages from the backend after applying changes
-  gitInstructions: null, // New: Optional git commands from LLM response
-  runningGitCommandIndex: null, // New: Index of the git command currently being executed
-  commandExecutionOutput: null, // New: Output from the last git command execution
-  commandExecutionError: null, // New: Error from the last git command execution
-  openedFile: null, // Path of the file currently opened in the right editor panel
-  openedFileContent: null, // Content of the file currently opened
-  isFetchingFileContent: false, // Loading state for fetching opened file content
-  fetchFileContentError: null, // Error state for fetching opened file content
-  isSavingFileContent: false, // New: Initialize isSavingFileContent
-  saveFileContentError: null, // New: Initialize saveFileContentError
-  isOpenedFileDirty: false, // New: Initialize isOpenedFileDirty
-  autoApplyChanges: false, // New: Automatically apply changes after generation
-  isBuilding: false, // New: Initialize isBuilding state
-  buildOutput: null, // New: Initialize buildOutput state
-  openedTabs: [], // New: Initialize openedTabs array
+  scanPathsInput: 'src,package.json,README.md',
+  lastLlmResponse: null,
+  lastLlmGeneratePayload: null,
+  selectedChanges: {},
+  currentDiff: null,
+  diffFilePath: null,
+  applyingChanges: false,
+  appliedMessages: [],
+  gitInstructions: null,
+  runningGitCommandIndex: null,
+  commandExecutionOutput: null,
+  commandExecutionError: null,
+  openedFile: null,
+  openedFileContent: null,
+  initialFileContentSnapshot: null, // New: Snapshot of content when file was last loaded/saved
+  isFetchingFileContent: false,
+  fetchFileContentError: null,
+  isSavingFileContent: false,
+  saveFileContentError: null,
+  isOpenedFileDirty: false,
+  autoApplyChanges: false,
+  isBuilding: false,
+  buildOutput: null,
+  openedTabs: [],
+  snackbar: {
+    open: false,
+    message: '',
+    severity: null,
+  },
 });
 
 export const setInstruction = (instruction: string) => {
@@ -84,11 +87,11 @@ export const setLlmOutputFormat = (format: LlmOutputFormat) => {
 export const setUploadedFile = (
   data: string | null,
   mimeType: string | null,
-  fileName: string | null, // Added fileName parameter
+  fileName: string | null,
 ) => {
   aiEditorStore.setKey('uploadedFileData', data);
   aiEditorStore.setKey('uploadedFileMimeType', mimeType);
-  aiEditorStore.setKey('uploadedFileName', fileName); // Set uploadedFileName
+  aiEditorStore.setKey('uploadedFileName', fileName);
 };
 
 export const setResponse = (response: string | null) => {
@@ -106,40 +109,46 @@ export const setError = (message: string | null) => {
 export const clearState = () => {
   aiEditorStore.set({
     instruction: '',
-    aiInstruction: INSTRUCTION, // Reset to default
-    expectedOutputInstruction: ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT, // Reset to JSON default
-    requestType: RequestType.LLM_GENERATION, // Reset to default, which is now LLM_GENERATION
-    llmOutputFormat: LlmOutputFormat.YAML, // Reset to YAML default
+    aiInstruction: INSTRUCTION,
+    expectedOutputInstruction: ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
+    requestType: RequestType.LLM_GENERATION,
+    llmOutputFormat: LlmOutputFormat.YAML,
     uploadedFileData: null,
     uploadedFileMimeType: null,
-    uploadedFileName: null, // Reset uploadedFileName
+    uploadedFileName: null,
     currentProjectPath: null,
     response: null,
     loading: false,
     error: null,
-    scanPathsInput: 'src,package.json,README.md', // Reset to default scan paths as well
+    scanPathsInput: 'src,package.json,README.md,docs',
     lastLlmResponse: null,
-    lastLlmGeneratePayload: null, // New: Reset lastLlmGeneratePayload
+    lastLlmGeneratePayload: null,
     selectedChanges: {},
     currentDiff: null,
     diffFilePath: null,
     applyingChanges: false,
     appliedMessages: [],
-    gitInstructions: null, // Reset to null
+    gitInstructions: null,
     runningGitCommandIndex: null,
     commandExecutionOutput: null,
     commandExecutionError: null,
     openedFile: null,
     openedFileContent: null,
+    initialFileContentSnapshot: null, // Clear on full state clear
     isFetchingFileContent: false,
     fetchFileContentError: null,
-    isSavingFileContent: false, // Reset new states
-    saveFileContentError: null, // Reset new states
-    isOpenedFileDirty: false, // Reset new states
-    autoApplyChanges: false, // Reset to default
-    isBuilding: false, // Reset build state
-    buildOutput: null, // Reset build output
-    openedTabs: [], // New: Reset openedTabs
+    isSavingFileContent: false,
+    saveFileContentError: null,
+    isOpenedFileDirty: false,
+    autoApplyChanges: false,
+    isBuilding: false,
+    buildOutput: null,
+    openedTabs: [],
+    snackbar: {
+      open: false,
+      message: '',
+      severity: null,
+    },
   });
 };
 
@@ -153,11 +162,11 @@ export const setLastLlmResponse = (response: ModelResponse | null) => {
   if (response && response.changes) {
     const newSelectedChanges: Record<string, FileChange> = {};
     response.changes.forEach((change) => {
-      newSelectedChanges[change.filePath] = change; // Select all by default
+      newSelectedChanges[change.filePath] = change;
     });
     aiEditorStore.setKey('selectedChanges', newSelectedChanges);
   }
-  aiEditorStore.setKey('gitInstructions', response?.gitInstructions || null); // New: Set git instructions
+  aiEditorStore.setKey('gitInstructions', response?.gitInstructions || null);
   // Clear selected changes if no response or no changes
   if (!response || !response.changes) {
     aiEditorStore.setKey('selectedChanges', {});
@@ -171,24 +180,24 @@ export const setLastLlmGeneratePayload = (
 };
 
 export const toggleSelectedChange = (change: FileChange) => {
-  const state = aiEditorStore.get(); // Get current state
+  const state = aiEditorStore.get();
   const newSelected = { ...state.selectedChanges };
   if (newSelected[change.filePath]) {
     delete newSelected[change.filePath];
   } else {
     newSelected[change.filePath] = change;
   }
-  aiEditorStore.set({ ...state, selectedChanges: newSelected }); // Set new full state
+  aiEditorStore.set({ ...state, selectedChanges: newSelected });
 };
 
 export const selectAllChanges = () => {
-  const state = aiEditorStore.get(); // Get current state
+  const state = aiEditorStore.get();
   if (state.lastLlmResponse?.changes) {
     const newSelectedChanges: Record<string, FileChange> = {};
     state.lastLlmResponse.changes.forEach((change) => {
       newSelectedChanges[change.filePath] = change;
     });
-    aiEditorStore.set({ ...state, selectedChanges: newSelectedChanges }); // Set new full state
+    aiEditorStore.set({ ...state, selectedChanges: newSelectedChanges });
   }
 };
 
@@ -221,10 +230,9 @@ export const updateProposedChangeContent = (
   filePath: string,
   newContent: string,
 ) => {
-  const state = aiEditorStore.get(); // Get current state
-  if (!state.lastLlmResponse) return; // No change if there's no LLM response
+  const state = aiEditorStore.get();
+  if (!state.lastLlmResponse) return;
 
-  // Update changes in lastLlmResponse
   const updatedChanges: FileChange[] = state.lastLlmResponse.changes.map(
     (change) => {
       if (change.filePath === filePath) {
@@ -233,17 +241,14 @@ export const updateProposedChangeContent = (
           change.action === 'modify' ||
           change.action === 'repair'
         ) {
-          // Type guard ensures 'change' is AddOrModifyFileChange here
           return { ...(change as AddOrModifyFileChange), newContent };
         }
-        // For 'delete' or 'analyze' actions, newContent is not applicable.
-        return change; // Return the original change without modifying newContent
+        return change;
       }
       return change;
     },
   );
 
-  // Update changes in selectedChanges
   const newSelectedChanges: Record<string, FileChange> = {
     ...state.selectedChanges,
   };
@@ -255,18 +260,14 @@ export const updateProposedChangeContent = (
       selectedChange.action === 'modify' ||
       selectedChange.action === 'repair'
     ) {
-      // Type guard ensures 'selectedChange' is AddOrModifyFileChange here
       newSelectedChanges[filePath] = {
-        ...(selectedChange as AddOrModifyFileChange), // Corrected line: Removed the extra '{'
+        ...(selectedChange as AddOrModifyFileChange),
         newContent,
       };
     }
-    // For 'delete' or 'analyze' actions, newContent is not applicable.
-    // So, no need to modify newSelectedChanges[filePath] for these actions.
   }
 
   aiEditorStore.set({
-    // Set new full state
     ...state,
     lastLlmResponse: { ...state.lastLlmResponse, changes: updatedChanges },
     selectedChanges: newSelectedChanges,
@@ -282,11 +283,10 @@ export const updateProposedChangePath = (
     console.warn(
       'Cannot update proposed change path: No LLM response available.',
     );
-    setError('New file path cannot be empty.'); // Ensure error is set even if early exit
+    setError('New file path cannot be empty.');
     return;
   }
 
-  // Ensure newFilePath is not empty and different from oldFilePath
   const trimmedNewFilePath = newFilePath.trim();
   if (!trimmedNewFilePath) {
     console.warn(
@@ -296,11 +296,9 @@ export const updateProposedChangePath = (
     return;
   }
   if (trimmedNewFilePath === oldFilePath) {
-    // No change, do nothing
     return;
   }
 
-  // 1. Update lastLlmResponse.changes array
   let foundAndUpdated = false;
   const updatedChanges: FileChange[] = state.lastLlmResponse.changes.map(
     (change) => {
@@ -320,12 +318,10 @@ export const updateProposedChangePath = (
     return;
   }
 
-  // 2. Update selectedChanges map (if the item was selected)
   const newSelectedChanges: Record<string, FileChange> = {
     ...state.selectedChanges,
   };
   if (newSelectedChanges[oldFilePath]) {
-    // Create a new entry with the new key and updated filePath, then delete the old key
     newSelectedChanges[trimmedNewFilePath] = {
       ...newSelectedChanges[oldFilePath],
       filePath: trimmedNewFilePath,
@@ -333,16 +329,14 @@ export const updateProposedChangePath = (
     delete newSelectedChanges[oldFilePath];
   }
 
-  // 3. Clear currentDiff if it was for the old file
   let newDiffFilePath = state.diffFilePath;
   let newCurrentDiff = state.currentDiff;
   if (state.diffFilePath === oldFilePath) {
-    newDiffFilePath = null; // Clear the diff view, as the file path has changed
+    newDiffFilePath = null;
     newCurrentDiff = null;
   }
 
   aiEditorStore.set({
-    // Set new full state
     ...state,
     lastLlmResponse: { ...state.lastLlmResponse, changes: updatedChanges },
     selectedChanges: newSelectedChanges,
@@ -351,7 +345,6 @@ export const updateProposedChangePath = (
   });
 };
 
-// Actions for opened file content
 export const addOpenedTab = (filePath: string) => {
   const state = aiEditorStore.get();
   if (!state.openedTabs.includes(filePath)) {
@@ -364,45 +357,40 @@ export const removeOpenedTab = (filePath: string) => {
   const newOpenedTabs = state.openedTabs.filter((tab) => tab !== filePath);
   aiEditorStore.setKey('openedTabs', newOpenedTabs);
 
-  // If the closed tab was the currently active file
   if (state.openedFile === filePath) {
     if (newOpenedTabs.length > 0) {
-      // Find index of closed tab in the *original* array to determine neighbor
       const oldIndex = state.openedTabs.indexOf(filePath);
       const newActiveFile =
         oldIndex > 0 ? newOpenedTabs[oldIndex - 1] : newOpenedTabs[0];
-      setOpenedFile(newActiveFile); // This will recursively call addOpenedTab, but that's fine as it's idempotent.
+      setOpenedFile(newActiveFile);
     } else {
-      setOpenedFile(null); // No more tabs, close editor
+      setOpenedFile(null);
     }
   }
 };
 
 export const setOpenedFile = (filePath: string | null) => {
   aiEditorStore.setKey('openedFile', filePath);
-  // Ensure the file is added to openedTabs if it's being opened.
   if (filePath && !aiEditorStore.get().openedTabs.includes(filePath)) {
     addOpenedTab(filePath);
   }
-  // Clear content and errors when a new file is opened or file is closed
   aiEditorStore.setKey('openedFileContent', null);
+  aiEditorStore.setKey('initialFileContentSnapshot', null); // Clear snapshot when changing opened file
   aiEditorStore.setKey('isFetchingFileContent', false);
   aiEditorStore.setKey('fetchFileContentError', null);
-  aiEditorStore.setKey('isSavingFileContent', false); // Reset saving state
-  aiEditorStore.setKey('saveFileContentError', null); // Reset saving error
-  aiEditorStore.setKey('isOpenedFileDirty', false); // Reset dirty state
+  aiEditorStore.setKey('isSavingFileContent', false);
+  aiEditorStore.setKey('saveFileContentError', null);
+  aiEditorStore.setKey('isOpenedFileDirty', false);
 };
 
 export const setOpenedFileContent = (content: string | null) => {
   aiEditorStore.setKey('openedFileContent', content);
-  // Mark file as dirty if content changes from initial load and is not null
-  if (content !== null) {
-    aiEditorStore.setKey('isOpenedFileDirty', true);
-  } else {
-    // If content becomes null (e.g., file closed), it's no longer dirty
-    aiEditorStore.setKey('isOpenedFileDirty', false);
-  }
-  aiEditorStore.setKey('saveFileContentError', null); // Clear save error on new input
+  // isOpenedFileDirty is now computed in OpenedFileViewer based on initialFileContentSnapshot
+  aiEditorStore.setKey('saveFileContentError', null);
+};
+
+export const setInitialFileContentSnapshot = (content: string | null) => {
+  aiEditorStore.setKey('initialFileContentSnapshot', content);
 };
 
 export const setIsFetchingFileContent = (isLoading: boolean) => {
@@ -425,7 +413,6 @@ export const setIsOpenedFileDirty = (isDirty: boolean) => {
   aiEditorStore.setKey('isOpenedFileDirty', isDirty);
 };
 
-// New actions for running git commands
 export const setRunningGitCommandIndex = (index: number | null) => {
   aiEditorStore.setKey('runningGitCommandIndex', index);
 };
@@ -444,7 +431,6 @@ export const setAutoApplyChanges = (value: boolean) => {
   aiEditorStore.setKey('autoApplyChanges', value);
 };
 
-// New actions for build process
 export const setIsBuilding = (building: boolean) => {
   aiEditorStore.setKey('isBuilding', building);
 };
@@ -453,6 +439,180 @@ export const setBuildOutput = (
   output: { stdout: string; stderr: string; exitCode: number } | null,
 ) => {
   aiEditorStore.setKey('buildOutput', output);
+};
+
+export const showGlobalSnackbar = (
+  message: string,
+  severity: 'success' | 'error' | 'info',
+) => {
+  aiEditorStore.setKey('snackbar', {
+    open: true,
+    message,
+    severity,
+  });
+};
+
+export const hideGlobalSnackbar = () => {
+  aiEditorStore.setKey('snackbar', {
+    ...aiEditorStore.get().snackbar,
+    open: false,
+  });
+};
+
+export const saveActiveFile = async () => {
+  const { openedFile, openedFileContent } = aiEditorStore.get();
+
+  if (!openedFile || openedFileContent === null) {
+    showGlobalSnackbar('No file or content to save.', 'error');
+    return;
+  }
+
+  setIsSavingFileContent(true);
+  setSaveFileContentError(null);
+
+  try {
+    const result = await writeFileContent(openedFile, openedFileContent);
+    if (result.success) {
+      setInitialFileContentSnapshot(openedFileContent); // Update snapshot to new saved content
+      setIsOpenedFileDirty(false); // Mark as clean after saving
+      showGlobalSnackbar(`File saved: ${openedFile}`, 'success');
+    } else {
+      setSaveFileContentError(result.message || 'Failed to save file.');
+      showGlobalSnackbar(
+        `Failed to save: ${result.message || openedFile}`,
+        'error',
+      );
+    }
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    setSaveFileContentError(`Failed to save file: ${errorMessage}`);
+    showGlobalSnackbar(`Error saving: ${errorMessage}`, 'error');
+  } finally {
+    setIsSavingFileContent(false);
+  }
+};
+
+export const discardActiveFileChanges = () => {
+  const {
+    openedFile,
+    openedFileContent,
+    initialFileContentSnapshot,
+    isOpenedFileDirty,
+  } = aiEditorStore.get();
+
+  if (!openedFile || !isOpenedFileDirty) {
+    showGlobalSnackbar('No unsaved changes to discard.', 'info');
+    return;
+  }
+
+  if (
+    window.confirm(
+      'Are you sure you want to discard unsaved changes? This action cannot be undone.',
+    )
+  ) {
+    setOpenedFileContent(initialFileContentSnapshot); // Revert to snapshot
+    setIsOpenedFileDirty(false); // Mark as clean
+    setSaveFileContentError(null); // Clear any save errors
+    showGlobalSnackbar('Changes discarded.', 'info');
+  }
+};
+
+/**
+ * Orchestrates post-application actions: running a build script and then AI-suggested Git commands.
+ * This function centralizes logic used by both manual and auto-apply flows.
+ */
+export const performPostApplyActions = async (
+  projectRoot: string,
+  llmResponse: ModelResponse,
+  llmGeneratePayload: LlmGeneratePayload,
+  scanPaths: string[],
+) => {
+  const state = aiEditorStore.get();
+
+  // Run the build script
+  setIsBuilding(true); // Start build-specific loading indicator
+  let buildPassed = false;
+  try {
+    const buildResult = await runTerminalCommand('pnpm run build', projectRoot);
+    setBuildOutput(buildResult);
+
+    if (buildResult.exitCode !== 0) {
+      setError(
+        `Build failed with exit code ${buildResult.exitCode}. Check output.`,
+      );
+      // Removed reportErrorToLlm call here
+    } else {
+      setAppliedMessages([
+        ...state.appliedMessages,
+        'Project built successfully.',
+      ]);
+      buildPassed = true;
+    }
+  } catch (buildError) {
+    setBuildOutput({ stdout: '', stderr: String(buildError), exitCode: 1 });
+    setError(
+      `Failed to run build script: ${buildError instanceof Error ? buildError.message : String(buildError)}`,
+    );
+    // Removed reportErrorToLlm call here
+  } finally {
+    setIsBuilding(false); // End build-specific loading indicator
+  }
+
+  // If build was successful, proceed to run git instructions
+  if (
+    buildPassed &&
+    llmResponse?.gitInstructions &&
+    llmResponse.gitInstructions.length > 0
+  ) {
+    setAppliedMessages([
+      ...aiEditorStore.get().appliedMessages,
+      'Executing AI-suggested git instructions...',
+    ]);
+    let gitCommandsSuccessful = true;
+    for (const command of llmResponse.gitInstructions) {
+      setAppliedMessages([
+        ...aiEditorStore.get().appliedMessages,
+        `Running git command: \`${command}\``,
+      ]);
+      try {
+        const gitExecResult = await runTerminalCommand(command, projectRoot);
+        // Append individual command results to applied messages for visibility
+        setAppliedMessages([
+          ...aiEditorStore.get().appliedMessages,
+          `Git command output for \`${command}\` (Exit Code: ${gitExecResult.exitCode}):`,
+          `  Stdout: ${gitExecResult.stdout || 'None'} `,
+          `  Stderr: ${gitExecResult.stderr || 'None'} `,
+        ]);
+
+        if (gitExecResult.exitCode !== 0) {
+          const errMsg = `Git command failed: \`${command}\` (Exit Code: ${gitExecResult.exitCode}). See stderr above.`;
+          setAppliedMessages([...aiEditorStore.get().appliedMessages, errMsg]);
+          setError(errMsg); // Show a persistent error for failed git command
+          gitCommandsSuccessful = false;
+          // Removed reportErrorToLlm call here
+          break; // Stop executing further git commands on first failure
+        }
+      } catch (gitExecError) {
+        const errMsg = `Failed to execute git command \`${command}\`: ${gitExecError instanceof Error ? gitExecError.message : String(gitExecError)}`;
+        setAppliedMessages([...aiEditorStore.get().appliedMessages, errMsg]);
+        setError(errMsg);
+        gitCommandsSuccessful = false;
+        // Removed reportErrorToLlm call here
+        break; // Stop executing further git commands on first failure
+      }
+    }
+    if (gitCommandsSuccessful) {
+      setAppliedMessages([
+        ...aiEditorStore.get().appliedMessages,
+        'All AI-suggested git instructions executed successfully.',
+      ]);
+    } else {
+      setAppliedMessages([
+        ...aiEditorStore.get().appliedMessages,
+        'Some AI-suggested git instructions failed.',
+      ]);
+    }
+  }
 };
 
 /**
@@ -475,128 +635,50 @@ export const applyAllProposedChanges = async (
     setError('Project root is not set for applying changes.');
     return;
   }
+  if (!state.lastLlmResponse || !state.lastLlmGeneratePayload) {
+    setError(
+      'AI generation response or payload missing for post-apply actions. Cannot proceed automatically.',
+    );
+    return;
+  }
 
   setApplyingChanges(true);
   setError(null); // Clear previous error
   setAppliedMessages([]);
   setBuildOutput(null); // Clear previous build output before applying changes
+  setIsBuilding(false); // Ensure building state is reset
+  setCommandExecutionError(null); // Clear any previous individual git command outputs
+  setCommandExecutionOutput(null);
 
   try {
-    const result = await apiApplyProposedChanges(changes, projectRoot); // Use the aliased import
+    const result = await apiApplyProposedChanges(changes, projectRoot);
     setAppliedMessages(result.messages);
     if (!result.success) {
       setError(
         'Some changes failed to apply during automation. Check messages above.',
       );
-      // New: Report error to LLM if changes failed to apply
-      if (state.lastLlmResponse && state.lastLlmGeneratePayload) {
-        await reportErrorToLlm({
-          error: 'Failed to apply proposed changes automatically.',
-          errorDetails: JSON.stringify(result.messages),
-          originalRequestType: state.lastLlmGeneratePayload.requestType,
-          previousLlmResponse: state.lastLlmResponse,
-          originalLlmGeneratePayload: state.lastLlmGeneratePayload,
-          projectRoot: projectRoot,
-          scanPaths: state.scanPathsInput
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean),
-        });
-      }
+      // Removed reportErrorToLlm call here
     } else {
-      // If changes applied successfully, run the build script
-      setIsBuilding(true);
-      try {
-        const buildResult = await runTerminalCommand(
-          'pnpm run build',
-          projectRoot,
-        );
-        setBuildOutput(buildResult);
-        if (buildResult.exitCode !== 0) {
-          setError(
-            `Build failed with exit code ${buildResult.exitCode}. Check output.`,
-          );
-          // New: Report build failure to LLM
-          if (state.lastLlmResponse && state.lastLlmGeneratePayload) {
-            await reportErrorToLlm({
-              error: `Build failed after applying changes. Exit Code: ${buildResult.exitCode}.`,
-              errorDetails: buildResult.stderr || buildResult.stdout,
-              originalRequestType: state.lastLlmGeneratePayload.requestType,
-              previousLlmResponse: state.lastLlmResponse,
-              originalLlmGeneratePayload: state.lastLlmGeneratePayload,
-              projectRoot: projectRoot,
-              scanPaths: state.scanPathsInput
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean),
-              buildOutput: buildResult,
-            });
-          }
-        } else {
-          // Corrected nanostore array update: get current, create new array, then set
-          const currentMessages = aiEditorStore.get().appliedMessages;
-          setAppliedMessages([
-            ...currentMessages,
-            'Project built successfully.',
-          ]);
-        }
-      } catch (buildError) {
-        setBuildOutput({ stdout: '', stderr: String(buildError), exitCode: 1 });
-        setError(
-          `Failed to run build script: ${buildError instanceof Error ? buildError.message : String(buildError)}`,
-        );
-        // New: Report build script execution error to LLM
-        if (state.lastLlmResponse && state.lastLlmGeneratePayload) {
-          await reportErrorToLlm({
-            error: `Failed to execute build script: ${buildError instanceof Error ? buildError.message : String(buildError)}`,
-            errorDetails: String(buildError),
-            originalRequestType: state.lastLlmGeneratePayload.requestType,
-            previousLlmResponse: state.lastLlmResponse,
-            originalLlmGeneratePayload: state.lastLlmGeneratePayload,
-            projectRoot: projectRoot,
-            scanPaths: state.scanPathsInput
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean),
-            buildOutput: {
-              stdout: '',
-              stderr: String(buildError),
-              exitCode: 1,
-            },
-          });
-        }
-      } finally {
-        setIsBuilding(false);
-      }
-    }
-    // Clear the AI response and selected changes after applying automatically
-    setLastLlmResponse(null); // Clear the full response
-    deselectAllChanges(); // Ensure selected changes are cleared
-    clearDiff();
-  } catch (err) {
-    setError(
-      `Failed to apply changes automatically: ${err instanceof Error ? err.message : String(err)}`,
-    );
-    // New: Report overall apply changes error to LLM
-    const currentStoreState = aiEditorStore.get();
-    if (
-      currentStoreState.lastLlmResponse &&
-      currentStoreState.lastLlmGeneratePayload
-    ) {
-      await reportErrorToLlm({
-        error: `Overall failure during automatic application of changes: ${err instanceof Error ? err.message : String(err)}`,
-        errorDetails: String(err),
-        originalRequestType:
-          currentStoreState.lastLlmGeneratePayload.requestType,
-        previousLlmResponse: currentStoreState.lastLlmResponse,
-        originalLlmGeneratePayload: currentStoreState.lastLlmGeneratePayload,
-        projectRoot: projectRoot,
-        scanPaths: currentStoreState.scanPathsInput
+      // If changes applied successfully, perform post-apply actions (build + git)
+      await performPostApplyActions(
+        projectRoot,
+        state.lastLlmResponse,
+        state.lastLlmGeneratePayload,
+        state.scanPathsInput
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean),
-      });
+      );
     }
+    // Clear the AI response and selected changes after applying automatically
+    setLastLlmResponse(null);
+    deselectAllChanges();
+    clearDiff();
+  } catch (err) {
+    setError(
+      `Overall failure during automatic application of changes: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    // Removed reportErrorToLlm call here
   } finally {
     setApplyingChanges(false);
   }

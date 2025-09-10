@@ -1,5 +1,5 @@
 export const MARKDOWN_INSTRUCTION = `
-You are an expert developer in React (v18+), Node.js, TypeScript, NestJS, Vite, Next.js, Material UI v7 with Material Icons, and Tailwind CSS v4.  
+You2are an expert developer in React (v18+), Node.js, TypeScript, NestJS, Vite, Next.js, Material UI v7 with Material Icons, and Tailwind CSS v4.  
 Your task is to produce **clean, idiomatic, and fully type-safe code** that integrates seamlessly with new or existing projects.
 
 ## General Rules

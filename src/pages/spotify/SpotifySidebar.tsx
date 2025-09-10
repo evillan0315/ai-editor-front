@@ -16,6 +16,8 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import RssFeedIcon from '@mui/icons-material/RssFeed'; // For Podcasts
 import LightbulbIcon from '@mui/icons-material/Lightbulb'; // For Discover
+import { useStore } from '@nanostores/react';
+import { spotifyStore } from '@/stores/spotifyStore';
 
 interface SpotifySidebarProps {
   currentView: 'home' | 'search' | 'library';
@@ -26,7 +28,8 @@ const SpotifySidebar: React.FC<SpotifySidebarProps> = ({
   onSelectView,
 }) => {
   const theme = useTheme();
-
+  const store = useStore(spotifyStore);
+  const playlists = store?.playlists ?? [];
   const primaryNavItems = [
     { text: 'Home', icon: HomeIcon, view: 'home' as const },
     { text: 'Search', icon: SearchIcon, view: 'search' as const },
@@ -38,19 +41,6 @@ const SpotifySidebar: React.FC<SpotifySidebarProps> = ({
     { text: 'Liked Songs', icon: FavoriteIcon },
     { text: 'Your Episodes', icon: RssFeedIcon }, // Placeholder for podcasts/episodes
     { text: 'Discover', icon: LightbulbIcon },
-  ];
-
-  const playlistItems = [
-    'My Top Hits',
-    'Workout Mix',
-    'Chill Vibes',
-    'Focus Music',
-    'Road Trip Anthems',
-    'Acoustic Covers',
-    '90s Throwback',
-    'Electronic Dreams',
-    'Jazz Essentials',
-    'Classical Study',
   ];
 
   return (
@@ -141,14 +131,23 @@ const SpotifySidebar: React.FC<SpotifySidebarProps> = ({
           Playlists
         </Typography>
         <List dense>
-          {playlistItems.map((playlist, index) => (
+          {playlists.length === 0 ? (
             <ListItemButton
-              key={index}
-              sx={{ py: 0.5, px: 1, color: theme.palette.text.primary }}
+              sx={{ py: 0.5, px: 1, color: theme.palette.text.secondary }}
             >
-              <ListItemText primary={playlist} />
+              <ListItemText primary="No playlists yet" />
             </ListItemButton>
-          ))}
+          ) : (
+            playlists.map((playlist) => (
+              <ListItemButton
+                key={playlist.id}
+                sx={{ py: 0.5, px: 1, color: theme.palette.text.primary }}
+                onClick={() => onSelectView('library')} // Assuming clicking a playlist navigates to library
+              >
+                <ListItemText primary={playlist.name} />
+              </ListItemButton>
+            ))
+          )}
         </List>
       </Box>
     </Box>

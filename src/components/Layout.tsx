@@ -39,17 +39,6 @@ const Layout: React.FC = () => {
       >
         <Outlet />
       </main>
-      <footer
-        className="w-full text-center text-sm py-1 sticky bottom-0 z-100"
-        style={{
-          height: `${FOOTER_HEIGHT}px`, // Explicit height for footer
-          color: theme.palette.text.secondary,
-          backgroundColor: theme.palette.background.paper,
-          borderTop: `1px solid ${theme.palette.divider}`, // Added a top border for visual separation
-        }}
-      >
-        © 2025 AI Editor. All rights reserved.
-      </footer>
     </div>
   );
 };

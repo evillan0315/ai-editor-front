@@ -8,8 +8,15 @@ import {
   Card,
   CardContent,
   useTheme,
+  CardMedia,
+  Alert,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import { useStore } from '@nanostores/react';
+import { spotifyStore, playTrack } from '@/stores/spotifyStore';
+import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
+import AlbumIcon from '@mui/icons-material/Album';
+import { mapMediaFileToTrack } from '@/utils/mediaUtils';
 
 interface SpotifySearchPageProps {
   // No specific props for now
@@ -17,6 +24,29 @@ interface SpotifySearchPageProps {
 
 const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
   const theme = useTheme();
+  const { allAvailableMediaFiles, isPlaying, currentTrack } =
+    useStore(spotifyStore);
+  const [searchTerm, setSearchTerm] = React.useState('');
+
+  const playableTracks = allAvailableMediaFiles.filter(
+    (media) =>
+      media.fileType === 'AUDIO' && (media.metadata?.data?.duration || 0) > 0,
+  );
+
+  const filteredTracks = React.useMemo(() => {
+    if (!searchTerm) return playableTracks;
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    return playableTracks.filter(
+      (media) =>
+        media.name.toLowerCase().includes(lowerCaseSearchTerm) ||
+        media.metadata?.data?.title
+          ?.toLowerCase()
+          .includes(lowerCaseSearchTerm) ||
+        media.metadata?.data?.uploader
+          ?.toLowerCase()
+          .includes(lowerCaseSearchTerm),
+    );
+  }, [searchTerm, playableTracks]);
 
   const mockGenres = [
     { id: 1, name: 'Pop', color: '#8d6e63' }, // Brown
@@ -43,6 +73,8 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
         fullWidth
         variant="outlined"
         placeholder="What do you want to listen to?"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -66,46 +98,149 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
         sx={{ mb: 4 }}
       />
 
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
-        Browse all
-      </Typography>
-
-      <Grid container spacing={2}>
-        {mockGenres.map((genre) => (
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            md={3}
-            lg={2}
-            key={genre.id}
-            component="div"
-          >
-            <Card
-              sx={{
-                height: 120,
-                borderRadius: 1,
-                display: 'flex',
-                alignItems: 'flex-end',
-                p: 2,
-                cursor: 'pointer',
-                position: 'relative',
-                bgcolor: genre.color, // Use dynamic color
-                color: 'white', // Text color for contrast
-                boxShadow: theme.shadows[3],
-                transition: 'transform 0.2s ease-in-out',
-                '&:hover': {
-                  transform: 'scale(1.03)',
-                },
-              }}
-            >
-              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                {genre.name}
-              </Typography>
-            </Card>
+      {searchTerm ? (
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
+            Search Results
+          </Typography>
+          <Grid container spacing={3}>
+            {filteredTracks.length > 0 ? (
+              filteredTracks.map((mediaFile) => {
+                const track = mapMediaFileToTrack(mediaFile);
+                const isActive = currentTrack?.id === track.id && isPlaying;
+                return (
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={2}
+                    key={track.id}
+                    component="div"
+                  >
+                    <Card
+                      sx={{
+                        bgcolor: theme.palette.background.paper,
+                        boxShadow: 'none',
+                        borderRadius: 1,
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s',
+                        '&:hover': {
+                          bgcolor: theme.palette.action.hover,
+                          '& .play-icon-card': {
+                            opacity: 1,
+                          },
+                        },
+                        p: 2,
+                        position: 'relative',
+                        border: isActive
+                          ? `2px solid ${theme.palette.primary.main}`
+                          : 'none',
+                      }}
+                    >
+                      <Box sx={{ position: 'relative', mb: 1 }}>
+                        {track.coverArt ? (
+                          <CardMedia
+                            component="img"
+                            image={track.coverArt}
+                            alt={track.title}
+                            sx={{
+                              width: '100%',
+                              borderRadius: 1,
+                              aspectRatio: '1 / 1',
+                            }}
+                          />
+                        ) : (
+                          <AlbumIcon
+                            sx={{
+                              width: '100%',
+                              borderRadius: 1,
+                              aspectRatio: '1 / 1',
+                              color: theme.palette.text.secondary,
+                              p: 2,
+                            }}
+                          />
+                        )}
+                        <PlayCircleFilledWhiteIcon
+                          className="play-icon-card"
+                          sx={{
+                            position: 'absolute',
+                            bottom: 8,
+                            right: 8,
+                            opacity: isActive ? 1 : 0,
+                            fontSize: 48,
+                            color: theme.palette.primary.main,
+                            transition: 'opacity 0.2s',
+                          }}
+                        />
+                      </Box>
+                      <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{ fontWeight: 'bold' }}
+                        >
+                          {track.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {track.artist}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })
+            ) : (
+              <Box sx={{ p: 2, width: '100%' }}>
+                <Alert severity="info">
+                  No tracks found matching "{searchTerm}".
+                </Alert>
+              </Box>
+            )}
           </Grid>
-        ))}
-      </Grid>
+        </Box>
+      ) : (
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
+            Browse all
+          </Typography>
+
+          <Grid container spacing={2}>
+            {mockGenres.map((genre) => (
+              <Grid
+                item
+                xs={12}
+                sm={6}
+                md={3}
+                lg={2}
+                key={genre.id}
+                component="div"
+              >
+                <Card
+                  sx={{
+                    height: 120,
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    p: 2,
+                    cursor: 'pointer',
+                    position: 'relative',
+                    bgcolor: genre.color, // Use dynamic color
+                    color: 'white', // Text color for contrast
+                    boxShadow: theme.shadows[3],
+                    transition: 'transform 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'scale(1.03)',
+                    },
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                    {genre.name}
+                  </Typography>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
     </Box>
   );
 };

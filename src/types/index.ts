@@ -5,34 +5,9 @@ import {
   AddOrModifyFileChange,
   DeleteOrAnalyzeFileChange,
 } from '@/constants';
-import type { FileEntry } from './fileTree'; // Import FileEntry type
-
-/**
- * Represents a file or folder entry returned by the backend's /api/file/list (non-recursive) endpoint.
- * This interface mirrors the backend's FileTreeNode directly.
- */
-export interface FileTreeNode {
-  name: string;
-  path: string; // Absolute path to the file or folder
-  isDirectory: boolean;
-  type: 'file' | 'folder';
-  lang?: string;
-  mimeType?: string;
-  size?: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-  children: FileTreeNode[]; // Will be empty when recursive=false is used.
-}
-
-/**
- * Represents a file entry returned by the backend's /api/file/scan endpoint.
- * This is used for providing AI context and is a flat structure.
- */
-export interface ApiFileScanResult {
-  filePath: string; // Absolute path to the file
-  relativePath: string; // Path relative to the project root (e.g., "src/components/MyComponent.tsx")
-  content: string;
-}
+export * from './fileTree';
+export * from './media';
+export * from './spotify'; // Import from new spotify types file
 
 export interface FileContentResponse {
   content: string;
@@ -57,7 +32,6 @@ export enum RequestType {
   RESUME_ENHANCEMENT = 'RESUME_ENHANCEMENT',
   VIDEO_GENERATION = 'VIDEO_GENERATION',
   IMAGE_GENERATION = 'IMAGE_GENERATION',
-  ERROR_REPORT = 'ERROR_REPORT', // New: For reporting errors to LLM
 }
 
 export const RequestTypeValues = Object.values(RequestType);
@@ -135,7 +109,8 @@ export interface LlmReportErrorContext {
   originalFilePaths?: string[]; // Derived from failedChanges.filePath
 }
 
-export interface LlmReportErrorApiPayload { // This will be the type sent to the backend
+export interface LlmReportErrorApiPayload {
+  // This will be the type sent to the backend
   errorDetails: string; // Combination of frontend error and errorDetails + buildOutput
   projectRoot: string;
   context: LlmReportErrorContext;
@@ -178,6 +153,11 @@ export interface AiEditorState {
   isBuilding: boolean; // New: Indicates if a build process is running
   buildOutput: TerminalCommandResponse | null; // New: Output from the last build command
   openedTabs: string[]; // New: List of file paths currently opened as tabs
+  snackbar: {
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | null;
+  }; // New: Global snackbar state
 }
 
 export interface TranslatorState {
@@ -407,3 +387,6 @@ export {
   type AddOrModifyFileChange,
   type DeleteOrAnalyzeFileChange,
 };
+
+export * from './auth';
+export * from './fileTree';

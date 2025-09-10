@@ -102,7 +102,11 @@ const ProfileMenuContent: React.FC<ProfileMenuContentProps> = ({
                     }}
                   >
                     <item.icon
-                      sx={{ fontSize: 24, color: theme.palette.primary.main, mb: 0.5 }}
+                      sx={{
+                        fontSize: 24,
+                        color: theme.palette.primary.main,
+                        mb: 0.5,
+                      }}
                     />
                     <Typography
                       variant="caption"
@@ -138,7 +142,11 @@ const ProfileMenuContent: React.FC<ProfileMenuContentProps> = ({
                     }}
                   >
                     <item.icon
-                      sx={{ fontSize: 24, color: theme.palette.error.main, mb: 0.5 }}
+                      sx={{
+                        fontSize: 24,
+                        color: theme.palette.error.main,
+                        mb: 0.5,
+                      }}
                     />
                     <Typography
                       variant="caption"

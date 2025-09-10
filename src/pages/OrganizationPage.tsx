@@ -105,7 +105,9 @@ const OrganizationFormDialog: React.FC<OrganizationFormDialogProps> = ({
     } catch (error) {
       // Error handling will be done by the parent (onUpdate/onCreate functions)
       // But we can catch and set a local form error if needed
-      setFormError(`Submission failed: ${error instanceof Error ? error.message : String(error)}`);
+      setFormError(
+        `Submission failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   };
 

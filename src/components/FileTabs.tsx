@@ -1,9 +1,13 @@
-import React, { SyntheticEvent } from 'react';
+import React, { SyntheticEvent, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import {
   aiEditorStore,
   setOpenedFile,
   removeOpenedTab,
+  saveActiveFile, // Import new action
+  discardActiveFileChanges, // Import new action
+  showGlobalSnackbar, // Import global snackbar action
+  hideGlobalSnackbar, // Import global snackbar action
 } from '@/stores/aiEditorStore';
 import {
   Box,
@@ -14,17 +18,27 @@ import {
   useTheme,
   Typography,
   CircularProgress,
+  BoxProps,
+  Button,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import SaveIcon from '@mui/icons-material/Save';
+import UndoIcon from '@mui/icons-material/Undo';
 import { getFileTypeIcon } from '@/constants/fileIcons';
 import * as path from 'path-browserify';
 
-interface FileTabsProps {
-  // No specific props needed, all state comes from aiEditorStore
+interface FileTabsProps extends BoxProps {
+  // No additional specific props needed beyond BoxProps
 }
 
-const FileTabs: React.FC<FileTabsProps> = () => {
-  const { openedTabs, openedFile, isOpenedFileDirty } = useStore(aiEditorStore);
+const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
+  const {
+    openedTabs,
+    openedFile,
+    isOpenedFileDirty,
+    isSavingFileContent,
+    snackbar, // Get global snackbar state
+  } = useStore(aiEditorStore);
   const theme = useTheme();
 
   const activeTabIndex = openedTabs.indexOf(openedFile || '');
@@ -39,9 +53,7 @@ const FileTabs: React.FC<FileTabsProps> = () => {
     removeOpenedTab(filePath);
   };
 
-  if (openedTabs.length === 0) {
-    return null;
-  }
+  const isDisabled = isSavingFileContent;
 
   return (
     <Box
@@ -56,7 +68,12 @@ const FileTabs: React.FC<FileTabsProps> = () => {
         '&::-webkit-scrollbar': {
           display: 'none', // Hide scrollbar for Chrome, Safari, Edge
         },
+        display: 'flex', // Enable flexbox for positioning buttons
+        alignItems: 'center', // Align items vertically in the center
+        height: '48px', // Explicitly set height for consistency
+        ...sx, // Merge the passed sx prop
       }}
+      {...otherProps} // Pass any other props to the Box
     >
       <Tabs
         value={openedFile || false} // Use openedFile as the value for the active tab
@@ -66,12 +83,14 @@ const FileTabs: React.FC<FileTabsProps> = () => {
         scrollButtons="auto"
         allowScrollButtonsMobile
         sx={{
+          flexGrow: 1, // Allow tabs to grow
+          maxWidth: 'calc(100% - 160px)', // Reserve space for buttons
           '& .MuiTabs-indicator': {
             backgroundColor: theme.palette.primary.main,
           },
           '& .MuiTab-root': {
             color: theme.palette.text.secondary,
-            minHeight: '40px', // Standard tab height
+            minHeight: '48px',
             padding: '6px 12px',
             textTransform: 'none', // Keep text as is
             fontSize: '0.875rem',
@@ -88,13 +107,20 @@ const FileTabs: React.FC<FileTabsProps> = () => {
       >
         {openedTabs.map((filePath) => {
           const fileName = path.basename(filePath);
-          const isDirty = openedFile === filePath && isOpenedFileDirty; // Only show dirty status for the currently active tab
+          const isActiveTab = openedFile === filePath;
+          const isDirty = isActiveTab && isOpenedFileDirty; // Only show dirty status for the currently active tab
           return (
             <Tab
               key={filePath}
               value={filePath}
               label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
                   <Box sx={{ color: 'inherit' }}>
                     {getFileTypeIcon(fileName, 'file', false)}
                   </Box>
@@ -121,7 +147,7 @@ const FileTabs: React.FC<FileTabsProps> = () => {
                     </Tooltip>
                   )}
                   <IconButton
-                    size="small"
+                    component="span"
                     onClick={(e) => handleCloseTab(e, filePath)}
                     sx={{
                       ml: 0.5,
@@ -140,6 +166,60 @@ const FileTabs: React.FC<FileTabsProps> = () => {
           );
         })}
       </Tabs>
+
+      {openedFile && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            ml: 'auto',
+            pr: 2,
+          }}
+        >
+          {isOpenedFileDirty && (
+            <Tooltip title="Discard unsaved changes">
+              <span>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={discardActiveFileChanges} // Use store action
+                  disabled={isDisabled}
+                  startIcon={<UndoIcon />}
+                  sx={{
+                    color: theme.palette.error.main,
+                    borderColor: theme.palette.error.light,
+                    '&:hover': {
+                      borderColor: theme.palette.error.dark,
+                      bgcolor: theme.palette.error.light + '10',
+                    },
+                    minWidth: 0, // Allow button to shrink
+                  }}
+                >
+                  Discard
+                </Button>
+              </span>
+            </Tooltip>
+          )}
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            onClick={saveActiveFile} // Use store action
+            disabled={isDisabled || !isOpenedFileDirty}
+            startIcon={
+              isSavingFileContent ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <SaveIcon />
+              )
+            }
+            sx={{ minWidth: 0 }} // Allow button to shrink
+          >
+            {isSavingFileContent ? 'Saving...' : 'Save'}
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 };
