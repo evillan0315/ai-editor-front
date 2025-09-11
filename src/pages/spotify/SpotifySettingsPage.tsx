@@ -86,7 +86,8 @@ const SpotifySettingsPage: React.FC<SpotifySettingsPageProps> = () => {
         <SettingsIcon sx={{ fontSize: 40 }} /> App Settings
       </Typography>
       <Typography variant="body1" color="text.secondary">
-        Configure application-specific settings, such as media scanning directories.
+        Configure application-specific settings, such as media scanning
+        directories.
       </Typography>
 
       <Box sx={{ mt: 3 }}>

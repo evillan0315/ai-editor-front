@@ -1,3 +1,4 @@
+// /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/src/types/refactored/media.ts
 /**
  * Defines the various types of files supported in the application.
  * Mirrors the backend's FileType enum from schema.prisma.
@@ -43,7 +44,6 @@ export const allowedMediaFormats = [
  * Type representing one of the allowed media formats.
  */
 export type AllowedMediaFormat = (typeof allowedMediaFormats)[number];
-
 /**
  * Interface for metadata often returned by media extraction or processing services.
  * This is distinct from the Prisma `Metadata` model which is a separate entity.
@@ -129,4 +129,57 @@ export interface MediaScanResponseDto {
   message: string;
   scannedFilesCount: number;
   errors?: string[];
+}
+
+// =========================================================================
+// Transcription Types
+// =========================================================================
+
+/**
+ * Represents a single segment of transcribed text with timing information
+ */
+export interface TranscriptionSegment {
+  start: number;
+  end: number;
+  text: string;
+  confidence: number;
+}
+
+/**
+ * Complete transcription result for an audio file
+ */
+export interface TranscriptionResult {
+  segments: TranscriptionSegment[];
+  fullText: string;
+  duration: number;
+  language?: string;
+  languageProbability?: number;
+  model?: string;
+  device?: string;
+}
+
+/**
+ * Request DTO for synchronized transcription
+ */
+export interface SyncTranscriptionRequest {
+  currentTime: number;
+}
+
+/**
+ * Response DTO for synchronized transcription with highlighting data
+ */
+export interface SyncTranscriptionResponse {
+  currentSegment: TranscriptionSegment | null;
+  previousSegments: TranscriptionSegment[];
+  upcomingSegments: TranscriptionSegment[];
+  fullTranscription: TranscriptionResult;
+}
+
+/**
+ * Convenience type for transcription API functions
+ */
+export interface TranscriptionApi {  // Add 'export' here
+  transcribe: (fileId: string) => Promise<TranscriptionResult>;
+  getTranscription: (fileId: string) => Promise<TranscriptionResult>;
+  getSyncTranscription: (fileId: string, currentTime: number) => Promise<SyncTranscriptionResponse>;
 }

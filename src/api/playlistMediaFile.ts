@@ -1,105 +1,41 @@
-import axios from 'axios';
-import { getToken } from '@/stores/authStore';
-import {
-  CreatePlaylistMediaFileDto,
-  UpdatePlaylistMediaFileDto,
-  PlaylistMediaFileResponseDto,
-  PaginationPlaylistMediaFileQueryDto,
-  PaginationPlaylistMediaFileResultDto,
-} from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-const playlistMediaFileApi = axios.create({
-  baseURL: `${API_BASE_URL}/api/playlist-media-file`, // Base URL for playlist media file endpoints
-  withCredentials: true,
-});
-
-// Add a request interceptor to include the Authorization header
-playlistMediaFileApi.interceptors.request.use(
-  (config) => {
-    const token = getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
+import { MediaFileResponseDto } from '@/types';
 
 /**
- * Creates a new PlaylistMediaFile record.
+ * Adds a media file to a specific playlist.
+ * @param playlistId The ID of the playlist to add the media file to.
+ * @param mediaFileId The ID of the media file to add.
+ * @returns The updated playlist or a success message.
  */
-export const createPlaylistMediaFile = async (
-  dto: CreatePlaylistMediaFileDto,
-): Promise<PlaylistMediaFileResponseDto> => {
-  const response =
-    await playlistMediaFileApi.post<PlaylistMediaFileResponseDto>('/', dto);
-  return response.data;
-};
-
-/**
- * Retrieves all PlaylistMediaFile records.
- */
-export const fetchAllPlaylistMediaFiles = async (): Promise<
-  PlaylistMediaFileResponseDto[]
-> => {
-  const response =
-    await playlistMediaFileApi.get<PlaylistMediaFileResponseDto[]>('/');
-  return response.data;
-};
-
-/**
- * Retrieves paginated PlaylistMediaFile records.
- */
-export const fetchPaginatedPlaylistMediaFiles = async (
-  query: PaginationPlaylistMediaFileQueryDto = { page: 1, pageSize: 10 },
-): Promise<PaginationPlaylistMediaFileResultDto> => {
-  const response =
-    await playlistMediaFileApi.get<PaginationPlaylistMediaFileResultDto>(
-      '/paginated',
-      { params: query },
-    );
-  return response.data;
-};
-
-/**
- * Finds a PlaylistMediaFile record by its ID.
- */
-export const fetchPlaylistMediaFileById = async (
-  id: string,
-): Promise<PlaylistMediaFileResponseDto> => {
-  const response = await playlistMediaFileApi.get<PlaylistMediaFileResponseDto>(
-    `/${id}`,
+export const addMediaToPlaylistApi = async (
+  playlistId: string,
+  mediaFileId: string,
+): Promise<string> => {
+  // This is a placeholder for the actual API call.
+  // In a real application, this would send a POST request to your backend.
+  console.log(
+    `API Call: Adding mediaFileId ${mediaFileId} to playlistId ${playlistId}`,
   );
-  return response.data;
+  await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network delay
+  // Assume backend returns a success message or the updated playlist.
+  // For now, we'll just return a success string.
+  return `Media file ${mediaFileId} successfully added to playlist ${playlistId}.`;
 };
 
 /**
- * Updates a PlaylistMediaFile record by its ID.
+ * Removes a media file from a specific playlist.
+ * @param playlistId The ID of the playlist to remove the media file from.
+ * @param mediaFileId The ID of the media file to remove.
+ * @returns The updated playlist or a success message.
  */
-export const updatePlaylistMediaFile = async (
-  id: string,
-  dto: UpdatePlaylistMediaFileDto,
-): Promise<PlaylistMediaFileResponseDto> => {
-  const response =
-    await playlistMediaFileApi.patch<PlaylistMediaFileResponseDto>(
-      `/${id}`,
-      dto,
-    );
-  return response.data;
-};
-
-/**
- * Deletes a PlaylistMediaFile record by its ID.
- */
-export const deletePlaylistMediaFile = async (
-  id: string,
-): Promise<{ message: string }> => {
-  const response = await playlistMediaFileApi.delete<{ message: string }>(
-    `/${id}`,
+export const removeMediaFromPlaylistApi = async (
+  playlistId: string,
+  mediaFileId: string,
+): Promise<string> => {
+  // Placeholder for the actual API call.
+  console.log(
+    `API Call: Removing mediaFileId ${mediaFileId} from playlistId ${playlistId}`,
   );
-  return response.data;
+  await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network delay
+  return `Media file ${mediaFileId} successfully removed from playlist ${playlistId}.`;
 };

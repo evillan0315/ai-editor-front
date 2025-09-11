@@ -49,7 +49,7 @@ import {
   setIsVideoModalOpen,
   bufferedAtom, // New: Import bufferedAtom
 } from '@/stores/spotifyStore';
-import { RepeatMode, FileType, BufferedRange } from '@/types/refactored/spotify'; // New: Import BufferedRange
+import { RepeatMode, FileType, BufferedRange } from '@/types'; // New: Import BufferedRange
 
 interface SpotifyPlayerBarProps {
   mediaRef: React.RefObject<HTMLMediaElement | null>; // Now receives the active media element ref, allowing null
@@ -99,6 +99,7 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
   };
 
   const handlePlayPause = useCallback(() => {
+    setLoading(true);
     if (!currentTrack?.mediaSrc) {
       setError('No track selected to play.');
       return;
@@ -107,8 +108,9 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
     // If it's a video and the video modal is not open, open it
     if (currentTrack.fileType === FileType.VIDEO && !isVideoModalOpen) {
       setIsVideoModalOpen(true);
+      setLoading(false)
     }
-
+    
     togglePlayPause(); // This is a nanostore action, stable.
   }, [currentTrack, isVideoModalOpen, setIsVideoModalOpen, setError]); // Removed togglePlayPause from dependencies as it's a stable nanostore action
 
@@ -347,7 +349,9 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
             {formatTime(internalProgress)}
           </Typography>
 
-          <Box sx={{ flexGrow: 1, position: 'relative', height: 4 }}> {/* Wrapper for Slider and buffer */}
+          <Box sx={{ flexGrow: 1, position: 'relative', height: 4 }}>
+            {' '}
+            {/* Wrapper for Slider and buffer */}
             {/* Buffer Visual */}
             {currentTrack && duration > 0 && (
               <Box
@@ -364,7 +368,8 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
               >
                 {buffered.map((range, index) => {
                   const rangeStartPercent = (range.start / duration) * 100;
-                  const rangeWidthPercent = ((range.end - range.start) / duration) * 100;
+                  const rangeWidthPercent =
+                    ((range.end - range.start) / duration) * 100;
                   return (
                     <Box
                       key={index}

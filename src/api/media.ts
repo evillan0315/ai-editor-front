@@ -1,3 +1,5 @@
+// /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/src/api/media.ts
+
 import { getToken } from '@/stores/authStore';
 import {
   CreateMediaDto,
@@ -6,6 +8,11 @@ import {
   PaginationMediaResultDto,
   MediaScanRequestDto,
   MediaScanResponseDto,
+  // Add transcription types
+  TranscriptionSegment,
+  TranscriptionResult,
+  SyncTranscriptionRequest,
+  SyncTranscriptionResponse,
 } from '@/types';
 
 const API_BASE_URL = `/api`;
@@ -33,6 +40,7 @@ const fetchWithAuth = async (url: string, options?: RequestInit) => {
 
   return fetch(url, { ...options, headers });
 };
+
 /**
  * Constructs a URL for streaming a file from the backend.
  * @param filePath The path to the file on the backend server.
@@ -145,4 +153,73 @@ export const scanMediaDirectory = async (
     console.error('Error scanning media directory:', error);
     throw error;
   }
+};
+
+// =========================================================================
+// Transcription API Functions
+// =========================================================================
+
+/**
+ * Transcribes an audio file using speech-to-text
+ * @param fileId The ID of the audio file to transcribe
+ * @returns A promise that resolves to a TranscriptionResult
+ */
+export const transcribeAudio = async (
+  fileId: string,
+): Promise<TranscriptionResult> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/media/${fileId}/transcribe`, {
+      method: 'POST',
+    });
+    return handleResponse<TranscriptionResult>(response);
+  } catch (error) {
+    console.error('Error transcribing audio:', error);
+    throw error;
+  }
+};
+
+/**
+ * Retrieves the transcription for an audio file
+ * @param fileId The ID of the audio file
+ * @returns A promise that resolves to a TranscriptionResult
+ */
+export const getTranscription = async (
+  fileId: string,
+): Promise<TranscriptionResult> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/media/${fileId}/transcription`);
+    return handleResponse<TranscriptionResult>(response);
+  } catch (error) {
+    console.error('Error getting transcription:', error);
+    throw error;
+  }
+};
+
+/**
+ * Gets synchronized transcription data for real-time highlighting
+ * @param fileId The ID of the audio file
+ * @param currentTime The current playback time in seconds
+ * @returns A promise that resolves to a SyncTranscriptionResponse
+ */
+export const getSyncTranscription = async (
+  fileId: string,
+  currentTime: number,
+): Promise<SyncTranscriptionResponse> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/media/${fileId}/transcription/sync`, {
+      method: 'POST',
+      body: JSON.stringify({ currentTime }),
+    });
+    return handleResponse<SyncTranscriptionResponse>(response);
+  } catch (error) {
+    console.error('Error getting synchronized transcription:', error);
+    throw error;
+  }
+};
+
+// Export the transcription API object for convenience
+export const transcriptionApi = {
+  transcribe: transcribeAudio,
+  getTranscription,
+  getSyncTranscription,
 };

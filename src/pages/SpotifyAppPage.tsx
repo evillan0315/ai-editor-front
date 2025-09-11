@@ -26,7 +26,7 @@ import {
   bufferedAtom, // New: Import bufferedAtom
   setBuffered, // New: Import setBuffered
 } from '@/stores/spotifyStore';
-import { FileType, BufferedRange } from '@/types/refactored/spotify'; // New: Import BufferedRange
+import { FileType, BufferedRange } from '@/types'; // New: Import BufferedRange
 
 type SpotifyView = 'home' | 'search' | 'library' | 'settings';
 
@@ -101,7 +101,7 @@ const SpotifyAppPage: React.FC = () => {
       if (videoMedia && isVideoModalOpenAtom.get()) videoMedia.pause();
       mediaElementRef.current = null;
       setIsVideoModalOpen(false); // Close video modal if no track
-      resetPlaybackState(); // Reset all playback state if no track is active
+      //resetPlaybackState(); // Reset all playback state if no track is active
     }
   }, [currentTrack?.fileType, setIsVideoModalOpen, audioRef, mediaElementRef]); // resetPlaybackState is now a global action, no need to include in dependency array.
 

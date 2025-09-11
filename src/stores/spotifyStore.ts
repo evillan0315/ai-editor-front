@@ -1,3 +1,5 @@
+// /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/src/stores/spotifyStore.ts
+
 import { atom, map } from 'nanostores';
 import { showGlobalSnackbar } from './aiEditorStore';
 import { persistentAtom, mapMediaFileToTrack } from '@/utils';
@@ -16,7 +18,7 @@ import {
   PaginationMediaQueryDto,
   FileType,
   BufferedRange, // New: Import BufferedRange
-} from '@/types/refactored/spotify';
+} from '@/types';
 import {
   fetchPlaylists,
   fetchPlaylistById,
@@ -29,7 +31,15 @@ import {
 import {
   scanMediaDirectory as apiScanMediaDirectory,
   fetchMediaFiles as apiFetchAllMediaFiles,
+  transcribeAudio,
+  getTranscription,
+  getSyncTranscription,
 } from '@/api/media';
+import { authStore } from './authStore'; // Import authStore for login check
+import {
+  TranscriptionResult,
+  SyncTranscriptionResponse,
+} from '@/types'; 
 
 
 // --- Atoms (Non-persistent for transient playback state, persistent for user preferences) ---
@@ -49,22 +59,22 @@ export const shuffleAtom = persistentAtom<boolean>('spotify:shuffle', false); //
 
 // --- Store Interface (for the map part) ---
 export interface SpotifyStore {
-  queue: Track[]; // Tracks to play next
-  history: Track[]; // Tracks that have been played (for 'previous' functionality)
+  queue: Track[];
+  history: Track[];
   currentPlaylist: Playlist | null;
   playlists: Playlist[];
   isLoadingPlaylists: boolean;
   playlistError: string | null;
-  // General media related state (for home, search, playlist creation)
+  // General media related state
   allAvailableMediaFiles: MediaFileResponseDto[];
   isFetchingMedia: boolean;
   fetchMediaError: string | null;
-  // Paginated audio files state (for Library -> Audios tab)
+  // Paginated audio files state
   paginatedAudioFiles: MediaFileResponseDto[];
   audioPagination: { page: number; pageSize: number; totalPages: number; hasMore: boolean; };
   isFetchingPaginatedAudio: boolean;
   fetchPaginatedAudioError: string | null;
-  // Paginated video files state (for Library -> Videos tab)
+  // Paginated video files state
   paginatedVideoFiles: MediaFileResponseDto[];
   videoPagination: { page: number; pageSize: number; totalPages: number; hasMore: boolean; };
   isFetchingPaginatedVideo: boolean;
@@ -73,8 +83,14 @@ export interface SpotifyStore {
   mediaScanPath: string;
   isScanningMedia: boolean;
   mediaScanError: string | null;
-  loading: boolean; // General loading state for player actions
-  error: string | null; // General error state for player actions
+  loading: boolean;
+  error: string | null;
+  
+  // ADD THESE TRANSCRIPTION PROPERTIES:
+  transcriptionData: TranscriptionResult | null;
+  transcriptionSyncData: SyncTranscriptionResponse | null;
+  isTranscribing: boolean;
+  transcriptionError: string | null;
 }
 
 // --- Initial State (for the map part) ---
@@ -105,6 +121,12 @@ export const $spotifyStore = map<SpotifyStore>({
   mediaScanError: null,
   loading: false,
   error: null,
+  
+  // ADD THESE TRANSCRIPTION INITIAL STATES:
+  transcriptionData: null,
+  transcriptionSyncData: null,
+  isTranscribing: false,
+  transcriptionError: null,
 });
 
 // --- Actions ---
@@ -116,7 +138,17 @@ export const setLoading = (isLoading: boolean) => {
 export const setError = (message: string | null) => {
   $spotifyStore.setKey('error', message);
 };
-
+// Add this action to clear transcription data
+export const clearTranscription = () => {
+  const state = $spotifyStore.get();
+  $spotifyStore.set({
+    ...state,
+    transcriptionData: null,
+    transcriptionSyncData: null,
+    isTranscribing: false,
+    transcriptionError: null,
+  });
+};
 /**
  * Resets all playback-related state to their initial non-playing values.
  * This is useful when stopping playback, closing a modal, or clearing the player.
@@ -126,11 +158,13 @@ export const resetPlaybackState = () => {
   currentTrackAtom.set(null);
   progressAtom.set(0);
   durationAtom.set(0);
-  bufferedAtom.set([]); // New: Reset buffered ranges
+  bufferedAtom.set([]);
   isVideoModalOpenAtom.set(false);
   $spotifyStore.setKey('loading', false);
   $spotifyStore.setKey('error', null);
+  clearTranscription(); // Add this line
 };
+
 
 /**
  * Sets the playback state (playing or paused).
@@ -532,7 +566,6 @@ export const fetchUserPlaylists = async (
   } catch (error: any) {
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to load playlists.';
-    $spotifyStore.setKey('playlistError', errorMessage);
     showGlobalSnackbar(`Error loading playlists: ${errorMessage}`, 'error');
   } finally {
     $spotifyStore.setKey('isLoadingPlaylists', false);
@@ -601,7 +634,7 @@ export const updateExistingPlaylist = async (
       'success',
     );
     fetchUserPlaylists();
-    if (currentTrackAtom.get()?.id === playlistId) { // Check currentTrack from atom
+    if ($spotifyStore.get().currentPlaylist?.id === playlistId) { // Check currentPlaylist from store map
       loadPlaylistDetails(playlistId);
     }
     return updatedPlaylist;
@@ -642,6 +675,7 @@ export const addMediaToSpecificPlaylist = async (
         await addMediaToPlaylist(playlistId, dto);
         showGlobalSnackbar('Media added to playlist successfully!', 'success');
         loadPlaylistDetails(playlistId);
+        fetchUserPlaylists(); // Re-fetch all playlists to update counts/content in library
     } catch (error: any) {
         const errorMessage =
         error instanceof Error ? error.message : 'Failed to add media to playlist.';
@@ -661,6 +695,7 @@ export const removeMediaFromSpecificPlaylist = async (
       'success',
     );
     loadPlaylistDetails(playlistId);
+    fetchUserPlaylists(); // Re-fetch all playlists to update counts/content in library
   } catch (error: any) {
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to remove media from playlist.';
@@ -669,32 +704,106 @@ export const removeMediaFromSpecificPlaylist = async (
   }
 };
 
-// New media scan actions
+// =========================================================================
+// Media Scanning Actions
+// =========================================================================
 export const setMediaScanPath = (path: string) => {
   $spotifyStore.setKey('mediaScanPath', path);
 };
 
-export const triggerMediaScan = async (directoryPath: string) => {
-  $spotifyStore.setKey('isScanningMedia', true);
-  $spotifyStore.setKey('mediaScanError', null);
+export const triggerMediaScan = async (path: string) => {
+  const isLoggedIn = authStore.get().isLoggedIn;
+  if (!isLoggedIn) {
+    showGlobalSnackbar('You must be logged in to scan media.', 'error');
+    return;
+  }
+
+  const state = $spotifyStore.get();
+  if (state.isScanningMedia) return;
+
+  $spotifyStore.set({ ...state, isScanningMedia: true, mediaScanError: null });
+
   try {
-    const dto: MediaScanRequestDto = { directoryPath };
-    const response = await apiScanMediaDirectory(dto);
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to scan directory.');
-    }
-      showGlobalSnackbar(
-      `Scan successful! Found ${response.scannedFilesCount} new media files.`,
-      'success',
+    // Call the API to scan media directory
+    await apiScanMediaDirectory({ directoryPath: path });
+
+    showGlobalSnackbar(`Scanning directory: ${path}`, 'info');
+
+    // After scan, re-fetch all media and paginated media to reflect changes
+    fetchMediaForPurpose({ page: 1, pageSize: 200 }, 'general', true);
+    fetchMediaForPurpose(
+      { page: 1, pageSize: 20, fileType: FileType.AUDIO },
+      'paginatedAudio',
+      true,
     );
-    // After a successful scan, refresh the list of all available media
-    await fetchMediaForPurpose({ page: 1, pageSize: 200 }, 'general', true);
-  } catch (error: any) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'An unknown error occurred.';
-    $spotifyStore.setKey('mediaScanError', errorMessage);
-    showGlobalSnackbar(`Error scanning directory: ${errorMessage}`, 'error');
+    fetchMediaForPurpose(
+      { page: 1, pageSize: 20, fileType: FileType.VIDEO },
+      'paginatedVideo',
+      true,
+    );
+
+    showGlobalSnackbar('Media scan complete!', 'success');
+  } catch (err: any) {
+    const message = err.message || 'Failed to trigger media scan.';
+    $spotifyStore.setKey('mediaScanError', message);
+    showGlobalSnackbar(message, 'error');
   } finally {
     $spotifyStore.setKey('isScanningMedia', false);
+  }
+};
+
+export const loadTranscription = async (fileId: string) => {
+  const state = $spotifyStore.get();
+  $spotifyStore.setKey('isTranscribing', true);
+  $spotifyStore.setKey('transcriptionError', null);
+
+  try {
+    const data = await getTranscription(fileId);
+    $spotifyStore.set({ 
+      ...state, 
+      transcriptionData: data, 
+      isTranscribing: false, 
+      transcriptionError: null 
+    });
+  } catch (err) {
+    $spotifyStore.set({ 
+      ...state, 
+      isTranscribing: false, 
+      transcriptionError: err instanceof Error ? err.message : 'Failed to load transcription' 
+    });
+  }
+};
+
+export const transcribeAudioAction = async (fileId: string) => {
+  const state = $spotifyStore.get();
+  $spotifyStore.setKey('isTranscribing', true);
+  $spotifyStore.setKey('transcriptionError', null);
+
+  try {
+    const data = await transcribeAudio(fileId);
+    $spotifyStore.set({ 
+      ...state, 
+      transcriptionData: data, 
+      isTranscribing: false, 
+      transcriptionError: null 
+    });
+  } catch (err) {
+    $spotifyStore.set({ 
+      ...state, 
+      isTranscribing: false, 
+      transcriptionError: err instanceof Error ? err.message : 'Transcription failed' 
+    });
+  }
+};
+
+export const updateTranscriptionSync = async (fileId: string, currentTime: number) => {
+  const state = $spotifyStore.get();
+  if (!state.transcriptionData) return;
+
+  try {
+    const syncData = await getSyncTranscription(fileId, currentTime);
+    $spotifyStore.setKey('transcriptionSyncData', syncData);
+  } catch (err) {
+    console.error('Failed to sync transcription:', err);
   }
 };

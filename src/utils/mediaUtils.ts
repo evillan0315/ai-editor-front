@@ -1,4 +1,4 @@
-import { MediaFileResponseDto, Track, FileType } from '@/types/refactored/spotify';
+import { MediaFileResponseDto, Track, FileType } from '@/types';
 import { getFileStreamUrl } from '@/api/media';
 
 /**

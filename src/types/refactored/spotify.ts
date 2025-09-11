@@ -1,5 +1,6 @@
+// /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/src/types/refactored/spotify.ts
 import { MediaFileResponseDto } from './media'; // Explicitly import MediaFileResponseDto
-export * from './media';
+// REMOVE THIS LINE: export * from './media'; // This causes circular dependency
 
 /**
  * Defines the repeat mode for media playback.
@@ -196,3 +197,4 @@ export interface PaginationPlaylistMediaFileResultDto {
   pageSize: number;
   totalPages: number;
 }
+

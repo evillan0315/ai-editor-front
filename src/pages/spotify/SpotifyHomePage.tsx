@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -10,20 +10,40 @@ import {
   CardActionArea,
   CircularProgress,
   Alert,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  IconButton,
+  Avatar,
+  Menu,
+  MenuItem,
+  ListItemIcon,
 } from '@mui/material';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import EditIcon from '@mui/icons-material/Edit';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import DeleteIcon from '@mui/icons-material/Delete';
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useStore } from '@nanostores/react';
 import {
   $spotifyStore,
   playTrack,
   fetchMediaForPurpose,
-  isPlayingAtom,    // New: Import isPlayingAtom
-  currentTrackAtom, // New: Import currentTrackAtom
+  isPlayingAtom,
+  currentTrackAtom,
 } from '@/stores/spotifyStore';
 import AlbumIcon from '@mui/icons-material/Album';
-import MovieIcon from '@mui/icons-material/Movie'; // Import MovieIcon for video
-import { MediaFileResponseDto, FileType } from '@/types/refactored/spotify';
+import MovieIcon from '@mui/icons-material/Movie';
+import { MediaFileResponseDto, FileType } from '@/types';
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';
+import { showGlobalSnackbar } from '@/stores/aiEditorStore';
+import AddMediaToPlaylistDialog from './components/AddMediaToPlaylistDialog'; // New Import
+import MediaActionMenu from './components/MediaActionMenu'; // New Import
+import { authStore } from '@/stores/authStore'; // For isLoggedIn
 
 interface SpotifyHomePageProps {
   // No specific props for now, just static content
@@ -31,15 +51,25 @@ interface SpotifyHomePageProps {
 
 const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   const theme = useTheme();
-  const {
-    allAvailableMediaFiles,
-    isFetchingMedia,
-    fetchMediaError,
-  } = useStore($spotifyStore);
+  const { isLoggedIn } = useStore(authStore); // Get login status
+  const { allAvailableMediaFiles, isFetchingMedia, fetchMediaError } =
+    useStore($spotifyStore);
 
   // Directly get isPlaying and currentTrack from their respective atoms
   const isPlaying = useStore(isPlayingAtom);
   const currentTrack = useStore(currentTrackAtom);
+
+  // State for media action menu
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [openMenuMediaFile, setOpenMenuMediaFile] =
+    useState<MediaFileResponseDto | null>(null);
+  const isMenuOpen = Boolean(anchorEl);
+
+  // State for "Add to Playlist" dialog
+  const [isAddMediaToPlaylistDialogOpen, setIsAddMediaToPlaylistDialogOpen] =
+    useState(false);
+  const [mediaFileToAddToPlaylist, setMediaFileToAddToPlaylist] =
+    useState<MediaFileResponseDto | null>(null);
 
   useEffect(() => {
     // Fetch media files when the component mounts if not already fetched
@@ -50,16 +80,12 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   }, [allAvailableMediaFiles.length, isFetchingMedia]);
 
   // Filter for audio files
-  const playableAudioTracks: MediaFileResponseDto[] = allAvailableMediaFiles.filter(
-    (media) =>
-      media.fileType === FileType.AUDIO,
-  );
+  const playableAudioTracks: MediaFileResponseDto[] =
+    allAvailableMediaFiles.filter((media) => media.fileType === FileType.AUDIO);
 
   // Filter for video files
-  const playableVideoTracks: MediaFileResponseDto[] = allAvailableMediaFiles.filter(
-    (media) =>
-      media.fileType === FileType.VIDEO,
-  );
+  const playableVideoTracks: MediaFileResponseDto[] =
+    allAvailableMediaFiles.filter((media) => media.fileType === FileType.VIDEO);
 
   // Deduplicate artists based on uploader name from metadata (only for audio for now)
   const uniqueArtists = React.useMemo(() => {
@@ -88,6 +114,74 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
     return Array.from(artistsMap.values());
   }, [playableAudioTracks]);
 
+  const handleOpenMediaActionsMenu = useCallback(
+    (event: React.MouseEvent<HTMLElement>, mediaFile: MediaFileResponseDto) => {
+      setAnchorEl(event.currentTarget);
+      setOpenMenuMediaFile(mediaFile);
+    },
+    [],
+  );
+
+  const handleCloseMediaActionsMenu = useCallback(() => {
+    setAnchorEl(null);
+    setOpenMenuMediaFile(null);
+  }, []);
+
+  const handlePlayMedia = useCallback(
+    (mediaFile: MediaFileResponseDto) => {
+      const trackList =
+        mediaFile.fileType === FileType.AUDIO
+          ? playableAudioTracks.map(mapMediaFileToTrack)
+          : playableVideoTracks.map(mapMediaFileToTrack);
+      playTrack(mediaFile, trackList);
+    },
+    [playableAudioTracks, playableVideoTracks],
+  );
+
+  const handleAddToPlaylist = useCallback((mediaFile: MediaFileResponseDto) => {
+    setMediaFileToAddToPlaylist(mediaFile);
+    setIsAddMediaToPlaylistDialogOpen(true);
+    handleCloseMediaActionsMenu();
+  }, [handleCloseMediaActionsMenu]);
+
+  const handleUpdateMedia = useCallback(
+    (mediaFile: MediaFileResponseDto) => {
+      showGlobalSnackbar(
+        `Update metadata for "${mediaFile.name}" (Not Implemented)`,
+        'info',
+      );
+      handleCloseMediaActionsMenu();
+      // TODO: Implement a dialog/form for updating media metadata
+    },
+    [handleCloseMediaActionsMenu],
+  );
+
+  const handleDownloadMediaMetadata = useCallback(
+    (mediaFile: MediaFileResponseDto) => {
+      // Placeholder for actual metadata download API call
+      showGlobalSnackbar(
+        `Downloading metadata for "${mediaFile.name}" (Not Implemented)`,
+        'info',
+      );
+      handleCloseMediaActionsMenu();
+      // TODO: Implement actual API call to download metadata
+    },
+    [handleCloseMediaActionsMenu],
+  );
+
+  const handleDeleteMedia = useCallback(
+    (mediaFile: MediaFileResponseDto) => {
+      // Placeholder for actual media file deletion API call
+      showGlobalSnackbar(
+        `Deleting "${mediaFile.name}" (Not Implemented)`,
+        'info',
+      );
+      handleCloseMediaActionsMenu();
+      // TODO: Implement a confirmation dialog and actual API call for deletion
+    },
+    [handleCloseMediaActionsMenu],
+  );
+
   if (isFetchingMedia) {
     return (
       <Box className="flex justify-center items-center h-full">
@@ -108,12 +202,14 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
     );
   }
 
-  const noPlayableMedia = playableAudioTracks.length === 0 && playableVideoTracks.length === 0;
+  const noPlayableMedia =
+    playableAudioTracks.length === 0 && playableVideoTracks.length === 0;
 
   if (noPlayableMedia) {
     return (
       <Alert severity="info">
-        No playable audio or video files found. Upload some via the AI Editor or backend.
+        No playable audio or video files found. Upload some via the AI Editor or
+        backend.
       </Alert>
     );
   }
@@ -172,23 +268,49 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
                             component="img"
                             image={track.coverArt}
                             alt={track.title}
-                            sx={{ width: 64, height: 64, flexShrink: 0, objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <AlbumIcon
                             sx={{
                               width: 64,
                               height: 64,
                               flexShrink: 0,
-                              color: theme.palette.text.secondary,
-                              p: 1,
+                              objectFit: 'cover',
                             }}
                           />
+                        ) : (
+                          <Box
+                            sx={{
+                              width: 64,
+                              height: 64,
+                              flexShrink: 0,
+                              bgcolor:
+                                theme.palette.action.disabledBackground,
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              borderRadius: 1, // Match CardMedia's implicit rounded corners
+                            }}
+                          >
+                            <AlbumIcon
+                              sx={{
+                                fontSize: '3rem', // Larger icon
+                                color: theme.palette.text.secondary,
+                              }}
+                            />
+                          </Box>
                         )}
                         <CardContent
                           sx={{ flexGrow: 1, p: 1, '&:last-child': { pb: 1 } }}
                         >
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 'bold',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2, // Truncate to 2 rows
+                              WebkitBoxOrient: 'vertical',
+                            }}
+                          >
                             {track.title}
                           </Typography>
                         </CardContent>
@@ -213,100 +335,84 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
         </Box>
       )}
 
-      {/* All Available Audio Tracks */}
+      {/* All Available Audio Tracks - Converted to List View */}
       {playableAudioTracks.length > 0 && (
         <Box mb={4}>
           <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
             All Available Audio Tracks
           </Typography>
-          <Grid container spacing={3}>
+          <List>
             {playableAudioTracks.map((mediaFile) => {
               const track = mapMediaFileToTrack(mediaFile);
               const isActive = currentTrack?.id === track.id && isPlaying;
               return (
-                <Grid item xs={12} sm={6} md={2} key={track.id} component="div">
-                  <Card
-                    sx={{
-                      bgcolor: theme.palette.background.paper,
-                      boxShadow: 'none',
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      transition: 'background-color 0.2s',
-                      '&:hover': {
-                        bgcolor: theme.palette.action.hover,
-                        '& .play-icon-card': {
-                          opacity: 1,
-                        },
-                      },
-                      p: 2,
-                      position: 'relative',
-                      border: isActive
-                        ? `2px solid ${theme.palette.primary.main}`
-                        : 'none',
-                    }}
-                  >
-                    <CardActionArea
-                      onClick={() =>
-                        playTrack(
-                          mediaFile,
-                          playableAudioTracks.map(mapMediaFileToTrack),
-                        )
-                      }
-                    >
-                      <Box sx={{ position: 'relative', mb: 1 }}>
-                        {track.coverArt ? (
-                          <CardMedia
-                            component="img"
-                            image={track.coverArt}
-                            alt={track.title}
-                            sx={{
-                              width: '100%',
-                              borderRadius: 1,
-                              aspectRatio: '1 / 1',
-                              objectFit: 'cover',
-                            }}
-                          />
-                        ) : (
-                          <AlbumIcon
-                            sx={{
-                              width: '100%',
-                              borderRadius: 1,
-                              aspectRatio: '1 / 1',
-                              color: theme.palette.text.secondary,
-                              p: 2,
-                            }}
-                          />
-                        )}
-                        <PlayCircleFilledWhiteIcon
-                          className="play-icon-card"
-                          sx={{
-                            position: 'absolute',
-                            bottom: 8,
-                            right: 8,
-                            opacity: isActive ? 1 : 0,
-                            fontSize: 48,
-                            color: theme.palette.primary.main,
-                            transition: 'opacity 0.2s',
-                          }}
-                        />
-                      </Box>
-                      <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: 'bold' }}
-                        >
-                          {track.title}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {track.artist}
-                        </Typography>
-                      </CardContent>
-                    </CardActionArea>
-                  </Card>
-                </Grid>
+                <ListItem
+                  key={track.id}
+                  secondaryAction={
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <IconButton
+                        edge="end"
+                        aria-label="play audio"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent ListItem's onClick from firing
+                          handlePlayMedia(mediaFile);
+                        }}
+                        sx={{ color: theme.palette.primary.main, ml: 2 }}
+                      >
+                        <PlayArrowIcon />
+                      </IconButton>
+                      <IconButton
+                        edge="end"
+                        aria-label="more actions"
+                        onClick={(e) =>
+                          handleOpenMediaActionsMenu(e, mediaFile)
+                        }
+                        sx={{ ml: 1 }}
+                      >
+                        <MoreHorizIcon />
+                      </IconButton>
+                    </Box>
+                  }
+                  sx={{
+                    bgcolor: theme.palette.background.paper,
+                    borderRadius: 1,
+                    mb: 1,
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: theme.palette.action.hover },
+                    border: isActive
+                      ? `2px solid ${theme.palette.primary.main}`
+                      : 'none',
+                    color: theme.palette.text.primary,
+                  }}
+                  onClick={() => handlePlayMedia(mediaFile)}
+                >
+                  <ListItemAvatar>
+                    {track.coverArt ? (
+                      <Avatar
+                        variant="rounded"
+                        src={track.coverArt}
+                        sx={{ objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <AlbumIcon
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          color: theme.palette.text.secondary,
+                        }}
+                      />
+                    )}
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={track.title}
+                    secondary={track.artist}
+                    primaryTypographyProps={{ fontWeight: 'bold' }}
+                    secondaryTypographyProps={{ color: 'text.secondary' }}
+                  />
+                </ListItem>
               );
             })}
-          </Grid>
+          </List>
         </Box>
       )}
 
@@ -364,15 +470,25 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
                             }}
                           />
                         ) : (
-                          <MovieIcon
+                          <Box
                             sx={{
                               width: '100%',
                               borderRadius: 1,
                               aspectRatio: '16 / 9',
-                              color: theme.palette.text.secondary,
-                              p: 2,
+                              bgcolor:
+                                theme.palette.action.disabledBackground,
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
                             }}
-                          />
+                          >
+                            <MovieIcon
+                              sx={{
+                                fontSize: '4rem', // Larger icon
+                                color: theme.palette.text.secondary,
+                              }}
+                            />
+                          </Box>
                         )}
                         <PlayCircleFilledWhiteIcon
                           className="play-icon-card"
@@ -390,7 +506,14 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
                       <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
                         <Typography
                           variant="subtitle1"
-                          sx={{ fontWeight: 'bold' }}
+                          sx={{
+                            fontWeight: 'bold',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                          }}
                         >
                           {track.title}
                         </Typography>
@@ -448,6 +571,12 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
                         mb: 1,
                         width: '100%',
                         aspectRatio: '1 / 1',
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        bgcolor: theme.palette.action.disabledBackground, // Added background for fallback
                       }}
                     >
                       {artist.image ? (
@@ -465,12 +594,9 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
                       ) : (
                         <AlbumIcon
                           sx={{
-                            width: '100%',
-                            height: '100%',
-                            borderRadius: '50%',
-                            objectFit: 'cover',
+                            fontSize: '4rem', // Larger icon, fills the circular space better
                             color: theme.palette.text.secondary,
-                            p: 2,
+                            // Removed p: 2 as flexbox centering handles alignment
                           }}
                         />
                       )}
@@ -502,6 +628,26 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
           </Grid>
         </Box>
       )}
+
+      <MediaActionMenu
+        anchorEl={anchorEl}
+        open={isMenuOpen}
+        onClose={handleCloseMediaActionsMenu}
+        mediaFile={openMenuMediaFile}
+        onPlay={handlePlayMedia}
+        onAddToPlaylist={handleAddToPlaylist}
+        onUpdate={handleUpdateMedia}
+        onDownloadMetadata={handleDownloadMediaMetadata}
+        onDelete={handleDeleteMedia}
+      />
+
+      <AddMediaToPlaylistDialog
+        open={isAddMediaToPlaylistDialogOpen}
+        onClose={() => setIsAddMediaToPlaylistDialogOpen(false)}
+        mediaFile={mediaFileToAddToPlaylist}
+        onShowSnackbar={showGlobalSnackbar}
+        isLoggedIn={isLoggedIn}
+      />
     </Box>
   );
 };

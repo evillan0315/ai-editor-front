@@ -8,7 +8,7 @@ import {
 } from '@mui/material'; // Import CircularProgress
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { FileEntry } from '@/types/refactored/fileTree'; // Fixed import
+import { FileEntry } from '@/types'; // Fixed import
 import {
   toggleDirExpansion,
   setSelectedFile,

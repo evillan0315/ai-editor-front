@@ -19,8 +19,8 @@ import {
   setSelectedFile,
 } from '@/stores/fileTreeStore';
 import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
-import { FileEntry } from '@/types/refactored/fileTree'; // Fixed import
-import { ContextMenuItem } from '@/types';
+
+import { ContextMenuItem, FileEntry } from '@/types';
 import {
   showFileTreeContextMenu,
   hideFileTreeContextMenu,

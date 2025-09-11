@@ -69,7 +69,7 @@ import {
   Track,
   UpdatePlaylistDto,
   FileType,
-} from '@/types/refactored/spotify';
+} from '@/types';
 import { extractMedia as extractMediaFromUrl } from '@/api/media';
 import { authStore } from '@/stores/authStore';
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';

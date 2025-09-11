@@ -26,7 +26,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { useStore } from '@nanostores/react';
 import { fileTreeStore, loadInitialTree } from '@/stores/fileTreeStore';
 import { aiEditorStore } from '@/stores/aiEditorStore';
-import { FileEntry } from '@/types/refactored/fileTree'; // Corrected import path for FileEntry
+import { FileEntry } from '@/types'; // Corrected import path for FileEntry
 import { getFileTypeIcon } from '@/constants/fileIcons';
 
 interface FilePickerDialogProps {

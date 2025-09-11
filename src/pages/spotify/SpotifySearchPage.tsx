@@ -19,7 +19,7 @@ import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite
 import AlbumIcon from '@mui/icons-material/Album';
 import MovieIcon from '@mui/icons-material/Movie';
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';
-import { FileType } from '@/types/refactored/spotify';
+import { FileType } from '@/types';
 
 interface SpotifySearchPageProps {
   // No specific props for now
@@ -167,25 +167,45 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
                               }}
                             />
                           ) : track.fileType === FileType.VIDEO ? (
-                            <MovieIcon
+                            <Box
                               sx={{
                                 width: '100%',
                                 borderRadius: 1,
                                 aspectRatio: '16 / 9',
-                                color: theme.palette.text.secondary,
-                                p: 2,
+                                bgcolor:
+                                  theme.palette.action.disabledBackground,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
                               }}
-                            />
+                            >
+                              <MovieIcon
+                                sx={{
+                                  fontSize: '4rem', // Larger icon
+                                  color: theme.palette.text.secondary,
+                                }}
+                              />
+                            </Box>
                           ) : (
-                            <AlbumIcon
+                            <Box
                               sx={{
                                 width: '100%',
                                 borderRadius: 1,
                                 aspectRatio: '1 / 1',
-                                color: theme.palette.text.secondary,
-                                p: 2,
+                                bgcolor:
+                                  theme.palette.action.disabledBackground,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
                               }}
-                            />
+                            >
+                              <AlbumIcon
+                                sx={{
+                                  fontSize: '4rem', // Larger icon
+                                  color: theme.palette.text.secondary,
+                                }}
+                              />
+                            </Box>
                           )}
                           <PlayCircleFilledWhiteIcon
                             className="play-icon-card"
