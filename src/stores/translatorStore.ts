@@ -1,5 +1,16 @@
 import { map } from 'nanostores';
-import { TranslatorState } from '@/types';
+
+// --- Store Interface ---
+export interface TranslatorState {
+  inputText: string;
+  uploadedFileData: string | null;
+  uploadedFileName: string | null;
+  uploadedFileMimeType: string | null;
+  targetLanguage: string; // e.g., 'English', 'Spanish'
+  translatedContent: string | null;
+  loading: boolean;
+  error: string | null;
+}
 
 export const translatorStore = map<TranslatorState>({
   inputText: '',

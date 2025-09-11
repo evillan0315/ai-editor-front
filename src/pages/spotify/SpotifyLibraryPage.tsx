@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -31,11 +31,12 @@ import {
   Menu,
   DialogContentText,
   ListItemIcon,
+  SelectChangeEvent, // Import SelectChangeEvent
 } from '@mui/material';
 import {
   $spotifyStore,
   playTrack,
-  fetchAllMediaFiles,
+  fetchMediaForPurpose,
   addExtractedMediaFile,
   fetchUserPlaylists,
   createUserPlaylist,
@@ -47,9 +48,9 @@ import { useStore } from '@nanostores/react';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AddIcon from '@mui/icons-material/Add';
-import CloseIcon from '@mui/icons-material/Close'; // NEW: Import CloseIcon
+import CloseIcon from '@mui/icons-material/Close'; // Import CloseIcon for dialogs
 import AlbumIcon from '@mui/icons-material/Album';
-import MovieIcon from '@mui/icons-material/Movie';
+import MovieIcon from '@mui/icons-material/Movie'; // Import MovieIcon for video
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import EditIcon from '@mui/icons-material/Edit';
@@ -84,6 +85,7 @@ interface MediaExtractionFormDialogProps {
     severity: 'success' | 'error' | 'info',
   ) => void;
   isLoggedIn: boolean;
+  activeTabValue: number; // New prop to determine active tab
 }
 
 const MediaExtractionFormDialog: React.FC<MediaExtractionFormDialogProps> = ({
@@ -92,6 +94,7 @@ const MediaExtractionFormDialog: React.FC<MediaExtractionFormDialogProps> = ({
   onExtractSuccess,
   onShowSnackbar,
   isLoggedIn,
+  activeTabValue, // Use this to trigger re-fetch after extraction
 }) => {
   const theme = useTheme();
   const [url, setUrl] = useState('');
@@ -179,7 +182,7 @@ const MediaExtractionFormDialog: React.FC<MediaExtractionFormDialogProps> = ({
           size="small"
           sx={{ color: theme.palette.text.secondary }}
         >
-          <CloseIcon /> {/* Changed from AddIcon */}
+          <CloseIcon />
         </IconButton>
       </DialogTitle>
       <DialogContent sx={{ p: 2 }}>
@@ -370,15 +373,15 @@ const CreatePlaylistFormDialog: React.FC<CreatePlaylistFormDialogProps> = ({
   // Allow both audio and video files to be added to playlists
   const availableTracks = allAvailableMediaFiles.filter(
     (media) =>
-      (media.fileType === FileType.AUDIO || media.fileType === FileType.VIDEO) &&
-      (media.metadata?.data?.duration || 0) > 0,
+      (media.fileType === FileType.AUDIO || media.fileType === FileType.VIDEO),
   ).map(mapMediaFileToTrack);
 
-  const handleMediaSelectionChange = (
-    event: React.ChangeEvent<{ value: unknown }>,
-  ) => {
-    setSelectedMediaFileIds(event.target.value as string[]);
-  };
+  const handleMediaSelectionChange = useCallback(
+    (event: SelectChangeEvent<string[]>) => {
+      setSelectedMediaFileIds(event.target.value as string[]);
+    },
+    [],
+  );
 
   return (
     <Dialog
@@ -410,7 +413,7 @@ const CreatePlaylistFormDialog: React.FC<CreatePlaylistFormDialogProps> = ({
           size="small"
           sx={{ color: theme.palette.text.secondary }}
         >
-          <CloseIcon /> {/* Changed from AddIcon */}
+          <CloseIcon />
         </IconButton>
       </DialogTitle>
       <DialogContent sx={{ p: 2 }}>
@@ -637,7 +640,7 @@ const EditPlaylistFormDialog: React.FC<EditPlaylistFormDialogProps> = ({
           size="small"
           sx={{ color: theme.palette.text.secondary }}
         >
-          <CloseIcon /> {/* Changed from AddIcon */}
+          <CloseIcon />
         </IconButton>
       </DialogTitle>
       <DialogContent sx={{ p: 2 }}>
@@ -804,20 +807,28 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
   );
 };
 
+const DEFAULT_PAGE_SIZE = 20;
+
 const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { isLoggedIn } = useStore(authStore);
   const [value, setValue] = React.useState(0); // For Tabs
   const {
-    allAvailableMediaFiles,
-    isFetchingMedia,
-    fetchMediaError,
+    allAvailableMediaFiles, // Used for general purposes like playlist creation, home, search
     playlists,
     isLoadingPlaylists,
     playlistError,
     currentTrack,
     isPlaying,
+    paginatedAudioFiles, // New: for Audios tab
+    audioPagination, // New: for Audios tab
+    isFetchingPaginatedAudio, // New: for Audios tab
+    fetchPaginatedAudioError, // New: for Audios tab
+    paginatedVideoFiles, // New: for Videos tab
+    videoPagination, // New: for Videos tab
+    isFetchingPaginatedVideo, // New: for Videos tab
+    fetchPaginatedVideoError, // New: for Videos tab
   } = useStore($spotifyStore);
 
   const [isExtractFormOpen, setIsExtractFormOpen] = useState(false);
@@ -835,6 +846,10 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeletingPlaylist, setIsDeletingPlaylist] = useState(false);
 
+  // Refs for infinite scroll sentinels
+  const audioSentinelRef = useRef<HTMLDivElement>(null);
+  const videoSentinelRef = useRef<HTMLDivElement>(null);
+
   const showSnackbar = useCallback(
     (message: string, severity: 'success' | 'error' | 'info') => {
       showGlobalSnackbar(message, severity);
@@ -842,24 +857,137 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
     [],
   );
 
-  // Modified useEffect to fetch media based on tab selection
+  // Function to load more audio files
+  const loadMoreAudios = useCallback(() => {
+    if (isFetchingPaginatedAudio || !audioPagination.hasMore) return;
+
+    fetchMediaForPurpose(
+      {
+        page: audioPagination.page + 1,
+        pageSize: DEFAULT_PAGE_SIZE,
+        fileType: FileType.AUDIO,
+      },
+      'paginatedAudio',
+      false, // Do not reset, append
+    );
+  }, [isFetchingPaginatedAudio, audioPagination.hasMore, audioPagination.page]);
+
+  // Function to load more video files
+  const loadMoreVideos = useCallback(() => {
+    if (isFetchingPaginatedVideo || !videoPagination.hasMore) return;
+
+    fetchMediaForPurpose(
+      {
+        page: videoPagination.page + 1,
+        pageSize: DEFAULT_PAGE_SIZE,
+        fileType: FileType.VIDEO,
+      },
+      'paginatedVideo',
+      false, // Do not reset, append
+    );
+  }, [isFetchingPaginatedVideo, videoPagination.hasMore, videoPagination.page]);
+
+  // IntersectionObserver for Audio list
   useEffect(() => {
-    if (isLoggedIn) {
-      if (value === 0 || value === 1) {
-        // Playlists or Artists tab: fetch all media (for internal filtering) and playlists
-        fetchAllMediaFiles({ page: 1, pageSize: 50 });
-        fetchUserPlaylists();
-      } else if (value === 2) {
-        // Audios tab: fetch only audio files
-        fetchAllMediaFiles({ page: 1, pageSize: 100, fileType: FileType.AUDIO });
-      } else if (value === 3) {
-        // Videos tab: fetch only video files
-        fetchAllMediaFiles({ page: 1, pageSize: 100, fileType: FileType.VIDEO });
-      }
-    } else {
+    const sentinel = audioSentinelRef.current;
+    if (!sentinel || value !== 2) return; // Only observe when Audios tab is active
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !isFetchingPaginatedAudio && audioPagination.hasMore) {
+          loadMoreAudios();
+        }
+      },
+      { root: null, threshold: 0.1 }, // Observe relative to the document's viewport
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.unobserve(sentinel);
+      observer.disconnect();
+    };
+  }, [
+    audioSentinelRef.current, // Watch for sentinel ref itself
+    isFetchingPaginatedAudio,
+    audioPagination.hasMore,
+    loadMoreAudios,
+    value,
+  ]);
+
+  // IntersectionObserver for Video list
+  useEffect(() => {
+    const sentinel = videoSentinelRef.current;
+    if (!sentinel || value !== 3) return; // Only observe when Videos tab is active
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !isFetchingPaginatedVideo && videoPagination.hasMore) {
+          loadMoreVideos();
+        }
+      },
+      { root: null, threshold: 0.1 }, // Observe relative to the document's viewport
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.unobserve(sentinel);
+      observer.disconnect();
+    };
+  }, [
+    videoSentinelRef.current, // Watch for sentinel ref itself
+    isFetchingPaginatedVideo,
+    videoPagination.hasMore,
+    loadMoreVideos,
+    value,
+  ]);
+
+  // Fetch initial media based on tab selection
+  useEffect(() => {
+    if (!isLoggedIn) {
       // Clear store if not logged in
       $spotifyStore.setKey('allAvailableMediaFiles', []);
+      $spotifyStore.setKey('paginatedAudioFiles', []);
+      $spotifyStore.setKey('paginatedVideoFiles', []);
       $spotifyStore.setKey('playlists', []);
+      return;
+    }
+
+    if (value === 0 || value === 1) { // Playlists and Artists tabs
+      fetchUserPlaylists();
+      // Ensure allAvailableMediaFiles is populated for playlist creation/artist display
+      // This is also fetched by SpotifyHomePage, but good to have a fallback here.
+      if ($spotifyStore.get().allAvailableMediaFiles.length === 0) {
+        fetchMediaForPurpose({ page: 1, pageSize: 200 }, 'general', true); // Fetch a larger set for general use
+      }
+      // Clear paginated audio/video data when switching to non-paginated tabs
+      $spotifyStore.setKey('paginatedAudioFiles', []);
+      $spotifyStore.setKey('audioPagination', { page: 1, pageSize: DEFAULT_PAGE_SIZE, totalPages: 1, hasMore: false });
+      $spotifyStore.setKey('paginatedVideoFiles', []);
+      $spotifyStore.setKey('videoPagination', { page: 1, pageSize: DEFAULT_PAGE_SIZE, totalPages: 1, hasMore: false });
+    } else if (value === 2) {
+      // Audios tab: fetch only audio files, reset pagination
+      fetchMediaForPurpose(
+        { page: 1, pageSize: DEFAULT_PAGE_SIZE, fileType: FileType.AUDIO },
+        'paginatedAudio',
+        true, // Always reset to first page when switching to this tab
+      );
+      // Clear other paginated data
+      $spotifyStore.setKey('paginatedVideoFiles', []);
+      $spotifyStore.setKey('videoPagination', { page: 1, pageSize: DEFAULT_PAGE_SIZE, totalPages: 1, hasMore: false });
+    } else if (value === 3) {
+      // Videos tab: fetch only video files, reset pagination
+      fetchMediaForPurpose(
+        { page: 1, pageSize: DEFAULT_PAGE_SIZE, fileType: FileType.VIDEO },
+        'paginatedVideo',
+        true, // Always reset to first page when switching to this tab
+      );
+      // Clear other paginated data
+      $spotifyStore.setKey('paginatedAudioFiles', []);
+      $spotifyStore.setKey('audioPagination', { page: 1, pageSize: DEFAULT_PAGE_SIZE, totalPages: 1, hasMore: false });
     }
   }, [isLoggedIn, value]); // Depend on isLoggedIn and value for re-fetching
 
@@ -870,12 +998,25 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
   const handleExtractSuccess = useCallback(
     (mediaFile: MediaFileResponseDto) => {
       addExtractedMediaFile(mediaFile);
+      // After extraction, if on Audios/Videos tab, re-fetch first page to include new file
+      if (mediaFile.fileType === FileType.AUDIO && value === 2) {
+        fetchMediaForPurpose(
+          { page: 1, pageSize: DEFAULT_PAGE_SIZE, fileType: FileType.AUDIO },
+          'paginatedAudio',
+          true,
+        );
+      } else if (mediaFile.fileType === FileType.VIDEO && value === 3) {
+        fetchMediaForPurpose(
+          { page: 1, pageSize: DEFAULT_PAGE_SIZE, fileType: FileType.VIDEO },
+          'paginatedVideo',
+          true,
+        );
+      }
     },
-    [],
+    [value],
   );
 
   const handlePlayPlaylistTrack = (track: Track, playlistTracks: Track[]) => {
-    console.log(allAvailableMediaFiles, playlistTracks);
     const mediaFileToPlay = allAvailableMediaFiles.find((m) => m.id === track.mediaFileId);
     if (mediaFileToPlay) {
       playTrack(mediaFileToPlay, playlistTracks);
@@ -885,8 +1026,6 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
   };
 
   const handlePlayArtistTopTrack = (track: Track) => {
-    console.log(allAvailableMediaFiles, 'handlePlayArtistTopTrack allAvailableMediaFiles');
-    console.log(track, 'handlePlayArtistTopTrack track');
     const mediaFileToPlay = allAvailableMediaFiles.find((m) => m.id === track.mediaFileId);
     if (mediaFileToPlay) {
       playTrack(mediaFileToPlay, [track]);
@@ -948,14 +1087,13 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
     }
   };
 
-  // Filter for only audio files (will be allAvailableMediaFiles if value === 2)
-  const playableAudioFiles: MediaFileResponseDto[] = allAvailableMediaFiles.filter(
+  // These derived lists still use allAvailableMediaFiles for consistency with how they were previously defined
+  // They are for the 'Playlists' tab, not the dedicated 'Audios'/'Videos' tabs.
+  const allAudioTracksForPlaylistTab: MediaFileResponseDto[] = allAvailableMediaFiles.filter(
     (media) =>
       media.fileType === FileType.AUDIO,
   );
-
-  // Filter for only video files (will be allAvailableMediaFiles if value === 3)
-  const playableVideoFiles: MediaFileResponseDto[] = allAvailableMediaFiles.filter(
+  const allVideoTracksForPlaylistTab: MediaFileResponseDto[] = allAvailableMediaFiles.filter(
     (media) =>
       media.fileType === FileType.VIDEO,
   );
@@ -968,10 +1106,10 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       description: 'All available audio files',
       isPublic: false,
       cover: '/default-playlist.png',
-      tracks: playableAudioFiles.map(mapMediaFileToTrack),
-      trackCount: playableAudioFiles.length,
+      tracks: allAudioTracksForPlaylistTab.map(mapMediaFileToTrack),
+      trackCount: allAudioTracksForPlaylistTab.length,
     };
-  }, [playableAudioFiles]);
+  }, [allAudioTracksForPlaylistTab]);
 
   // Create a simplified 'All Videos' playlist from the fetched video media files
   const allVideoTracksPlaylist: Playlist = React.useMemo(() => {
@@ -981,10 +1119,10 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       description: 'All available video files',
       isPublic: false,
       cover: '/default-video-cover.png', // A different default cover for videos
-      tracks: playableVideoFiles.map(mapMediaFileToTrack),
-      trackCount: playableVideoFiles.length,
+      tracks: allVideoTracksForPlaylistTab.map(mapMediaFileToTrack),
+      trackCount: allVideoTracksForPlaylistTab.length,
     };
-  }, [playableVideoFiles]);
+  }, [allVideoTracksForPlaylistTab]);
 
   // Deduplicate artists based on uploader name from metadata (only for audio for now)
   const uniqueArtists = React.useMemo(() => {
@@ -997,7 +1135,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
         topTrackMediaFile: MediaFileResponseDto;
       }
     >();
-    playableAudioFiles.forEach((media) => {
+    allAudioTracksForPlaylistTab.forEach((media) => {
       const uploader = media.metadata?.data?.uploader || 'Unknown Artist';
       if (!artistsMap.has(uploader)) {
         artistsMap.set(uploader, {
@@ -1009,7 +1147,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       }
     });
     return Array.from(artistsMap.values());
-  }, [playableAudioFiles]);
+  }, [allAudioTracksForPlaylistTab]);
 
   if (!isLoggedIn) {
     return (
@@ -1021,26 +1159,78 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
     );
   }
 
-  if (isFetchingMedia || isLoadingPlaylists) {
-    return (
-      <Box className="flex justify-center items-center h-full">
-        <CircularProgress size={40} />
-        <Typography
-          variant="h6"
-          sx={{ ml: 2, color: theme.palette.text.secondary }}
-        >
-          Loading library...
-        </Typography>
-      </Box>
-    );
-  }
+  // Centralized loading/error display for each tab's content
+  const renderContent = () => {
+    if (value === 0 || value === 1) { // Playlists and Artists tabs
+      if (isLoadingPlaylists) {
+        return (
+          <Box className="flex justify-center items-center h-full">
+            <CircularProgress size={40} />
+            <Typography
+              variant="h6"
+              sx={{ ml: 2, color: theme.palette.text.secondary }}
+            >
+              Loading playlists and artists...
+            </Typography>
+          </Box>
+        );
+      }
+      if (playlistError) {
+        return (
+          <Alert severity="error">
+            Error loading library: {playlistError}
+          </Alert>
+        );
+      }
+    } else if (value === 2) { // Audios tab
+      if (isFetchingPaginatedAudio && audioPagination.page === 1) { // Only show full-screen loader for first page
+        return (
+          <Box className="flex justify-center items-center h-full">
+            <CircularProgress size={40} />
+            <Typography
+              variant="h6"
+              sx={{ ml: 2, color: theme.palette.text.secondary }}
+            >
+              Loading audio files...
+            </Typography>
+          </Box>
+        );
+      }
+      if (fetchPaginatedAudioError) {
+        return (
+          <Alert severity="error">
+            Error loading audio files: {fetchPaginatedAudioError}
+          </Alert>
+        );
+      }
+    } else if (value === 3) { // Videos tab
+      if (isFetchingPaginatedVideo && videoPagination.page === 1) { // Only show full-screen loader for first page
+        return (
+          <Box className="flex justify-center items-center h-full">
+            <CircularProgress size={40} />
+            <Typography
+              variant="h6"
+              sx={{ ml: 2, color: theme.palette.text.secondary }}
+            >
+              Loading video files...
+            </Typography>
+          </Box>
+        );
+      }
+      if (fetchPaginatedVideoError) {
+        return (
+          <Alert severity="error">
+            Error loading video files: {fetchPaginatedVideoError}
+          </Alert>
+        );
+      }
+    }
+    return null; // No full-screen loader or error
+  };
 
-  if (fetchMediaError || playlistError) {
-    return (
-      <Alert severity="error">
-        Error loading library: {fetchMediaError || playlistError}
-      </Alert>
-    );
+  const contentLoader = renderContent();
+  if (contentLoader) {
+    return contentLoader;
   }
 
   return (
@@ -1433,11 +1623,12 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       )}
 
       {value === 2 && ( // Audios
-        <List>
-          {playableAudioFiles.length === 0 ? (
-            <Alert severity="info">No audio files found in your library.</Alert>
-          ) : (
-            playableAudioFiles.map((mediaFile) => {
+        <Box>
+          <List>
+            {paginatedAudioFiles.length === 0 && !isFetchingPaginatedAudio && (
+              <Alert severity="info">No audio files found in your library.</Alert>
+            )}
+            {paginatedAudioFiles.map((mediaFile) => {
               const track = mapMediaFileToTrack(mediaFile);
               const isActive = currentTrack?.id === track.id && isPlaying;
               return (
@@ -1447,7 +1638,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                     <IconButton
                       edge="end"
                       aria-label="play audio"
-                      onClick={() => playTrack(mediaFile, playableAudioFiles.map(mapMediaFileToTrack))}
+                      onClick={() => playTrack(mediaFile, paginatedAudioFiles.map(mapMediaFileToTrack))}
                       sx={{ color: theme.palette.primary.main, ml: 2 }}
                     >
                       <PlayArrowIcon />
@@ -1478,17 +1669,29 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                   />
                 </ListItem>
               );
-            })
-          )}
-        </List>
+            })}
+            {isFetchingPaginatedAudio && audioPagination.hasMore && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            )}
+            <div ref={audioSentinelRef} style={{ height: '1px', visibility: 'hidden', margin: '1px 0' }} /> {/* Sentinel for infinite scroll */}
+            {!audioPagination.hasMore && paginatedAudioFiles.length > 0 && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                No more audio files to load.
+              </Alert>
+            )}
+          </List>
+        </Box>
       )}
 
       {value === 3 && ( // Videos
-        <List>
-          {playableVideoFiles.length === 0 ? (
-            <Alert severity="info">No video files found in your library.</Alert>
-          ) : (
-            playableVideoFiles.map((mediaFile) => {
+        <Box>
+          <List>
+            {paginatedVideoFiles.length === 0 && !isFetchingPaginatedVideo && (
+              <Alert severity="info">No video files found in your library.</Alert>
+            )}
+            {paginatedVideoFiles.map((mediaFile) => {
               const track = mapMediaFileToTrack(mediaFile);
               const isActive = currentTrack?.id === track.id && isPlaying;
               return (
@@ -1498,7 +1701,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                     <IconButton
                       edge="end"
                       aria-label="play video"
-                      onClick={() => playTrack(mediaFile, playableVideoFiles.map(mapMediaFileToTrack))}
+                      onClick={() => playTrack(mediaFile, paginatedVideoFiles.map(mapMediaFileToTrack))}
                       sx={{ color: theme.palette.primary.main, ml: 2 }}
                     >
                       <PlayArrowIcon />
@@ -1529,9 +1732,20 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                   />
                 </ListItem>
               );
-            })
-          )}
-        </List>
+            })}
+            {isFetchingPaginatedVideo && videoPagination.hasMore && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            )}
+            <div ref={videoSentinelRef} style={{ height: '1px', visibility: 'hidden', margin: '1px 0' }} /> {/* Sentinel for infinite scroll */}
+            {!videoPagination.hasMore && paginatedVideoFiles.length > 0 && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                No more video files to load.
+              </Alert>
+            )}
+          </List>
+        </Box>
       )}
 
       <MediaExtractionFormDialog
@@ -1540,6 +1754,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
         onExtractSuccess={handleExtractSuccess}
         onShowSnackbar={showGlobalSnackbar}
         isLoggedIn={isLoggedIn}
+        activeTabValue={value}
       />
 
       <CreatePlaylistFormDialog
@@ -1550,7 +1765,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
         allAvailableMediaFiles={allAvailableMediaFiles} // Pass all media files, filter internally
       />
 
-      {/* Playlist Actions Menu */}
+
       <Menu
         anchorEl={anchorEl}
         open={isMenuOpen}
@@ -1568,7 +1783,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       >
         {openMenuPlaylistId &&
           playlists.find((p) => p.id === openMenuPlaylistId) &&
-          [ // Directly return an array of MenuItems
+          [
             <MenuItem
               key="edit-playlist"
               onClick={() =>
@@ -1612,7 +1827,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
           ]}
       </Menu>
 
-      {/* Edit Playlist Dialog */}
+
       <EditPlaylistFormDialog
         open={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
@@ -1621,7 +1836,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
         isLoggedIn={isLoggedIn}
       />
 
-      {/* Delete Confirmation Dialog */}
+
       <DeleteConfirmationDialog
         open={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
