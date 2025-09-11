@@ -7,6 +7,14 @@ export * from './media';
 export type RepeatMode = 'off' | 'context' | 'track';
 
 /**
+ * Represents a buffered time range in seconds.
+ */
+export interface BufferedRange {
+  start: number;
+  end: number;
+}
+
+/**
  * Frontend-specific Track interface, representing a playable item in the Spotify-like app.
  * It is derived from `MediaFileResponseDto` but includes all necessary properties for UI display and playback,
  * including a direct `mediaSrc` URL.

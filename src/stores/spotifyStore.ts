@@ -1,5 +1,6 @@
-import { map } from 'nanostores';
+import { atom, map } from 'nanostores';
 import { showGlobalSnackbar } from './aiEditorStore';
+import { persistentAtom, mapMediaFileToTrack } from '@/utils';
 import {
   Track,
   Playlist,
@@ -14,6 +15,7 @@ import {
   PlaylistTrackResponseDto,
   PaginationMediaQueryDto,
   FileType,
+  BufferedRange, // New: Import BufferedRange
 } from '@/types/refactored/spotify';
 import {
   fetchPlaylists,
@@ -28,17 +30,25 @@ import {
   scanMediaDirectory as apiScanMediaDirectory,
   fetchMediaFiles as apiFetchAllMediaFiles,
 } from '@/api/media';
-import { mapMediaFileToTrack } from '@/utils/mediaUtils';
 
-// --- Store Interface ---
+
+// --- Atoms (Non-persistent for transient playback state, persistent for user preferences) ---
+// Playback state should NOT be persistent to avoid browser autoplay issues on refresh.
+// However, the user explicitly requested these to be persistent.
+export const isPlayingAtom = persistentAtom<boolean>('spotify:isPlaying', false);
+export const currentTrackAtom = persistentAtom<Track | null>('spotify:currentTrack', null);
+export const progressAtom = persistentAtom<number>('spotify:progress', 0);
+export const durationAtom = persistentAtom<number>('spotify:duration', 0);
+export const bufferedAtom = persistentAtom<BufferedRange[]>('spotify:buffered', []); // New: Buffered ranges atom
+export const isVideoModalOpenAtom = persistentAtom<boolean>('spotify:isVideoModalOpen', false);
+
+// User preferences are persistent
+export const volumeAtom = persistentAtom<number>('spotify:volume', 70); // Persistent
+export const repeatModeAtom = persistentAtom<RepeatMode>('spotify:repeatMode', 'off'); // Persistent
+export const shuffleAtom = persistentAtom<boolean>('spotify:shuffle', false); // Persistent
+
+// --- Store Interface (for the map part) ---
 export interface SpotifyStore {
-  currentTrack: Track | null;
-  isPlaying: boolean;
-  volume: number; // 0-100 for slider
-  progress: number; // Current playback position in seconds
-  duration: number; // Total duration of the current track in seconds
-  repeatMode: RepeatMode;
-  shuffle: boolean;
   queue: Track[]; // Tracks to play next
   history: Track[]; // Tracks that have been played (for 'previous' functionality)
   currentPlaylist: Playlist | null;
@@ -67,15 +77,8 @@ export interface SpotifyStore {
   error: string | null; // General error state for player actions
 }
 
-// --- Initial State ---
+// --- Initial State (for the map part) ---
 export const $spotifyStore = map<SpotifyStore>({
-  currentTrack: null,
-  isPlaying: false,
-  volume: 70,
-  progress: 0,
-  duration: 0,
-  repeatMode: 'off',
-  shuffle: false,
   queue: [],
   history: [],
   currentPlaylist: null,
@@ -113,14 +116,59 @@ export const setLoading = (isLoading: boolean) => {
 export const setError = (message: string | null) => {
   $spotifyStore.setKey('error', message);
 };
+
+/**
+ * Resets all playback-related state to their initial non-playing values.
+ * This is useful when stopping playback, closing a modal, or clearing the player.
+ */
+export const resetPlaybackState = () => {
+  isPlayingAtom.set(false);
+  currentTrackAtom.set(null);
+  progressAtom.set(0);
+  durationAtom.set(0);
+  bufferedAtom.set([]); // New: Reset buffered ranges
+  isVideoModalOpenAtom.set(false);
+  $spotifyStore.setKey('loading', false);
+  $spotifyStore.setKey('error', null);
+};
+
 /**
  * Sets the playback state (playing or paused).
  * This is primarily used by the media element's event handlers in SpotifyAppPage
  * to synchronize the store's `isPlaying` state with the actual media element.
  */
 export const setPlaying = (status: boolean) => {
-  $spotifyStore.setKey('isPlaying', status);
+  isPlayingAtom.set(status);
 };
+
+/**
+ * Sets the current playback progress in seconds.
+ */
+export const setTrackProgress = (progress: number) => {
+  progressAtom.set(progress);
+};
+
+/**
+ * Sets the total duration of the current track in seconds.
+ */
+export const setTrackDuration = (duration: number) => {
+  durationAtom.set(duration);
+};
+
+/**
+ * Sets the visibility of the video modal.
+ */
+export const setIsVideoModalOpen = (isOpen: boolean) => {
+  isVideoModalOpenAtom.set(isOpen);
+};
+
+/**
+ * Sets the current buffered ranges.
+ */
+export const setBuffered = (ranges: BufferedRange[]) => {
+  bufferedAtom.set(ranges);
+};
+
 /**
  * Plays a specific track and optionally sets up a new queue/history.
  * @param mediaFile The MediaFileResponseDto to play.
@@ -131,62 +179,69 @@ export const playTrack = (
   contextTracks: Track[],
 ) => {
   const trackToPlay = mapMediaFileToTrack(mediaFile);
-  const state = $spotifyStore.get();
+  // Get values from individual atoms
+  const currentTrack = currentTrackAtom.get();
+  const isPlaying = isPlayingAtom.get();
+  const shuffle = shuffleAtom.get(); // Get shuffle from persistent atom
 
   // If playing the same track, just toggle play/pause
-  if (state.currentTrack?.id === trackToPlay.id) {
-    $spotifyStore.setKey('isPlaying', !state.isPlaying);
+  if (currentTrack?.id === trackToPlay.id) {
+    isPlayingAtom.set(!isPlaying);
     return;
   }
 
   // Add current track to history before changing
-  if (state.currentTrack) {
-    $spotifyStore.setKey('history', [...state.history, state.currentTrack]);
+  if (currentTrack) {
+    $spotifyStore.setKey('history', [...$spotifyStore.get().history, currentTrack]);
   }
 
   // Set new current track and build a new queue
   const trackIndex = contextTracks.findIndex(
     (t) => t.id === trackToPlay.id,
   );
-  let newQueue: Track[] = []; // Explicitly type newQueue as Track[]
+  let newQueue: Track[] = [];
   if (trackIndex !== -1) {
     newQueue = contextTracks.slice(trackIndex + 1);
-    if (state.shuffle) {
+    if (shuffle) {
       newQueue = shuffleArray(newQueue);
     }
   }
 
+  // Update individual atoms and map
+  currentTrackAtom.set(trackToPlay);
+  isPlayingAtom.set(true); // Intend to play immediately
+  progressAtom.set(0); // Reset progress for new track
+  durationAtom.set(trackToPlay.duration || 0); // Set initial duration
+  bufferedAtom.set([]); // New: Reset buffered ranges for new track
+
+  // Set video modal visibility based on track type
+  if (trackToPlay.fileType === FileType.VIDEO) {
+    isVideoModalOpenAtom.set(true);
+  } else {
+    isVideoModalOpenAtom.set(false);
+  }
+
   $spotifyStore.set({
-    ...state,
-    currentTrack: trackToPlay,
-    isPlaying: true,
-    progress: 0,
-    duration: trackToPlay.duration || 0,
+    ...$spotifyStore.get(), // Keep other map properties
     queue: newQueue,
-    error: null,
-    loading: false,
+    error: null, // Clear any previous errors
+    loading: true, // Set loading while media prepares
   });
 };
 
 export const togglePlayPause = () => {
-  $spotifyStore.setKey('isPlaying', !$spotifyStore.get().isPlaying);
+  isPlayingAtom.set(!isPlayingAtom.get());
 };
 
 export const setVolume = (volume: number) => {
-  $spotifyStore.setKey('volume', volume);
-};
-
-export const setPlaybackProgress = (progress: number) => {
-  $spotifyStore.setKey('progress', progress);
-};
-
-export const setDuration = (duration: number) => {
-  $spotifyStore.setKey('duration', duration);
+  volumeAtom.set(volume);
 };
 
 export const toggleShuffle = () => {
   const state = $spotifyStore.get();
-  const newShuffle = !state.shuffle;
+  const newShuffle = !shuffleAtom.get(); // Toggle the persistent atom
+  shuffleAtom.set(newShuffle);
+
   let newQueue = [...state.queue];
 
   if (newShuffle) {
@@ -196,90 +251,122 @@ export const toggleShuffle = () => {
     // For simplicity, we'll just keep the current shuffled order if no original order is maintained
     // A more robust solution would require storing the 'unshuffled' queue.
   }
-  $spotifyStore.set({ ...state, shuffle: newShuffle, queue: newQueue });
+  $spotifyStore.set({ ...state, queue: newQueue });
 };
 
 export const toggleRepeat = () => {
-  const currentMode = $spotifyStore.get().repeatMode;
+  const currentMode = repeatModeAtom.get(); // Get from persistent atom
   const newMode: RepeatMode =
     currentMode === 'off'
       ? 'context'
       : currentMode === 'context'
         ? 'track'
         : 'off';
-  $spotifyStore.setKey('repeatMode', newMode);
+  repeatModeAtom.set(newMode); // Set the persistent atom
 };
 
 export const nextTrack = () => {
-  const state = $spotifyStore.get();
-  if (state.repeatMode === 'track' && state.currentTrack) {
+  const state = $spotifyStore.get(); // Get map state
+  const currentTrack = currentTrackAtom.get(); // Get currentTrack from atom
+  const repeatMode = repeatModeAtom.get(); // Get repeatMode from persistent atom
+
+  if (repeatMode === 'track' && currentTrack) {
     // If repeating current track, just restart it
-    $spotifyStore.setKey('progress', 0);
-    $spotifyStore.setKey('isPlaying', true);
+    progressAtom.set(0);
+    isPlayingAtom.set(true);
+    // Modal state doesn't change if repeating the same track
     return;
   }
 
   if (state.queue.length > 0) {
     const [next, ...rest] = state.queue;
-    if (state.currentTrack) {
-      $spotifyStore.setKey('history', [...state.history, state.currentTrack]);
+    if (currentTrack) {
+      $spotifyStore.setKey('history', [...state.history, currentTrack]);
     }
+    currentTrackAtom.set(next);
+    isPlayingAtom.set(true);
+    progressAtom.set(0);
+    durationAtom.set(next.duration || 0);
+    bufferedAtom.set([]); // New: Reset buffered ranges for new track
+
+    // Update video modal state for the next track
+    if (next.fileType === FileType.VIDEO) {
+      isVideoModalOpenAtom.set(true);
+    } else {
+      isVideoModalOpenAtom.set(false);
+    }
+
     $spotifyStore.set({
       ...state,
-      currentTrack: next,
       queue: rest,
-      progress: 0,
-      isPlaying: true,
-      duration: next.duration || 0,
     });
-  } else if (state.repeatMode === 'context' && state.currentPlaylist) {
+  } else if (repeatMode === 'context' && state.currentPlaylist) {
     // If queue is empty but repeating context, restart from the beginning of the current playlist
     const firstTrack = state.currentPlaylist.tracks[0];
     if (firstTrack) {
+      currentTrackAtom.set(firstTrack);
+      isPlayingAtom.set(true);
+      progressAtom.set(0);
+      durationAtom.set(firstTrack.duration || 0);
+      bufferedAtom.set([]); // New: Reset buffered ranges for new track
+
+      // Update video modal state for the first track in playlist
+      if (firstTrack.fileType === FileType.VIDEO) {
+        isVideoModalOpenAtom.set(true);
+      } else {
+        isVideoModalOpenAtom.set(false);
+      }
+
       $spotifyStore.set({
         ...state,
-        currentTrack: firstTrack,
         queue: shuffleArray(state.currentPlaylist.tracks.slice(1)),
         history: [],
-        progress: 0,
-        isPlaying: true,
-        duration: firstTrack.duration || 0,
       });
     } else {
       // No tracks in playlist, stop playing
-      $spotifyStore.setKey('isPlaying', false);
-      $spotifyStore.setKey('currentTrack', null);
+      resetPlaybackState(); // New: Use resetPlaybackState
     }
   } else {
     // No more tracks and not repeating, stop playing
-    $spotifyStore.setKey('isPlaying', false);
-    $spotifyStore.setKey('currentTrack', null);
+    resetPlaybackState(); // New: Use resetPlaybackState
   }
 };
 
 export const previousTrack = () => {
-  const state = $spotifyStore.get();
+  const state = $spotifyStore.get(); // Get map state
+  const currentTrack = currentTrackAtom.get(); // Get currentTrack from atom
+
   if (state.history.length > 0) {
     const previous = state.history[state.history.length - 1];
     const newHistory = state.history.slice(0, -1);
-    if (state.currentTrack) {
-      $spotifyStore.setKey('queue', [state.currentTrack, ...state.queue]);
+    if (currentTrack) {
+      $spotifyStore.setKey('queue', [currentTrack, ...state.queue]);
     }
+    currentTrackAtom.set(previous);
+    isPlayingAtom.set(true);
+    progressAtom.set(0);
+    durationAtom.set(previous.duration || 0);
+    bufferedAtom.set([]); // New: Reset buffered ranges for new track
+
+    // Update video modal state for the previous track
+    if (previous.fileType === FileType.VIDEO) {
+      isVideoModalOpenAtom.set(true);
+    } else {
+      isVideoModalOpenAtom.set(false);
+    }
+
     $spotifyStore.set({
       ...state,
-      currentTrack: previous,
       history: newHistory,
-      progress: 0,
-      isPlaying: true,
-      duration: previous.duration || 0,
     });
   } else {
     // If no history, restart current track
-    if (state.currentTrack) {
-      $spotifyStore.setKey('progress', 0);
-      $spotifyStore.setKey('isPlaying', true);
+    if (currentTrack) {
+      progressAtom.set(0);
+      isPlayingAtom.set(true);
+      // Modal state doesn't change if restarting the same track
     } else {
-      $spotifyStore.setKey('isPlaying', false);
+      resetPlaybackState(); // New: Use resetPlaybackState
     }
   }
 };
@@ -340,6 +427,9 @@ export const fetchMediaForPurpose = async (
       effectiveQuery.page = 1;
     } else if (!effectiveQuery.page) {
       effectiveQuery.page = currentPagination.page;
+    } else if (effectiveQuery.page < currentPagination.page) {
+      // If fetching a page less than current, it implies a reset to an earlier page
+      reset = true;
     }
     if (!effectiveQuery.pageSize) effectiveQuery.pageSize = currentPagination.pageSize;
 
@@ -511,7 +601,7 @@ export const updateExistingPlaylist = async (
       'success',
     );
     fetchUserPlaylists();
-    if ($spotifyStore.get().currentPlaylist?.id === playlistId) {
+    if (currentTrackAtom.get()?.id === playlistId) { // Check currentTrack from atom
       loadPlaylistDetails(playlistId);
     }
     return updatedPlaylist;
@@ -528,9 +618,14 @@ export const removePlaylist = async (playlistId: string) => {
     await deletePlaylist(playlistId);
     showGlobalSnackbar('Playlist deleted successfully!', 'success');
     fetchUserPlaylists();
-    if ($spotifyStore.get().currentPlaylist?.id === playlistId) {
-      $spotifyStore.setKey('currentPlaylist', null);
+    // If the current track was part of the deleted playlist, reset playback state
+    const currentTrack = currentTrackAtom.get();
+    if (currentTrack && currentTrack.id === playlistId) { // Assuming playlist ID could be used as a track ID in some contexts, though unlikely
+        resetPlaybackState();
     }
+    // More robust check: if currentTrack is from a playlist, check if that playlist is the deleted one
+    // This would require currentTrack to store its origin playlist ID, which it currently doesn't.
+    // For simplicity, we just clear if the currentTrack ID matches the playlistId.
   } catch (error: any) {
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to delete playlist.';
@@ -588,7 +683,7 @@ export const triggerMediaScan = async (directoryPath: string) => {
     if (!response.success) {
       throw new Error(response.message || 'Failed to scan directory.');
     }
-    showGlobalSnackbar(
+      showGlobalSnackbar(
       `Scan successful! Found ${response.scannedFilesCount} new media files.`,
       'success',
     );

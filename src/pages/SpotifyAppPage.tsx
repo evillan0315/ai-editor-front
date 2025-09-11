@@ -3,236 +3,345 @@ import { Box, useTheme } from '@mui/material';
 import SpotifySidebar from '@/pages/spotify/SpotifySidebar';
 import SpotifyMainContent from '@/pages/spotify/SpotifyMainContent';
 import SpotifyPlayerBar from '@/pages/spotify/SpotifyPlayerBar';
-import VideoPlayer from '@/pages/spotify/VideoPlayer'; // New import
+import VideoModal from '@/components/VideoModal';
 import { useStore } from '@nanostores/react';
-import { $spotifyStore, togglePlayPause, setPlaybackProgress, setVolume, setLoading, setError, nextTrack } from '@/stores/spotifyStore';
-import { FileType } from '@/types/refactored/spotify';
+import {
+  $spotifyStore,
+  setPlaying,
+  setTrackProgress,
+  setTrackDuration,
+  setVolume,
+  setLoading,
+  setError,
+  nextTrack,
+  isVideoModalOpenAtom,
+  setIsVideoModalOpen,
+  currentTrackAtom,
+  isPlayingAtom,
+  repeatModeAtom,
+  progressAtom,
+  durationAtom,
+  volumeAtom,
+  resetPlaybackState,
+  bufferedAtom, // New: Import bufferedAtom
+  setBuffered, // New: Import setBuffered
+} from '@/stores/spotifyStore';
+import { FileType, BufferedRange } from '@/types/refactored/spotify'; // New: Import BufferedRange
 
 type SpotifyView = 'home' | 'search' | 'library' | 'settings';
 
 const SpotifyAppPage: React.FC = () => {
   const theme = useTheme();
   const [currentView, setCurrentView] = useState<SpotifyView>('home');
-  const { currentTrack, isPlaying, repeatMode } = useStore($spotifyStore);
 
-  const mediaElementRef = useRef<HTMLMediaElement | null>(null); // Unified ref for the active media element
-  const audioRef = useRef<HTMLAudioElement | null>(null); // Ref for the hidden audio element
-  const playerBarRef = useRef<HTMLDivElement | null>(null); // Corrected to allow null
-  const [videoPlayerHeight, setVideoPlayerHeight] = useState('0px');
-  const [isMainContentVisible, setIsMainContentVisible] = useState(true);
+  // Use individual atoms for frequently updated or persistent states
+  const currentTrack = useStore(currentTrackAtom);
+  const isPlaying = useStore(isPlayingAtom);
+  const repeatMode = useStore(repeatModeAtom);
+  const progress = useStore(progressAtom);
+  const duration = useStore(durationAtom);
+  const volume = useStore(volumeAtom);
+  const isVideoModalOpen = useStore(isVideoModalOpenAtom);
+  const buffered = useStore(bufferedAtom); // New: Get buffered ranges
+  const { loading, error } = useStore($spotifyStore); // Keep general loading/error from map
 
-  const calculateAndSetVideoPlayerHeight = useCallback(() => {
-    if (playerBarRef.current) {
-      const playerBarHeight = playerBarRef.current.offsetHeight;
-      const screenHeight = window.innerHeight;
-      // Subtract the player bar height from the total screen height
-      const calculatedHeight = screenHeight - playerBarHeight;
-      setVideoPlayerHeight(`${calculatedHeight}px`);
+  const mediaElementRef = useRef<HTMLMediaElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playerBarRef = useRef<HTMLDivElement | null>(null);
+
+  // Callback for when the native HTML5 video element is ready (from VideoModal's VideoPlayer)
+  const handleVideoPlayerReady = useCallback(
+    (htmlMediaElement: HTMLVideoElement) => {
+      mediaElementRef.current = htmlMediaElement;
+
+      // If store says it should be playing, attempt to play
+      if (isPlaying && htmlMediaElement) {
+        htmlMediaElement.play().catch((e) => {
+          console.error('HTML5 video playback failed on ready (modal):', e);
+          setError('Video playback prevented. User interaction required.');
+          setPlaying(false); // Update store
+        });
+      }
+    },
+    [isPlaying, setError, setPlaying],
+  );
+
+  // Callback to handle closing the video modal
+  const handleVideoModalClose = useCallback(() => {
+    const media = mediaElementRef.current;
+    if (media) {
+      media.pause(); // Pause video when modal closes
     }
-  }, []);
+    resetPlaybackState(); // New: Reset all playback related state
+  }, [mediaElementRef]); // resetPlaybackState is now a global action, no need to include in dependency array.
 
+  // Effect to manage which HTMLMediaElement is active (audio or video) and control modal visibility
   useEffect(() => {
-    calculateAndSetVideoPlayerHeight();
-    window.addEventListener('resize', calculateAndSetVideoPlayerHeight);
-    return () => {
-      window.removeEventListener('resize', calculateAndSetVideoPlayerHeight);
-    };
-  }, [calculateAndSetVideoPlayerHeight]);
+    const audioMedia = audioRef.current;
+    const videoMedia = mediaElementRef.current; // This ref will point to video element when modal is open
 
-  // Effect to manage which HTMLMediaElement is active (audio or video)
-  useEffect(() => {
     if (currentTrack?.fileType === FileType.AUDIO) {
-      mediaElementRef.current = audioRef.current;
-      setIsMainContentVisible(true); // Always show main content for audio
+      mediaElementRef.current = audioMedia;
+      if (videoMedia && isVideoModalOpenAtom.get()) { // If video was playing/modal open
+        videoMedia.pause(); // Pause video if switching to audio
+      }
+      setIsVideoModalOpen(false); // Close video modal if switching to audio
     } else if (currentTrack?.fileType === FileType.VIDEO) {
-      // The VideoPlayer component will update mediaElementRef.current directly
-      // when its internal video element is ready.
-      // We set it to null here temporarily, it will be populated by VideoPlayer
+      if (audioMedia && isPlayingAtom.get()) { // If audio was playing
+        audioMedia.pause(); // Pause audio if switching to video
+      }
+      // For video, mediaElementRef.current will be set by handleVideoPlayerReady (from VideoModal)
+      // We set it to null here temporarily, it will be populated by VideoPlayer in modal
       mediaElementRef.current = null;
-      setIsMainContentVisible(false); // Hide main content if video is playing
+      setIsVideoModalOpen(true); // Open video modal for video track
     } else {
+      // No track selected or track removed
+      if (audioMedia) audioMedia.pause();
+      if (videoMedia && isVideoModalOpenAtom.get()) videoMedia.pause();
       mediaElementRef.current = null;
-      setIsMainContentVisible(true);
+      setIsVideoModalOpen(false); // Close video modal if no track
+      resetPlaybackState(); // Reset all playback state if no track is active
     }
-    // If mediaElementRef.current changes, its event listeners will be re-attached by the next effect.
-  }, [currentTrack?.fileType]);
+  }, [currentTrack?.fileType, setIsVideoModalOpen, audioRef, mediaElementRef]); // resetPlaybackState is now a global action, no need to include in dependency array.
 
-  // Event listeners for the active media element
+  // Effect to handle setting media source and loading for the active media element
   useEffect(() => {
     const media = mediaElementRef.current;
-    if (!media || !currentTrack) return;
 
-    // Ensure volume is synced initially
-    media.volume = $spotifyStore.get().volume / 100;
-
-    const handleTimeUpdate = () => {
-      if (media && currentTrack) {
-        const newProgress = Math.floor(media.currentTime);
-        if (Math.abs(newProgress - $spotifyStore.get().progress) > 0) {
-          setPlaybackProgress(newProgress);
-        }
-      }
-    };
-
-    const handleVolumeChange = () => {
+    if (!media || !currentTrack?.mediaSrc) {
+      // No track or source, ensure media is paused and cleared
       if (media) {
-        setVolume(Math.round(media.volume * 100));
+        media.pause();
+        media.src = '';
       }
-    };
+      setTrackProgress(0);
+      setTrackDuration(0);
+      setBuffered([]); // New: Clear buffered ranges
+      setLoading(false);
+      setPlaying(false); // Ensure store reflects paused state
+      return;
+    }
 
-    const handleEnded = () => {
+    // Only update src if it's different to prevent unnecessary reloads
+    if (media.src !== currentTrack.mediaSrc) {
+      setLoading(true);
+      setPlaying(false); // Temporarily set playing to false while new media loads
+      media.src = currentTrack.mediaSrc;
+      media.load(); // Load new source
+      setTrackProgress(0); // Reset progress for new track
+      setBuffered([]); // New: Clear buffered ranges for new track
+    }
+    // Set initial duration if available and not already set, or if track changes
+    if (currentTrack.duration) {
+      setTrackDuration(currentTrack.duration);
+    }
+  }, [currentTrack, mediaElementRef.current, setTrackProgress, setTrackDuration, setLoading, setPlaying, setBuffered]); // Re-run when currentTrack or the active media element changes
+
+  // Event handlers for the active media element, defined at the top level
+  const handleTimeUpdate = useCallback(() => {
+    const media = mediaElementRef.current;
+    if (media && currentTrack) {
+      const newProgress = Math.floor(media.currentTime);
+      if (Math.abs(newProgress - progress) > 0) {
+        setTrackProgress(newProgress);
+      }
+      // Update duration if it's not set or significantly different (e.g., for streams)
+      if (media.duration && !isNaN(media.duration) && Math.abs(media.duration - duration) > 1) {
+        setTrackDuration(Math.floor(media.duration));
+      }
+    }
+  }, [currentTrack, progress, duration, mediaElementRef, setTrackProgress, setTrackDuration]);
+
+  // New: Handle 'progress' event to update buffered ranges
+  const handleProgress = useCallback(() => {
+    const media = mediaElementRef.current;
+    if (media && media.buffered.length > 0) {
+      const newBufferedRanges: BufferedRange[] = [];
+      for (let i = 0; i < media.buffered.length; i++) {
+        newBufferedRanges.push({
+          start: media.buffered.start(i),
+          end: media.buffered.end(i),
+        });
+      }
+      // Only update if the ranges have actually changed to avoid unnecessary re-renders
+      if (JSON.stringify(newBufferedRanges) !== JSON.stringify(buffered)) {
+        setBuffered(newBufferedRanges);
+      }
+    } else if (buffered.length > 0) { // If no buffered ranges, clear them
+      setBuffered([]);
+    }
+  }, [mediaElementRef, buffered, setBuffered]);
+
+  const handleVolumeChange = useCallback(() => {
+    const media = mediaElementRef.current;
+    if (media) {
+      setVolume(Math.round(media.volume * 100));
+    }
+  }, [mediaElementRef, setVolume]);
+
+  const handleEnded = useCallback(() => {
+    const media = mediaElementRef.current;
+    if (media) {
+      setPlaying(false); // Ensure UI reflects paused state
       if (repeatMode === 'track') {
         media.currentTime = 0;
-        media.play();
+        media.play(); // Restart current track
+        setPlaying(true); // Update store
       } else {
-        nextTrack();
+        nextTrack(); // Go to next track in queue
       }
-    };
+    }
+  }, [repeatMode, setPlaying, nextTrack, mediaElementRef]);
 
-    const handlePlaying = () => {
-      setLoading(false);
-      setError(null);
-    };
+  const handlePlaying = useCallback(() => {
+    setLoading(false);
+    setPlaying(true); // Media is actually playing
+    setError(null);
+  }, [setLoading, setPlaying, setError]);
 
-    const handleWaiting = () => {
-      setLoading(true);
-    };
+  const handlePause = useCallback(() => {
+    setPlaying(false); // Media is actually paused
+  }, [setPlaying]);
 
-    const handleError = (e: Event) => {
-      const mediaTarget = e.target as HTMLMediaElement;
-      const mediaError = mediaTarget.error;
-      let errorMessage = 'Failed to play media. Please try another file.';
+  const handleWaiting = useCallback(() => {
+    setLoading(true);
+  }, [setLoading]);
 
-      if (mediaError) {
-        switch (mediaError.code) {
-          case MediaError.MEDIA_ERR_ABORTED: errorMessage = 'Media playback aborted by user.'; break;
-          case MediaError.MEDIA_ERR_NETWORK: errorMessage = 'Network error: Media file could not be downloaded.'; break;
-          case MediaError.MEDIA_ERR_DECODE: errorMessage = 'Media decoding error: The media file is corrupted or unsupported.'; break;
-          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED: errorMessage = 'Media format not supported by your browser.'; break;
-          default: errorMessage = `Media playback error (${mediaError.code}): ${mediaError.message || 'Unknown error'}.`; break;
-        }
+  // Crucial for starting playback after media is ready
+  const handleCanPlay = useCallback(() => {
+    const media = mediaElementRef.current;
+    // If the store intends to play, and media is ready, call play()
+    // This is primarily for the audio element. Video playback is initiated in handleVideoPlayerReady.
+    if (media && isPlaying && currentTrack?.fileType === FileType.AUDIO) {
+      media.play().catch((e) => {
+        console.error('Playback failed on canplay (audio):', e);
+        setError('Audio playback prevented. User interaction required.');
+        setPlaying(false); // Pause the store if autoplay failed
+      });
+    }
+  }, [isPlaying, currentTrack?.fileType, mediaElementRef, setError, setPlaying]);
+
+  const handleError = useCallback((e: Event) => {
+    const mediaTarget = e.target as HTMLMediaElement;
+    const mediaError = mediaTarget.error;
+    let errorMessage = 'Failed to play media. Please try another file.';
+
+    if (mediaError) {
+      switch (mediaError.code) {
+        case MediaError.MEDIA_ERR_ABORTED: errorMessage = 'Media playback aborted by user.'; break;
+        case MediaError.MEDIA_ERR_NETWORK: errorMessage = 'Network error: Media file could not be downloaded.'; break;
+        case MediaError.MEDIA_ERR_DECODE: errorMessage = 'Media decoding error: The media file is corrupted or unsupported.'; break;
+        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED: errorMessage = 'Media format not supported by your browser.'; break;
+        default: errorMessage = `Media playback error (${mediaError.code}): ${mediaError.message || 'Unknown error'}.`; break;
       }
-      console.error('Media playback error details:', e, mediaError);
-      setError(errorMessage);
-      setLoading(false);
-    };
+    }
+    console.error('Media playback error details:', e, mediaError);
+    setError(errorMessage);
+    setLoading(false);
+    setPlaying(false); // Ensure store reflects paused state on error
+  }, [setError, setLoading, setPlaying]);
+
+  // Effect to attach and detach event listeners for the active media element
+  useEffect(() => {
+    const media = mediaElementRef.current;
+    if (!media) return;
+
+    // Ensure volume is synced initially
+    media.volume = volume / 100; // Use volume from the atom
 
     media.addEventListener('timeupdate', handleTimeUpdate);
     media.addEventListener('volumechange', handleVolumeChange);
     media.addEventListener('ended', handleEnded);
     media.addEventListener('playing', handlePlaying);
+    media.addEventListener('pause', handlePause); // Listen for explicit pause
     media.addEventListener('waiting', handleWaiting);
+    media.addEventListener('canplay', handleCanPlay); // This is key!
     media.addEventListener('error', handleError);
+    media.addEventListener('progress', handleProgress); // New: Attach progress listener
 
     return () => {
       media.removeEventListener('timeupdate', handleTimeUpdate);
       media.removeEventListener('volumechange', handleVolumeChange);
       media.removeEventListener('ended', handleEnded);
       media.removeEventListener('playing', handlePlaying);
+      media.removeEventListener('pause', handlePause);
       media.removeEventListener('waiting', handleWaiting);
+      media.removeEventListener('canplay', handleCanPlay);
       media.removeEventListener('error', handleError);
+      media.removeEventListener('progress', handleProgress); // New: Detach progress listener
     };
-  }, [mediaElementRef.current, currentTrack, repeatMode]); // Re-attach listeners if media element or track changes
+  }, [
+    mediaElementRef.current,
+    handleTimeUpdate,
+    handleVolumeChange,
+    handleEnded,
+    handlePlaying,
+    handlePause,
+    handleWaiting,
+    handleCanPlay,
+    handleError,
+    handleProgress, // New: Add handleProgress to dependencies
+    volume,
+  ]); // Re-attach listeners if active media element or any callback changes
 
-  // Control playback based on isPlaying state
+  // Control playback based on isPlaying state (from store)
   useEffect(() => {
     const media = mediaElementRef.current;
-    if (media) {
-      if (isPlaying) {
+
+    if (!media || !currentTrack) return; // Ensure media element and track exist
+
+    if (isPlaying) {
+      // Only attempt to play if not already playing or paused
+      if (media.paused) {
         media.play().catch((e) => {
-          console.error('Playback failed:', e);
-          setError('Playback prevented. User interaction required.');
-          togglePlayPause(); // Pause the store if autoplay failed
+          console.error('HTMLMediaElement.play() failed:', e);
+          setError('Media playback prevented. User interaction required.');
+          setPlaying(false);
         });
-      } else {
+        setLoading(true); // Indicate loading while media prepares to play
+      }
+    } else {
+      // Pause if not playing
+      if (!media.paused) {
         media.pause();
       }
-    }
-  }, [isPlaying, mediaElementRef.current]);
-
-  // Update media element source when currentTrack changes
-  useEffect(() => {
-    const media = mediaElementRef.current;
-    if (media && currentTrack?.mediaSrc) {
-      if (media.src !== currentTrack.mediaSrc) {
-        setLoading(true);
-        media.src = currentTrack.mediaSrc;
-        media.load(); // Load new source
-        // media.play() will be called by the isPlaying effect if isPlaying is true
-      } else if (isPlaying) {
-        // If same track and already playing, ensure it keeps playing (e.g., after seeking)
-        media.play().catch((e) => {
-          console.error('Existing track playback failed:', e);
-          setError('Playback prevented. User interaction required.');
-          togglePlayPause(); // Pause the store if autoplay failed
-        });
-      }
-    } else if (media && !currentTrack) {
-      media.pause();
-      media.src = '';
-      setPlaybackProgress(0);
       setLoading(false);
     }
-  }, [currentTrack, mediaElementRef.current, isPlaying]);
+  }, [isPlaying, mediaElementRef.current, currentTrack, setLoading, setError, setPlaying]);
 
-
-  const videoJsOptions = {
-    autoplay: false, // Controlled by isPlaying state
-    controls: false, // We use custom controls in SpotifyPlayerBar
-    responsive: true,
-    fluid: true,
-    sources: currentTrack?.fileType === FileType.VIDEO && currentTrack.mediaSrc ? [{
-      src: currentTrack.mediaSrc,
-      type: currentTrack.mimeType || 'video/mp4' // Use actual mimeType if available
-    }] : []
-  };
+  // Set initial loading state when a new track is selected
+  useEffect(() => {
+    if (currentTrack) {
+      setLoading(true); // Always set loading when a new track is selected
+      setError(null); // Clear any previous errors
+    } else {
+      setLoading(false);
+      setError(null);
+    }
+  }, [currentTrack, setLoading, setError]);
 
   return (
     <Box
       sx={{
         display: 'grid',
         gridTemplateAreas: `'sidebar main'
-                            'player player'`,
+                          'player player'`,
         gridTemplateColumns: '250px 1fr',
         gridTemplateRows: '1fr auto',
         flexGrow: 1,
         bgcolor: theme.palette.background.default,
         color: theme.palette.text.primary,
         overflow: 'hidden',
-        position: 'relative', // Needed for absolute positioning of video
+        position: 'relative',
       }}
     >
       <SpotifySidebar currentView={currentView} onSelectView={setCurrentView} />
 
-      {currentTrack?.fileType === FileType.VIDEO && currentTrack.mediaSrc && (
-  <Box
-    sx={{
-      gridArea: "main",
-      position: "absolute",
-      top: 0,
-      left: 250,
-      width: `calc(100% - 250px)`,
-      height: videoPlayerHeight,
-      bgcolor: "black",
-      zIndex: 10,
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-    }}
-  >
-    <VideoPlayer
-      src={currentTrack.mediaSrc}
-      mediaElementRef={mediaElementRef}
-      options={videoJsOptions}
-    />
-  </Box>
-)}
-
-      {/* Main Content, hidden if video is playing in overlay */}
+      {/* Main Content, always visible, modal will overlay it */}
       <Box
         sx={{
           gridArea: 'main',
-          display: isMainContentVisible ? 'block' : 'none', // Hide if video overlay is active
           bgcolor: theme.palette.background.default,
           overflowY: 'auto',
           p: 3,
@@ -243,6 +352,20 @@ const SpotifyAppPage: React.FC = () => {
 
       {/* Hidden audio element (always present) */}
       <audio ref={audioRef} style={{ display: 'none' }} preload="metadata" />
+
+      {/* Video Modal - conditionally rendered */}
+      {currentTrack?.fileType === FileType.VIDEO && currentTrack.mediaSrc && (
+        <VideoModal
+          open={isVideoModalOpen} // Now controlled by the store
+          onClose={handleVideoModalClose}
+          src={currentTrack.mediaSrc}
+          mediaElementRef={mediaElementRef}
+          autoplay={isPlaying} // Autoplay based on store's isPlaying
+          controls={false}
+          muted={false}
+          onPlayerReady={handleVideoPlayerReady}
+        />
+      )}
 
       <SpotifyPlayerBar mediaRef={mediaElementRef} playerBarRef={playerBarRef} />
     </Box>

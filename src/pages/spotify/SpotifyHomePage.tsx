@@ -17,8 +17,8 @@ import {
   $spotifyStore,
   playTrack,
   fetchMediaForPurpose,
-  isPlayingAtom,
-  currentTrackAtom,
+  isPlayingAtom,    // New: Import isPlayingAtom
+  currentTrackAtom, // New: Import currentTrackAtom
 } from '@/stores/spotifyStore';
 import AlbumIcon from '@mui/icons-material/Album';
 import MovieIcon from '@mui/icons-material/Movie'; // Import MovieIcon for video

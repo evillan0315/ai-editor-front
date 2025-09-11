@@ -43,6 +43,16 @@ import {
   updateExistingPlaylist,
   removePlaylist,
   loadPlaylistDetails,
+  volumeAtom,
+  shuffleAtom,
+  repeatModeAtom,
+  currentTrackAtom,
+  isPlayingAtom,
+  progressAtom,
+  durationAtom,
+  isVideoModalOpenAtom,
+  setIsVideoModalOpen,
+  bufferedAtom,
 } from '@/stores/spotifyStore';
 import { useStore } from '@nanostores/react';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -814,13 +824,21 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
   const navigate = useNavigate();
   const { isLoggedIn } = useStore(authStore);
   const [value, setValue] = React.useState(0); // For Tabs
+
+  const currentTrack = useStore(currentTrackAtom);
+  const isPlaying = useStore(isPlayingAtom);
+  const progress = useStore(progressAtom);
+  const duration = useStore(durationAtom); // New: Get duration from atom
+  const volume = useStore(volumeAtom);
+  const shuffle = useStore(shuffleAtom);
+  const repeatMode = useStore(repeatModeAtom);
+  const isVideoModalOpen = useStore(isVideoModalOpenAtom);
+  const buffered = useStore(bufferedAtom); // New: Get buffered ranges
   const {
     allAvailableMediaFiles, // Used for general purposes like playlist creation, home, search
     playlists,
     isLoadingPlaylists,
     playlistError,
-    currentTrack,
-    isPlaying,
     paginatedAudioFiles, // New: for Audios tab
     audioPagination, // New: for Audios tab
     isFetchingPaginatedAudio, // New: for Audios tab

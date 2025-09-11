@@ -1,6 +1,5 @@
 import React,
-  {
-    useRef,
+  { useRef,
     useEffect,
     useState,
     useCallback,
@@ -31,7 +30,7 @@ import MovieIcon from '@mui/icons-material/Movie'; // Import MovieIcon for video
 import {
   $spotifyStore,
   togglePlayPause,
-  setPlaybackProgress,
+  setTrackProgress, // Changed from setPlaybackProgress
   setVolume,
   toggleShuffle,
   toggleRepeat,
@@ -39,8 +38,18 @@ import {
   previousTrack,
   setLoading,
   setError,
+  volumeAtom,
+  shuffleAtom,
+  repeatModeAtom,
+  currentTrackAtom,
+  isPlayingAtom,
+  progressAtom,
+  durationAtom,
+  isVideoModalOpenAtom,
+  setIsVideoModalOpen,
+  bufferedAtom, // New: Import bufferedAtom
 } from '@/stores/spotifyStore';
-import { RepeatMode, FileType } from '@/types/refactored/spotify';
+import { RepeatMode, FileType, BufferedRange } from '@/types/refactored/spotify'; // New: Import BufferedRange
 
 interface SpotifyPlayerBarProps {
   mediaRef: React.RefObject<HTMLMediaElement | null>; // Now receives the active media element ref, allowing null
@@ -49,16 +58,16 @@ interface SpotifyPlayerBarProps {
 
 const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBarRef }) => {
   const theme = useTheme();
-  const {
-    currentTrack,
-    isPlaying,
-    progress,
-    volume,
-    shuffle,
-    repeatMode,
-    loading,
-    error,
-  } = useStore($spotifyStore);
+  const { loading, error } = useStore($spotifyStore);
+  const currentTrack = useStore(currentTrackAtom);
+  const isPlaying = useStore(isPlayingAtom);
+  const progress = useStore(progressAtom);
+  const duration = useStore(durationAtom); // New: Get duration from atom
+  const volume = useStore(volumeAtom);
+  const shuffle = useStore(shuffleAtom);
+  const repeatMode = useStore(repeatModeAtom);
+  const isVideoModalOpen = useStore(isVideoModalOpenAtom);
+  const buffered = useStore(bufferedAtom); // New: Get buffered ranges
 
   const [internalProgress, setInternalProgress] = useState(0);
   const [internalVolume, setInternalVolume] = useState(volume);
@@ -75,8 +84,11 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
 
   // Sync progress from store to internal state (for display)
   useEffect(() => {
-    setInternalProgress(progress);
-  }, [progress]);
+    // Only update internal progress if not actively seeking
+    if (!isSeeking) {
+      setInternalProgress(progress);
+    }
+  }, [progress, isSeeking]);
 
 
   const formatTime = (seconds: number) => {
@@ -91,8 +103,14 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
       setError('No track selected to play.');
       return;
     }
-    togglePlayPause();
-  }, [currentTrack]);
+
+    // If it's a video and the video modal is not open, open it
+    if (currentTrack.fileType === FileType.VIDEO && !isVideoModalOpen) {
+      setIsVideoModalOpen(true);
+    }
+
+    togglePlayPause(); // This is a nanostore action, stable.
+  }, [currentTrack, isVideoModalOpen, setIsVideoModalOpen, setError]); // Removed togglePlayPause from dependencies as it's a stable nanostore action
 
   const handleVolumeSliderChange = useCallback(
     (_event: Event, newValue: number | number[]) => {
@@ -132,7 +150,7 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
         setVolume(Math.round(media.volume * 100));
       }
     }
-  }, [mediaRef]);
+  }, [mediaRef, setVolume]);
 
   const handleProgressSliderChange = useCallback(
     (_event: Event, newValue: number | number[]) => {
@@ -147,7 +165,7 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
       const media = mediaRef.current;
       if (media && currentTrack) {
         media.currentTime = newValue as number;
-        setPlaybackProgress(newValue as number);
+        setTrackProgress(newValue as number);
       }
       setIsSeeking(false);
     },
@@ -318,36 +336,86 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
           </IconButton>
         </Box>
         <Box
-          sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 1 }}
+          sx={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
         >
           <Typography variant="caption" color="text.secondary">
             {formatTime(internalProgress)}
           </Typography>
-          <Slider
-            size="small"
-            value={internalProgress}
-            onChange={handleProgressSliderChange}
-            onChangeCommitted={handleProgressSliderChangeCommitted}
-            max={currentTrack?.duration || 0}
-            aria-label="Track progress"
-            sx={{
-              color: theme.palette.primary.main,
-              height: 4,
-              '& .MuiSlider-thumb': {
-                width: 12,
-                height: 12,
-                '&:hover, &.Mui-focusVisible': {
-                  boxShadow: `0px 0px 0px 8px ${theme.palette.primary.main}40`,
+
+          <Box sx={{ flexGrow: 1, position: 'relative', height: 4 }}> {/* Wrapper for Slider and buffer */}
+            {/* Buffer Visual */}
+            {currentTrack && duration > 0 && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: '100%',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  bgcolor: theme.palette.action.disabledBackground, // Rail background
+                }}
+              >
+                {buffered.map((range, index) => {
+                  const rangeStartPercent = (range.start / duration) * 100;
+                  const rangeWidthPercent = ((range.end - range.start) / duration) * 100;
+                  return (
+                    <Box
+                      key={index}
+                      sx={{
+                        position: 'absolute',
+                        left: `${rangeStartPercent}%`,
+                        width: `${rangeWidthPercent}%`,
+                        height: '100%',
+                        bgcolor: theme.palette.text.secondary + '40', // Semi-transparent color for buffer
+                        borderRadius: 2,
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            )}
+
+            <Slider
+              size="small"
+              value={internalProgress ?? 0}
+              onChange={handleProgressSliderChange}
+              onChangeCommitted={handleProgressSliderChangeCommitted}
+              min={0}
+              max={duration ?? 0}
+              aria-label="Track progress"
+              sx={{
+                position: 'relative', // To ensure zIndex works
+                zIndex: 1, // Slider on top of buffer visual
+                color: theme.palette.primary.main,
+                height: 4,
+                width: '100%', // Take full width of parent Box
+                padding: '0 !important', // Remove default padding to align perfectly
+                '& .MuiSlider-thumb': {
+                  width: 12,
+                  height: 12,
+                  '&:hover, &.Mui-focusVisible': {
+                    boxShadow: `0px 0px 0px 8px ${theme.palette.primary.main}40`,
+                  },
                 },
-              },
-              '& .MuiSlider-rail': {
-                opacity: 0.28,
-              },
-            }}
-            disabled={!currentTrack}
-          />
+                '& .MuiSlider-rail': {
+                  opacity: 0, // Hide default rail as we have a custom buffer background
+                },
+                '& .MuiSlider-track': {
+                  border: 'none',
+                },
+              }}
+              disabled={!currentTrack}
+            />
+          </Box>
           <Typography variant="caption" color="text.secondary">
-            {formatTime(currentTrack?.duration || 0)}
+            {formatTime(duration || 0)}
           </Typography>
         </Box>
       </Box>
@@ -375,9 +443,10 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
         </IconButton>
         <Slider
           size="small"
-          value={internalVolume}
+          value={internalVolume ?? 0}
           onChange={handleVolumeSliderChange}
           onChangeCommitted={handleVolumeSliderChangeCommitted}
+          min={0}
           max={100}
           aria-label="Volume"
           sx={{

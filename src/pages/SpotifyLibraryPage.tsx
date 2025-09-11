@@ -43,8 +43,8 @@ import {
   updateExistingPlaylist,
   removePlaylist,
   loadPlaylistDetails,
-  currentTrackAtom,
-  isPlayingAtom,
+  currentTrackAtom, // New: Import currentTrackAtom
+  isPlayingAtom,    // New: Import isPlayingAtom
 } from '@/stores/spotifyStore';
 import { useStore } from '@nanostores/react';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -821,6 +821,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
     playlists,
     isLoadingPlaylists,
     playlistError,
+    // Removed currentTrack and isPlaying from here as they are separate atoms
     paginatedAudioFiles, // New: for Audios tab
     audioPagination, // New: for Audios tab
     isFetchingPaginatedAudio, // New: for Audios tab
@@ -1033,6 +1034,8 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
     const mediaFileToPlay = allAvailableMediaFiles.find((m) => m.id === track.mediaFileId);
     if (mediaFileToPlay) {
       playTrack(mediaFileToPlay, [track]);
+    } else {
+      showSnackbar(`Media file for artist's top track '${track.title}' not found.`, 'error');
     }
   };
 

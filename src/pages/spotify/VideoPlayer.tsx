@@ -1,31 +1,49 @@
-// src/components/spotify/VideoPlayer.tsx
-import React, { useEffect } from "react";
-import VideoJSPlayer from "@/components/VideoJSPlayer";
-import type Player from "video.js/dist/types/player";
+import React from "react";
+import Html5VideoPlayer from "@/components/Html5VideoPlayer";
 
+/**
+ * Props for the VideoPlayer component.
+ */
 type VideoPlayerProps = {
   src: string;
   mediaElementRef: React.MutableRefObject<HTMLMediaElement | null>;
-  options: Record<string, any>;
+  autoplay?: boolean;
+  controls?: boolean;
+  loop?: boolean;
+  muted?: boolean;
+  className?: string;
+  onPlayerReady: (htmlMediaElement: HTMLVideoElement) => void;
 };
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, mediaElementRef, options }) => {
-  // Ensure the video element from video.js is assigned to your shared ref
-  const handleReady = (player: Player) => {
-    mediaElementRef.current = player.el() as HTMLVideoElement;
+/**
+ * `VideoPlayer` is a wrapper around `Html5VideoPlayer` to provide a consistent
+ * interface for video playback within the Spotify app. It ensures the underlying
+ * HTML5 video element is correctly assigned to the shared `mediaElementRef`.
+ */
+const VideoPlayer: React.FC<VideoPlayerProps> = ({
+  src,
+  mediaElementRef,
+  autoplay = false,
+  controls = false,
+  loop = false,
+  muted = false,
+  className = "",
+  onPlayerReady,
+}) => {
+  // Ensure the video element from Html5VideoPlayer is assigned to your shared ref
+  const handleReady = (htmlMediaElement: HTMLVideoElement) => {
+    mediaElementRef.current = htmlMediaElement; // Set the unified media element ref to the actual video element
+    onPlayerReady(htmlMediaElement); // Pass the HTML element up to SpotifyAppPage
   };
 
   return (
-    <VideoJSPlayer
-      options={{
-        ...options,
-        sources: [
-          {
-            src,
-            type: options?.sources?.[0]?.type || "video/mp4",
-          },
-        ],
-      }}
+    <Html5VideoPlayer
+      src={src}
+      autoplay={autoplay}
+      controls={controls}
+      loop={loop}
+      muted={muted}
+      className={className}
       onReady={handleReady}
     />
   );
