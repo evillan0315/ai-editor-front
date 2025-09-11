@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { useStore } from '@nanostores/react';
-import { $spotifyStore, playTrack } from '@/stores/spotifyStore';
+import { $spotifyStore, playTrack, isPlayingAtom, currentTrackAtom } from '@/stores/spotifyStore';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 import AlbumIcon from '@mui/icons-material/Album';
 import MovieIcon from '@mui/icons-material/Movie';
@@ -27,7 +27,12 @@ interface SpotifySearchPageProps {
 
 const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
   const theme = useTheme();
-  const { allAvailableMediaFiles, isPlaying, currentTrack } = useStore($spotifyStore);
+  const { allAvailableMediaFiles } = useStore($spotifyStore);
+
+  // Directly get isPlaying and currentTrack from their respective atoms
+  const isPlaying = useStore(isPlayingAtom);
+  const currentTrack = useStore(currentTrackAtom);
+
   const [searchTerm, setSearchTerm] = React.useState('');
 
   // Filter for all playable media (audio and video)

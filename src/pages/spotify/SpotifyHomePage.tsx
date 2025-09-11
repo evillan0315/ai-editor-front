@@ -16,7 +16,9 @@ import { useStore } from '@nanostores/react';
 import {
   $spotifyStore,
   playTrack,
-  fetchMediaForPurpose, // Use fetchMediaForPurpose
+  fetchMediaForPurpose,
+  isPlayingAtom,
+  currentTrackAtom,
 } from '@/stores/spotifyStore';
 import AlbumIcon from '@mui/icons-material/Album';
 import MovieIcon from '@mui/icons-material/Movie'; // Import MovieIcon for video
@@ -33,9 +35,11 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
     allAvailableMediaFiles,
     isFetchingMedia,
     fetchMediaError,
-    isPlaying,
-    currentTrack,
   } = useStore($spotifyStore);
+
+  // Directly get isPlaying and currentTrack from their respective atoms
+  const isPlaying = useStore(isPlayingAtom);
+  const currentTrack = useStore(currentTrackAtom);
 
   useEffect(() => {
     // Fetch media files when the component mounts if not already fetched
