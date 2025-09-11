@@ -23,7 +23,7 @@ import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 import * as path from 'path-browserify';
 
 import DirectoryPickerDialog from './DirectoryPickerDialog'; // Reuse existing picker
-import { FileEntry, CopyResult, MoveResult } from '@/types';
+import { FileEntry, CopyResult, MoveResult } from '@/types'; // Fixed import
 import { copyFile as apiCopyFile, moveFile as apiMoveFile } from '@/api/file';
 
 interface OperationPathDialogProps {

@@ -1,3 +1,4 @@
+import { MediaFileResponseDto } from './media'; // Explicitly import MediaFileResponseDto
 export * from './media';
 
 /**
@@ -19,7 +20,7 @@ export interface Track {
   duration?: number; // Duration in seconds, if available
   mediaSrc: string; // The direct stream URL for playback (can be audio or video)
   // Include other relevant MediaFileResponseDto properties that are useful for a Track
-  fileType: FileType;
+  fileType: MediaFileResponseDto['fileType']; // Use indexed access type
   mimeType?: MediaFileResponseDto['mimeType'];
   size?: MediaFileResponseDto['size'];
   provider?: MediaFileResponseDto['provider'];

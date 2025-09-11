@@ -7,6 +7,8 @@ import {
   RequestType,
   LlmOutputFormat,
   LlmGeneratePayload,
+  LlmReportErrorApiPayload, // Imported from types
+  LlmReportErrorContext, // Imported from types
 } from '@/types';
 import {
   INSTRUCTION,
@@ -14,9 +16,7 @@ import {
 } from '@/constants';
 import {
   applyProposedChanges as apiApplyProposedChanges,
-  LlmReportErrorApiPayload,
-  LlmReportErrorContext,
-} from '@/api/llm'; // Import LlmReportErrorApiPayload and Context
+} from '@/api/llm';
 import { runTerminalCommand } from '@/api/terminal';
 import { writeFileContent } from '@/api/file';
 
@@ -47,7 +47,7 @@ export const aiEditorStore = map<AiEditorState>({
   commandExecutionError: null,
   openedFile: null,
   openedFileContent: null,
-  initialFileContentSnapshot: null, // New: Snapshot of content when file was last loaded/saved
+  initialFileContentSnapshot: null,
   isFetchingFileContent: false,
   fetchFileContentError: null,
   isSavingFileContent: false,
@@ -60,7 +60,7 @@ export const aiEditorStore = map<AiEditorState>({
   snackbar: {
     open: false,
     message: '',
-    severity: null,
+    severity: undefined, // Changed from null to undefined
   },
 });
 
@@ -134,7 +134,7 @@ export const clearState = () => {
     commandExecutionError: null,
     openedFile: null,
     openedFileContent: null,
-    initialFileContentSnapshot: null, // Clear on full state clear
+    initialFileContentSnapshot: null,
     isFetchingFileContent: false,
     fetchFileContentError: null,
     isSavingFileContent: false,
@@ -147,7 +147,7 @@ export const clearState = () => {
     snackbar: {
       open: false,
       message: '',
-      severity: null,
+      severity: undefined, // Changed from null to undefined
     },
   });
 };
@@ -158,7 +158,6 @@ export const setScanPathsInput = (paths: string) => {
 
 export const setLastLlmResponse = (response: ModelResponse | null) => {
   aiEditorStore.setKey('lastLlmResponse', response);
-  // Auto-select all changes when a new response comes in (for manual apply)
   if (response && response.changes) {
     const newSelectedChanges: Record<string, FileChange> = {};
     response.changes.forEach((change) => {
@@ -167,7 +166,6 @@ export const setLastLlmResponse = (response: ModelResponse | null) => {
     aiEditorStore.setKey('selectedChanges', newSelectedChanges);
   }
   aiEditorStore.setKey('gitInstructions', response?.gitInstructions || null);
-  // Clear selected changes if no response or no changes
   if (!response || !response.changes) {
     aiEditorStore.setKey('selectedChanges', {});
   }
@@ -375,7 +373,7 @@ export const setOpenedFile = (filePath: string | null) => {
     addOpenedTab(filePath);
   }
   aiEditorStore.setKey('openedFileContent', null);
-  aiEditorStore.setKey('initialFileContentSnapshot', null); // Clear snapshot when changing opened file
+  aiEditorStore.setKey('initialFileContentSnapshot', null);
   aiEditorStore.setKey('isFetchingFileContent', false);
   aiEditorStore.setKey('fetchFileContentError', null);
   aiEditorStore.setKey('isSavingFileContent', false);
@@ -385,7 +383,6 @@ export const setOpenedFile = (filePath: string | null) => {
 
 export const setOpenedFileContent = (content: string | null) => {
   aiEditorStore.setKey('openedFileContent', content);
-  // isOpenedFileDirty is now computed in OpenedFileViewer based on initialFileContentSnapshot
   aiEditorStore.setKey('saveFileContentError', null);
 };
 
@@ -473,8 +470,8 @@ export const saveActiveFile = async () => {
   try {
     const result = await writeFileContent(openedFile, openedFileContent);
     if (result.success) {
-      setInitialFileContentSnapshot(openedFileContent); // Update snapshot to new saved content
-      setIsOpenedFileDirty(false); // Mark as clean after saving
+      setInitialFileContentSnapshot(openedFileContent);
+      setIsOpenedFileDirty(false);
       showGlobalSnackbar(`File saved: ${openedFile}`, 'success');
     } else {
       setSaveFileContentError(result.message || 'Failed to save file.');
@@ -510,17 +507,13 @@ export const discardActiveFileChanges = () => {
       'Are you sure you want to discard unsaved changes? This action cannot be undone.',
     )
   ) {
-    setOpenedFileContent(initialFileContentSnapshot); // Revert to snapshot
-    setIsOpenedFileDirty(false); // Mark as clean
-    setSaveFileContentError(null); // Clear any save errors
+    setOpenedFileContent(initialFileContentSnapshot);
+    setIsOpenedFileDirty(false);
+    setSaveFileContentError(null);
     showGlobalSnackbar('Changes discarded.', 'info');
   }
 };
 
-/**
- * Orchestrates post-application actions: running a build script and then AI-suggested Git commands.
- * This function centralizes logic used by both manual and auto-apply flows.
- */
 export const performPostApplyActions = async (
   projectRoot: string,
   llmResponse: ModelResponse,
@@ -529,8 +522,7 @@ export const performPostApplyActions = async (
 ) => {
   const state = aiEditorStore.get();
 
-  // Run the build script
-  setIsBuilding(true); // Start build-specific loading indicator
+  setIsBuilding(true);
   let buildPassed = false;
   try {
     const buildResult = await runTerminalCommand('pnpm run build', projectRoot);
@@ -540,7 +532,6 @@ export const performPostApplyActions = async (
       setError(
         `Build failed with exit code ${buildResult.exitCode}. Check output.`,
       );
-      // Removed reportErrorToLlm call here
     } else {
       setAppliedMessages([
         ...state.appliedMessages,
@@ -553,12 +544,10 @@ export const performPostApplyActions = async (
     setError(
       `Failed to run build script: ${buildError instanceof Error ? buildError.message : String(buildError)}`,
     );
-    // Removed reportErrorToLlm call here
   } finally {
-    setIsBuilding(false); // End build-specific loading indicator
+    setIsBuilding(false);
   }
 
-  // If build was successful, proceed to run git instructions
   if (
     buildPassed &&
     llmResponse?.gitInstructions &&
@@ -576,7 +565,6 @@ export const performPostApplyActions = async (
       ]);
       try {
         const gitExecResult = await runTerminalCommand(command, projectRoot);
-        // Append individual command results to applied messages for visibility
         setAppliedMessages([
           ...aiEditorStore.get().appliedMessages,
           `Git command output for \`${command}\` (Exit Code: ${gitExecResult.exitCode}):`,
@@ -587,18 +575,16 @@ export const performPostApplyActions = async (
         if (gitExecResult.exitCode !== 0) {
           const errMsg = `Git command failed: \`${command}\` (Exit Code: ${gitExecResult.exitCode}). See stderr above.`;
           setAppliedMessages([...aiEditorStore.get().appliedMessages, errMsg]);
-          setError(errMsg); // Show a persistent error for failed git command
+          setError(errMsg);
           gitCommandsSuccessful = false;
-          // Removed reportErrorToLlm call here
-          break; // Stop executing further git commands on first failure
+          break;
         }
       } catch (gitExecError) {
         const errMsg = `Failed to execute git command \`${command}\`: ${gitExecError instanceof Error ? gitExecError.message : String(gitExecError)}`;
         setAppliedMessages([...aiEditorStore.get().appliedMessages, errMsg]);
         setError(errMsg);
         gitCommandsSuccessful = false;
-        // Removed reportErrorToLlm call here
-        break; // Stop executing further git commands on first failure
+        break;
       }
     }
     if (gitCommandsSuccessful) {
@@ -615,12 +601,6 @@ export const performPostApplyActions = async (
   }
 };
 
-/**
- * Applies all provided changes to the file system.
- * This is typically used for automated application of AI responses.
- * @param changes An array of FileChange objects to apply.
- * @param projectRoot The root directory of the project.
- */
 export const applyAllProposedChanges = async (
   changes: FileChange[],
   projectRoot: string,
@@ -643,11 +623,11 @@ export const applyAllProposedChanges = async (
   }
 
   setApplyingChanges(true);
-  setError(null); // Clear previous error
+  setError(null);
   setAppliedMessages([]);
-  setBuildOutput(null); // Clear previous build output before applying changes
-  setIsBuilding(false); // Ensure building state is reset
-  setCommandExecutionError(null); // Clear any previous individual git command outputs
+  setBuildOutput(null);
+  setIsBuilding(false);
+  setCommandExecutionError(null);
   setCommandExecutionOutput(null);
 
   try {
@@ -657,9 +637,7 @@ export const applyAllProposedChanges = async (
       setError(
         'Some changes failed to apply during automation. Check messages above.',
       );
-      // Removed reportErrorToLlm call here
     } else {
-      // If changes applied successfully, perform post-apply actions (build + git)
       await performPostApplyActions(
         projectRoot,
         state.lastLlmResponse,
@@ -670,7 +648,6 @@ export const applyAllProposedChanges = async (
           .filter(Boolean),
       );
     }
-    // Clear the AI response and selected changes after applying automatically
     setLastLlmResponse(null);
     deselectAllChanges();
     clearDiff();
@@ -678,7 +655,6 @@ export const applyAllProposedChanges = async (
     setError(
       `Overall failure during automatic application of changes: ${err instanceof Error ? err.message : String(err)}`,
     );
-    // Removed reportErrorToLlm call here
   } finally {
     setApplyingChanges(false);
   }

@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import AppsIcon from '@mui/icons-material/Apps';
-import { AppDefinition } from '@/types';
+import { AppDefinition } from '@/types'; // Fixed import
 
 interface AppsMenuContentProps {
   apps: AppDefinition[];

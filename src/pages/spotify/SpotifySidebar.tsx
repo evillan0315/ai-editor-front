@@ -16,7 +16,7 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import RssFeedIcon from '@mui/icons-material/RssFeed';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
-import SettingsIcon from '@mui/icons-material/Settings';
+import SettingsIcon from '@mui/icons-material/Settings'; // New: Import SettingsIcon
 import { useStore } from '@nanostores/react';
 import { $spotifyStore } from '@/stores/spotifyStore';
 
@@ -35,7 +35,7 @@ const SpotifySidebar: React.FC<SpotifySidebarProps> = ({
     { text: 'Home', icon: HomeIcon, view: 'home' as const },
     { text: 'Search', icon: SearchIcon, view: 'search' as const },
     { text: 'Your Library', icon: LibraryMusicIcon, view: 'library' as const },
-    { text: 'Settings', icon: SettingsIcon, view: 'settings' as const },
+    { text: 'Settings', icon: SettingsIcon, view: 'settings' as const }, // New: Added Settings item
   ];
 
   const secondaryNavItems = [

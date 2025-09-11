@@ -8,7 +8,7 @@ import {
 } from '@mui/material'; // Import CircularProgress
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { FileEntry } from '@/types/fileTree';
+import { FileEntry } from '@/types/refactored/fileTree'; // Fixed import
 import {
   toggleDirExpansion,
   setSelectedFile,
@@ -28,8 +28,9 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
   projectRoot,
   onContextMenu,
 }) => {
-  const { expandedDirs, selectedFile, loadingChildren } =
-    useStore(fileTreeStore);
+  const { expandedDirs, selectedFile, loadingChildren } = useStore(
+    fileTreeStore,
+  );
   const theme = useTheme();
   const isExpanded = expandedDirs.has(fileEntry.path);
   const isSelected = selectedFile === fileEntry.path;

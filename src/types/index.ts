@@ -1,13 +1,78 @@
-import {
-  FileChange,
-  ModelResponse,
-  type FileAction,
-  AddOrModifyFileChange,
-  DeleteOrAnalyzeFileChange,
-} from '@/constants';
+import { AlertColor } from '@mui/material';
+
+// Existing exports from refactored sub-modules
 export * from './refactored/fileTree';
 export * from './refactored/media';
 export * from './refactored/spotify';
+export * from './auth';
+
+// --- New/Redefined Types for LLM and File Operations ---
+
+// File Actions for AI-generated changes
+export enum FileAction {
+  ADD = 'add',
+  MODIFY = 'modify',
+  DELETE = 'delete',
+  REPAIR = 'repair',
+  ANALYZE = 'analyze',
+}
+
+// Base interface for file changes
+export interface BaseFileChange {
+  filePath: string; // Absolute path to the file
+  reason?: string;
+  action: FileAction;
+}
+
+// Specific types for different file change actions
+export interface AddOrModifyFileChange extends BaseFileChange {
+  action: FileAction.ADD | FileAction.MODIFY | FileAction.REPAIR;
+  newContent: string;
+}
+
+export interface DeleteOrAnalyzeFileChange extends BaseFileChange {
+  action: FileAction.DELETE | FileAction.ANALYZE;
+  newContent?: never; // Delete and analyze actions don't have new content
+}
+
+// Union type for all possible file changes
+export type FileChange = AddOrModifyFileChange | DeleteOrAnalyzeFileChange;
+
+// Model Response structure from LLM
+export interface ModelResponse {
+  summary: string;
+  thoughtProcess?: string;
+  changes: FileChange[];
+  gitInstructions?: string[];
+  requestType: RequestType;
+  outputFormat: LlmOutputFormat;
+  rawResponse?: string; // For debugging or display of raw LLM output
+  error?: string; // If the LLM itself reports an error in its structured response
+  buildScript?: string; // New: Optional build script from LLM response
+}
+
+// API Results for file operations
+export interface FileOperationResult {
+  success: boolean;
+  message: string;
+  filePath?: string; // Path of the file involved in the operation
+  error?: string;
+}
+
+export interface RenameResult extends FileOperationResult {
+  oldPath?: string;
+  newPath?: string;
+}
+
+export interface CopyResult extends FileOperationResult {
+  sourcePath?: string;
+  destinationPath?: string;
+}
+
+export interface MoveResult extends FileOperationResult {
+  sourcePath?: string;
+  destinationPath?: string;
+}
 
 export interface FileContentResponse {
   content: string;
@@ -65,8 +130,6 @@ export enum ScriptStatus {
   ERROR = 'ERROR',
 }
 
-// Re-export LlmGeneratePayload from '@/api/llm' if it's meant to be global
-// Or define it here if it's truly a type specific to 'types/index'
 export interface LlmRelevantFile {
   filePath: string;
   relativePath: string;
@@ -88,8 +151,6 @@ export interface LlmGeneratePayload {
   output?: LlmOutputFormat; // New: Desired output format for the LLM response
 }
 
-// New: Interface for reporting errors to LLM (Frontend's original payload structure)
-// This is now aliased in src/api/llm.ts as FrontendLlmReportErrorPayload
 export interface LlmReportErrorPayload {
   error: string; // The error message
   errorDetails?: string; // Additional details like stack trace or stderr
@@ -101,7 +162,6 @@ export interface LlmReportErrorPayload {
   buildOutput?: TerminalCommandResponse | null; // The full output of the failed build command
 }
 
-// New: Mirroring backend DTO structure for LlmReportError for frontend API calls
 export interface LlmReportErrorContext {
   originalUserPrompt?: string; // From originalLlmGeneratePayload.userPrompt
   systemInstruction?: string; // From originalLlmGeneratePayload.additionalInstructions
@@ -110,22 +170,22 @@ export interface LlmReportErrorContext {
 }
 
 export interface LlmReportErrorApiPayload {
-  // This will be the type sent to the backend
-  errorDetails: string; // Combination of frontend error and errorDetails + buildOutput
+  errorDetails: string;
   projectRoot: string;
   context: LlmReportErrorContext;
-  scanPaths?: string[]; // Made optional to match backend DTO
+  scanPaths?: string[];
 }
 
+// --- AiEditorState (Updated) ---
 export interface AiEditorState {
   instruction: string;
-  aiInstruction: string; // Editable version of INSTRUCTION constant
-  expectedOutputInstruction: string; // Editable version of ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT constant
-  requestType: RequestType; // New field for selecting request type
-  llmOutputFormat: LlmOutputFormat; // New field for selecting LLM output format
-  uploadedFileData: string | null; // Base64 content of an uploaded file/image
+  aiInstruction: string;
+  expectedOutputInstruction: string;
+  requestType: RequestType;
+  llmOutputFormat: LlmOutputFormat;
+  uploadedFileData: string | null;
   uploadedFileName: string | null; // New: Name of the uploaded file/image
-  uploadedFileMimeType: string | null; // Mime type of the uploaded file/image
+  uploadedFileMimeType: string | null;
   currentProjectPath: string | null;
   response: string | null; // AI's last raw response string
   loading: boolean;
@@ -144,6 +204,7 @@ export interface AiEditorState {
   commandExecutionError: string | null; // New: Error from the last git command execution
   openedFile: string | null; // Path of the file currently opened in the right editor panel
   openedFileContent: string | null; // Content of the file currently opened
+  initialFileContentSnapshot: string | null; // NEW: Added to AiEditorState
   isFetchingFileContent: boolean; // Loading state for fetching opened file content
   fetchFileContentError: string | null; // Error state for fetching opened file content
   isSavingFileContent: boolean; // New: Loading state for saving opened file content
@@ -156,37 +217,30 @@ export interface AiEditorState {
   snackbar: {
     open: boolean;
     message: string;
-    severity: 'success' | 'error' | 'info' | null;
+    severity: AlertColor | undefined;
   }; // New: Global snackbar state
 }
 
-export interface TranslatorState {
-  inputText: string;
-  uploadedFileData: string | null;
-  uploadedFileName: string | null; // To display the name of the uploaded file
-  uploadedFileMimeType: string | null;
-  targetLanguage: string;
-  translatedContent: string | null;
-  loading: boolean;
-  error: string | null;
+// --- App Definition (for AppsMenuContent) ---
+export interface AppDefinition {
+  id: string;
+  title: string;
+  description: string;
+  link: string;
+  icon: React.ElementType; // For Material UI Icons
+  linkText?: string; // NEW: Added linkText property
+  requestType?: RequestType; // Optional, for apps that pre-configure AI editor
+  llmOutputFormat?: LlmOutputFormat; // Optional, for apps that pre-configure AI editor
 }
 
-// Context Menu Types (for FileTree and potentially other areas)
-export interface ContextMenuItem {
-  type?: 'item' | 'divider' | 'header';
-  label?: string;
-  icon?: React.ReactNode; // Can be a Material Icon component or other ReactNode
-  action?: (file: FileEntry) => void;
-  className?: string;
-  disabled?: boolean;
-}
-
-export interface ContextMenuState {
-  visible: boolean;
-  x: number;
-  y: number;
-  items: ContextMenuItem[];
-  targetFile: FileEntry | null; // The FileEntry that the context menu was opened for
+// --- Profile Menu Item Definition (for ProfileMenuContent) ---
+export interface ProfileMenuItem {
+  id: string;
+  title: string;
+  description?: string;
+  link?: string;
+  action?: 'logout'; // Specific action for logout
+  icon: React.ElementType; // For Material UI Icons
 }
 
 // --- Gemini Live Audio Types (mirroring backend DTOs) ---
@@ -380,12 +434,21 @@ export interface PaginationProjectResultDto {
   totalPages: number;
 }
 
-export {
-  type FileChange,
-  type ModelResponse,
-  FileAction,
-  type AddOrModifyFileChange,
-  type DeleteOrAnalyzeFileChange,
-};
+// Context Menu Types (for FileTree and potentially other areas)
+import { FileEntry } from './refactored/fileTree'; // Import FileEntry specifically for ContextMenuItem
+export interface ContextMenuItem {
+  type?: 'item' | 'divider' | 'header';
+  label?: string;
+  icon?: React.ReactNode; // Can be a Material Icon component or other ReactNode
+  action?: (file: FileEntry) => void;
+  className?: string;
+  disabled?: boolean;
+}
 
-export * from './auth';
+export interface ContextMenuState {
+  visible: boolean;
+  x: number;
+  y: number;
+  items: ContextMenuItem[];
+  targetFile: FileEntry | null; // The FileEntry that the context menu was opened for
+}

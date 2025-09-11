@@ -17,9 +17,9 @@ import { useStore } from '@nanostores/react';
 import { $spotifyStore, playTrack } from '@/stores/spotifyStore';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 import AlbumIcon from '@mui/icons-material/Album';
-import MovieIcon from '@mui/icons-material/Movie'; // New: Import MovieIcon
+import MovieIcon from '@mui/icons-material/Movie';
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';
-import { FileType } from '@/types/refactored/spotify'; // Import FileType
+import { FileType } from '@/types/refactored/spotify';
 
 interface SpotifySearchPageProps {
   // No specific props for now
@@ -33,8 +33,7 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
   // Filter for all playable media (audio and video)
   const playableMedia = allAvailableMediaFiles.filter(
     (media) =>
-      (media.fileType === FileType.AUDIO || media.fileType === FileType.VIDEO) &&
-      (media.metadata?.data?.duration || 0) > 0,
+      (media.fileType === FileType.AUDIO || media.fileType === FileType.VIDEO),
   );
 
   const filteredTracks = React.useMemo(() => {

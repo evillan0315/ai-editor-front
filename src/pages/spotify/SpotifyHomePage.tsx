@@ -16,11 +16,11 @@ import { useStore } from '@nanostores/react';
 import {
   $spotifyStore,
   playTrack,
-  fetchAllMediaFiles,
+  fetchMediaForPurpose, // Use fetchMediaForPurpose
 } from '@/stores/spotifyStore';
 import AlbumIcon from '@mui/icons-material/Album';
-import MovieIcon from '@mui/icons-material/Movie'; // New: Import MovieIcon
-import { MediaFileResponseDto, FileType } from '@/types/refactored/spotify'; // Import FileType
+import MovieIcon from '@mui/icons-material/Movie'; // Import MovieIcon for video
+import { MediaFileResponseDto, FileType } from '@/types/refactored/spotify';
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';
 
 interface SpotifyHomePageProps {
@@ -39,21 +39,22 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
 
   useEffect(() => {
     // Fetch media files when the component mounts if not already fetched
+    // Use 'general' purpose to populate allAvailableMediaFiles, with reset: true
     if (allAvailableMediaFiles.length === 0 && !isFetchingMedia) {
-      fetchAllMediaFiles({ page: 1, pageSize: 50 }); // Fetch all for now, could add pagination later
+      fetchMediaForPurpose({ page: 1, pageSize: 200 }, 'general', true); // Fetch a larger set for general use
     }
   }, [allAvailableMediaFiles.length, isFetchingMedia]);
 
   // Filter for audio files
   const playableAudioTracks: MediaFileResponseDto[] = allAvailableMediaFiles.filter(
     (media) =>
-      media.fileType === FileType.AUDIO && (media.metadata?.data?.duration || 0) > 0,
+      media.fileType === FileType.AUDIO,
   );
 
   // Filter for video files
   const playableVideoTracks: MediaFileResponseDto[] = allAvailableMediaFiles.filter(
     (media) =>
-      media.fileType === FileType.VIDEO && (media.metadata?.data?.duration || 0) > 0,
+      media.fileType === FileType.VIDEO,
   );
 
   // Deduplicate artists based on uploader name from metadata (only for audio for now)
@@ -77,6 +78,8 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
           topTrackMediaFile: media,
         });
       }
+      // Note: Currently, only audio files are considered for artists.
+      // If video artists are needed, this logic should be extended.
     });
     return Array.from(artistsMap.values());
   }, [playableAudioTracks]);

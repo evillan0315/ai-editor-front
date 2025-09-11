@@ -19,7 +19,7 @@ import {
   setSelectedFile,
 } from '@/stores/fileTreeStore';
 import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
-import { FileEntry } from '@/types/fileTree';
+import { FileEntry } from '@/types/refactored/fileTree'; // Fixed import
 import { ContextMenuItem } from '@/types';
 import {
   showFileTreeContextMenu,

@@ -17,7 +17,7 @@ import {
   IconButton,
   Typography,
   TextField as MuiTextField,
-  InputAdornment, // Added InputAdornment import
+  InputAdornment,
   useTheme,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -26,8 +26,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import { useStore } from '@nanostores/react';
 import { fileTreeStore, loadInitialTree } from '@/stores/fileTreeStore';
 import { aiEditorStore } from '@/stores/aiEditorStore';
-import { FileEntry } from '@/types/fileTree'; // Import FileEntry
-import { getFileTypeIcon } from '@/constants/fileIcons'; // Import the new utility
+import { FileEntry } from '@/types/refactored/fileTree'; // Corrected import path for FileEntry
+import { getFileTypeIcon } from '@/constants/fileIcons';
 
 interface FilePickerDialogProps {
   open: boolean;
@@ -40,9 +40,6 @@ interface FilePickerDialogProps {
 const flattenTree = (nodes: FileEntry[]): FileEntry[] => {
   let flat: FileEntry[] = [];
   nodes.forEach((node) => {
-    // Exclude the root folder itself if its relative path is just '.'
-    // But include it if it's a folder in the tree, allowing users to explicitly select the project root.
-    // For scan paths, '.' might be valid, so let's keep it generally, and rely on the filter below if specific exclusion is needed.
     flat.push(node);
     if (node.type === 'folder' && node.children) {
       flat = flat.concat(flattenTree(node.children));
@@ -62,25 +59,22 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
     isFetchingTree,
     fetchTreeError,
     lastFetchedProjectRoot,
-  } = useStore(fileTreeStore); // Use 'files' (the tree)
-  const { currentProjectPath } = useStore(aiEditorStore); // Use currentProjectPath to derive relative paths if needed, though FileEntry should have it now
+  } = useStore(fileTreeStore);
+  const { currentProjectPath } = useStore(aiEditorStore);
   const theme = useTheme();
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    // Load initial tree if dialog opens and project root is set but not yet loaded in fileTreeStore
     if (open && currentProjectPath && !lastFetchedProjectRoot) {
       loadInitialTree(currentProjectPath);
     }
   }, [open, currentProjectPath, lastFetchedProjectRoot]);
 
   useEffect(() => {
-    // Initialize selected paths when dialog opens based on currentScanPaths
     if (open) {
       setSelectedPaths(new Set(currentScanPaths));
     }
-    // Clear selection when dialog closes
     if (!open) {
       setSelectedPaths(new Set());
       setSearchTerm('');
@@ -99,7 +93,6 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
     });
   }, []);
 
-  // Flatten the entire tree whenever `treeFiles` changes
   const allFilesAndFolders = useMemo(() => {
     return flattenTree(treeFiles);
   }, [treeFiles]);
@@ -110,13 +103,12 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
     return allFilesAndFolders.filter(
       (file) =>
         file.path.toLowerCase().includes(lowerCaseSearchTerm) ||
-        file.name.toLowerCase().includes(lowerCaseSearchTerm), // Also search by name
+        file.name.toLowerCase().includes(lowerCaseSearchTerm),
     );
   }, [allFilesAndFolders, searchTerm]);
 
   const sortedFiles = useMemo(() => {
     return [...filteredFiles].sort((a, b) => {
-      // Sort folders first, then files, alphabetically by relative path
       if (a.type === 'folder' && b.type !== 'folder') return -1;
       if (a.type !== 'folder' && b.type === 'folder') return 1;
       return a.path.localeCompare(b.path);
@@ -124,7 +116,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
   }, [filteredFiles]);
 
   const handleSelectAll = useCallback(() => {
-    const allFilteredPaths = sortedFiles.map((file) => file.path); // Use path for selection consistency
+    const allFilteredPaths = sortedFiles.map((file) => file.path);
     setSelectedPaths(new Set(allFilteredPaths));
   }, [sortedFiles]);
 
@@ -257,7 +249,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           >
             {sortedFiles.map((fileEntry) => (
               <ListItem
-                key={fileEntry.path} // Use absolute path as key for uniqueness
+                key={fileEntry.path}
                 secondaryAction={
                   <Checkbox
                     edge="end"

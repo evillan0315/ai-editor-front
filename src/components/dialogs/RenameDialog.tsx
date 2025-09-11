@@ -19,7 +19,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import FolderIcon from '@mui/icons-material/FolderOutlined';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import * as path from 'path-browserify';
-import { FileEntry, RenameResult } from '@/types';
+import { FileEntry, RenameResult } from '@/types'; // Fixed import
 import { renameFile as apiRenameFile } from '@/api/file';
 
 interface RenameDialogProps {

@@ -12,7 +12,7 @@ import {
   Avatar,
   Divider,
 } from '@mui/material';
-import type { ProfileMenuItem, UserProfile } from '@/types';
+import type { ProfileMenuItem, UserProfile } from '@/types'; // Fixed import
 
 interface ProfileMenuContentProps {
   profileItems: ProfileMenuItem[];

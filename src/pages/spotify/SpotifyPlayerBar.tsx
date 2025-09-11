@@ -26,7 +26,7 @@ import RepeatIcon from '@mui/icons-material/Repeat';
 import RepeatOneIcon from '@mui/icons-material/RepeatOne';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import AlbumIcon from '@mui/icons-material/Album';
-import MovieIcon from '@mui/icons-material/Movie'; // New: Icon for video
+import MovieIcon from '@mui/icons-material/Movie'; // Import MovieIcon for video
 
 import {
   $spotifyStore,
@@ -40,13 +40,14 @@ import {
   setLoading,
   setError,
 } from '@/stores/spotifyStore';
-import { RepeatMode, FileType } from '@/types/refactored/spotify'; // Import FileType
+import { RepeatMode, FileType } from '@/types/refactored/spotify';
 
 interface SpotifyPlayerBarProps {
-  // No specific props, all state managed by spotifyStore
+  mediaRef: React.RefObject<HTMLMediaElement | null>; // Now receives the active media element ref, allowing null
+  playerBarRef: React.RefObject<HTMLDivElement | null>; // To measure its height, allowing null
 }
 
-const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
+const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBarRef }) => {
   const theme = useTheme();
   const {
     currentTrack,
@@ -59,154 +60,24 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
     error,
   } = useStore($spotifyStore);
 
-  const mediaElementRef = useRef<HTMLMediaElement | null>(null); // Unified ref for audio/video
   const [internalProgress, setInternalProgress] = useState(0);
   const [internalVolume, setInternalVolume] = useState(volume);
   const [isMuted, setIsMuted] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
 
-  // Initialize media element and attach event listeners
+  // Sync volume from store to internal state (for display)
   useEffect(() => {
-    const media = mediaElementRef.current;
-    if (!media) return;
-
-    media.volume = volume / 100;
-    media.autoplay = false;
-
-    const handleTimeUpdate = () => {
-      if (!isSeeking && media && currentTrack) {
-        const newProgress = Math.floor(media.currentTime);
-        if (Math.abs(newProgress - progress) > 0) {
-          setPlaybackProgress(newProgress);
-          setInternalProgress(newProgress);
-        }
-      }
-    };
-
-    const handleVolumeChange = () => {
-      if (media) {
-        setVolume(Math.round(media.volume * 100));
-        setIsMuted(media.muted);
-      }
-    };
-
-    const handleEnded = () => {
-      if (repeatMode === 'track') {
-        media.currentTime = 0;
-        media.play();
-      } else {
-        nextTrack();
-      }
-    };
-
-    const handlePlaying = () => {
-      setLoading(false);
-      setError(null);
-    };
-
-    const handleWaiting = () => {
-      setLoading(true);
-    };
-
-    const handleError = (e: Event) => {
-      const mediaTarget = e.target as HTMLMediaElement;
-      const mediaError = mediaTarget.error;
-      let errorMessage = 'Failed to play media. Please try another file.';
-
-      if (mediaError) {
-        switch (mediaError.code) {
-          case MediaError.MEDIA_ERR_ABORTED:
-            errorMessage = 'Media playback aborted by user.';
-            break;
-          case MediaError.MEDIA_ERR_NETWORK:
-            errorMessage = 'Network error: Media file could not be downloaded.';
-            break;
-          case MediaError.MEDIA_ERR_DECODE:
-            errorMessage =
-              'Media decoding error: The media file is corrupted or unsupported.';
-            break;
-          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-            errorMessage = 'Media format not supported by your browser.';
-            break;
-          default:
-            errorMessage = `Media playback error (${mediaError.code}): ${mediaError.message || 'Unknown error'}.`;
-            break;
-        }
-      }
-      console.error('Media playback error details:', e, mediaError);
-      setError(errorMessage);
-      setLoading(false);
-    };
-
-    media.addEventListener('timeupdate', handleTimeUpdate);
-    media.addEventListener('volumechange', handleVolumeChange);
-    media.addEventListener('ended', handleEnded);
-    media.addEventListener('playing', handlePlaying);
-    media.addEventListener('waiting', handleWaiting);
-    media.addEventListener('error', handleError);
-
-    return () => {
-      media.removeEventListener('timeupdate', handleTimeUpdate);
-      media.removeEventListener('volumechange', handleVolumeChange);
-      media.removeEventListener('ended', handleEnded);
-      media.removeEventListener('playing', handlePlaying);
-      media.removeEventListener('waiting', handleWaiting);
-      media.removeEventListener('error', handleError);
-    };
-  }, [repeatMode, isSeeking, currentTrack, progress, volume]); // Added currentTrack, progress, volume to dependencies
-
-  // Control playback based on isPlaying state
-  useEffect(() => {
-    const media = mediaElementRef.current;
-    if (media) {
-      console.log(media, 'useEffect playerBar');
-      if (isPlaying) {
-        media.play().catch((e) => {
-          console.error('Playback failed:', e);
-          setError('Playback prevented. User interaction required.');
-          togglePlayPause(); // Pause the store if autoplay failed
-        });
-      } else {
-        media.pause();
-      }
-    }
-  }, [isPlaying]);
-
-  // Update media element source when currentTrack changes
-  useEffect(() => {
-    const media = mediaElementRef.current;
-    
-    if (media && currentTrack?.mediaSrc) {
-      setLoading(true);
-      media.src = currentTrack.mediaSrc;
-      media.play().catch((e) => {
-        console.error('New track playback failed:', e);
-        setError('Autoplay failed. Please click play manually.');
-        setLoading(false);
-      });
-    } else if (media && !currentTrack) {
-      media.pause();
-      media.src = '';
-      setPlaybackProgress(0);
-      setInternalProgress(0);
-      setLoading(false);
-    }
-  }, [currentTrack]);
-
-  // Sync volume from store to media element
-  useEffect(() => {
-    if (mediaElementRef.current && mediaElementRef.current.volume * 100 !== volume) {
-      mediaElementRef.current.volume = volume / 100;
-      if (volume > 0 && isMuted) setIsMuted(false);
-      if (volume === 0 && !isMuted) setIsMuted(true);
-    }
     setInternalVolume(volume);
-  }, [volume, isMuted]);
+    if (mediaRef.current) {
+        setIsMuted(mediaRef.current.muted || mediaRef.current.volume === 0);
+    }
+  }, [volume, mediaRef.current]);
 
   // Sync progress from store to internal state (for display)
   useEffect(() => {
     setInternalProgress(progress);
   }, [progress]);
+
 
   const formatTime = (seconds: number) => {
     if (isNaN(seconds) || seconds < 0) return '0:00';
@@ -226,18 +97,19 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
   const handleVolumeSliderChange = useCallback(
     (_event: Event, newValue: number | number[]) => {
       const newVol = newValue as number;
-      if (mediaElementRef.current) {
-        mediaElementRef.current.volume = newVol / 100;
-        if (newVol > 0 && mediaElementRef.current.muted) {
-          mediaElementRef.current.muted = false;
+      const media = mediaRef.current;
+      if (media) {
+        media.volume = newVol / 100;
+        if (newVol > 0 && media.muted) {
+          media.muted = false;
         }
-        if (newVol === 0 && !mediaElementRef.current.muted) {
-          mediaElementRef.current.muted = true;
+        if (newVol === 0 && !media.muted) {
+          media.muted = true;
         }
       }
       setInternalVolume(newVol);
     },
-    [],
+    [mediaRef],
   );
 
   const handleVolumeSliderChangeCommitted = useCallback(
@@ -248,17 +120,19 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
   );
 
   const handleToggleMute = useCallback(() => {
-    if (mediaElementRef.current) {
-      mediaElementRef.current.muted = !mediaElementRef.current.muted;
-      setIsMuted(mediaElementRef.current.muted);
-      if (!mediaElementRef.current.muted && mediaElementRef.current.volume === 0) {
-        mediaElementRef.current.volume = 0.5; // Default volume if unmuting from 0
-        setVolume(50); // Sync store
+    const media = mediaRef.current;
+    if (media) {
+      media.muted = !media.muted;
+      setIsMuted(media.muted);
+      if (!media.muted && media.volume === 0) {
+        // If unmuting from 0 volume, set a default volume
+        media.volume = 0.5;
+        setVolume(50);
       } else {
-        setVolume(Math.round(mediaElementRef.current.volume * 100)); // Sync store
+        setVolume(Math.round(media.volume * 100));
       }
     }
-  }, []);
+  }, [mediaRef]);
 
   const handleProgressSliderChange = useCallback(
     (_event: Event, newValue: number | number[]) => {
@@ -270,18 +144,19 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
 
   const handleProgressSliderChangeCommitted = useCallback(
     (_event: Event | SyntheticEvent, newValue: number | number[]) => {
-      const media = mediaElementRef.current;
+      const media = mediaRef.current;
       if (media && currentTrack) {
         media.currentTime = newValue as number;
         setPlaybackProgress(newValue as number);
       }
       setIsSeeking(false);
     },
-    [currentTrack],
+    [currentTrack, mediaRef],
   );
 
   return (
     <Box
+      ref={playerBarRef} // Attach ref to measure height
       sx={{
         gridArea: 'player',
         bgcolor: theme.palette.background.paper,
@@ -293,28 +168,9 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
         px: 2,
         color: theme.palette.text.primary,
         flexShrink: 0,
+        zIndex: 11, // Ensure player bar is above video overlay
       }}
     >
-      {/* Conditionally render audio or video element */}
-      {currentTrack && currentTrack.mediaSrc && (
-        <>{
-        
-          currentTrack.fileType === FileType.VIDEO ? (
-            <video
-              ref={mediaElementRef as React.RefObject<HTMLVideoElement>}
-              //style={{ display: 'none' }} // Hidden video element
-              preload="metadata"
-            />
-          ) : (
-            <audio
-              ref={mediaElementRef as React.RefObject<HTMLAudioElement>}
-              style={{ display: 'none' }} // Hidden audio element
-              preload="metadata"
-            />
-          )
-        }</>
-      )}
-
       {error && (
         <Box
           sx={{
@@ -371,7 +227,7 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
         )}
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
           <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-            {currentTrack?.name || currentTrack?.title || 'No track playing'}
+            {currentTrack?.title || 'No track playing'}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {currentTrack?.artist || 'Artist Name'}

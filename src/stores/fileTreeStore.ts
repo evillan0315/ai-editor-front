@@ -5,7 +5,6 @@ import {
   aiEditorStore,
   setOpenedFile,
   setIsOpenedFileDirty,
-  addOpenedTab,
 } from './aiEditorStore';
 import { getRelativePath } from '@/utils';
 
@@ -65,7 +64,8 @@ export const setSelectedFile = (filePath: string | null) => {
 
   fileTreeStore.setKey('selectedFile', filePath);
   // When a file is selected in the tree, also set it in aiEditorStore to display its content.
-  setOpenedFile(filePath); // This action now also handles adding to openedTabs
+  // addOpenedTab is implicitly handled by setOpenedFile now
+  setOpenedFile(filePath); 
 };
 
 /**
@@ -250,8 +250,7 @@ export const loadChildrenForDirectory = async (parentPath: string) => {
         ...node,
         isChildrenLoaded: false, // Optionally reset if load failed
         isChildrenLoading: false,
-      }),
-    );
+      }),);
     fileTreeStore.setKey('files', treeWithErrorState);
   } finally {
     newLoadingChildren.delete(parentPath);

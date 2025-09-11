@@ -13,7 +13,7 @@ import {
   PlaylistCreationRequest,
   PlaylistTrackResponseDto,
   PaginationMediaQueryDto,
-  FileType, // NEW: Import FileType
+  FileType,
 } from '@/types/refactored/spotify';
 import {
   fetchPlaylists,
@@ -45,10 +45,20 @@ export interface SpotifyStore {
   playlists: Playlist[];
   isLoadingPlaylists: boolean;
   playlistError: string | null;
-  // New media related state
-  allAvailableMediaFiles: MediaFileResponseDto[]; // All media files fetched from backend
+  // General media related state (for home, search, playlist creation)
+  allAvailableMediaFiles: MediaFileResponseDto[];
   isFetchingMedia: boolean;
   fetchMediaError: string | null;
+  // Paginated audio files state (for Library -> Audios tab)
+  paginatedAudioFiles: MediaFileResponseDto[];
+  audioPagination: { page: number; pageSize: number; totalPages: number; hasMore: boolean; };
+  isFetchingPaginatedAudio: boolean;
+  fetchPaginatedAudioError: string | null;
+  // Paginated video files state (for Library -> Videos tab)
+  paginatedVideoFiles: MediaFileResponseDto[];
+  videoPagination: { page: number; pageSize: number; totalPages: number; hasMore: boolean; };
+  isFetchingPaginatedVideo: boolean;
+  fetchPaginatedVideoError: string | null;
   // Media scan state
   mediaScanPath: string;
   isScanningMedia: boolean;
@@ -72,9 +82,21 @@ export const $spotifyStore = map<SpotifyStore>({
   playlists: [],
   isLoadingPlaylists: false,
   playlistError: null,
+  // General media state
   allAvailableMediaFiles: [],
   isFetchingMedia: false,
   fetchMediaError: null,
+  // Paginated audio state
+  paginatedAudioFiles: [],
+  audioPagination: { page: 1, pageSize: 20, totalPages: 1, hasMore: false },
+  isFetchingPaginatedAudio: false,
+  fetchPaginatedAudioError: null,
+  // Paginated video state
+  paginatedVideoFiles: [],
+  videoPagination: { page: 1, pageSize: 20, totalPages: 1, hasMore: false },
+  isFetchingPaginatedVideo: false,
+  fetchPaginatedVideoError: null,
+  // Media scan state
   mediaScanPath: '',
   isScanningMedia: false,
   mediaScanError: null,
@@ -91,7 +113,14 @@ export const setLoading = (isLoading: boolean) => {
 export const setError = (message: string | null) => {
   $spotifyStore.setKey('error', message);
 };
-
+/**
+ * Sets the playback state (playing or paused).
+ * This is primarily used by the media element's event handlers in SpotifyAppPage
+ * to synchronize the store's `isPlaying` state with the actual media element.
+ */
+export const setPlaying = (status: boolean) => {
+  $spotifyStore.setKey('isPlaying', status);
+};
 /**
  * Plays a specific track and optionally sets up a new queue/history.
  * @param mediaFile The MediaFileResponseDto to play.
@@ -119,7 +148,7 @@ export const playTrack = (
   const trackIndex = contextTracks.findIndex(
     (t) => t.id === trackToPlay.id,
   );
-  let newQueue = [];
+  let newQueue: Track[] = []; // Explicitly type newQueue as Track[]
   if (trackIndex !== -1) {
     newQueue = contextTracks.slice(trackIndex + 1);
     if (state.shuffle) {
@@ -267,21 +296,109 @@ const shuffleArray = <T>(array: T[]): T[] => {
 
 // --- Media File Actions ---
 
-export const fetchAllMediaFiles = async (
-  query?: PaginationMediaQueryDto,
+/**
+ * Fetches media files based on purpose (general, paginated audio, paginated video).
+ * @param query Pagination and filter query.
+ * @param purpose The intended use of the fetched data.
+ * @param reset If true, clears existing data for the purpose before adding new.
+ */
+export const fetchMediaForPurpose = async (
+  query: PaginationMediaQueryDto = {},
+  purpose: 'general' | 'paginatedAudio' | 'paginatedVideo',
+  reset: boolean = false,
 ) => {
-  $spotifyStore.setKey('isFetchingMedia', true);
-  $spotifyStore.setKey('fetchMediaError', null);
+  const state = $spotifyStore.get();
+  let currentFiles: MediaFileResponseDto[] = [];
+  let currentPagination = { page: 1, pageSize: 20, totalPages: 1, hasMore: false };
+
+  // Set loading and error states based on purpose
+  switch (purpose) {
+    case 'general':
+      $spotifyStore.setKey('isFetchingMedia', true);
+      $spotifyStore.setKey('fetchMediaError', null);
+      currentFiles = state.allAvailableMediaFiles;
+      break;
+    case 'paginatedAudio':
+      $spotifyStore.setKey('isFetchingPaginatedAudio', true);
+      $spotifyStore.setKey('fetchPaginatedAudioError', null);
+      currentFiles = state.paginatedAudioFiles;
+      currentPagination = state.audioPagination;
+      break;
+    case 'paginatedVideo':
+      $spotifyStore.setKey('isFetchingPaginatedVideo', true);
+      $spotifyStore.setKey('fetchPaginatedVideoError', null);
+      currentFiles = state.paginatedVideoFiles;
+      currentPagination = state.videoPagination;
+      break;
+  }
+
   try {
-    const result = await apiFetchAllMediaFiles(query);
-    $spotifyStore.setKey('allAvailableMediaFiles', result.items);
+    // Ensure page and pageSize are set for paginated purposes
+    const effectiveQuery = { ...query };
+    // If resetting, ensure page is 1. Otherwise, use current pagination page or query page.
+    if (reset) {
+      effectiveQuery.page = 1;
+    } else if (!effectiveQuery.page) {
+      effectiveQuery.page = currentPagination.page;
+    }
+    if (!effectiveQuery.pageSize) effectiveQuery.pageSize = currentPagination.pageSize;
+
+    const result = await apiFetchAllMediaFiles(effectiveQuery);
+
+    const newItems = result.items.filter(
+      (newItem) => !currentFiles.some((existingItem) => existingItem.id === newItem.id),
+    );
+
+    const updatedFiles = reset ? newItems : [...currentFiles, ...newItems];
+
+    const newPagination = {
+      page: result.page,
+      pageSize: result.pageSize,
+      totalPages: result.totalPages,
+      hasMore: result.page < result.totalPages,
+    };
+
+    // Update store keys based on purpose
+    switch (purpose) {
+      case 'general':
+        $spotifyStore.setKey('allAvailableMediaFiles', updatedFiles);
+        break;
+      case 'paginatedAudio':
+        $spotifyStore.setKey('paginatedAudioFiles', updatedFiles);
+        $spotifyStore.setKey('audioPagination', newPagination);
+        break;
+      case 'paginatedVideo':
+        $spotifyStore.setKey('paginatedVideoFiles', updatedFiles);
+        $spotifyStore.setKey('videoPagination', newPagination);
+        break;
+    }
   } catch (error: any) {
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to load media files.';
-    $spotifyStore.setKey('fetchMediaError', errorMessage);
     showGlobalSnackbar(`Error loading media files: ${errorMessage}`, 'error');
+    switch (purpose) {
+      case 'general':
+        $spotifyStore.setKey('fetchMediaError', errorMessage);
+        break;
+      case 'paginatedAudio':
+        $spotifyStore.setKey('fetchPaginatedAudioError', errorMessage);
+        break;
+      case 'paginatedVideo':
+        $spotifyStore.setKey('fetchPaginatedVideoError', errorMessage);
+        break;
+    }
   } finally {
-    $spotifyStore.setKey('isFetchingMedia', false);
+    switch (purpose) {
+      case 'general':
+        $spotifyStore.setKey('isFetchingMedia', false);
+        break;
+      case 'paginatedAudio':
+        $spotifyStore.setKey('isFetchingPaginatedAudio', false);
+        break;
+      case 'paginatedVideo':
+        $spotifyStore.setKey('isFetchingPaginatedVideo', false);
+        break;
+    }
   }
 };
 
@@ -294,6 +411,8 @@ export const addExtractedMediaFile = (mediaFile: MediaFileResponseDto) => {
       mediaFile,
     ]);
   }
+  // For paginated lists, a full re-fetch of the first page is safer to ensure correct ordering/inclusion
+  // The LibraryPage component will handle triggering this based on the active tab
 };
 
 // --- Playlist Actions ---
@@ -424,16 +543,16 @@ export const addMediaToSpecificPlaylist = async (
   playlistId: string,
   dto: AddRemoveMediaToPlaylistDto,
 ) => {
-  try {
-    await addMediaToPlaylist(playlistId, dto);
-    showGlobalSnackbar('Media added to playlist successfully!', 'success');
-    loadPlaylistDetails(playlistId);
-  } catch (error: any) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to add media to playlist.';
-    showGlobalSnackbar(`Error adding media: ${errorMessage}`, 'error');
-    throw error;
-  }
+    try {
+        await addMediaToPlaylist(playlistId, dto);
+        showGlobalSnackbar('Media added to playlist successfully!', 'success');
+        loadPlaylistDetails(playlistId);
+    } catch (error: any) {
+        const errorMessage =
+        error instanceof Error ? error.message : 'Failed to add media to playlist.';
+        showGlobalSnackbar(`Error adding media: ${errorMessage}`, 'error');
+        throw error;
+    }
 };
 
 export const removeMediaFromSpecificPlaylist = async (
@@ -474,7 +593,7 @@ export const triggerMediaScan = async (directoryPath: string) => {
       'success',
     );
     // After a successful scan, refresh the list of all available media
-    await fetchAllMediaFiles({page:1,pageSize:10});
+    await fetchMediaForPurpose({ page: 1, pageSize: 200 }, 'general', true);
   } catch (error: any) {
     const errorMessage =
       error instanceof Error ? error.message : 'An unknown error occurred.';
