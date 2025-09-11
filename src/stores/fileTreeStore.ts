@@ -1,14 +1,13 @@
 import { map } from 'nanostores';
-import { FileTreeState, FileEntry } from '@/types/fileTree';
-import { FileTreeNode, ApiFileScanResult } from '@/types'; // Import FileTreeNode and ApiFileScanResult
-import { fetchDirectoryContents, fetchScannedFilesForAI } from '@/api/file'; // Updated import
+import { FileTreeState, FileEntry, FileTreeNode, ApiFileScanResult } from '@/types/refactored/fileTree'; // Updated import
+import { fetchDirectoryContents, fetchScannedFilesForAI } from '@/api/file';
 import {
   aiEditorStore,
   setOpenedFile,
   setIsOpenedFileDirty,
   addOpenedTab,
-} from './aiEditorStore'; // Import setOpenedFile and addOpenedTab
-import { getRelativePath } from '@/utils'; // Import getRelativePath
+} from './aiEditorStore';
+import { getRelativePath } from '@/utils';
 
 export const fileTreeStore = map<FileTreeState>({
   files: [], // Hierarchical file tree

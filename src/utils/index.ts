@@ -88,5 +88,9 @@ export function getCodeMirrorLanguage(
   }
 }
 
-export { buildFileTree, joinPaths, getRelativePath } from './fileUtils';
+export * from './fileUtils';
+export * from './mediaUtils';
+
 export { createCodeMirrorTheme };
+
+

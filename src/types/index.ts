@@ -5,9 +5,9 @@ import {
   AddOrModifyFileChange,
   DeleteOrAnalyzeFileChange,
 } from '@/constants';
-export * from './fileTree';
-export * from './media';
-export * from './spotify'; // Import from new spotify types file
+export * from './refactored/fileTree';
+export * from './refactored/media';
+export * from './refactored/spotify';
 
 export interface FileContentResponse {
   content: string;
@@ -389,4 +389,3 @@ export {
 };
 
 export * from './auth';
-export * from './fileTree';

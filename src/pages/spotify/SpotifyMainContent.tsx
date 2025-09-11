@@ -3,9 +3,10 @@ import { Box, useTheme, Typography } from '@mui/material';
 import SpotifyHomePage from './SpotifyHomePage';
 import SpotifySearchPage from './SpotifySearchPage';
 import SpotifyLibraryPage from './SpotifyLibraryPage';
+import SpotifySettingsPage from './SpotifySettingsPage'; // New: Import SpotifySettingsPage
 
 interface SpotifyMainContentProps {
-  currentView: 'home' | 'search' | 'library';
+  currentView: 'home' | 'search' | 'library' | 'settings'; // New: Added 'settings' view
 }
 
 const SpotifyMainContent: React.FC<SpotifyMainContentProps> = ({
@@ -18,13 +19,14 @@ const SpotifyMainContent: React.FC<SpotifyMainContentProps> = ({
       sx={{
         gridArea: 'main',
         bgcolor: theme.palette.background.default,
-        overflowY: 'auto', // Allow main content to scroll
+        overflowY: 'auto',
         p: 3,
       }}
     >
       {currentView === 'home' && <SpotifyHomePage />}
       {currentView === 'search' && <SpotifySearchPage />}
       {currentView === 'library' && <SpotifyLibraryPage />}
+      {currentView === 'settings' && <SpotifySettingsPage />} {/* New: Render Settings page */}
     </Box>
   );
 };

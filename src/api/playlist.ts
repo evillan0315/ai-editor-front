@@ -72,7 +72,7 @@ export const fetchPlaylists = async (
   const response = await playlistApi.get<PaginationPlaylistResultDto>(
     '/paginated',
     { params: query },
-  ); // Use paginated endpoint
+  );
   return response.data;
 };
 

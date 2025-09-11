@@ -1,6 +1,6 @@
 import { map } from 'nanostores';
 import { ContextMenuState, ContextMenuItem } from '@/types';
-import type { FileEntry } from '@/types/fileTree';
+import type { FileEntry } from '@/types/refactored/fileTree'; // Updated import
 
 export const fileTreeContextMenu = map<ContextMenuState>({
   visible: false,

@@ -1,17 +1,8 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Container,
-  Paper,
-  useTheme,
-  Button,
-} from '@mui/material';
-import MusicNoteIcon from '@mui/icons-material/MusicNote';
-import { Link } from 'react-router-dom';
-import SpotifySidebar from './spotify/SpotifySidebar';
-import SpotifyMainContent from './spotify/SpotifyMainContent';
-import SpotifyPlayerBar from './spotify/SpotifyPlayerBar';
+import { Box, useTheme } from '@mui/material';
+import SpotifySidebar from './SpotifySidebar';
+import SpotifyMainContent from './SpotifyMainContent';
+import SpotifyPlayerBar from './SpotifyPlayerBar';
 
 type SpotifyView = 'home' | 'search' | 'library' | 'settings'; // New: Added 'settings' view
 
@@ -24,13 +15,13 @@ const SpotifyAppPage: React.FC = () => {
       sx={{
         display: 'grid',
         gridTemplateAreas: `'sidebar main'
-                            'player player'`,
-        gridTemplateColumns: '250px 1fr',
-        gridTemplateRows: '1fr auto',
-        flexGrow: 1,
+                            'player player'`, // Named grid areas
+        gridTemplateColumns: '250px 1fr', // Fixed sidebar width, main content fills rest
+        gridTemplateRows: '1fr auto', // Main content fills space, player bar is auto height
+        flexGrow: 1, // Fill available vertical space within the parent (Layout's <main>)
         bgcolor: theme.palette.background.default,
         color: theme.palette.text.primary,
-        overflow: 'hidden',
+        overflow: 'hidden', // Prevent scrollbars on the main container
       }}
     >
       <SpotifySidebar currentView={currentView} onSelectView={setCurrentView} />

@@ -1,10 +1,11 @@
-import React, {
-  useRef,
-  useEffect,
-  useState,
-  useCallback,
-  SyntheticEvent,
-} from 'react';
+import React,
+  {
+    useRef,
+    useEffect,
+    useState,
+    useCallback,
+    SyntheticEvent,
+  } from 'react';
 import { useStore } from '@nanostores/react';
 import {
   Box,
@@ -12,23 +13,23 @@ import {
   Slider,
   IconButton,
   useTheme,
-  CircularProgress, // Import CircularProgress for loading indicator
+  CircularProgress,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import VolumeOffIcon from '@mui/icons-material/VolumeOff'; // New: for muted state
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
 import RepeatIcon from '@mui/icons-material/Repeat';
-import RepeatOneIcon from '@mui/icons-material/RepeatOne'; // New: for repeat one track
+import RepeatOneIcon from '@mui/icons-material/RepeatOne';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import FavoriteIcon from '@mui/icons-material/Favorite'; // New: for liked songs
-import AlbumIcon from '@mui/icons-material/Album'; // Placeholder for album art
+import AlbumIcon from '@mui/icons-material/Album';
+import MovieIcon from '@mui/icons-material/Movie'; // New: Icon for video
 
 import {
-  spotifyStore,
+  $spotifyStore,
   togglePlayPause,
   setPlaybackProgress,
   setVolume,
@@ -38,9 +39,8 @@ import {
   previousTrack,
   setLoading,
   setError,
-  Track, // New: Import Track interface
 } from '@/stores/spotifyStore';
-import { RepeatMode } from '@/types'; // Import RepeatMode
+import { RepeatMode, FileType } from '@/types/refactored/spotify'; // Import FileType
 
 interface SpotifyPlayerBarProps {
   // No specific props, all state managed by spotifyStore
@@ -54,31 +54,28 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
     progress,
     volume,
     shuffle,
-    repeat,
+    repeatMode,
     loading,
     error,
-  } = useStore(spotifyStore);
+  } = useStore($spotifyStore);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [internalProgress, setInternalProgress] = useState(0); // For smoother UI updates
+  const mediaElementRef = useRef<HTMLMediaElement | null>(null); // Unified ref for audio/video
+  const [internalProgress, setInternalProgress] = useState(0);
   const [internalVolume, setInternalVolume] = useState(volume);
   const [isMuted, setIsMuted] = useState(false);
-  const [isSeeking, setIsSeeking] = useState(false); // To prevent UI fighting audio.onTimeUpdate
+  const [isSeeking, setIsSeeking] = useState(false);
 
-  // Initialize audio element
+  // Initialize media element and attach event listeners
   useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.volume = volume / 100;
-      audioRef.current.autoplay = false; // We control playback manually
-    }
+    const media = mediaElementRef.current;
+    if (!media) return;
 
-    const audio = audioRef.current;
+    media.volume = volume / 100;
+    media.autoplay = false;
 
     const handleTimeUpdate = () => {
-      if (!isSeeking && audio && currentTrack) {
-        const newProgress = Math.floor(audio.currentTime);
-        // Only update if it's different enough to prevent excessive re-renders
+      if (!isSeeking && media && currentTrack) {
+        const newProgress = Math.floor(media.currentTime);
         if (Math.abs(newProgress - progress) > 0) {
           setPlaybackProgress(newProgress);
           setInternalProgress(newProgress);
@@ -87,18 +84,18 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
     };
 
     const handleVolumeChange = () => {
-      if (audio) {
-        setVolume(Math.round(audio.volume * 100));
-        setIsMuted(audio.muted);
+      if (media) {
+        setVolume(Math.round(media.volume * 100));
+        setIsMuted(media.muted);
       }
     };
 
     const handleEnded = () => {
-      if (repeat === 'track') {
-        audio.currentTime = 0;
-        audio.play();
+      if (repeatMode === 'track') {
+        media.currentTime = 0;
+        media.play();
       } else {
-        nextTrack(); // Plays next track if available, or stops if not repeating context
+        nextTrack();
       }
     };
 
@@ -112,94 +109,94 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
     };
 
     const handleError = (e: Event) => {
-      const audioTarget = e.target as HTMLAudioElement;
-      const mediaError = audioTarget.error;
-      let errorMessage = 'Failed to play audio. Please try another track.';
+      const mediaTarget = e.target as HTMLMediaElement;
+      const mediaError = mediaTarget.error;
+      let errorMessage = 'Failed to play media. Please try another file.';
 
       if (mediaError) {
         switch (mediaError.code) {
           case MediaError.MEDIA_ERR_ABORTED:
-            errorMessage = 'Audio playback aborted by user.';
+            errorMessage = 'Media playback aborted by user.';
             break;
           case MediaError.MEDIA_ERR_NETWORK:
-            errorMessage = 'Network error: Audio file could not be downloaded.';
+            errorMessage = 'Network error: Media file could not be downloaded.';
             break;
           case MediaError.MEDIA_ERR_DECODE:
             errorMessage =
-              'Audio decoding error: The audio file is corrupted or unsupported.';
+              'Media decoding error: The media file is corrupted or unsupported.';
             break;
           case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-            errorMessage = 'Audio format not supported by your browser.';
+            errorMessage = 'Media format not supported by your browser.';
             break;
           default:
-            errorMessage = `Audio playback error (${mediaError.code}): ${mediaError.message || 'Unknown error'}.`;
+            errorMessage = `Media playback error (${mediaError.code}): ${mediaError.message || 'Unknown error'}.`;
             break;
         }
       }
-      console.error('Audio playback error details:', e, mediaError);
+      console.error('Media playback error details:', e, mediaError);
       setError(errorMessage);
       setLoading(false);
     };
 
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('volumechange', handleVolumeChange);
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('playing', handlePlaying);
-    audio.addEventListener('waiting', handleWaiting);
-    audio.addEventListener('error', handleError);
+    media.addEventListener('timeupdate', handleTimeUpdate);
+    media.addEventListener('volumechange', handleVolumeChange);
+    media.addEventListener('ended', handleEnded);
+    media.addEventListener('playing', handlePlaying);
+    media.addEventListener('waiting', handleWaiting);
+    media.addEventListener('error', handleError);
 
     return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('volumechange', handleVolumeChange);
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('playing', handlePlaying);
-      audio.removeEventListener('waiting', handleWaiting);
-      audio.removeEventListener('error', handleError);
+      media.removeEventListener('timeupdate', handleTimeUpdate);
+      media.removeEventListener('volumechange', handleVolumeChange);
+      media.removeEventListener('ended', handleEnded);
+      media.removeEventListener('playing', handlePlaying);
+      media.removeEventListener('waiting', handleWaiting);
+      media.removeEventListener('error', handleError);
     };
-  }, [repeat]); // Add repeat to dependency array
+  }, [repeatMode, isSeeking, currentTrack, progress, volume]); // Added currentTrack, progress, volume to dependencies
 
   // Control playback based on isPlaying state
   useEffect(() => {
-    const audio = audioRef.current;
-    if (audio) {
+    const media = mediaElementRef.current;
+    if (media) {
+      console.log(media, 'useEffect playerBar');
       if (isPlaying) {
-        audio.play().catch((e) => {
+        media.play().catch((e) => {
           console.error('Playback failed:', e);
           setError('Playback prevented. User interaction required.');
-          togglePlayPause(); // Revert UI to paused
+          togglePlayPause(); // Pause the store if autoplay failed
         });
       } else {
-        audio.pause();
+        media.pause();
       }
     }
   }, [isPlaying]);
 
-  // Update audio element source when currentTrack changes
+  // Update media element source when currentTrack changes
   useEffect(() => {
-    const audio = audioRef.current;
-    if (audio && currentTrack?.audioSrc) {
+    const media = mediaElementRef.current;
+    
+    if (media && currentTrack?.mediaSrc) {
       setLoading(true);
-      audio.src = currentTrack.audioSrc;
-      // audio.load(); // Removed explicit audio.load(), setting src implicitly loads
-      audio.play().catch((e) => {
+      media.src = currentTrack.mediaSrc;
+      media.play().catch((e) => {
         console.error('New track playback failed:', e);
         setError('Autoplay failed. Please click play manually.');
         setLoading(false);
-        // Do not togglePlayPause here, let user manually play
       });
-    } else if (audio && !currentTrack) {
-      audio.pause();
-      audio.src = '';
+    } else if (media && !currentTrack) {
+      media.pause();
+      media.src = '';
       setPlaybackProgress(0);
       setInternalProgress(0);
       setLoading(false);
     }
   }, [currentTrack]);
 
-  // Sync volume from store to audio element
+  // Sync volume from store to media element
   useEffect(() => {
-    if (audioRef.current && audioRef.current.volume * 100 !== volume) {
-      audioRef.current.volume = volume / 100;
+    if (mediaElementRef.current && mediaElementRef.current.volume * 100 !== volume) {
+      mediaElementRef.current.volume = volume / 100;
       if (volume > 0 && isMuted) setIsMuted(false);
       if (volume === 0 && !isMuted) setIsMuted(true);
     }
@@ -219,7 +216,7 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
   };
 
   const handlePlayPause = useCallback(() => {
-    if (!currentTrack?.audioSrc) {
+    if (!currentTrack?.mediaSrc) {
       setError('No track selected to play.');
       return;
     }
@@ -229,51 +226,54 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
   const handleVolumeSliderChange = useCallback(
     (_event: Event, newValue: number | number[]) => {
       const newVol = newValue as number;
-      if (audioRef.current) {
-        audioRef.current.volume = newVol / 100;
-        if (newVol > 0 && audioRef.current.muted)
-          audioRef.current.muted = false;
-        if (newVol === 0 && !audioRef.current.muted)
-          audioRef.current.muted = true;
+      if (mediaElementRef.current) {
+        mediaElementRef.current.volume = newVol / 100;
+        if (newVol > 0 && mediaElementRef.current.muted) {
+          mediaElementRef.current.muted = false;
+        }
+        if (newVol === 0 && !mediaElementRef.current.muted) {
+          mediaElementRef.current.muted = true;
+        }
       }
-      setInternalVolume(newVol); // Update local state immediately for responsiveness
+      setInternalVolume(newVol);
     },
     [],
   );
 
   const handleVolumeSliderChangeCommitted = useCallback(
     (_event: Event | SyntheticEvent, newValue: number | number[]) => {
-      setVolume(newValue as number); // Update store on commit
+      setVolume(newValue as number);
     },
     [],
   );
 
   const handleToggleMute = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.muted = !audioRef.current.muted;
-      setIsMuted(audioRef.current.muted);
-      // Optionally, save the mute state or revert volume to previous if unmuting from 0
-      if (!audioRef.current.muted && audioRef.current.volume === 0) {
-        audioRef.current.volume = 0.5; // Default volume if unmuting from 0
+    if (mediaElementRef.current) {
+      mediaElementRef.current.muted = !mediaElementRef.current.muted;
+      setIsMuted(mediaElementRef.current.muted);
+      if (!mediaElementRef.current.muted && mediaElementRef.current.volume === 0) {
+        mediaElementRef.current.volume = 0.5; // Default volume if unmuting from 0
+        setVolume(50); // Sync store
+      } else {
+        setVolume(Math.round(mediaElementRef.current.volume * 100)); // Sync store
       }
-      setVolume(Math.round(audioRef.current.volume * 100)); // Sync store
     }
   }, []);
 
   const handleProgressSliderChange = useCallback(
     (_event: Event, newValue: number | number[]) => {
       setIsSeeking(true);
-      setInternalProgress(newValue as number); // Update local state immediately for responsiveness
+      setInternalProgress(newValue as number);
     },
     [],
   );
 
   const handleProgressSliderChangeCommitted = useCallback(
     (_event: Event | SyntheticEvent, newValue: number | number[]) => {
-      const audio = audioRef.current;
-      if (audio && currentTrack) {
-        audio.currentTime = newValue as number;
-        setPlaybackProgress(newValue as number); // Update store on commit
+      const media = mediaElementRef.current;
+      if (media && currentTrack) {
+        media.currentTime = newValue as number;
+        setPlaybackProgress(newValue as number);
       }
       setIsSeeking(false);
     },
@@ -286,15 +286,35 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
         gridArea: 'player',
         bgcolor: theme.palette.background.paper,
         borderTop: `1px solid ${theme.palette.divider}`,
-        height: '80px', // Fixed height for player bar
+        height: '80px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         px: 2,
         color: theme.palette.text.primary,
-        flexShrink: 0, // Prevent shrinking
+        flexShrink: 0,
       }}
     >
+      {/* Conditionally render audio or video element */}
+      {currentTrack && currentTrack.mediaSrc && (
+        <>{
+        
+          currentTrack.fileType === FileType.VIDEO ? (
+            <video
+              ref={mediaElementRef as React.RefObject<HTMLVideoElement>}
+              //style={{ display: 'none' }} // Hidden video element
+              preload="metadata"
+            />
+          ) : (
+            <audio
+              ref={mediaElementRef as React.RefObject<HTMLAudioElement>}
+              style={{ display: 'none' }} // Hidden audio element
+              preload="metadata"
+            />
+          )
+        }</>
+      )}
+
       {error && (
         <Box
           sx={{
@@ -337,7 +357,12 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
               height: 40,
               marginRight: theme.spacing(1),
               borderRadius: 4,
+              objectFit: 'cover',
             }}
+          />
+        ) : currentTrack?.fileType === FileType.VIDEO ? (
+          <MovieIcon
+            sx={{ fontSize: 40, mr: 1, color: theme.palette.text.secondary }}
           />
         ) : (
           <AlbumIcon
@@ -346,7 +371,7 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
         )}
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
           <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-            {currentTrack?.title || 'No track playing'}
+            {currentTrack?.name || currentTrack?.title || 'No track playing'}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {currentTrack?.artist || 'Artist Name'}
@@ -357,8 +382,7 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
           sx={{ ml: 2, color: theme.palette.text.secondary }}
           disabled={!currentTrack}
         >
-          <FavoriteBorderIcon fontSize="small" />{' '}
-          {/* TODO: Add logic for liked songs */}
+          <FavoriteBorderIcon fontSize="small" />
         </IconButton>
       </Box>
 
@@ -427,12 +451,12 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
             sx={{ color: theme.palette.text.primary }}
             onClick={toggleRepeat}
           >
-            {repeat === 'track' ? (
+            {repeatMode === 'track' ? (
               <RepeatOneIcon fontSize="small" color="primary" />
             ) : (
               <RepeatIcon
                 fontSize="small"
-                color={repeat === 'context' ? 'primary' : 'inherit'}
+                color={repeatMode === 'context' ? 'primary' : 'inherit'}
               />
             )}
           </IconButton>
@@ -514,7 +538,7 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = () => {
         <IconButton
           size="small"
           sx={{ ml: 2, color: theme.palette.text.primary }}
-          disabled // Fullscreen not implemented
+          disabled
         >
           {/* <FullscreenIcon /> */}
         </IconButton>

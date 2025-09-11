@@ -14,32 +14,34 @@ import SearchIcon from '@mui/icons-material/Search';
 import LibraryMusicIcon from '@mui/icons-material/LibraryMusic';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import RssFeedIcon from '@mui/icons-material/RssFeed'; // For Podcasts
-import LightbulbIcon from '@mui/icons-material/Lightbulb'; // For Discover
+import RssFeedIcon from '@mui/icons-material/RssFeed';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { useStore } from '@nanostores/react';
-import { spotifyStore } from '@/stores/spotifyStore';
+import { $spotifyStore } from '@/stores/spotifyStore';
 
 interface SpotifySidebarProps {
-  currentView: 'home' | 'search' | 'library';
-  onSelectView: (view: 'home' | 'search' | 'library') => void;
+  currentView: 'home' | 'search' | 'library' | 'settings';
+  onSelectView: (view: 'home' | 'search' | 'library' | 'settings') => void;
 }
 const SpotifySidebar: React.FC<SpotifySidebarProps> = ({
   currentView,
   onSelectView,
 }) => {
   const theme = useTheme();
-  const store = useStore(spotifyStore);
+  const store = useStore($spotifyStore);
   const playlists = store?.playlists ?? [];
   const primaryNavItems = [
     { text: 'Home', icon: HomeIcon, view: 'home' as const },
     { text: 'Search', icon: SearchIcon, view: 'search' as const },
     { text: 'Your Library', icon: LibraryMusicIcon, view: 'library' as const },
+    { text: 'Settings', icon: SettingsIcon, view: 'settings' as const },
   ];
 
   const secondaryNavItems = [
     { text: 'Create Playlist', icon: AddBoxIcon },
     { text: 'Liked Songs', icon: FavoriteIcon },
-    { text: 'Your Episodes', icon: RssFeedIcon }, // Placeholder for podcasts/episodes
+    { text: 'Your Episodes', icon: RssFeedIcon },
     { text: 'Discover', icon: LightbulbIcon },
   ];
 
@@ -52,12 +54,12 @@ const SpotifySidebar: React.FC<SpotifySidebarProps> = ({
         display: 'flex',
         flexDirection: 'column',
         overflowY: 'auto',
-        pb: 2, // Padding bottom for scrollable content
+        pb: 2,
       }}
     >
       <Box sx={{ p: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
-          🎵 AI Music
+          🎵 Project Stream
         </Typography>
       </Box>
 
@@ -76,9 +78,8 @@ const SpotifySidebar: React.FC<SpotifySidebarProps> = ({
                   bgcolor: theme.palette.action.hover,
                 },
               },
-              color: theme.palette.text.primary, // Ensure text color is consistent
+              color: theme.palette.text.primary,
               '& .MuiListItemIcon-root': {
-                // Target icon color within selected state
                 color: 'inherit',
               },
             }}
@@ -142,7 +143,7 @@ const SpotifySidebar: React.FC<SpotifySidebarProps> = ({
               <ListItemButton
                 key={playlist.id}
                 sx={{ py: 0.5, px: 1, color: theme.palette.text.primary }}
-                onClick={() => onSelectView('library')} // Assuming clicking a playlist navigates to library
+                onClick={() => onSelectView('library')}
               >
                 <ListItemText primary={playlist.name} />
               </ListItemButton>

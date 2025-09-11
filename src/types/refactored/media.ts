@@ -1,0 +1,132 @@
+/**
+ * Defines the various types of files supported in the application.
+ * Mirrors the backend's FileType enum from schema.prisma.
+ */
+export enum FileType {
+  AUDIO = 'AUDIO',
+  VIDEO = 'VIDEO',
+  IMAGE = 'IMAGE',
+  DOCUMENT = 'DOCUMENT',
+  CODE = 'CODE',
+  TEXT = 'TEXT',
+  ZIP = 'ZIP',
+  PDF = 'PDF',
+  MARKDOWN = 'MARKDOWN',
+  YAML = 'YAML',
+  JSON = 'JSON',
+  JAVASCRIPT = 'JAVASCRIPT',
+  TYPESCRIPT = 'TYPESCRIPT',
+  JSX = 'JSX',
+  TSX = 'TSX',
+  CSS = 'CSS',
+  HTML = 'HTML',
+  SQL = 'SQL',
+  PYTHON = 'PYTHON',
+  JAVA = 'JAVA',
+  XML = 'XML',
+  OTHER = 'OTHER',
+}
+
+/**
+ * A constant array of allowed media formats for extraction/processing.
+ */
+export const allowedMediaFormats = [
+  'mp3',
+  'webm',
+  'm4a',
+  'wav',
+  'mp4',
+  'flv',
+] as const;
+
+/**
+ * Type representing one of the allowed media formats.
+ */
+export type AllowedMediaFormat = (typeof allowedMediaFormats)[number];
+
+/**
+ * Interface for metadata often returned by media extraction or processing services.
+ * This is distinct from the Prisma `Metadata` model which is a separate entity.
+ */
+export interface MediaFileMetadata {
+  data?: {
+    title?: string;
+    duration?: number;
+    uploader?: string;
+    thumbnail?: string;
+  };
+  // Add any other top-level metadata properties here if needed
+}
+
+/**
+ * DTO for creating a new media file entry in the backend.
+ */
+export interface CreateMediaDto {
+  url: string;
+  format?: AllowedMediaFormat;
+  provider?: string;
+  cookieAccess?: boolean;
+}
+
+/**
+ * DTO representing a media file response from the backend.
+ * This is the pure data model received from the API, aligned with the Prisma `File` model
+ * and the backend `MediaFileResponseDto` with necessary adjustments for frontend types.
+ */
+export interface MediaFileResponseDto {
+  id: string;
+  name: string;
+  content?: string | null; // Added from Prisma File model
+  path: string;
+  fileType: FileType;
+  mimeType?: string | null;
+  size?: string; // Prisma uses BigInt, string is common for frontend representation
+  provider?: string | null;
+  url?: string | null;
+  createdAt: string; // Assuming string serialization of Date from backend
+  updatedAt: string | null; // Assuming string serialization of Date from backend
+  createdById: string;
+  folderId?: string | null;
+  metadata?: MediaFileMetadata | null; // Added metadata field back for frontend use, assuming it's nested
+}
+
+/**
+ * DTO for querying media files with pagination.
+ */
+export interface PaginationMediaQueryDto {
+  page?: number;
+  pageSize?: number;
+  name?: string;
+  fileType?: FileType;
+  provider?: string;
+  url?: string;
+  folderId?: string;
+}
+
+/**
+ * DTO for paginated media file results.
+ */
+export interface PaginationMediaResultDto {
+  items: MediaFileResponseDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/**
+ * DTO for Media Scan Request, matching backend.
+ */
+export interface MediaScanRequestDto {
+  directoryPath: string;
+}
+
+/**
+ * DTO for Media Scan Response, matching backend.
+ */
+export interface MediaScanResponseDto {
+  success: boolean;
+  message: string;
+  scannedFilesCount: number;
+  errors?: string[];
+}

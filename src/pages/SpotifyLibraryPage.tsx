@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -26,36 +27,46 @@ import {
   FormControlLabel,
   Switch,
   Tooltip,
-  InputAdornment, // Added InputAdornment import
-} from '@mui/material';
+  InputAdornment,
+  Menu,
+  DialogContentText,
+  ListItemIcon,
+}
+from '@mui/material';
 import {
-  spotifyStore,
+  $spotifyStore,
   playTrack,
   fetchAllMediaFiles,
   addExtractedMediaFile,
   fetchUserPlaylists,
   createUserPlaylist,
-  // Removed Playlist, Track from here as they are now imported from '@/types'
+  updateExistingPlaylist,
+  removePlaylist,
+  loadPlaylistDetails,
 } from '@/stores/spotifyStore';
 import { useStore } from '@nanostores/react';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AddIcon from '@mui/icons-material/Add';
 import AlbumIcon from '@mui/icons-material/Album';
-import CloudDownloadIcon from '@mui/icons-material/CloudDownload'; // New icon for extraction
-import YouTubeIcon from '@mui/icons-material/YouTube'; // New icon for YouTube provider
-import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore'; // Import global snackbar
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import YouTubeIcon from '@mui/icons-material/YouTube';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import { showGlobalSnackbar } from '@/stores/aiEditorStore';
 import {
   MediaFileResponseDto,
   CreateMediaDto,
   AllowedMediaFormat,
   allowedMediaFormats,
-  PlaylistCreationRequest, // Corrected import from CreatePlaylistPayload
-  Playlist, // Imported from '@/types'
-  Track, // Imported from '@/types'
+  PlaylistCreationRequest,
+  Playlist,
+  Track,
+  UpdatePlaylistDto,
 } from '@/types';
-import { extractMediaFromUrl } from '@/api/media'; // Import the new API function
-import { authStore } from '@/stores/authStore'; // Import authStore for login check
+import { extractMedia as extractMediaFromUrl } from '@/api/media';
+import { authStore } from '@/stores/authStore';
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';
 
 interface SpotifyLibraryPageProps {
@@ -289,7 +300,7 @@ interface CreatePlaylistFormDialogProps {
     severity: 'success' | 'error' | 'info',
   ) => void;
   isLoggedIn: boolean;
-  allAvailableMediaFiles: MediaFileResponseDto[]; // Pass for initial track selection (optional for now)
+  allAvailableMediaFiles: MediaFileResponseDto[];
 }
 
 const CreatePlaylistFormDialog: React.FC<CreatePlaylistFormDialogProps> = ({
@@ -334,7 +345,6 @@ const CreatePlaylistFormDialog: React.FC<CreatePlaylistFormDialogProps> = ({
     setCreateError(null);
 
     const payload: PlaylistCreationRequest = {
-      // Corrected type here
       name: name.trim(),
       description: description.trim() || undefined,
       isPublic,
@@ -522,27 +532,307 @@ const CreatePlaylistFormDialog: React.FC<CreatePlaylistFormDialogProps> = ({
   );
 };
 
+interface EditPlaylistFormDialogProps {
+  open: boolean;
+  onClose: () => void;
+  playlist: Playlist | null;
+  onShowSnackbar: (
+    message: string,
+    severity: 'success' | 'error' | 'info',
+  ) => void;
+  isLoggedIn: boolean;
+}
+
+const EditPlaylistFormDialog: React.FC<EditPlaylistFormDialogProps> = ({
+  open,
+  onClose,
+  playlist,
+  onShowSnackbar,
+  isLoggedIn,
+}) => {
+  const theme = useTheme();
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open && playlist) {
+      setName(playlist.name);
+      setDescription(playlist.description || '');
+      setIsPublic(playlist.isPublic);
+      setEditError(null);
+    } else if (!open) {
+      // Reset when dialog closes
+      setName('');
+      setDescription('');
+      setIsPublic(false);
+      setEditError(null);
+    }
+  }, [open, playlist]);
+
+  const handleUpdate = async () => {
+    if (!isLoggedIn) {
+      onShowSnackbar('You must be logged in to edit a playlist.', 'error');
+      return;
+    }
+    if (!playlist) return; // Should not happen if dialog is open
+    if (!name.trim()) {
+      setEditError('Playlist name is required.');
+      return;
+    }
+
+    setIsUpdating(true);
+    setEditError(null);
+
+    const dto: UpdatePlaylistDto = {
+      name: name.trim(),
+      description: description.trim() || undefined,
+      isPublic,
+    };
+
+    try {
+      await updateExistingPlaylist(playlist.id, dto);
+      onShowSnackbar(`Playlist "${name}" updated successfully!`, 'success');
+      onClose();
+    } catch (err: any) {
+      const message = err.message || 'Failed to update playlist.';
+      setEditError(message);
+      onShowSnackbar(`Playlist update failed: ${message}`, 'error');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          pr: 1,
+        }}
+      >
+        <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
+          Edit Playlist
+        </Typography>
+        <IconButton
+          onClick={onClose}
+          size="small"
+          sx={{ color: theme.palette.text.secondary }}
+        >
+          <AddIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent sx={{ p: 2 }}>
+        {editError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {editError}
+          </Alert>
+        )}
+        <TextField
+          autoFocus
+          margin="dense"
+          id="edit-playlist-name"
+          label="Playlist Name"
+          type="text"
+          fullWidth
+          variant="outlined"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          disabled={isUpdating}
+          sx={{ mt: 2 }}
+          InputLabelProps={{ shrink: true }}
+          InputProps={{ style: { color: theme.palette.text.primary } }}
+          error={!!editError && !name.trim()}
+          helperText={
+            !!editError && !name.trim() ? 'Playlist name is required' : ''
+          }
+        />
+        <TextField
+          margin="dense"
+          id="edit-playlist-description"
+          label="Description"
+          type="text"
+          fullWidth
+          variant="outlined"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          disabled={isUpdating}
+          sx={{ mt: 2 }}
+          InputLabelProps={{ shrink: true }}
+          InputProps={{ style: { color: theme.palette.text.primary } }}
+          multiline
+          rows={2}
+        />
+        <FormControlLabel
+          control={
+            <Switch
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+              name="isPublic"
+              color="primary"
+              disabled={isUpdating}
+            />
+          }
+          label={
+            <Tooltip title="Make this playlist visible to others.">
+              <Typography variant="body2" color="text.secondary">
+                Public Playlist
+              </Typography>
+            </Tooltip>
+          }
+          sx={{ mt: 2, '& .MuiFormControlLabel-label': { ml: 1 } }}
+        />
+      </DialogContent>
+      <DialogActions
+        sx={{
+          borderTop: `1px solid ${theme.palette.divider}`,
+          p: 2,
+          justifyContent: 'flex-end',
+        }}
+      >
+        <Button onClick={onClose} disabled={isUpdating}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleUpdate}
+          color="primary"
+          variant="contained"
+          disabled={isUpdating || !name.trim()}
+          startIcon={isUpdating && <CircularProgress size={20} />}
+        >
+          Save Changes
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+interface DeleteConfirmationDialogProps {
+  open: boolean;
+  onClose: () => void;
+  playlist: Playlist | null;
+  onConfirmDelete: (playlistId: string) => void;
+  isDeleting: boolean;
+}
+
+const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
+  open,
+  onClose,
+  playlist,
+  onConfirmDelete,
+  isDeleting,
+}) => {
+  const theme = useTheme();
+
+  const handleDelete = () => {
+    if (playlist) {
+      onConfirmDelete(playlist.id);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          pr: 1,
+        }}
+      >
+        <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
+          Confirm Delete Playlist
+        </Typography>
+      </DialogTitle>
+      <DialogContent sx={{ p: 2 }}>
+        <DialogContentText color="text.primary">
+          Are you sure you want to delete the playlist "
+          <Typography component="span" fontWeight="bold">
+            {playlist?.name}
+          </Typography>
+          "? This action cannot be undone.
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions
+        sx={{
+          borderTop: `1px solid ${theme.palette.divider}`,
+          p: 2,
+          justifyContent: 'flex-end',
+        }}
+      >
+        <Button onClick={onClose} disabled={isDeleting}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleDelete}
+          color="error"
+          variant="contained"
+          disabled={isDeleting}
+          startIcon={isDeleting && <CircularProgress size={20} />}
+        >
+          Delete
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const { isLoggedIn } = useStore(authStore);
-  const [value, setValue] = React.useState(0); // For Tabs
+  const [value, setValue] = React.useState(0);
   const {
     allAvailableMediaFiles,
     isFetchingMedia,
     fetchMediaError,
     playlists,
-    isFetchingPlaylists,
-    fetchPlaylistError,
+    isLoadingPlaylists,
+    playlistError,
     currentTrack,
     isPlaying,
-  } = useStore(spotifyStore);
+  } = useStore($spotifyStore);
 
   const [isExtractFormOpen, setIsExtractFormOpen] = useState(false);
-  const [isCreatePlaylistFormOpen, setIsCreatePlaylistFormOpen] =
-    useState(false);
+  const [isCreatePlaylistFormOpen, setIsCreatePlaylistFormOpen] = useState(false);
 
-  // Removed local snackbar state and `CustomSnackbar` import/component
-  // Now using the global snackbar provided by `aiEditorStore`
+  // State for playlist action menu
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [openMenuPlaylistId, setOpenMenuPlaylistId] = useState<string | null>(null);
+  const isMenuOpen = Boolean(anchorEl);
+
+  // State for edit/delete dialogs
+  const [playlistToEdit, setPlaylistToEdit] = useState<Playlist | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeletingPlaylist, setIsDeletingPlaylist] = useState(false);
+
   const showSnackbar = useCallback(
     (message: string, severity: 'success' | 'error' | 'info') => {
       showGlobalSnackbar(message, severity);
@@ -555,8 +845,8 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       fetchAllMediaFiles({ page: 1, pageSize: 50 });
       fetchUserPlaylists();
     } else {
-      spotifyStore.setKey('allAvailableMediaFiles', []);
-      spotifyStore.setKey('playlists', []);
+      $spotifyStore.setKey('allAvailableMediaFiles', []);
+      $spotifyStore.setKey('playlists', []);
     }
   }, [isLoggedIn]);
 
@@ -567,10 +857,82 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
   const handleExtractSuccess = useCallback(
     (mediaFile: MediaFileResponseDto) => {
       addExtractedMediaFile(mediaFile);
-      // Optionally, navigate to the extracted file or show it prominently
     },
     [],
   );
+
+  const handlePlayPlaylistTrack = (track: Track, playlistTracks: Track[]) => {
+    const mediaFileToPlay =
+      allAvailableMediaFiles.find((m) => m.id === track.mediaFileId);
+    if (mediaFileToPlay) {
+      playTrack(mediaFileToPlay, playlistTracks);
+    } else {
+      showGlobalSnackbar(`Media file for track '${track.title}' not found.`, 'error');
+    }
+  };
+
+  const handlePlayArtistTopTrack = (track: Track) => {
+    const mediaFileToPlay =
+      allAvailableMediaFiles.find((m) => m.id === track.mediaFileId);
+    if (mediaFileToPlay) {
+      playTrack(mediaFileToPlay, [track]);
+    } else {
+      showGlobalSnackbar(`Media file for track '${track.title}' not found.`, 'error');
+    }
+  };
+
+  // Menu handlers
+  const handleOpenMenu = (
+    event: React.MouseEvent<HTMLElement>,
+    playlist: Playlist,
+  ) => {
+    setAnchorEl(event.currentTarget);
+    setOpenMenuPlaylistId(playlist.id);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+    setOpenMenuPlaylistId(null);
+  };
+
+  const handleEditPlaylist = (playlist: Playlist) => {
+    setPlaylistToEdit(playlist);
+    setIsEditDialogOpen(true);
+    handleCloseMenu();
+  };
+
+  const handleViewPlaylist = (playlist: Playlist) => {
+    loadPlaylistDetails(playlist.id); // Load details into currentPlaylist in store
+    showSnackbar(`Viewing playlist: ${playlist.name}`, 'info');
+    // If you had a dedicated playlist detail page, you would navigate here:
+    // navigate(`/spotify/playlist/${playlist.id}`);
+    handleCloseMenu();
+  };
+
+  const handleConfirmDeletePlaylist = (playlist: Playlist) => {
+    setPlaylistToDelete(playlist);
+    setIsDeleteDialogOpen(true);
+    handleCloseMenu();
+  };
+
+  const handleDeletePlaylist = async (playlistId: string) => {
+    if (!isLoggedIn) {
+      showSnackbar('You must be logged in to delete a playlist.', 'error');
+      return;
+    }
+    setIsDeletingPlaylist(true);
+    try {
+      await removePlaylist(playlistId);
+      showSnackbar('Playlist deleted successfully!', 'success');
+      setIsDeleteDialogOpen(false);
+      setPlaylistToDelete(null);
+    } catch (err: any) {
+      const message = err.message || 'Failed to delete playlist.';
+      showSnackbar(`Deletion failed: ${message}`, 'error');
+    } finally {
+      setIsDeletingPlaylist(false);
+    }
+  };
 
   // Filter for only audio files or files with duration
   const playableTracks: MediaFileResponseDto[] = allAvailableMediaFiles.filter(
@@ -599,40 +961,22 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
         id: string;
         name: string;
         avatar: string;
-        topTrackMediaFile: MediaFileResponseDto; // Store the actual MediaFileResponseDto
+        topTrackMediaFile: MediaFileResponseDto;
       }
     >();
     playableTracks.forEach((media) => {
       const uploader = media.metadata?.data?.uploader || 'Unknown Artist';
       if (!artistsMap.has(uploader)) {
         artistsMap.set(uploader, {
-          id: media.createdById + uploader, // Unique ID for artist
+          id: media.createdById + uploader,
           name: uploader,
-          avatar: media.metadata?.data?.thumbnail || '/default-artist.png', // Placeholder
-          topTrackMediaFile: media, // Store the MediaFileResponseDto directly
+          avatar: media.metadata?.data?.thumbnail || '/default-artist.png',
+          topTrackMediaFile: media,
         });
       }
     });
     return Array.from(artistsMap.values());
   }, [playableTracks]);
-
-  const handlePlayPlaylistTrack = (track: Track, playlistTracks: Track[]) => {
-    const mediaFileToPlay =
-      playableTracks.find((m) => m.id === track.mediaFileId) ||
-      playableTracks[0];
-    if (mediaFileToPlay) {
-      playTrack(mediaFileToPlay, playlistTracks);
-    }
-  };
-
-  const handlePlayArtistTopTrack = (track: Track) => {
-    const mediaFileToPlay =
-      playableTracks.find((m) => m.id === track.mediaFileId) ||
-      playableTracks[0];
-    if (mediaFileToPlay) {
-      playTrack(mediaFileToPlay, [track]);
-    }
-  };
 
   if (!isLoggedIn) {
     return (
@@ -644,7 +988,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
     );
   }
 
-  if (isFetchingMedia || isFetchingPlaylists) {
+  if (isFetchingMedia || isLoadingPlaylists) {
     return (
       <Box className="flex justify-center items-center h-full">
         <CircularProgress size={40} />
@@ -658,10 +1002,10 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
     );
   }
 
-  if (fetchMediaError || fetchPlaylistError) {
+  if (fetchMediaError || playlistError) {
     return (
       <Alert severity="error">
-        Error loading library: {fetchMediaError || fetchPlaylistError}
+        Error loading library: {fetchMediaError || playlistError}
       </Alert>
     );
   }
@@ -734,15 +1078,13 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       >
         <Tab label="Playlists" />
         <Tab label="Artists" />
-        <Tab label="Albums" disabled />{' '}
-        {/* Albums and Podcasts tabs disabled for now */}
+        <Tab label="Albums" disabled />
         <Tab label="Podcasts" disabled />
       </Tabs>
 
       {/* Content based on selected tab */}
       {value === 0 && ( // Playlists
         <List>
-          {/* Displaying 'All Tracks' as the primary playlist */}
           {allTracksPlaylist.tracks.length === 0 && playlists.length === 0 ? (
             <Alert severity="info">
               No playlists or playable audio files found in your library. Use
@@ -755,25 +1097,20 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                 <ListItem
                   key={allTracksPlaylist.id}
                   secondaryAction={
-                    allTracksPlaylist.tracks.length > 0 ? (
-                      <IconButton
-                        edge="end"
-                        aria-label="play"
-                        onClick={() =>
-                          handlePlayPlaylistTrack(
-                            allTracksPlaylist.tracks[0],
-                            allTracksPlaylist.tracks,
-                          )
-                        }
-                        sx={{ color: theme.palette.primary.main, ml: 2 }}
-                      >
-                        <PlayArrowIcon />
-                      </IconButton>
-                    ) : (
-                      <IconButton edge="end" aria-label="options">
-                        <MoreVertIcon />
-                      </IconButton>
-                    )
+                    <IconButton
+                      edge="end"
+                      aria-label="play all tracks"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePlayPlaylistTrack(
+                          allTracksPlaylist.tracks[0],
+                          allTracksPlaylist.tracks,
+                        );
+                      }}
+                      sx={{ color: theme.palette.primary.main, ml: 2 }}
+                    >
+                      <PlayArrowIcon />
+                    </IconButton>
                   }
                   sx={{
                     bgcolor: theme.palette.background.paper,
@@ -785,10 +1122,19 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                     },
                     color: theme.palette.text.primary,
                   }}
+                  onClick={() =>
+                    handlePlayPlaylistTrack(
+                      allTracksPlaylist.tracks[0],
+                      allTracksPlaylist.tracks,
+                    )
+                  }
                 >
                   <ListItemAvatar>
                     {allTracksPlaylist.cover ? (
-                      <Avatar variant="rounded" src={allTracksPlaylist.cover} />
+                      <Avatar
+                        variant="rounded"
+                        src={allTracksPlaylist.cover}
+                      />
                     ) : (
                       <AlbumIcon
                         sx={{
@@ -801,7 +1147,9 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                   </ListItemAvatar>
                   <ListItemText
                     primary={allTracksPlaylist.name}
-                    secondary={`${allTracksPlaylist.trackCount} songs`}
+                    secondary={
+                      `${allTracksPlaylist.trackCount} songs`
+                    }
                     primaryTypographyProps={{ fontWeight: 'bold' }}
                     secondaryTypographyProps={{ color: 'text.secondary' }}
                   />
@@ -818,25 +1166,32 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                   <ListItem
                     key={playlist.id}
                     secondaryAction={
-                      playlist.tracks.length > 0 ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {playlist.tracks.length > 0 && (
+                          <IconButton
+                            edge="end"
+                            aria-label="play playlist"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePlayPlaylistTrack(
+                                playlist.tracks[0],
+                                playlist.tracks,
+                              );
+                            }}
+                            sx={{ color: theme.palette.primary.main, ml: 1 }}
+                          >
+                            <PlayArrowIcon />
+                          </IconButton>
+                        )}
                         <IconButton
                           edge="end"
-                          aria-label="play"
-                          onClick={() =>
-                            handlePlayPlaylistTrack(
-                              playlist.tracks[0],
-                              playlist.tracks,
-                            )
-                          }
-                          sx={{ color: theme.palette.primary.main, ml: 2 }}
+                          aria-label="playlist options"
+                          onClick={(e) => handleOpenMenu(e, playlist)}
+                          sx={{ ml: 1 }}
                         >
-                          <PlayArrowIcon />
+                          <MoreHorizIcon />
                         </IconButton>
-                      ) : (
-                        <IconButton edge="end" aria-label="options">
-                          <MoreVertIcon />
-                        </IconButton>
-                      )
+                      </Box>
                     }
                     sx={{
                       bgcolor: theme.palette.background.paper,
@@ -850,6 +1205,16 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                         ? `2px solid ${theme.palette.primary.main}`
                         : 'none',
                       color: theme.palette.text.primary,
+                    }}
+                    onClick={() => {
+                      if (playlist.tracks.length > 0) {
+                        handlePlayPlaylistTrack(
+                          playlist.tracks[0],
+                          playlist.tracks,
+                        );
+                      } else {
+                        showSnackbar(`Playlist "${playlist.name}" has no tracks to play.`, 'info');
+                      }
                     }}
                   >
                     <ListItemAvatar>
@@ -868,7 +1233,9 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                     <ListItemText
                       primary={playlist.name}
                       secondary={
-                        playlist.description || `${playlist.trackCount} songs`
+                        playlist.trackCount === 1
+                          ? '1 song'
+                          : `${playlist.trackCount} songs`
                       }
                       primaryTypographyProps={{ fontWeight: 'bold' }}
                       secondaryTypographyProps={{ color: 'text.secondary' }}
@@ -908,7 +1275,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                       </IconButton>
                     ) : (
                       <IconButton edge="end" aria-label="options">
-                        <MoreVertIcon />
+                        <MoreHorizIcon />
                       </IconButton>
                     )
                   }
@@ -954,24 +1321,102 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
           )}
         </List>
       )}
-      {/* Additional tabs (Albums, Podcasts) can be implemented similarly */}
 
       <MediaExtractionFormDialog
         open={isExtractFormOpen}
         onClose={() => setIsExtractFormOpen(false)}
         onExtractSuccess={handleExtractSuccess}
-        onShowSnackbar={showGlobalSnackbar} // Use global snackbar
+        onShowSnackbar={showGlobalSnackbar}
         isLoggedIn={isLoggedIn}
       />
 
       <CreatePlaylistFormDialog
         open={isCreatePlaylistFormOpen}
         onClose={() => setIsCreatePlaylistFormOpen(false)}
-        onShowSnackbar={showGlobalSnackbar} // Use global snackbar
+        onShowSnackbar={showGlobalSnackbar}
         isLoggedIn={isLoggedIn}
         allAvailableMediaFiles={playableTracks}
       />
-      {/* CustomSnackbar component is no longer needed as showGlobalSnackbar is used */}
+
+      {/* Playlist Actions Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={isMenuOpen}
+        onClose={handleCloseMenu}
+        MenuListProps={{
+          'aria-labelledby': 'playlist-options-button',
+        }}
+        PaperProps={{
+          sx: {
+            bgcolor: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+            boxShadow: theme.shadows[3],
+          },
+        }}
+      >
+        {openMenuPlaylistId &&
+          playlists.find((p) => p.id === openMenuPlaylistId) &&
+          [ // Directly return an array of MenuItems
+            <MenuItem
+              key="edit-playlist"
+              onClick={() =>
+                handleEditPlaylist(
+                  playlists.find((p) => p.id === openMenuPlaylistId)!,
+                )
+              }
+            >
+              <ListItemIcon>
+                <EditIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Edit</ListItemText>
+            </MenuItem>,
+            <MenuItem
+              key="view-playlist"
+              onClick={() =>
+                handleViewPlaylist(
+                  playlists.find((p) => p.id === openMenuPlaylistId)!,
+                )
+              }
+            >
+              <ListItemIcon>
+                <VisibilityIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>View</ListItemText>
+            </MenuItem>,
+            <MenuItem
+              key="delete-playlist"
+              onClick={() =>
+                handleConfirmDeletePlaylist(
+                  playlists.find((p) => p.id === openMenuPlaylistId)!,
+                )
+              }
+              sx={{ color: theme.palette.error.main }}
+            >
+              <ListItemIcon sx={{ color: theme.palette.error.main }}>
+                <DeleteIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Delete</ListItemText>
+            </MenuItem>,
+          ]}
+      </Menu>
+
+      {/* Edit Playlist Dialog */}
+      <EditPlaylistFormDialog
+        open={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        playlist={playlistToEdit}
+        onShowSnackbar={showGlobalSnackbar}
+        isLoggedIn={isLoggedIn}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        playlist={playlistToDelete}
+        onConfirmDelete={handleDeletePlaylist}
+        isDeleting={isDeletingPlaylist}
+      />
     </Box>
   );
 };

@@ -10,13 +10,16 @@ import {
   useTheme,
   CardMedia,
   Alert,
+  CardActionArea,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { useStore } from '@nanostores/react';
-import { spotifyStore, playTrack } from '@/stores/spotifyStore';
+import { $spotifyStore, playTrack } from '@/stores/spotifyStore';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 import AlbumIcon from '@mui/icons-material/Album';
+import MovieIcon from '@mui/icons-material/Movie'; // New: Import MovieIcon
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';
+import { FileType } from '@/types/refactored/spotify'; // Import FileType
 
 interface SpotifySearchPageProps {
   // No specific props for now
@@ -24,19 +27,20 @@ interface SpotifySearchPageProps {
 
 const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
   const theme = useTheme();
-  const { allAvailableMediaFiles, isPlaying, currentTrack } =
-    useStore(spotifyStore);
+  const { allAvailableMediaFiles, isPlaying, currentTrack } = useStore($spotifyStore);
   const [searchTerm, setSearchTerm] = React.useState('');
 
-  const playableTracks = allAvailableMediaFiles.filter(
+  // Filter for all playable media (audio and video)
+  const playableMedia = allAvailableMediaFiles.filter(
     (media) =>
-      media.fileType === 'AUDIO' && (media.metadata?.data?.duration || 0) > 0,
+      (media.fileType === FileType.AUDIO || media.fileType === FileType.VIDEO) &&
+      (media.metadata?.data?.duration || 0) > 0,
   );
 
   const filteredTracks = React.useMemo(() => {
-    if (!searchTerm) return playableTracks;
+    if (!searchTerm) return playableMedia;
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
-    return playableTracks.filter(
+    return playableMedia.filter(
       (media) =>
         media.name.toLowerCase().includes(lowerCaseSearchTerm) ||
         media.metadata?.data?.title
@@ -46,21 +50,21 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
           ?.toLowerCase()
           .includes(lowerCaseSearchTerm),
     );
-  }, [searchTerm, playableTracks]);
+  }, [searchTerm, playableMedia]);
 
   const mockGenres = [
-    { id: 1, name: 'Pop', color: '#8d6e63' }, // Brown
-    { id: 2, name: 'Hip Hop', color: '#4a148c' }, // Purple
-    { id: 3, name: 'Rock', color: '#b71c1c' }, // Red
-    { id: 4, name: 'Jazz', color: '#1b5e20' }, // Green
-    { id: 5, name: 'Electronic', color: '#006064' }, // Teal
-    { id: 6, name: 'Classical', color: '#311b92' }, // Dark Purple
-    { id: 7, name: 'R&B', color: '#f57f17' }, // Amber
-    { id: 8, name: 'Country', color: '#bf360c' }, // Deep Orange
-    { id: 9, name: 'Indie', color: '#2e7d32' }, // Dark Green
-    { id: 10, name: 'Metal', color: '#424242' }, // Grey
-    { id: 11, name: 'Blues', color: '#5d4037' }, // Brown
-    { id: 12, name: 'Folk', color: '#880e4f' }, // Pink
+    { id: 1, name: 'Pop', color: '#8d6e63' },
+    { id: 2, name: 'Hip Hop', color: '#4a148c' },
+    { id: 3, name: 'Rock', color: '#b71c1c' },
+    { id: 4, name: 'Jazz', color: '#1b5e20' },
+    { id: 5, name: 'Electronic', color: '#006064' },
+    { id: 6, name: 'Classical', color: '#311b92' },
+    { id: 7, name: 'R&B', color: '#f57f17' },
+    { id: 8, name: 'Country', color: '#bf360c' },
+    { id: 9, name: 'Indie', color: '#2e7d32' },
+    { id: 10, name: 'Metal', color: '#424242' },
+    { id: 11, name: 'Blues', color: '#5d4037' },
+    { id: 12, name: 'Folk', color: '#880e4f' },
   ];
 
   return (
@@ -72,7 +76,7 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
       <TextField
         fullWidth
         variant="outlined"
-        placeholder="What do you want to listen to?"
+        placeholder="What do you want to listen to or watch?"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         InputProps={{
@@ -82,16 +86,16 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
             </InputAdornment>
           ),
           sx: {
-            borderRadius: '500px', // Pill shape
+            borderRadius: '500px',
             bgcolor: theme.palette.background.paper,
             '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'transparent', // Hide border by default
+              borderColor: 'transparent',
             },
             '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: theme.palette.primary.main, // Show border on hover
+              borderColor: theme.palette.primary.main,
             },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: theme.palette.primary.main, // Show border on focus
+              borderColor: theme.palette.primary.main,
             },
           },
         }}
@@ -137,53 +141,73 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
                           : 'none',
                       }}
                     >
-                      <Box sx={{ position: 'relative', mb: 1 }}>
-                        {track.coverArt ? (
-                          <CardMedia
-                            component="img"
-                            image={track.coverArt}
-                            alt={track.title}
+                      <CardActionArea
+                        onClick={() =>
+                          playTrack(
+                            mediaFile,
+                            playableMedia.map(mapMediaFileToTrack),
+                          )
+                        }
+                      >
+                        <Box sx={{ position: 'relative', mb: 1 }}>
+                          {track.coverArt ? (
+                            <CardMedia
+                              component="img"
+                              image={track.coverArt}
+                              alt={track.title}
+                              sx={{
+                                width: '100%',
+                                borderRadius: 1,
+                                aspectRatio: track.fileType === FileType.VIDEO ? '16 / 9' : '1 / 1',
+                                objectFit: 'cover',
+                              }}
+                            />
+                          ) : track.fileType === FileType.VIDEO ? (
+                            <MovieIcon
+                              sx={{
+                                width: '100%',
+                                borderRadius: 1,
+                                aspectRatio: '16 / 9',
+                                color: theme.palette.text.secondary,
+                                p: 2,
+                              }}
+                            />
+                          ) : (
+                            <AlbumIcon
+                              sx={{
+                                width: '100%',
+                                borderRadius: 1,
+                                aspectRatio: '1 / 1',
+                                color: theme.palette.text.secondary,
+                                p: 2,
+                              }}
+                            />
+                          )}
+                          <PlayCircleFilledWhiteIcon
+                            className="play-icon-card"
                             sx={{
-                              width: '100%',
-                              borderRadius: 1,
-                              aspectRatio: '1 / 1',
+                              position: 'absolute',
+                              bottom: 8,
+                              right: 8,
+                              opacity: isActive ? 1 : 0,
+                              fontSize: 48,
+                              color: theme.palette.primary.main,
+                              transition: 'opacity 0.2s',
                             }}
                           />
-                        ) : (
-                          <AlbumIcon
-                            sx={{
-                              width: '100%',
-                              borderRadius: 1,
-                              aspectRatio: '1 / 1',
-                              color: theme.palette.text.secondary,
-                              p: 2,
-                            }}
-                          />
-                        )}
-                        <PlayCircleFilledWhiteIcon
-                          className="play-icon-card"
-                          sx={{
-                            position: 'absolute',
-                            bottom: 8,
-                            right: 8,
-                            opacity: isActive ? 1 : 0,
-                            fontSize: 48,
-                            color: theme.palette.primary.main,
-                            transition: 'opacity 0.2s',
-                          }}
-                        />
-                      </Box>
-                      <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: 'bold' }}
-                        >
-                          {track.title}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {track.artist}
-                        </Typography>
-                      </CardContent>
+                        </Box>
+                        <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ fontWeight: 'bold' }}
+                          >
+                            {track.title}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {track.artist}
+                          </Typography>
+                        </CardContent>
+                      </CardActionArea>
                     </Card>
                   </Grid>
                 );
@@ -191,7 +215,7 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
             ) : (
               <Box sx={{ p: 2, width: '100%' }}>
                 <Alert severity="info">
-                  No tracks found matching "{searchTerm}".
+                  No media found matching "{searchTerm}".
                 </Alert>
               </Box>
             )}
@@ -223,8 +247,8 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
                     p: 2,
                     cursor: 'pointer',
                     position: 'relative',
-                    bgcolor: genre.color, // Use dynamic color
-                    color: 'white', // Text color for contrast
+                    bgcolor: genre.color,
+                    color: 'white',
                     boxShadow: theme.shadows[3],
                     transition: 'transform 0.2s ease-in-out',
                     '&:hover': {
