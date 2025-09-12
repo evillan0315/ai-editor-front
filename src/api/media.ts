@@ -187,7 +187,8 @@ export const getTranscription = async (
   fileId: string,
 ): Promise<TranscriptionResult> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/media/${fileId}/transcription`);
+    const response = await fetchWithAuth(`${API_BASE_URL}/media/${fileId}/transcription
+`);
     return handleResponse<TranscriptionResult>(response);
   } catch (error) {
     console.error('Error getting transcription:', error);

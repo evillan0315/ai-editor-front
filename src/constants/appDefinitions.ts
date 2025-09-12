@@ -8,6 +8,7 @@ import MicIcon from '@mui/icons-material/Mic';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CorporateFareIcon from '@mui/icons-material/CorporateFare';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'; // Default/fallback icon
+import TranscribeIcon from '@mui/icons-material/Transcribe';
 
 import { Link } from 'react-router-dom';
 import { RequestType, LlmOutputFormat, AppDefinition } from '@/types';
@@ -202,5 +203,13 @@ export const appDefinitions: AppDefinition[] = [
     icon: BugReportIcon,
     link: '#',
     linkText: 'Report (Coming Soon)',
+  },
+  {
+    id: 'audio-transcription',
+    title: 'Audio Transcription',
+    description: 'Transcribe audio files into text with AI.',
+    icon: TranscribeIcon, // Use TranscribeIcon
+    link: '/apps/transcription',
+    linkText: 'Open Transcriber',
   },
 ];

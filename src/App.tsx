@@ -22,6 +22,7 @@ const OrganizationPage = lazy(() => import('./pages/OrganizationPage')); // New:
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage')); // New: Project Management Page
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage')); // New: User Profile Page
 const UserSettingsPage = lazy(() => import('./pages/UserSettingsPage')); // New: User Settings Page
+const TranscriptionPage = lazy(() => import('./pages/TranscriptionPage')); // NEW: Transcription Page
 
 function App() {
   const { snackbar } = useStore(aiEditorStore);
@@ -103,6 +104,15 @@ function App() {
             element={
               <Suspense fallback={<Loading />}>
                 <PreviewAppPage />
+              </Suspense>
+            }
+          />
+          {/* NEW: Route for Audio Transcription */}
+          <Route
+            path="/apps/transcription"
+            element={
+              <Suspense fallback={<Loading />}>
+                <TranscriptionPage />
               </Suspense>
             }
           />

@@ -10,6 +10,7 @@ import { AlertColor } from '@mui/material';
 export * from './refactored/fileTree';
 export * from './refactored/media';
 export * from './refactored/spotify';
+export * from './terminal';
 export * from './auth';
 
 
