@@ -23,7 +23,10 @@ const ProjectsPage = lazy(() => import('./pages/ProjectsPage')); // New: Project
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage')); // New: User Profile Page
 const UserSettingsPage = lazy(() => import('./pages/UserSettingsPage')); // New: User Settings Page
 const TranscriptionPage = lazy(() => import('./pages/TranscriptionPage')); // NEW: Transcription Page
+const TerminalPage = lazy(() => import('./pages/TerminalPage')); // NEW: Transcription Page
+const LlmGenerationPage = lazy(() => import('./pages/LlmGenerationPage')); // NEW: LLM Generation Page
 
+import '@xterm/xterm/css/xterm.css';
 function App() {
   const { snackbar } = useStore(aiEditorStore);
 
@@ -34,6 +37,7 @@ function App() {
   return (
     <>
       <Routes>
+        {/* Layout component now handles rendering of Navbar and potential right sidebar */}
         <Route path="/" element={<Layout />}>
           <Route
             index
@@ -113,6 +117,24 @@ function App() {
             element={
               <Suspense fallback={<Loading />}>
                 <TranscriptionPage />
+              </Suspense>
+            }
+          />
+{/* NEW: Route for Terminal  */}
+          <Route
+            path="/apps/terminal"
+            element={
+              <Suspense fallback={<Loading />}>
+                <TerminalPage />
+              </Suspense>
+            }
+          />
+           {/* NEW: Route for LLM Generation */}
+          <Route
+            path="/apps/llm-generation"
+            element={
+              <Suspense fallback={<Loading />}>
+                <LlmGenerationPage />
               </Suspense>
             }
           />

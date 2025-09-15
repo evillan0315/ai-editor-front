@@ -6,8 +6,9 @@ import {
   setCurrentDiff,
   updateProposedChangeContent,
   updateProposedChangePath,
-  setError,
+  setError, // Still used for immediate UI feedback
 } from '@/stores/aiEditorStore';
+import { addLog } from '@/stores/logStore'; // NEW: Import addLog
 import { getGitDiff } from '@/api/llm';
 import { FileChange, FileAction } from '@/types';
 import CodeMirror from '@uiw/react-codemirror';
@@ -60,6 +61,11 @@ const getFileActionChipColor = (action: FileAction) => {
   }
 };
 
+/**
+ * Displays an individual proposed file change from the AI.
+ * Provides options to select/deselect the change, view a git diff,
+ * and edit the proposed file path or content. Logs relevant actions to `logStore`.
+ */
 const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
   change,
   index,
@@ -87,11 +93,14 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
 
   const handleShowDiff = async () => {
     if (!currentProjectPath) {
-      setError('Project root is not set. Please load a project first.');
+      const msg = 'Project root is not set. Please load a project first.';
+      setError(msg); // For immediate UI feedback
+      addLog('Proposed Change Card', msg, 'error', undefined, undefined, true);
       return;
     }
     setError(null); // Clear previous error
     setCurrentDiff(null, null); // Clear previous diff before showing a new one
+    addLog('Proposed Change Card', `Fetching git diff for ${change.filePath}...`, 'info');
 
     try {
       let diffContent: string;
@@ -110,21 +119,22 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
         diffContent = await getGitDiff(filePathToSend, currentProjectPath);
       }
 
-      setCurrentDiff(change.filePath, diffContent);
+      setCurrentDiff(change.filePath, diffContent); // This also logs it via aiEditorStore's setCurrentDiff
+      addLog('Proposed Change Card', `Git diff loaded successfully for ${change.filePath}.`, 'success');
     } catch (err) {
-      setError(
-        `Failed to get diff for ${change.filePath}: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      const errorMsg = `Failed to get diff for ${change.filePath}: ${err instanceof Error ? err.message : String(err)}`;
+      setError(errorMsg); // For immediate UI feedback
       setCurrentDiff(
         change.filePath,
         `Error: ${err instanceof Error ? err.message : String(err)}`,
       );
+      addLog('Proposed Change Card', errorMsg, 'error', String(err), undefined, true);
     }
   };
 
   const handleSaveFilePath = () => {
     if (editedFilePath !== change.filePath) {
-      // Dispatch action to update the store
+      // Dispatch action to update the store, this logs internally
       updateProposedChangePath(change.filePath, editedFilePath);
     }
     setIsEditingFilePath(false);
@@ -133,6 +143,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
   const handleCancelEditFilePath = () => {
     setEditedFilePath(change.filePath); // Revert to original
     setIsEditingFilePath(false);
+    addLog('Proposed Change Card', `Cancelled file path edit for ${change.filePath}.`, 'info');
   };
 
   const handleKeyDownOnInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -167,7 +178,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
             checked={!!selectedChanges[change.filePath]}
             onChange={(e) => {
               e.stopPropagation();
-              toggleSelectedChange(change);
+              toggleSelectedChange(change); // This logs internally
             }}
             disabled={commonDisabled}
             onClick={(e) => e.stopPropagation()}
@@ -241,6 +252,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
               onClick={(e) => {
                 e.stopPropagation(); // Prevent accordion collapse
                 setIsEditingFilePath(true);
+                addLog('Proposed Change Card', `Started editing file path for: ${change.filePath}`, 'debug');
               }}
               disabled={commonDisabled}
               sx={{ color: muiTheme.palette.text.secondary }}
@@ -270,6 +282,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
             flexDirection: 'column',
             display: 'flex',
             gap: 2,
+            overflowY: 'auto', // Added overflowY: 'auto' here
           }}
         >
           {' '}
@@ -296,7 +309,7 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
               <CodeMirror
                 value={change.newContent || ''}
                 onChange={(value) =>
-                  updateProposedChangeContent(change.filePath, value)
+                  updateProposedChangeContent(change.filePath, value) // This logs internally
                 }
                 extensions={[
                   getCodeMirrorLanguage(change.filePath),

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useStore } from '@nanostores/react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   aiEditorStore,
   clearDiff,
@@ -10,50 +10,74 @@ import {
   setLlmOutputFormat,
   setInstruction,
   setUploadedFile,
+  setError, // For global errors to be displayed at the top level
 } from '@/stores/aiEditorStore';
+import { addLog } from '@/stores/logStore'; // NEW: Import addLog for logging page events
+import { resizeTerminal } from '@/stores/terminalStore'; 
+
 import {
   Box,
   Typography,
-  Alert, // Added for error display
-  Paper,
+  Alert, // Added for global error display
   useTheme,
-  IconButton,
   LinearProgress,
 } from '@mui/material';
 import { FileTree } from '@/components/file-tree';
-import PromptGenerator from '@/components/PromptGenerator';
-import AiResponseDisplay from '@/components/AiResponseDisplay';
 import OpenedFileViewer from '@/components/OpenedFileViewer';
 import { RequestType, LlmOutputFormat } from '@/types';
-// import { APP_NAME } from '@/constants'; // Not used in the original component, keeping commented.
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ChevronDownIcon from '@mui/icons-material/ExpandMore';
-import ChevronUpIcon from '@mui/icons-material/ExpandLess';
-import FileTabs from '@/components/FileTabs'; // Now used
+import FileTabs from '@/components/FileTabs';
+import { useRightSidebar } from '@/components/Layout'; // Import the useRightSidebar hook
+import AiSidebarContent from '@/components/AiSidebarContent'; // NEW: Import the consolidated AI sidebar content
+import { XTerminal } from '@/components/Terminal/Terminal'; // NEW: Import XTerminal component
+import { handleLogout } from '@/services/authService';
 
 // Constants for layout.
 const FILE_TREE_WIDTH = 300; // Fixed width for the file tree when visible
 const FILE_TABS_HEIGHT = 48; // Approximate height of the new file tabs component (can be theme-driven later)
-const PROMPT_GENERATOR_HEIGHT_MIN = 60; // Minimum height for prompt generator when collapsed
-const HEADER_HEIGHT = 0; // If you had a fixed header, define it here. Currently 0.
+const RESIZE_HANDLE_HEIGHT = 4; // Height of the draggable divider
 
+/**
+ * The main AI Editor page component, displaying the file tree, file editor,
+ * and integrating the AI sidebar content. It handles global loading, errors,
+ * and URL parameter parsing for AI request types and output formats.
+ */
 const AiEditorPage: React.FC = () => {
   const {
-    error,
+    error: globalError, // Renamed to avoid conflict, used for immediate page-level alerts
     currentProjectPath,
     lastLlmResponse,
     loading,
     applyingChanges,
     isBuilding,
-    openedFile, // Added to show the OpenedFileViewer when a file is open even without LLM response
   } = useStore(aiEditorStore);
   const theme = useTheme();
   const [searchParams] = useSearchParams();
-  const [showFileTree, setShowFileTree] = useState(true);
-  const [showPromptGenerator, setShowPromptGenerator] = useState(true);
+  const [showFileTree, setShowFileTree] = useState(true); // State for toggling file tree visibility
+  const { setRightSidebar } = useRightSidebar(); // Use the custom hook
+  const navigate = useNavigate(); // For redirecting after terminal logout
+
+  // State for resizable terminal
+  const [terminalHeight, setTerminalHeight] = useState(300); // Initial height for terminal
+  const [isResizing, setIsResizing] = useState(false);
+  const [initialMouseY, setInitialMouseY] = useState(0);
+  const [initialTerminalHeight, setInitialTerminalHeight] = useState(0);
+  const contentAreaRef = useRef<HTMLDivElement>(null); // Ref for the resizable content area
+
   // New derived state for the loader
   const isAIGeneratingOrModifying = loading || applyingChanges || isBuilding;
+
+  // Effect to set and unset the right sidebar content
+  useEffect(() => {
+    // Set the consolidated AI sidebar content component
+    setRightSidebar(<AiSidebarContent />);
+    addLog('AI Editor Page', 'AI Editor Page mounted, sidebar content set.', 'debug');
+
+    // Cleanup: remove sidebar content when component unmounts
+    return () => {
+      setRightSidebar(null);
+      addLog('AI Editor Page', 'AI Editor Page unmounted, sidebar content cleared.', 'debug');
+    };
+  }, [setRightSidebar]); // Dependencies only include setRightSidebar
 
   useEffect(() => {
     // Clear diff when project or response changes
@@ -73,16 +97,18 @@ const AiEditorPage: React.FC = () => {
       const newRequestType =
         RequestType[requestTypeParam as keyof typeof RequestType];
       if (aiEditorStore.get().requestType !== newRequestType) {
-        setRequestType(newRequestType);
+        setRequestType(newRequestType); // This action also logs internally
         // Clear related states when switching generator types via URL
         setInstruction('');
         setUploadedFile(null, null, null);
         setLastLlmResponse(null);
         setOpenedFile(null); // Close any currently viewed file when switching generator types
+        addLog('AI Editor Page', `Request type set from URL: ${newRequestType}`, 'info');
       }
     } else if (aiEditorStore.get().requestType !== RequestType.LLM_GENERATION) {
       // If no requestType param, default to LLM_GENERATION
-      setRequestType(RequestType.LLM_GENERATION);
+      setRequestType(RequestType.LLM_GENERATION); // This action also logs internally
+      addLog('AI Editor Page', `Defaulting request type to LLM_GENERATION (no URL param).`, 'info');
     }
 
     // Update LlmOutputFormat from URL
@@ -93,22 +119,117 @@ const AiEditorPage: React.FC = () => {
       const newLlmOutputFormat =
         LlmOutputFormat[outputFormatParam as keyof typeof LlmOutputFormat];
       if (aiEditorStore.get().llmOutputFormat !== newLlmOutputFormat) {
-        setLlmOutputFormat(newLlmOutputFormat);
+        setLlmOutputFormat(newLlmOutputFormat); // This action also logs internally
+        addLog('AI Editor Page', `Output format set from URL: ${newLlmOutputFormat}`, 'info');
       }
     } else if (aiEditorStore.get().llmOutputFormat !== LlmOutputFormat.YAML) {
       // If no outputFormat param, default to YAML (matching store default)
-      setLlmOutputFormat(LlmOutputFormat.YAML);
+      setLlmOutputFormat(LlmOutputFormat.YAML); // This action also logs internally
+      addLog('AI Editor Page', `Defaulting output format to YAML (no URL param).`, 'info');
     }
   }, [searchParams]);
+
+  // Resizing handlers
+  const startResize = useCallback((e: React.MouseEvent) => {
+    setIsResizing(true);
+    setInitialMouseY(e.clientY);
+    setInitialTerminalHeight(terminalHeight);
+    document.body.style.cursor = 'ns-resize'; // Change cursor globally
+  }, [terminalHeight]);
+
+  const resize = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+    const deltaY = e.clientY - initialMouseY;
+    // For bottom-to-top resize:
+    // If mouse moves up (deltaY is negative), terminal height increases.
+    // If mouse moves down (deltaY is positive), terminal height decreases.
+    let newHeight = initialTerminalHeight - deltaY;
+
+    const MIN_TERMINAL_HEIGHT = 30; // Minimum pixel height for terminal
+    const MIN_VIEWER_HEIGHT = 150; // Minimum pixel height for OpenedFileViewer
+
+    const totalResizableHeight = contentAreaRef.current?.clientHeight || 0;
+    // Calculate max possible terminal height respecting minimum viewer height
+    const maxPossibleTerminalHeight = Math.max(0, totalResizableHeight - MIN_VIEWER_HEIGHT - RESIZE_HANDLE_HEIGHT);
+
+    // Constrain newHeight within min and max bounds
+    newHeight = Math.max(MIN_TERMINAL_HEIGHT, Math.min(newHeight, maxPossibleTerminalHeight));
+    setTerminalHeight(newHeight);
+  }, [isResizing, initialMouseY, initialTerminalHeight]);
+
+  const stopResize = useCallback(() => {
+    setIsResizing(false);
+    document.body.style.cursor = 'default'; // Reset cursor
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener('mousemove', resize);
+      window.addEventListener('mouseup', stopResize);
+    } else {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResize);
+    }
+    return () => {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResize);
+    };
+  }, [isResizing, resize, stopResize]);
+
+  const handleTerminalLogout = useCallback(async () => {
+    try {
+      await handleLogout();
+      navigate('/login'); // Redirect to login page after logout
+      addLog('Terminal', 'User logged out successfully via terminal.', 'info');
+    } catch (error) {
+      console.error('Failed to log out from terminal:', error);
+      setError('Failed to log out from terminal.'); // Use global error store
+      addLog('Terminal', `Failed to log out from terminal: ${error}`, 'error');
+    }
+  }, [navigate]);
+
+  // Function to handle terminal resizing
+  const handleTerminalResize = useCallback(() => {
+    const cols = Math.floor(window.innerWidth / 10); // Adjust divisor as needed
+    const rows = Math.floor(terminalHeight / 20); // Adjust divisor as needed
+    console.log(`Resizing terminal to ${cols} cols and ${rows} rows`);
+    console.log(`Terminal Height: ${terminalHeight}`);
+    // console.log(`Window inner Height: ${window.innerHeight}`);
+    // console.log(`Window outer Height: ${window.outerHeight}`);
+    // console.log(`Window screen Height: ${window.screen.height}`);
+    // console.log(`Document client Height: ${document.documentElement.clientHeight}`);
+    // console.log(`Document offset Height: ${document.documentElement.offsetHeight}`);
+    // console.log(`Window devicePixelRatio: ${window.devicePixelRatio}`);
+    // Resize terminal with calculated cols and rows
+    // Adjust divisor as needed
+
+    // Resize terminal with calculated cols and rows
+    // Adjust divisor as needed
+    // resizeTerminal(cols, rows);
+    // console.log(`Resizing terminal to ${cols} cols and ${rows} rows`);
+    //resizeTerminal(cols, rows);
+  }, [terminalHeight]);
+  useEffect(() => {
+    // Add event listener for window resize
+    window.addEventListener('resize', handleTerminalResize);
+
+    // Call handleTerminalResize on component mount to set initial terminal size
+    handleTerminalResize();
+
+    // Clean up event listener on component unmount
+    return () => {
+      window.removeEventListener('resize', handleTerminalResize);
+    };
+  }, [handleTerminalResize]);
 
   return (
     <Box
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100dvh', // Use 100dvh for better mobile/browser toolbar handling
+        height: '100%', // Changed from 100dvh to 100% to fit within Layout's main content area
         width: '100%',
-        bgcolor: theme.palette.background.default,
+        // bgcolor: theme.palette.background.default, // Layout now provides this background
         color: theme.palette.text.primary,
         overflow: 'hidden', // Prevent outer scrollbars
       }}
@@ -117,7 +238,7 @@ const AiEditorPage: React.FC = () => {
         <LinearProgress sx={{ width: '100%', flexShrink: 0, zIndex: 1200 }} />
       )}
 
-      {error && (
+      {globalError && (
         <Alert
           severity="error"
           sx={{
@@ -128,7 +249,7 @@ const AiEditorPage: React.FC = () => {
             flexShrink: 0,
           }}
         >
-          <Typography variant="body2">{error}</Typography>
+          <Typography variant="body2">{globalError}</Typography>
         </Alert>
       )}
 
@@ -162,10 +283,10 @@ const AiEditorPage: React.FC = () => {
             <FileTree projectRoot={currentProjectPath} />
           ) : (
             <Box sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                No project opened.
-              </Typography>
-            </Box>
+            <Typography variant="body2" color="text.secondary">
+              No project opened.
+            </Typography>
+          </Box>
           )}
         </Box>
 
@@ -180,92 +301,59 @@ const AiEditorPage: React.FC = () => {
             bgcolor: theme.palette.background.default,
           }}
         >
-          {/* File Tree Toggle Button */}
-          <IconButton
-            onClick={() => setShowFileTree(!showFileTree)}
-            sx={{
-              position: 'absolute',
-              top: 0, // Align with the top of the main content area
-              left: 0,
-              zIndex: 11,
-              bgcolor: theme.palette.background.paper, // Match paper background for a floating effect
-              borderRadius: '0 0 4px 0', // Rounded bottom-right corner
-              borderRight: `1px solid ${theme.palette.divider}`,
-              borderBottom: `1px solid ${theme.palette.divider}`,
-              p: 0.5, // Smaller padding for icon button
-              color: theme.palette.text.secondary,
-              '&:hover': {
-                bgcolor: theme.palette.action.hover,
-              },
-            }}
-          >
-            {showFileTree ? (
-              <ChevronLeftIcon fontSize="small" />
-            ) : (
-              <ChevronRightIcon fontSize="small" />
-            )}
-          </IconButton>
-
           {/* File Tabs */}
           <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
 
-          {/* AI Response Display / Opened File Viewer */}
+          {/* Opened File Viewer, Resizer, and Terminal container */}
           <Box
+            ref={contentAreaRef} // Attach ref here to get total height for resizing calculations
             sx={{
-              flexGrow: 1,
-              minHeight: 0, // Allow content to shrink vertically
-              overflow: 'auto', // Enable scrolling for the editor/response area
-              bgcolor: theme.palette.background.default,
+              display: 'flex',
+              flexDirection: 'column',
+              flexGrow: 1, // Takes all available vertical space in its parent
+              minHeight: 0, // Allows children to properly manage their height within this flex container
+              overflow: 'hidden', // Ensures inner scrollbars are respected
             }}
           >
-            {lastLlmResponse ? <AiResponseDisplay /> : <OpenedFileViewer />}
-          </Box>
-
-          {/* Prompt Generator Panel */}
-          <Paper
-            elevation={3}
-            sx={{
-              flexShrink: 0,
-              p: showPromptGenerator ? 2 : 0, // Only apply padding when expanded
-              height: showPromptGenerator
-                ? 'auto'
-                : PROMPT_GENERATOR_HEIGHT_MIN,
-              overflow: 'hidden', // Hide content when collapsed
-              bgcolor: theme.palette.background.paper,
-              borderTop: `1px solid ${theme.palette.divider}`,
-              borderRadius: 0, // Sharp corners
-              position: 'relative', // For toggle button
-              transition: 'height 0.2s ease-in-out, padding 0.2s ease-in-out',
-            }}
-          >
-            {/* Prompt Generator Toggle Button */}
-            <IconButton
-              onClick={() => setShowPromptGenerator(!showPromptGenerator)}
+            {/* Opened File Viewer */}
+            <Box
               sx={{
-                position: 'absolute',
-                top: -1, // Adjust to sit on the border
-                right: theme.spacing(2), // Align with padding
-                zIndex: 12,
-                bgcolor: theme.palette.background.paper,
-                borderRadius: '4px 4px 0 0', // Rounded top corners
-                border: `1px solid ${theme.palette.divider}`,
-                borderBottom: 'none',
-                p: 0.5, // Smaller padding
-                color: theme.palette.text.secondary,
-                '&:hover': {
-                  bgcolor: theme.palette.action.hover,
-                },
+                flexGrow: 1, // Allows OpenedFileViewer to take all remaining space above the terminal
+                minHeight: '150px', // Minimum height for the file viewer (adjust as needed)
+                overflow: 'auto', // Add scrollbar if content overflows
               }}
             >
-              {showPromptGenerator ? (
-                <ChevronDownIcon fontSize="small" />
-              ) : (
-                <ChevronUpIcon fontSize="small" />
-              )}
-            </IconButton>
-            {/* Conditionally render PromptGenerator to save resources when hidden */}
-            {showPromptGenerator && <PromptGenerator />}
-          </Paper>
+              <OpenedFileViewer />
+            </Box>
+
+            {/* Resize Handle */}
+            <Box
+              onMouseDown={startResize}
+              sx={{
+                height: RESIZE_HANDLE_HEIGHT,
+                bgcolor: theme.palette.divider,
+                cursor: 'ns-resize',
+                flexShrink: 0, // Prevent the handle from shrinking
+                '&:hover': {
+                  bgcolor: theme.palette.primary.main, // Visual feedback on hover
+                },
+              }}
+            />
+
+            {/* Terminal Container */}
+            <Box
+              sx={{
+                height: terminalHeight, // Controlled height
+                minHeight: '50px', // Minimum terminal height
+                flexShrink: 0, // Prevent terminal from shrinking below its height
+                overflow: 'hidden', // XTerminal component itself handles internal scrolling
+              }}
+            >
+              <XTerminal onLogout={handleTerminalLogout} terminalHeight={terminalHeight} />
+            </Box>
+          </Box>
+
+          {/* Prompt Generator Panel and AiResponseDisplay are now in the right sidebar */}
         </Box>
       </Box>
     </Box>

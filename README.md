@@ -5,7 +5,7 @@
 [![Pull Requests](https://img.shields.io/github/issues-pr/evillan0315/project-board-front)](https://github.com/evillan0315/project-board-front/pulls)
 [![Last Commit](https://img.shields.io/github/last-commit/evillan0315/project-board-front)](https://github.com/evillan0315/project-board-front/commits)
 
-> A React frontend for the Project Board server backend, built with Vite, React, Nanostores, Tailwind CSS **v4**, and Material UI **v7**, focusing on intelligent code assistance and a broader range of AI-powered applications.
+> A React **v19** frontend for the Project Board server backend, built with **Vite v7**, React, Nanostores, Tailwind CSS **v4**, and Material UI **v6**, focusing on intelligent code assistance and a broader range of AI-powered applications.
 
 ---
 
@@ -50,8 +50,8 @@
 - 🌍 **Project Management**: Create and manage organizations and their associated projects.
 - ⚙️ **Project Settings**: Manage project configurations, AI models, and API keys. (Coming Soon)
 - 🐛 **Bug Report**: Submit bug reports and track issues within your projects. (Coming Soon)
-- 🌍 **Modern UI/UX**: Built with React, Material-UI **v7**, and Tailwind CSS **v4** for a responsive, accessible, and intuitive user experience.
-- ⚡ **Vite Development**: Fast development and build times powered by Vite, providing a modern and efficient development workflow.
+- 🌍 **Modern UI/UX**: Built with React, Material-UI **v6**, and Tailwind CSS **v4** for a responsive, accessible, and intuitive user experience.
+- ⚡ **Vite Development**: Fast development and build times powered by **Vite v7**, providing a modern and efficient development workflow.
 - 🌗 **Dark/Light Theme Toggle**: Effortlessly switch between dark and light modes, enhancing readability and user comfort.
 
 ---
@@ -374,13 +374,14 @@ Distributed under the MIT License. See [LICENSE](https://github.com/evillan0315/
 
 ## 🙌 Acknowledgements
 
-- [React](https://react.dev/)
-- [Vite](https://vitejs.dev/)
+- [React v19](https://react.dev/)
+- [Vite v7](https://vitejs.dev/)
 - [Nanostores](https://nanostores.github.io/)
 - [Tailwind CSS v4](https://tailwindcss.com/)
-- [Material-UI v7](https://mui.com/)
+- [Material-UI v6](https://mui.com/)
 - [@uiw/react-codemirror](https://uiwjs.github.io/react-codemirror/)
 - [CodeMirror](https://codemirror.net/)
 - [path-browserify](https://www.npmjs.com/package/path-browserify)
 - [socket.io-client](https://socket.io/docs/v4/client-api/)
-- [React Router DOM v6](https://reactrouter.com/en/main)
+- [React Router DOM v7](https://reactrouter.com/en/main)
+- [ESLint (Flat Config)](https://eslint.org/)

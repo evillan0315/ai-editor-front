@@ -84,7 +84,7 @@ export const fetchDirectoryContents = async (
 export const readFileContent = async (filePath: string): Promise<string> => {
   try {
     // Ensure the filePath is sent in the body for the POST request
-    const response = await fetchWithAuth(`${API_BASE_URL}/file/open`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/file/read`, {
       method: 'POST',
       body: JSON.stringify({ filePath: filePath }),
     });

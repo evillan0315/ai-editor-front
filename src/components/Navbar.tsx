@@ -236,6 +236,8 @@ const Navbar: React.FC = () => {
         zIndex: 1100,
         bgcolor: theme.palette.background.paper,
         borderBottom: `1px solid ${theme.palette.divider}`,
+         
+
       }}
     >
       {/* New: Linear loader for script execution */}
@@ -251,7 +253,8 @@ const Navbar: React.FC = () => {
           alignItems: 'center',
           mx: 'auto',
           width: '100%',
-          px: { xs: 2, sm: 3, lg: 4 },
+          py: 0,
+          px: { xs: 1, sm: 2, lg: 2 },
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

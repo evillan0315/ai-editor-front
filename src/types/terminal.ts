@@ -1,12 +1,32 @@
- // src/types/terminal.ts
 export interface SystemInfo {
-  platform: string;
-  type: string;
-  release: string;
+  os: string;
   arch: string;
-  uptime: number;
-  hostname: string;
+  platform: string;
+  nodeVersion: string;
+  cpu: string;
+  memory: string;
+}
+
+export interface PromptData {
   cwd: string;
+}
+
+export interface CreateCommandHistoryDto {
+  command: string;
+  workingDirectory?: string;
+  status?: string;
+  exitCode?: number;
+  output?: string;
+  errorOutput?: string;
+  durationMs?: number;
+  shellType?: string;
+}
+
+export interface CreateTerminalSessionDto {
+  name?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  clientInfo?: object;
 }
 
 export interface ExecDto {
@@ -14,12 +34,22 @@ export interface ExecDto {
   newCwd?: string;
 }
 
-export interface SSHConnectPayload {
+export interface GetPackageScriptsDto {
+  projectRoot: string;
+}
+
+export interface SshCommandDto {
   host: string;
   port?: number;
   username: string;
   password?: string;
-  privateKey?: string;
+  privateKeyPath?: string;
+  command: string;
+}
+
+export interface TerminalCommandDto {
+  command: string;
+  cwd: string;
 }
 
 export interface ResizePayload {
@@ -27,7 +57,10 @@ export interface ResizePayload {
   rows: number;
 }
 
-export interface PromptData {
-  cwd: string;
-  command: string;
+export interface SSHConnectPayload {
+    host: string;
+    port?: number;
+    username: string;
+    password?: string;
+    privateKeyPath?: string;
 }

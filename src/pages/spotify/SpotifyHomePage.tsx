@@ -354,7 +354,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
                         edge="end"
                         aria-label="play audio"
                         onClick={(e) => {
-                          e.stopPropagation(); // Prevent ListItem's onClick from firing
+                         e.stopPropagation(); // Prevent ListItem's onClick from firing
                           handlePlayMedia(mediaFile);
                         }}
                         sx={{ color: theme.palette.primary.main, ml: 2 }}
@@ -384,7 +384,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
                       : 'none',
                     color: theme.palette.text.primary,
                   }}
-                  onClick={() => handlePlayMedia(mediaFile)}
+                  //onClick={() => handlePlayMedia(mediaFile)}
                 >
                   <ListItemAvatar>
                     {track.coverArt ? (

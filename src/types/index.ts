@@ -215,6 +215,7 @@ export interface AiEditorState {
   scanPathsInput: string; // Add scanPathsInput to the state
   lastLlmResponse: ModelResponse | null; // Stores the full structured response from LLM
   lastLlmGeneratePayload: LlmGeneratePayload | null; // Stores the last payload sent to generateCode
+  lastLlmGeneratePayloadString: string | null;
   selectedChanges: Record<string, FileChange>; // Map of filePath to ProposedFileChange
   currentDiff: string | null; // The content of the diff for the currently viewed file
   diffFilePath: string | null; // The filePath of the file whose diff is currently displayed

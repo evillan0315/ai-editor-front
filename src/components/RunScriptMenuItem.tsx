@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { defaultScriptIcon, scriptIcons } from '@/constants/scriptIcons';
 import { ScriptStatus } from '@/types';
+import { addLog } from '@/stores/logStore'; // NEW: Import addLog
 
 interface RunScriptMenuItemProps {
   name: string;
@@ -18,6 +19,11 @@ interface RunScriptMenuItemProps {
   disabled: boolean;
 }
 
+/**
+ * Represents a menu item for running a package.json script.
+ * Displays the script name, an icon, and status (running, success, error).
+ * Logs script execution attempts to the `logStore`.
+ */
 const RunScriptMenuItem: React.FC<RunScriptMenuItemProps> = ({
   name,
   command: rawScriptContent,
@@ -40,10 +46,19 @@ const RunScriptMenuItem: React.FC<RunScriptMenuItemProps> = ({
     iconColor = theme.palette.success.main;
   }
 
+  /**
+   * Handles the click event for the menu item.
+   * Logs the script execution attempt and then calls the provided onClick handler.
+   */
+  const handleClick = () => {
+    addLog('Script Runner', `Running script: \`${name}\``, 'info', `Command: ${rawScriptContent}`);
+    onClick(name, rawScriptContent);
+  };
+
   return (
     <Tooltip title={`Script: ${rawScriptContent}`} placement="right">
       <MenuItem
-        onClick={() => onClick(name, rawScriptContent)}
+        onClick={handleClick} // Use the new handleClick
         disabled={disabled || isLoading}
         sx={{
           minWidth: 150,

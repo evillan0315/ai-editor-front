@@ -5,18 +5,13 @@ import {
   selectAllChanges,
   deselectAllChanges,
   setApplyingChanges,
-  setAppliedMessages,
   setLastLlmResponse,
-  setError,
+  setError, // Still used for immediate, transient UI error
   clearDiff,
   setOpenedFile,
-  setRunningGitCommandIndex,
-  setCommandExecutionError,
-  setCommandExecutionOutput,
-  setBuildOutput,
-  setIsBuilding,
-  performPostApplyActions, // New: Import the unified action
+  performPostApplyActions, // Unified action, handles logging internally now
 } from '@/stores/aiEditorStore';
+import { addLog } from '@/stores/logStore'; // NEW: Import addLog for logging
 import {
   Button,
   Box,
@@ -37,65 +32,72 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { applyProposedChanges } from '@/api/llm';
 import { runTerminalCommand } from '@/api/terminal';
 import ProposedChangeCard from './ProposedChangeCard';
-import OutputLogger from './OutputLogger'; // New: Import OutputLogger
+// import OutputLogger from './OutputLogger'; // Removed, it's now a central log viewer in AiSidebarContent
 import { ModelResponse, FileChange, RequestType } from '@/types';
 
 interface AiResponseDisplayProps {
   // No specific props needed, all state comes from aiEditorStore
 }
 
+/**
+ * Displays the AI's proposed changes, thought process, and provides controls
+ * for reviewing, selecting, and applying these changes. It now logs detailed
+ * operational messages to the central `logStore`.
+ */
 const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
   const {
     loading,
     lastLlmResponse,
     selectedChanges,
     applyingChanges,
-    appliedMessages,
     currentProjectPath,
     gitInstructions,
-    runningGitCommandIndex,
-    commandExecutionOutput,
-    commandExecutionError,
-    isBuilding,
-    buildOutput,
     lastLlmGeneratePayload,
     scanPathsInput,
     error: globalError, // Rename to avoid conflict with local scope 'error'
   } = useStore(aiEditorStore);
   const theme = useTheme();
 
+  // `isBuilding`, `buildOutput`, `runningGitCommandIndex`, `commandExecutionOutput`,
+  // `commandExecutionError`, `appliedMessages` are now managed by `logStore`
+  // and internal to `performPostApplyActions`.
+  // `applyingChanges` is the primary indicator for the overall UI blocking state.
+
   useEffect(() => {
     // Clear diff when response changes to avoid stale diffs
     clearDiff();
     // Close any opened file when a new LLM response arrives
     if (lastLlmResponse) {
-      setOpenedFile(null);
+      console.log(lastLlmResponse);
+      //setOpenedFile(null);
     }
   }, [lastLlmResponse]);
 
   const handleApplySelectedChanges = async () => {
     if (Object.keys(selectedChanges).length === 0) {
-      setError('No changes selected to apply.');
+      const msg = 'No changes selected to apply.';
+      setError(msg); // For immediate UI feedback
+      addLog('AI Response Display', msg, 'warning', undefined, undefined, true);
       return;
     }
     if (!currentProjectPath) {
-      setError('Project root is not set.');
+      const msg = 'Project root is not set.';
+      setError(msg);
+      addLog('AI Response Display', msg, 'error', undefined, undefined, true);
       return;
     }
     if (!lastLlmGeneratePayload) {
-      setError('Original AI generation payload missing. Cannot report errors.');
+      const msg = 'Original AI generation payload missing. Cannot report errors.';
+      setError(msg);
+      addLog('AI Response Display', msg, 'error', undefined, undefined, true);
       return;
     }
 
     // Start the overall application process indicator
-    setApplyingChanges(true);
-    setError(null); // Clear previous error
-    setAppliedMessages([]);
-    setBuildOutput(null); // Clear previous build output
-    setIsBuilding(false); // Ensure building state is reset before starting any new process
-    // Clear any previous individual git command outputs as we are starting a new sequence
-    setCommandExecutionError(null);
-    setCommandExecutionOutput(null);
+    setApplyingChanges(true); // This action also logs the start of applying changes
+    setError(null); // Clear previous immediate error
+
+    addLog('AI Response Display', 'Starting application process for selected changes...', 'info');
 
     try {
       const changesToApply = Object.values(selectedChanges);
@@ -103,12 +105,16 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
         changesToApply,
         currentProjectPath,
       );
-      setAppliedMessages(applyResult.messages);
+      // Individual messages from applyResult.messages are now logged by `addLog` in aiEditorStore
+      applyResult.messages.forEach(msg => addLog('AI Response Display', msg, 'info'));
+
 
       if (!applyResult.success) {
-        setError('Some changes failed to apply. Check messages above.');
-        // Removed reportErrorToLlm call here
+        const msg = 'Some changes failed to apply. Check logs for details.';
+        setError(msg); // For immediate UI feedback
+        addLog('AI Response Display', msg, 'error', applyResult.messages.join('\n'), undefined, true);
       } else {
+        addLog('AI Response Display', 'Changes applied successfully. Proceeding to post-apply actions (build + git).', 'success');
         // If changes applied successfully, proceed to post-apply actions (build + git)
         if (lastLlmResponse && lastLlmGeneratePayload) {
           await performPostApplyActions(
@@ -128,39 +134,45 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
       deselectAllChanges();
       clearDiff();
     } catch (err) {
-      setError(
-        `Overall failure during application of changes: ${err instanceof Error ? err.message : String(err)}`,
-      );
-      // Removed reportErrorToLlm call here
+      const errorMsg = `Overall failure during application of changes: ${err instanceof Error ? err.message : String(err)}`;
+      setError(errorMsg); // For immediate UI feedback
+      addLog('AI Response Display', errorMsg, 'error', String(err), undefined, true);
     } finally {
-      setApplyingChanges(false); // End overall loading indicator
+      setApplyingChanges(false); // This action also logs the end of applying changes
     }
   };
 
-  const handleRunGitCommand = async (command: string, index: number) => {
+  const handleRunGitCommand = async (command: string) => { // Removed index parameter, as status is now global to logStore
     if (!currentProjectPath) {
-      setError('Project root is not set. Cannot run git command.');
+      const msg = 'Project root is not set. Cannot run git command.';
+      setError(msg); // For immediate UI feedback
+      addLog('AI Response Display', msg, 'error', undefined, undefined, true);
       return;
     }
-    setRunningGitCommandIndex(index);
-    setCommandExecutionError(null);
-    setCommandExecutionOutput(null);
+    addLog('Git Automation', `Manually running git command: \`${command}\``, 'info');
+
 
     try {
       const result = await runTerminalCommand(command, currentProjectPath);
-      setCommandExecutionOutput(result);
+      // Command execution output is now handled by `addLog`
       if (result.exitCode !== 0) {
-        setCommandExecutionError(`Command exited with code ${result.exitCode}`);
+        const msg = `Command exited with code ${result.exitCode}`;
+        addLog('Git Automation', `Git command failed: \`${command}\`. ${msg}`, 'error', result.stderr, result, true);
+        setError(msg); // For immediate UI feedback
+      } else {
+        addLog('Git Automation', `Git command succeeded: \`${command}\`.`, 'success', result.stdout, result);
       }
     } catch (err) {
-      setCommandExecutionError(
-        `Failed to run command: ${err instanceof Error ? err.message : String(err)}`,
-      );
-      setCommandExecutionOutput({ stdout: '', stderr: '', exitCode: 1 }); // Clear previous output on error
-    } finally {
-      setRunningGitCommandIndex(null);
+      const errorMsg = `Failed to run command: ${err instanceof Error ? err.message : String(err)}`;
+      addLog('Git Automation', errorMsg, 'error', String(err), { stdout: '', stderr: String(err), exitCode: 1 }, true);
+      setError(errorMsg); // For immediate UI feedback
     }
   };
+
+  // Simplified to just `applyingChanges` for overall process indicator,
+  // as `isBuilding` and `runningGitCommandIndex` status are now logged
+  // to the global log store and not needed for a dedicated UI element here.
+  const isAnyProcessRunning = applyingChanges;
 
   if (!lastLlmResponse) return null;
 
@@ -172,23 +184,17 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
         bgcolor: theme.palette.background.paper,
         flexGrow: 1,
         height: '100%',
-        maxHeight: '100%',
-        overflowY: 'auto',
+        display: 'flex', // Changed to flex container
+        flexDirection: 'column', // Changed to column direction
+        overflow: 'hidden', // Hide parent scroll to manage internal scroll
       }}
     >
-      <Typography
-        variant="h5"
-        className="!font-bold"
-        sx={{ color: theme.palette.text.primary }}
-        gutterBottom
-      >
-        AI Proposed Changes:
-      </Typography>
-      <Typography variant="body1" color="text.secondary" gutterBottom>
+
+      <Typography variant="body1" color="text.secondary" sx={{ flexShrink: 0 }} gutterBottom> {/* Added flexShrink */}
         {lastLlmResponse.summary}
       </Typography>
-      {lastLlmResponse.thoughtProcess && (
-        <Accordion sx={{ mb: 2 }}>
+      {/*lastLlmResponse.thoughtProcess && (
+        <Accordion sx={{ mb: 2, flexShrink: 0 }}> 
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography
               variant="subtitle1"
@@ -210,24 +216,24 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
                 color: theme.palette.text.primary,
               }}
             >
-              {lastLlmResponse.thoughtProcess}
+             
             </Typography>
           </AccordionDetails>
         </Accordion>
-      )}
+      )*/}
 
-      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+      <Box sx={{ display: 'flex', gap: 1, mb: 2, flexShrink: 0 }}> 
         <Button
           variant="outlined"
-          onClick={selectAllChanges}
-          disabled={loading || applyingChanges || isBuilding}
+          onClick={selectAllChanges} // This action also logs
+          disabled={isAnyProcessRunning}
         >
           Select All
         </Button>
         <Button
           variant="outlined"
-          onClick={deselectAllChanges}
-          disabled={loading || applyingChanges || isBuilding}
+          onClick={deselectAllChanges} // This action also logs
+          disabled={isAnyProcessRunning}
         >
           Deselect All
         </Button>
@@ -236,93 +242,38 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
           color="primary"
           onClick={handleApplySelectedChanges}
           disabled={
-            loading ||
-            applyingChanges ||
-            isBuilding ||
-            Object.keys(selectedChanges).length === 0
+            isAnyProcessRunning || Object.keys(selectedChanges).length === 0
           }
           startIcon={
-            applyingChanges || isBuilding ? (
+            isAnyProcessRunning ? (
               <CircularProgress size={16} color="inherit" />
             ) : null
           }
         >
           {applyingChanges
             ? 'Applying...'
-            : isBuilding
-              ? 'Processing...'
-              : 'Apply Selected Changes'}
+            : 'Apply Selected Changes'}
         </Button>
       </Box>
 
       {applyingChanges && (
-        <Alert severity="info" sx={{ mt: 3 }}>
+        <Alert severity="info" sx={{ mt: 3, flexShrink: 0 }}> {/* Added flexShrink */}
           Applying selected changes...
           <CircularProgress size={16} color="inherit" sx={{ ml: 1 }} />
         </Alert>
       )}
 
-      {appliedMessages && appliedMessages.length > 0 && (
-        <Paper
-          elevation={1}
-          sx={{
-            mt: 3,
-            p: 2,
-            bgcolor: theme.palette.background.paper,
-            border: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <Typography
-            variant="h6"
-            className="!font-semibold"
-            sx={{ color: theme.palette.text.primary }}
-            gutterBottom
-          >
-            Application Summary:
-          </Typography>
-          <Box
-            sx={{
-              whiteSpace: 'pre-wrap',
-              fontFamily: 'monospace',
-              fontSize: '0.875rem',
-              maxHeight: '200px',
-              overflowY: 'auto',
-              p: 1,
-              bgcolor: theme.palette.background.default,
-              borderRadius: 1,
-              color: theme.palette.text.primary,
-            }}
-          >
-            {appliedMessages.map((msg, index) => (
-              <Typography
-                key={index}
-                component="div"
-                sx={{ mb: 0.5, color: theme.palette.text.primary }}
-              >
-                {msg}
-              </Typography>
-            ))}
-          </Box>
-        </Paper>
-      )}
-
-      {/* Refactored Build Output */}
-      <OutputLogger
-        title="Build Script Output"
-        output={buildOutput}
-        isLoading={isBuilding}
-        defaultExpanded={buildOutput?.exitCode !== 0}
-      />
+      {/* `appliedMessages`, `buildOutput` are now displayed via the central `OutputLogger` in `AiSidebarContent` */}
 
       {gitInstructions && gitInstructions.length > 0 && (
-        <Accordion sx={{ mt: 3 }}>
+        <Accordion sx={{ mt: 3, flexShrink: 0 }}> {/* Added flexShrink */}
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography
               variant="subtitle1"
               className="!font-semibold"
               sx={{ color: theme.palette.text.primary }}
             >
-              Git Instructions
+              Manual Git Instructions (Run below to log to Output)
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
@@ -366,35 +317,19 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
                     <span>
                       <IconButton
                         size="small"
-                        onClick={() => handleRunGitCommand(command, index)}
-                        disabled={
-                          runningGitCommandIndex !== null &&
-                          runningGitCommandIndex !== index
-                        }
+                        onClick={() => handleRunGitCommand(command)} // Removed index
+                        disabled={isAnyProcessRunning} // Disabled if any process is running
                         sx={{ color: theme.palette.success.main }}
                       >
-                        {runningGitCommandIndex === index ? (
-                          <CircularProgress size={16} color="inherit" />
-                        ) : (
-                          <PlayArrowIcon fontSize="small" />
-                        )}
+                        {/* No specific per-command loading indicator needed here, as global log will show running state */}
+                        <PlayArrowIcon fontSize="small" />
                       </IconButton>
                     </span>
                   </Tooltip>
                 </Box>
               ))}
             </Box>
-            {/* Refactored Command Execution Output */}
-            <OutputLogger
-              title="Command Execution Output"
-              output={commandExecutionOutput}
-              error={commandExecutionError}
-              isLoading={runningGitCommandIndex !== null}
-              defaultExpanded={
-                commandExecutionOutput?.exitCode !== 0 ||
-                !!commandExecutionError
-              }
-            />
+            {/* `commandExecutionOutput` and `commandExecutionError` are now displayed via the central `OutputLogger` */}
           </AccordionDetails>
         </Accordion>
       )}
@@ -402,7 +337,7 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
       <Typography
         variant="h6"
         className="!font-semibold"
-        sx={{ mt: 3, mb: 2, color: theme.palette.text.primary }}
+        sx={{ mt: 3, mb: 2, color: theme.palette.text.primary, flexShrink: 0 }} // Added flexShrink
       >
         Detailed Changes:
       </Typography>
@@ -412,6 +347,7 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
           flexDirection: 'column',
           gap: 2,
           flexGrow: 1,
+          overflowY: 'auto', // Added overflowY: 'auto' here
         }}
       >
         {lastLlmResponse.changes &&
