@@ -178,8 +178,8 @@ const LlmGenerationContent: React.FC = () => {
           border: `1px solid ${theme.palette.divider}`,
           borderRadius: 1,
           // Make it sticky to the bottom of the scrollable parent Box
-          position: 'sticky',
-          bottom: theme.spacing(2), // Align with the parent Box's bottom padding (p: 2)
+          // position: 'sticky',
+          // bottom: theme.spacing(2), // Align with the parent Box's bottom padding (p: 2)
           zIndex: theme.zIndex.speedDial, // Ensure it floats above other content when sticky
           transition: 'height 0.2s ease-in-out',
           marginTop: 'auto', // This pushes the panel to the bottom in a flex column layout when space is available

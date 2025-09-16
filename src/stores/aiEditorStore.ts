@@ -624,7 +624,7 @@ export const discardActiveFileChanges = () => {
     setIsOpenedFileDirty(false);
     setSaveFileContentError(null);
     showGlobalSnackbar('Changes discarded.', 'info');
-    addLog('File Editor', `Changes discarded for: ${openedFile}`, 'info');
+    //addLog('File Editor', `Changes discarded for: ${openedFile}`, 'info');
   }
 };
 

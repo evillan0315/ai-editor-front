@@ -283,25 +283,7 @@ export const TerminalPage: React.FC<TerminalPageProps> = () => {
             terminalHeight={terminalHeight}
           />
 
-          {/*systemInfo && (
-            <Box sx={{ mt: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-              <Typography variant="h6" gutterBottom>
-                System Information
-              </Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 1 }}>
-                {Object.entries(systemInfo).map(([key, value]) => (
-                  <Box key={key}>
-                    <Typography variant="caption" color="text.secondary">
-                      {key}:
-                    </Typography>
-                    <Typography variant="body2">
-                      {value}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-          )}*/}
+          
         </Box>
       </Paper>
 

@@ -16,9 +16,13 @@ const LlmGenerationPage: React.FC = () => {
           color: theme.palette.text.primary,
           width: '100%',
           height: '100%',
+          display: 'flex', // Use flex to center the content
+          flexDirection: 'column', // Stack items vertically
+          alignItems: 'center', // Horizontally center items
+          justifyContent: 'flex-start', // Align items to the top
         }}
       >
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ mb: 2, textAlign: 'center' }}>
           <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
             LLM Generation Page
           </Typography>
@@ -28,19 +32,9 @@ const LlmGenerationPage: React.FC = () => {
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', height: 'calc(100% - 60px)' }}>
-          {/* Main content area */}
-          <Box sx={{ flex: 1, mr: 4 }}>
-            <Typography variant="h6">Main Content</Typography>
-            <Typography>
-              This is where the main content for LLM generation will go.
-            </Typography>
-          </Box>
-
-          {/* Sidebar with LLM Generation Controls */}
-          <Box sx={{ width: 300, flexShrink: 0 }}>
-            <LlmGenerationContent />
-          </Box>
+        {/* Sidebar with LLM Generation Controls - Takes full width */}
+        <Box sx={{ width: '100%', flexShrink: 0 }}>
+          <LlmGenerationContent />
         </Box>
       </Paper>
     </Container>

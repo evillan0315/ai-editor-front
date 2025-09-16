@@ -213,7 +213,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
           right: 0,
         }}
       >
-        <Box
+        { /*<Box
           sx={{
             color: '#4ec9b0',
             marginRight: '8px',
@@ -251,15 +251,16 @@ export const XTerminal: React.FC<XTerminalProps> = ({
               {getTruncatedPath(currentPath)}$
             </Box>
           </span>
-        </Box>
+        </Box> */}
         <input
           ref={inputRef}
           type="text"
           disabled={!isConnected}
           onKeyDown={handleKeyDown}
+          placeholder="Type a command..."
           style={{
             flexGrow: 1,
-
+       
             backgroundColor: 'transparent',
             border: 'none',
             color:
@@ -267,7 +268,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
                 ? theme.palette.text.primary
                 : theme.palette.text.secondary,
             fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
-            fontSize: '14px',
+            fontSize: '12px',
             outline: 'none',
           }}
         />
