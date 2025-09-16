@@ -1,5 +1,8 @@
 import * as path from 'path-browserify';
-import { FileTreeNode as ApiFileTreeNode, FileEntry } from '@/types/refactored/fileTree'; // Corrected import path for FileEntry
+import {
+  FileTreeNode as ApiFileTreeNode,
+  FileEntry,
+} from '@/types/refactored/fileTree'; // Corrected import path for FileEntry
 
 export function joinPaths(...paths: string[]): string {
   // Basic join for web paths. Not as robust as node's path.join across all OS.

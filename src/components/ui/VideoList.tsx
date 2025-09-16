@@ -1,4 +1,4 @@
- import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -23,7 +23,7 @@ import {
   Grow,
   Slide,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
 } from '@mui/material';
 import {
   PlayArrow,
@@ -37,7 +37,7 @@ import {
   Close,
   Theaters,
   Info,
-  Download
+  Download,
 } from '@mui/icons-material';
 
 // Types
@@ -81,10 +81,15 @@ const VideoList: React.FC<VideoListProps> = ({
   onAction,
   menuItems = [
     { label: 'Play Trailer', value: 'trailer', icon: <Theaters /> },
-    { label: 'Add to Watchlist', value: 'watchlist', icon: <FavoriteBorder />, divider: true },
+    {
+      label: 'Add to Watchlist',
+      value: 'watchlist',
+      icon: <FavoriteBorder />,
+      divider: true,
+    },
     { label: 'Download', value: 'download', icon: <Download /> },
-    { label: 'Info', value: 'info', icon: <Info /> }
-  ]
+    { label: 'Info', value: 'info', icon: <Info /> },
+  ],
 }) => {
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -102,26 +107,29 @@ const VideoList: React.FC<VideoListProps> = ({
 
   // Derived data
   const genres = useMemo(() => {
-    const allGenres = videos.flatMap(video => video.genre);
+    const allGenres = videos.flatMap((video) => video.genre);
     return ['all', ...Array.from(new Set(allGenres))];
   }, [videos]);
 
   const filteredAndSortedVideos = useMemo(() => {
     return videos
-      .filter(video => {
-        const matchesSearch = 
+      .filter((video) => {
+        const matchesSearch =
           video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           video.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (video.cast && video.cast.some(actor => 
-            actor.toLowerCase().includes(searchQuery.toLowerCase())));
-        
-        const matchesGenre = selectedGenre === 'all' || video.genre.includes(selectedGenre);
-        
+          (video.cast &&
+            video.cast.some((actor) =>
+              actor.toLowerCase().includes(searchQuery.toLowerCase()),
+            ));
+
+        const matchesGenre =
+          selectedGenre === 'all' || video.genre.includes(selectedGenre);
+
         return matchesSearch && matchesGenre;
       })
       .sort((a, b) => {
         const modifier = sortOrder === 'asc' ? 1 : -1;
-        
+
         if (a[sortField] < b[sortField]) return -1 * modifier;
         if (a[sortField] > b[sortField]) return 1 * modifier;
         return 0;
@@ -138,7 +146,10 @@ const VideoList: React.FC<VideoListProps> = ({
     }
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, video: Video) => {
+  const handleMenuOpen = (
+    event: React.MouseEvent<HTMLElement>,
+    video: Video,
+  ) => {
     setMenuAnchor(event.currentTarget);
     setSelectedVideo(video);
   };
@@ -172,12 +183,13 @@ const VideoList: React.FC<VideoListProps> = ({
   const renderListItems = () => (
     <Box sx={{ bgcolor: 'background.paper', borderRadius: 2 }}>
       {filteredAndSortedVideos.map((video) => (
-        <Card 
-          key={video.id} 
-          sx={{ 
-            mb: 1, 
-            bgcolor: hoveredVideo === video.id ? 'action.hover' : 'background.paper',
-            transition: 'background-color 0.2s'
+        <Card
+          key={video.id}
+          sx={{
+            mb: 1,
+            bgcolor:
+              hoveredVideo === video.id ? 'action.hover' : 'background.paper',
+            transition: 'background-color 0.2s',
           }}
           onMouseEnter={() => handleVideoHover(video.id)}
           onMouseLeave={() => handleVideoHover(null)}
@@ -189,24 +201,48 @@ const VideoList: React.FC<VideoListProps> = ({
               image={video.thumbnail}
               alt={video.title}
             />
-            <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minWidth: 0 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                flexGrow: 1,
+                minWidth: 0,
+              }}
+            >
               <CardContent sx={{ flexGrow: 1, py: 1 }}>
-                <Typography variant="h6" noWrap>{video.title}</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
-                  <Typography variant="body2" color="text.secondary">{video.year}</Typography>
+                <Typography variant="h6" noWrap>
+                  {video.title}
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 0.5,
+                    mb: 0.5,
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    {video.year}
+                  </Typography>
                   <span>•</span>
                   <Typography variant="body2" color="text.secondary">
                     {formatDuration(video.duration)}
                   </Typography>
                   <span>•</span>
-                  <Rating size="small" value={video.rating / 2} precision={0.5} readOnly />
+                  <Rating
+                    size="small"
+                    value={video.rating / 2}
+                    precision={0.5}
+                    readOnly
+                  />
                 </Box>
                 <Typography variant="body2" color="text.secondary" noWrap>
                   {video.description}
                 </Typography>
               </CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
-                <IconButton 
+                <IconButton
                   onClick={() => onFavorite(video.id)}
                   color={video.isFavorite ? 'error' : 'default'}
                   size="small"
@@ -216,7 +252,10 @@ const VideoList: React.FC<VideoListProps> = ({
                 <IconButton onClick={() => onPlay(video)} size="small">
                   <PlayArrow />
                 </IconButton>
-                <IconButton onClick={(e) => handleMenuOpen(e, video)} size="small">
+                <IconButton
+                  onClick={(e) => handleMenuOpen(e, video)}
+                  size="small"
+                >
                   <MoreVert />
                 </IconButton>
               </Box>
@@ -231,15 +270,15 @@ const VideoList: React.FC<VideoListProps> = ({
     <Grid container spacing={2}>
       {filteredAndSortedVideos.map((video) => (
         <Grid item xs={12} sm={6} md={4} lg={3} key={video.id}>
-          <Card 
-            sx={{ 
-              height: '100%', 
-              display: 'flex', 
+          <Card
+            sx={{
+              height: '100%',
+              display: 'flex',
               flexDirection: 'column',
               transition: 'transform 0.3s, box-shadow 0.3s',
               transform: hoveredVideo === video.id ? 'scale(1.05)' : 'scale(1)',
               zIndex: hoveredVideo === video.id ? 1 : 0,
-              boxShadow: hoveredVideo === video.id ? 6 : 1
+              boxShadow: hoveredVideo === video.id ? 6 : 1,
             }}
             onMouseEnter={() => handleVideoHover(video.id)}
             onMouseLeave={() => handleVideoHover(null)}
@@ -253,7 +292,11 @@ const VideoList: React.FC<VideoListProps> = ({
                   alt={video.title}
                   sx={{ objectFit: 'cover' }}
                 />
-                <Slide direction="up" in={hoveredVideo === video.id} timeout={300}>
+                <Slide
+                  direction="up"
+                  in={hoveredVideo === video.id}
+                  timeout={300}
+                >
                   <Fab
                     color="primary"
                     aria-label="play"
@@ -277,23 +320,40 @@ const VideoList: React.FC<VideoListProps> = ({
               <Typography gutterBottom variant="h6" noWrap>
                 {video.title}
               </Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 0.5,
+                }}
+              >
                 <Typography variant="body2" color="text.secondary">
                   {video.year}
                 </Typography>
                 <Chip label={formatDuration(video.duration)} size="small" />
               </Box>
-              <Rating value={video.rating / 2} precision={0.5} size="small" readOnly />
+              <Rating
+                value={video.rating / 2}
+                precision={0.5}
+                size="small"
+                readOnly
+              />
             </CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1 }}>
-              <IconButton 
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', p: 1 }}
+            >
+              <IconButton
                 onClick={() => onFavorite(video.id)}
                 color={video.isFavorite ? 'error' : 'default'}
                 size="small"
               >
                 {video.isFavorite ? <Favorite /> : <FavoriteBorder />}
               </IconButton>
-              <IconButton onClick={(e) => handleMenuOpen(e, video)} size="small">
+              <IconButton
+                onClick={(e) => handleMenuOpen(e, video)}
+                size="small"
+              >
                 <MoreVert />
               </IconButton>
             </Box>
@@ -306,13 +366,13 @@ const VideoList: React.FC<VideoListProps> = ({
   const renderThumbItems = () => (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
       {filteredAndSortedVideos.map((video) => (
-        <Box 
-          key={video.id} 
-          sx={{ 
+        <Box
+          key={video.id}
+          sx={{
             width: 240,
             transition: 'transform 0.3s',
             transform: hoveredVideo === video.id ? 'scale(1.05)' : 'scale(1)',
-            zIndex: hoveredVideo === video.id ? 1 : 0
+            zIndex: hoveredVideo === video.id ? 1 : 0,
           }}
           onMouseEnter={() => handleVideoHover(video.id)}
           onMouseLeave={() => handleVideoHover(null)}
@@ -335,32 +395,62 @@ const VideoList: React.FC<VideoListProps> = ({
                     right: 0,
                     bgcolor: 'rgba(0, 0, 0, 0.7)',
                     p: 1.5,
-                    color: 'white'
+                    color: 'white',
                   }}
                 >
-                  <Typography variant="h6" noWrap>{video.title}</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                  <Typography variant="h6" noWrap>
+                    {video.title}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 0.5,
+                    }}
+                  >
                     <Typography variant="body2">{video.year}</Typography>
                     <span>•</span>
-                    <Typography variant="body2">{formatDuration(video.duration)}</Typography>
+                    <Typography variant="body2">
+                      {formatDuration(video.duration)}
+                    </Typography>
                   </Box>
-                  <Rating value={video.rating / 2} precision={0.5} size="small" readOnly />
+                  <Rating
+                    value={video.rating / 2}
+                    precision={0.5}
+                    size="small"
+                    readOnly
+                  />
                 </Box>
               </Grow>
             </CardActionArea>
-            <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0.5 }}>
-              <IconButton 
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                display: 'flex',
+                gap: 0.5,
+              }}
+            >
+              <IconButton
                 onClick={() => onFavorite(video.id)}
                 color={video.isFavorite ? 'error' : 'default'}
                 size="small"
-                sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'background.paper' } }}
+                sx={{
+                  bgcolor: 'background.paper',
+                  '&:hover': { bgcolor: 'background.paper' },
+                }}
               >
                 {video.isFavorite ? <Favorite /> : <FavoriteBorder />}
               </IconButton>
-              <IconButton 
-                onClick={(e) => handleMenuOpen(e, video)} 
+              <IconButton
+                onClick={(e) => handleMenuOpen(e, video)}
                 size="small"
-                sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'background.paper' } }}
+                sx={{
+                  bgcolor: 'background.paper',
+                  '&:hover': { bgcolor: 'background.paper' },
+                }}
               >
                 <MoreVert />
               </IconButton>
@@ -374,7 +464,15 @@ const VideoList: React.FC<VideoListProps> = ({
   return (
     <Box>
       {/* Controls */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 2,
+          mb: 3,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        }}
+      >
         <TextField
           label="Search videos"
           value={searchQuery}
@@ -385,10 +483,10 @@ const VideoList: React.FC<VideoListProps> = ({
               <InputAdornment position="start">
                 <Search />
               </InputAdornment>
-            )
+            ),
           }}
         />
-        
+
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Genre</InputLabel>
           <Select
@@ -410,7 +508,7 @@ const VideoList: React.FC<VideoListProps> = ({
             variant="outlined"
             sx={{ mr: 1 }}
           />
-          <IconButton 
+          <IconButton
             onClick={() => handleSortChange('title')}
             color={sortField === 'title' ? 'primary' : 'default'}
           >
@@ -418,7 +516,7 @@ const VideoList: React.FC<VideoListProps> = ({
               Title {sortField === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
             </Typography>
           </IconButton>
-          <IconButton 
+          <IconButton
             onClick={() => handleSortChange('year')}
             color={sortField === 'year' ? 'primary' : 'default'}
           >
@@ -429,20 +527,20 @@ const VideoList: React.FC<VideoListProps> = ({
         </Box>
 
         <Box sx={{ display: 'flex' }}>
-          <IconButton 
-            onClick={() => setViewMode('list')} 
+          <IconButton
+            onClick={() => setViewMode('list')}
             color={viewMode === 'list' ? 'primary' : 'default'}
           >
             <ViewList />
           </IconButton>
-          <IconButton 
-            onClick={() => setViewMode('grid')} 
+          <IconButton
+            onClick={() => setViewMode('grid')}
             color={viewMode === 'grid' ? 'primary' : 'default'}
           >
             <ViewModule />
           </IconButton>
-          <IconButton 
-            onClick={() => setViewMode('thumb')} 
+          <IconButton
+            onClick={() => setViewMode('thumb')}
             color={viewMode === 'thumb' ? 'primary' : 'default'}
           >
             <ViewComfy />
@@ -514,7 +612,7 @@ const VideoList: React.FC<VideoListProps> = ({
                   right: 8,
                   bgcolor: 'rgba(0, 0, 0, 0.5)',
                   color: 'white',
-                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' }
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
                 }}
               >
                 <Close />
@@ -525,8 +623,14 @@ const VideoList: React.FC<VideoListProps> = ({
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
                   <Typography variant="body1">{selectedVideo.year}</Typography>
-                  <Typography variant="body1">{formatDuration(selectedVideo.duration)}</Typography>
-                  <Rating value={selectedVideo.rating / 2} precision={0.5} readOnly />
+                  <Typography variant="body1">
+                    {formatDuration(selectedVideo.duration)}
+                  </Typography>
+                  <Rating
+                    value={selectedVideo.rating / 2}
+                    precision={0.5}
+                    readOnly
+                  />
                 </Box>
                 <Typography variant="body1" paragraph>
                   {selectedVideo.description}
@@ -556,12 +660,16 @@ const VideoList: React.FC<VideoListProps> = ({
                     <PlayArrow sx={{ mr: 1 }} />
                     Play
                   </Fab>
-                  <IconButton 
+                  <IconButton
                     onClick={() => onFavorite(selectedVideo.id)}
                     color={selectedVideo.isFavorite ? 'error' : 'default'}
                     size="large"
                   >
-                    {selectedVideo.isFavorite ? <Favorite /> : <FavoriteBorder />}
+                    {selectedVideo.isFavorite ? (
+                      <Favorite />
+                    ) : (
+                      <FavoriteBorder />
+                    )}
                   </IconButton>
                 </Box>
               </Box>

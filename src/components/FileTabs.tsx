@@ -8,6 +8,7 @@ import {
   discardActiveFileChanges, // Import new action
   showGlobalSnackbar, // Import global snackbar action
   hideGlobalSnackbar, // Import global snackbar action
+  //removeAllOpenedTabs, // Import action to remove all tabs
 } from '@/stores/aiEditorStore';
 import {
   Box,
@@ -24,14 +25,19 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
 import UndoIcon from '@mui/icons-material/Undo';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import VisibilityIcon from '@mui/icons-material/Terminal';
+import CloseMultipleIcon from '@mui/icons-material/Close';
 import { getFileTypeIcon } from '@/constants/fileIcons';
 import * as path from 'path-browserify';
 
 interface FileTabsProps extends BoxProps {
-  // No additional specific props needed beyond BoxProps
+  setShowTerminal: React.Dispatch<React.SetStateAction<boolean>>;
+  showTerminal: boolean;
+  toggleTerminalVisibility: () => void;
 }
 
-const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
+const FileTabs: React.FC<FileTabsProps> = ({ sx, setShowTerminal, showTerminal, toggleTerminalVisibility, ...otherProps }) => {
   const {
     openedTabs,
     openedFile,
@@ -51,6 +57,11 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
   const handleCloseTab = (event: React.MouseEvent, filePath: string) => {
     event.stopPropagation(); // Prevent tab from activating when close button is clicked
     removeOpenedTab(filePath);
+  };
+
+  const handleCloseAllTabs = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    //removeAllOpenedTabs();
   };
 
   const isDisabled = isSavingFileContent;
@@ -180,12 +191,10 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
           {isOpenedFileDirty && (
             <Tooltip title="Discard unsaved changes">
               <span>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={discardActiveFileChanges} // Use store action
+                <IconButton
                   disabled={isDisabled}
-                  startIcon={<UndoIcon />}
+                  onClick={saveActiveFile}
+                  size="small"
                   sx={{
                     color: theme.palette.error.main,
                     borderColor: theme.palette.error.light,
@@ -196,28 +205,59 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
                     minWidth: 0, // Allow button to shrink
                   }}
                 >
-                  Discard
-                </Button>
+                  <UndoIcon />
+                </IconButton>
               </span>
             </Tooltip>
           )}
-          <Button
-            variant="contained"
-            color="primary"
-            size="small"
-            onClick={saveActiveFile} // Use store action
-            disabled={isDisabled || !isOpenedFileDirty}
-            startIcon={
-              isSavingFileContent ? (
+
+          <Tooltip title={'Save changes'}>
+            <IconButton
+              disabled={isDisabled || !isOpenedFileDirty}
+              onClick={saveActiveFile}
+              size="small"
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                },
+              }}
+            >
+              {isSavingFileContent ? (
                 <CircularProgress size={16} color="inherit" />
               ) : (
                 <SaveIcon />
-              )
-            }
-            sx={{ minWidth: 0 }} // Allow button to shrink
-          >
-            {isSavingFileContent ? 'Saving...' : 'Save'}
-          </Button>
+              )}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={showTerminal ? 'Hide Terminal' : 'Show Terminal'}>
+            <IconButton
+              onClick={toggleTerminalVisibility}
+              size="small"
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                },
+              }}
+            >
+              {showTerminal ? <VisibilityOffIcon /> : <VisibilityIcon />}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Close All Tabs">
+            <IconButton
+              onClick={handleCloseAllTabs}
+              size="small"
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                },
+              }}
+            >
+              <CloseMultipleIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       )}
     </Box>

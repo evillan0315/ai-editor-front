@@ -22,7 +22,11 @@ export const conversationStore = map<ConversationState>({
  * Loads conversations from the API and updates the store.
  */
 export async function loadConversations() {
-  conversationStore.set({ ...conversationStore.get(), isLoading: true, error: null });
+  conversationStore.set({
+    ...conversationStore.get(),
+    isLoading: true,
+    error: null,
+  });
   try {
     // You can pass paginationDto here if needed, e.g., { page: 1, limit: 100 }
     const response = await getConversations({ page: 1, limit: 50 });
@@ -35,7 +39,8 @@ export async function loadConversations() {
     console.error('Failed to load conversations:', error);
     conversationStore.set({
       ...conversationStore.get(),
-      error: error instanceof Error ? error.message : 'An unknown error occurred',
+      error:
+        error instanceof Error ? error.message : 'An unknown error occurred',
       isLoading: false,
     });
   }

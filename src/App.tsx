@@ -25,6 +25,7 @@ const UserSettingsPage = lazy(() => import('./pages/UserSettingsPage')); // New:
 const TranscriptionPage = lazy(() => import('./pages/TranscriptionPage')); // NEW: Transcription Page
 const TerminalPage = lazy(() => import('./pages/TerminalPage')); // NEW: Transcription Page
 const LlmGenerationPage = lazy(() => import('./pages/LlmGenerationPage')); // NEW: LLM Generation Page
+const ResumeBuilderPage = lazy(() => import('./pages/ResumeBuilderPage')); // NEW: Resume Builder Page
 
 import '@xterm/xterm/css/xterm.css';
 function App() {
@@ -120,7 +121,7 @@ function App() {
               </Suspense>
             }
           />
-{/* NEW: Route for Terminal  */}
+          {/* NEW: Route for Terminal  */}
           <Route
             path="/apps/terminal"
             element={
@@ -129,12 +130,21 @@ function App() {
               </Suspense>
             }
           />
-           {/* NEW: Route for LLM Generation */}
+          {/* NEW: Route for LLM Generation */}
           <Route
             path="/apps/llm-generation"
             element={
               <Suspense fallback={<Loading />}>
                 <LlmGenerationPage />
+              </Suspense>
+            }
+          />
+          {/* NEW: Route for Resume Builder */}
+          <Route
+            path="/apps/resume-builder"
+            element={
+              <Suspense fallback={<Loading />}>
+                <ResumeBuilderPage />
               </Suspense>
             }
           />

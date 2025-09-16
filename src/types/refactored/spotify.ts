@@ -169,7 +169,8 @@ export interface UpdatePlaylistMediaFileDto {
 /**
  * DTO for PlaylistMediaFile response (derived from backend DTO + timestamps/ID).
  */
-export interface PlaylistMediaFileResponseDto extends CreatePlaylistMediaFileDto {
+export interface PlaylistMediaFileResponseDto
+  extends CreatePlaylistMediaFileDto {
   id: string;
   createdAt: string;
   updatedAt: string;
@@ -197,4 +198,3 @@ export interface PaginationPlaylistMediaFileResultDto {
   pageSize: number;
   totalPages: number;
 }
-

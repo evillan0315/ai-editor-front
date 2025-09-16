@@ -1,10 +1,10 @@
-import React,
-  { useRef,
-    useEffect,
-    useState,
-    useCallback,
-    SyntheticEvent,
-  } from 'react';
+import React, {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  SyntheticEvent,
+} from 'react';
 import { useStore } from '@nanostores/react';
 import {
   Box,
@@ -56,7 +56,10 @@ interface SpotifyPlayerBarProps {
   playerBarRef: React.RefObject<HTMLDivElement | null>; // To measure its height, allowing null
 }
 
-const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBarRef }) => {
+const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({
+  mediaRef,
+  playerBarRef,
+}) => {
   const theme = useTheme();
   const { loading, error } = useStore($spotifyStore);
   const currentTrack = useStore(currentTrackAtom);
@@ -78,7 +81,7 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
   useEffect(() => {
     setInternalVolume(volume);
     if (mediaRef.current) {
-        setIsMuted(mediaRef.current.muted || mediaRef.current.volume === 0);
+      setIsMuted(mediaRef.current.muted || mediaRef.current.volume === 0);
     }
   }, [volume, mediaRef.current]);
 
@@ -89,7 +92,6 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
       setInternalProgress(progress);
     }
   }, [progress, isSeeking]);
-
 
   const formatTime = (seconds: number) => {
     if (isNaN(seconds) || seconds < 0) return '0:00';
@@ -108,9 +110,9 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
     // If it's a video and the video modal is not open, open it
     if (currentTrack.fileType === FileType.VIDEO && !isVideoModalOpen) {
       setIsVideoModalOpen(true);
-      setLoading(false)
+      setLoading(false);
     }
-    
+
     togglePlayPause(); // This is a nanostore action, stable.
   }, [currentTrack, isVideoModalOpen, setIsVideoModalOpen, setError]); // Removed togglePlayPause from dependencies as it's a stable nanostore action
 
@@ -386,7 +388,6 @@ const SpotifyPlayerBar: React.FC<SpotifyPlayerBarProps> = ({ mediaRef, playerBar
                 })}
               </Box>
             )}
-
             <Slider
               size="small"
               value={internalProgress ?? 0}

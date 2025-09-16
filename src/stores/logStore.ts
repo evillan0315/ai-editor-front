@@ -37,9 +37,8 @@ export const addLog = (
   severity: 'info' | 'warning' | 'error' | 'success' | 'debug' = 'info',
   details?: string,
   rawOutput?: TerminalCommandResponse,
-  alwaysExpanded?: boolean // Make optional here, set default inside
+  alwaysExpanded?: boolean, // Make optional here, set default inside
 ) => {
-  
   const newLog: LogEntry = {
     id: nanoid(),
     timestamp: new Date().toLocaleTimeString(),
@@ -49,7 +48,10 @@ export const addLog = (
     details,
     rawOutput,
     // Errors and warnings should be expanded by default unless explicitly overridden
-    alwaysExpanded: alwaysExpanded !== undefined ? alwaysExpanded : (severity === 'error' || severity === 'warning'),
+    alwaysExpanded:
+      alwaysExpanded !== undefined
+        ? alwaysExpanded
+        : severity === 'error' || severity === 'warning',
   };
   //logStore.set([...logStore.get(), newLog]);
   // console.log(`[${newLog.timestamp}][${newLog.source} - ${newLog.severity.toUpperCase()}] ${newLog.message}`);

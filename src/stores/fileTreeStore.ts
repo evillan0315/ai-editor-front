@@ -1,5 +1,10 @@
 import { map } from 'nanostores';
-import { FileTreeState, FileEntry, FileTreeNode, ApiFileScanResult } from '@/types/refactored/fileTree'; // Updated import
+import {
+  FileTreeState,
+  FileEntry,
+  FileTreeNode,
+  ApiFileScanResult,
+} from '@/types/refactored/fileTree'; // Updated import
 import { fetchDirectoryContents, fetchScannedFilesForAI } from '@/api/file';
 import {
   aiEditorStore,
@@ -65,7 +70,7 @@ export const setSelectedFile = (filePath: string | null) => {
   fileTreeStore.setKey('selectedFile', filePath);
   // When a file is selected in the tree, also set it in aiEditorStore to display its content.
   // addOpenedTab is implicitly handled by setOpenedFile now
-  setOpenedFile(filePath); 
+  setOpenedFile(filePath);
 };
 
 /**
@@ -250,7 +255,8 @@ export const loadChildrenForDirectory = async (parentPath: string) => {
         ...node,
         isChildrenLoaded: false, // Optionally reset if load failed
         isChildrenLoading: false,
-      }),);
+      }),
+    );
     fileTreeStore.setKey('files', treeWithErrorState);
   } finally {
     newLoadingChildren.delete(parentPath);

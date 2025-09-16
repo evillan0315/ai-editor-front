@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  useTheme,
-  IconButton,
-} from '@mui/material';
+import { Box, Typography, Paper, useTheme, IconButton } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import PromptGenerator from '@/components/PromptGenerator'; // Adjust if needed
@@ -25,8 +19,8 @@ const LlmGenerationContent: React.FC = () => {
   const [showOptions, setShowOptions] = useState(true);
   const [showAiOutputLog, setShowAiOutputLog] = useState(true); // State for AI Output Log visibility
   const [showAiResponseDisplay, setShowAiResponseDisplay] = useState(true); // State for AI Response Display visib
-   const [showPromptGenerator, setShowPromptGenerator] = useState(true); 
-  
+  const [showPromptGenerator, setShowPromptGenerator] = useState(true);
+
   return (
     <Box
       sx={{
@@ -60,8 +54,21 @@ const LlmGenerationContent: React.FC = () => {
           flexDirection: 'column',
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, height: `${PANEL_HEADER_HEIGHT - 16}px` }}> {/* 48px (panel height) - 16px (2*padding) = 32px */}
-          <Typography variant="subtitle1" sx={{ flexShrink: 0, fontWeight: 'bold' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexShrink: 0,
+            height: `${PANEL_HEADER_HEIGHT - 16}px`,
+          }}
+        >
+          {' '}
+          {/* 48px (panel height) - 16px (2*padding) = 32px */}
+          <Typography
+            variant="subtitle1"
+            sx={{ flexShrink: 0, fontWeight: 'bold' }}
+          >
             LLM Generation Options
           </Typography>
           <IconButton
@@ -96,7 +103,7 @@ const LlmGenerationContent: React.FC = () => {
             }}
           >
             <Typography>LLM Generation Options Content Here</Typography>
-            <AiResponseDisplay /> 
+            <AiResponseDisplay />
           </Box>
         )}
       </Paper>
@@ -108,7 +115,9 @@ const LlmGenerationContent: React.FC = () => {
         sx={{
           flexShrink: 0,
           p: 1,
-          height: showAiOutputLog ? AI_OUTPUT_LOG_DEFAULT_HEIGHT : PANEL_HEADER_HEIGHT,
+          height: showAiOutputLog
+            ? AI_OUTPUT_LOG_DEFAULT_HEIGHT
+            : PANEL_HEADER_HEIGHT,
           minHeight: PANEL_HEADER_HEIGHT, // Ensures it doesn't shrink below header size
           overflow: 'hidden', // Hide overflow when collapsed (important for unmounted component)
           bgcolor: theme.palette.background.paper,
@@ -119,8 +128,19 @@ const LlmGenerationContent: React.FC = () => {
           mb: 2, // Removed, replaced by gap on parent Box
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, height: `${PANEL_HEADER_HEIGHT - 16}px` }}>
-          <Typography variant="subtitle1" sx={{ flexShrink: 0, fontWeight: 'bold' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexShrink: 0,
+            height: `${PANEL_HEADER_HEIGHT - 16}px`,
+          }}
+        >
+          <Typography
+            variant="subtitle1"
+            sx={{ flexShrink: 0, fontWeight: 'bold' }}
+          >
             AI Output Log
           </Typography>
           <IconButton
@@ -144,9 +164,8 @@ const LlmGenerationContent: React.FC = () => {
           </IconButton>
         </Box>
         {showAiOutputLog && <OutputLogger />} Conditionally render OutputLogger
-      </Paper> 
+      </Paper>
 
- 
       <Paper
         elevation={3}
         sx={{
@@ -200,9 +219,9 @@ const LlmGenerationContent: React.FC = () => {
             )}
           </IconButton>
         </Box>
-     
+
         {showPromptGenerator && <PromptGenerator />}
-      </Paper> 
+      </Paper>
     </Box>
   );
 };

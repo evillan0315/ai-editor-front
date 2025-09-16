@@ -36,25 +36,36 @@ import {
   getSyncTranscription,
 } from '@/api/media';
 import { authStore } from './authStore'; // Import authStore for login check
-import {
-  TranscriptionResult,
-  SyncTranscriptionResponse,
-} from '@/types'; 
-
+import { TranscriptionResult, SyncTranscriptionResponse } from '@/types';
 
 // --- Atoms (Non-persistent for transient playback state, persistent for user preferences) ---
 // Playback state should NOT be persistent to avoid browser autoplay issues on refresh.
 // However, the user explicitly requested these to be persistent.
-export const isPlayingAtom = persistentAtom<boolean>('spotify:isPlaying', false);
-export const currentTrackAtom = persistentAtom<Track | null>('spotify:currentTrack', null);
+export const isPlayingAtom = persistentAtom<boolean>(
+  'spotify:isPlaying',
+  false,
+);
+export const currentTrackAtom = persistentAtom<Track | null>(
+  'spotify:currentTrack',
+  null,
+);
 export const progressAtom = persistentAtom<number>('spotify:progress', 0);
 export const durationAtom = persistentAtom<number>('spotify:duration', 0);
-export const bufferedAtom = persistentAtom<BufferedRange[]>('spotify:buffered', []); // New: Buffered ranges atom
-export const isVideoModalOpenAtom = persistentAtom<boolean>('spotify:isVideoModalOpen', false);
+export const bufferedAtom = persistentAtom<BufferedRange[]>(
+  'spotify:buffered',
+  [],
+); // New: Buffered ranges atom
+export const isVideoModalOpenAtom = persistentAtom<boolean>(
+  'spotify:isVideoModalOpen',
+  false,
+);
 
 // User preferences are persistent
 export const volumeAtom = persistentAtom<number>('spotify:volume', 70); // Persistent
-export const repeatModeAtom = persistentAtom<RepeatMode>('spotify:repeatMode', 'off'); // Persistent
+export const repeatModeAtom = persistentAtom<RepeatMode>(
+  'spotify:repeatMode',
+  'off',
+); // Persistent
 export const shuffleAtom = persistentAtom<boolean>('spotify:shuffle', false); // Persistent
 
 // --- Store Interface (for the map part) ---
@@ -71,12 +82,22 @@ export interface SpotifyStore {
   fetchMediaError: string | null;
   // Paginated audio files state
   paginatedAudioFiles: MediaFileResponseDto[];
-  audioPagination: { page: number; pageSize: number; totalPages: number; hasMore: boolean; };
+  audioPagination: {
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
   isFetchingPaginatedAudio: boolean;
   fetchPaginatedAudioError: string | null;
   // Paginated video files state
   paginatedVideoFiles: MediaFileResponseDto[];
-  videoPagination: { page: number; pageSize: number; totalPages: number; hasMore: boolean; };
+  videoPagination: {
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
   isFetchingPaginatedVideo: boolean;
   fetchPaginatedVideoError: string | null;
   // Media scan state
@@ -85,7 +106,7 @@ export interface SpotifyStore {
   mediaScanError: string | null;
   loading: boolean;
   error: string | null;
-  
+
   // ADD THESE TRANSCRIPTION PROPERTIES:
   transcriptionData: TranscriptionResult | null;
   transcriptionSyncData: SyncTranscriptionResponse | null;
@@ -121,7 +142,7 @@ export const $spotifyStore = map<SpotifyStore>({
   mediaScanError: null,
   loading: false,
   error: null,
-  
+
   // ADD THESE TRANSCRIPTION INITIAL STATES:
   transcriptionData: null,
   transcriptionSyncData: null,
@@ -164,7 +185,6 @@ export const resetPlaybackState = () => {
   $spotifyStore.setKey('error', null);
   clearTranscription(); // Add this line
 };
-
 
 /**
  * Sets the playback state (playing or paused).
@@ -226,13 +246,14 @@ export const playTrack = (
 
   // Add current track to history before changing
   if (currentTrack) {
-    $spotifyStore.setKey('history', [...$spotifyStore.get().history, currentTrack]);
+    $spotifyStore.setKey('history', [
+      ...$spotifyStore.get().history,
+      currentTrack,
+    ]);
   }
 
   // Set new current track and build a new queue
-  const trackIndex = contextTracks.findIndex(
-    (t) => t.id === trackToPlay.id,
-  );
+  const trackIndex = contextTracks.findIndex((t) => t.id === trackToPlay.id);
   let newQueue: Track[] = [];
   if (trackIndex !== -1) {
     newQueue = contextTracks.slice(trackIndex + 1);
@@ -430,7 +451,12 @@ export const fetchMediaForPurpose = async (
 ) => {
   const state = $spotifyStore.get();
   let currentFiles: MediaFileResponseDto[] = [];
-  let currentPagination = { page: 1, pageSize: 20, totalPages: 1, hasMore: false };
+  let currentPagination = {
+    page: 1,
+    pageSize: 20,
+    totalPages: 1,
+    hasMore: false,
+  };
 
   // Set loading and error states based on purpose
   switch (purpose) {
@@ -465,12 +491,14 @@ export const fetchMediaForPurpose = async (
       // If fetching a page less than current, it implies a reset to an earlier page
       reset = true;
     }
-    if (!effectiveQuery.pageSize) effectiveQuery.pageSize = currentPagination.pageSize;
+    if (!effectiveQuery.pageSize)
+      effectiveQuery.pageSize = currentPagination.pageSize;
 
     const result = await apiFetchAllMediaFiles(effectiveQuery);
 
     const newItems = result.items.filter(
-      (newItem) => !currentFiles.some((existingItem) => existingItem.id === newItem.id),
+      (newItem) =>
+        !currentFiles.some((existingItem) => existingItem.id === newItem.id),
     );
 
     const updatedFiles = reset ? newItems : [...currentFiles, ...newItems];
@@ -556,7 +584,9 @@ export const fetchUserPlaylists = async (
       isPublic: p.isPublic,
       cover:
         p.playlistMediaFiles?.[0]?.file?.metadata?.data?.thumbnail ||
-        (p.playlistMediaFiles?.[0]?.file?.fileType === FileType.VIDEO ? '/default-video-cover.png' : '/default-album-art.png'), // Dynamic default cover
+        (p.playlistMediaFiles?.[0]?.file?.fileType === FileType.VIDEO
+          ? '/default-video-cover.png'
+          : '/default-album-art.png'), // Dynamic default cover
       tracks: p.playlistMediaFiles
         .filter((pt) => pt.file) // Ensure file exists before mapping
         .map((pt) => mapMediaFileToTrack(pt.file)),
@@ -584,7 +614,9 @@ export const loadPlaylistDetails = async (playlistId: string) => {
       isPublic: p.isPublic,
       cover:
         p.playlistMediaFiles?.[0]?.file?.metadata?.data?.thumbnail ||
-        (p.playlistMediaFiles?.[0]?.file?.fileType === FileType.VIDEO ? '/default-video-cover.png' : '/default-album-art.png'), // Dynamic default cover
+        (p.playlistMediaFiles?.[0]?.file?.fileType === FileType.VIDEO
+          ? '/default-video-cover.png'
+          : '/default-album-art.png'), // Dynamic default cover
       tracks: p.playlistMediaFiles
         .filter((pt) => pt.file) // Ensure file exists before mapping
         .map((pt) => mapMediaFileToTrack(pt.file)),
@@ -593,9 +625,14 @@ export const loadPlaylistDetails = async (playlistId: string) => {
     $spotifyStore.setKey('currentPlaylist', transformedPlaylist);
   } catch (error: any) {
     const errorMessage =
-      error instanceof Error ? error.message : 'Failed to load playlist details.';
+      error instanceof Error
+        ? error.message
+        : 'Failed to load playlist details.';
     $spotifyStore.setKey('playlistError', errorMessage);
-    showGlobalSnackbar(`Error loading playlist details: ${errorMessage}`, 'error');
+    showGlobalSnackbar(
+      `Error loading playlist details: ${errorMessage}`,
+      'error',
+    );
   } finally {
     $spotifyStore.setKey('isLoadingPlaylists', false);
   }
@@ -604,9 +641,7 @@ export const loadPlaylistDetails = async (playlistId: string) => {
 /**
  * Creates a new playlist. This action accepts a frontend-friendly DTO.
  */
-export const createUserPlaylist = async (
-  payload: PlaylistCreationRequest,
-) => {
+export const createUserPlaylist = async (payload: PlaylistCreationRequest) => {
   try {
     const newPlaylist = await apiCreatePlaylist(payload);
     showGlobalSnackbar(
@@ -634,7 +669,8 @@ export const updateExistingPlaylist = async (
       'success',
     );
     fetchUserPlaylists();
-    if ($spotifyStore.get().currentPlaylist?.id === playlistId) { // Check currentPlaylist from store map
+    if ($spotifyStore.get().currentPlaylist?.id === playlistId) {
+      // Check currentPlaylist from store map
       loadPlaylistDetails(playlistId);
     }
     return updatedPlaylist;
@@ -653,8 +689,9 @@ export const removePlaylist = async (playlistId: string) => {
     fetchUserPlaylists();
     // If the current track was part of the deleted playlist, reset playback state
     const currentTrack = currentTrackAtom.get();
-    if (currentTrack && currentTrack.id === playlistId) { // Assuming playlist ID could be used as a track ID in some contexts, though unlikely
-        resetPlaybackState();
+    if (currentTrack && currentTrack.id === playlistId) {
+      // Assuming playlist ID could be used as a track ID in some contexts, though unlikely
+      resetPlaybackState();
     }
     // More robust check: if currentTrack is from a playlist, check if that playlist is the deleted one
     // This would require currentTrack to store its origin playlist ID, which it currently doesn't.
@@ -671,17 +708,19 @@ export const addMediaToSpecificPlaylist = async (
   playlistId: string,
   dto: AddRemoveMediaToPlaylistDto,
 ) => {
-    try {
-        await addMediaToPlaylist(playlistId, dto);
-        showGlobalSnackbar('Media added to playlist successfully!', 'success');
-        loadPlaylistDetails(playlistId);
-        fetchUserPlaylists(); // Re-fetch all playlists to update counts/content in library
-    } catch (error: any) {
-        const errorMessage =
-        error instanceof Error ? error.message : 'Failed to add media to playlist.';
-        showGlobalSnackbar(`Error adding media: ${errorMessage}`, 'error');
-        throw error;
-    }
+  try {
+    await addMediaToPlaylist(playlistId, dto);
+    showGlobalSnackbar('Media added to playlist successfully!', 'success');
+    loadPlaylistDetails(playlistId);
+    fetchUserPlaylists(); // Re-fetch all playlists to update counts/content in library
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : 'Failed to add media to playlist.';
+    showGlobalSnackbar(`Error adding media: ${errorMessage}`, 'error');
+    throw error;
+  }
 };
 
 export const removeMediaFromSpecificPlaylist = async (
@@ -690,15 +729,14 @@ export const removeMediaFromSpecificPlaylist = async (
 ) => {
   try {
     await removeMediaFromPlaylist(playlistId, { mediaFileId });
-    showGlobalSnackbar(
-      'Media removed from playlist successfully!',
-      'success',
-    );
+    showGlobalSnackbar('Media removed from playlist successfully!', 'success');
     loadPlaylistDetails(playlistId);
     fetchUserPlaylists(); // Re-fetch all playlists to update counts/content in library
   } catch (error: any) {
     const errorMessage =
-      error instanceof Error ? error.message : 'Failed to remove media from playlist.';
+      error instanceof Error
+        ? error.message
+        : 'Failed to remove media from playlist.';
     showGlobalSnackbar(`Error removing media: ${errorMessage}`, 'error');
     throw error;
   }
@@ -759,17 +797,18 @@ export const loadTranscription = async (fileId: string) => {
 
   try {
     const data = await getTranscription(fileId);
-    $spotifyStore.set({ 
-      ...state, 
-      transcriptionData: data, 
-      isTranscribing: false, 
-      transcriptionError: null 
+    $spotifyStore.set({
+      ...state,
+      transcriptionData: data,
+      isTranscribing: false,
+      transcriptionError: null,
     });
   } catch (err) {
-    $spotifyStore.set({ 
-      ...state, 
-      isTranscribing: false, 
-      transcriptionError: err instanceof Error ? err.message : 'Failed to load transcription' 
+    $spotifyStore.set({
+      ...state,
+      isTranscribing: false,
+      transcriptionError:
+        err instanceof Error ? err.message : 'Failed to load transcription',
     });
   }
 };
@@ -781,22 +820,26 @@ export const transcribeAudioAction = async (fileId: string) => {
 
   try {
     const data = await transcribeAudio(fileId);
-    $spotifyStore.set({ 
-      ...state, 
-      transcriptionData: data, 
-      isTranscribing: false, 
-      transcriptionError: null 
+    $spotifyStore.set({
+      ...state,
+      transcriptionData: data,
+      isTranscribing: false,
+      transcriptionError: null,
     });
   } catch (err) {
-    $spotifyStore.set({ 
-      ...state, 
-      isTranscribing: false, 
-      transcriptionError: err instanceof Error ? err.message : 'Transcription failed' 
+    $spotifyStore.set({
+      ...state,
+      isTranscribing: false,
+      transcriptionError:
+        err instanceof Error ? err.message : 'Transcription failed',
     });
   }
 };
 
-export const updateTranscriptionSync = async (fileId: string, currentTime: number) => {
+export const updateTranscriptionSync = async (
+  fileId: string,
+  currentTime: number,
+) => {
   const state = $spotifyStore.get();
   if (!state.transcriptionData) return;
 

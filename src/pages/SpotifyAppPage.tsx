@@ -83,12 +83,14 @@ const SpotifyAppPage: React.FC = () => {
 
     if (currentTrack?.fileType === FileType.AUDIO) {
       mediaElementRef.current = audioMedia;
-      if (videoMedia && isVideoModalOpenAtom.get()) { // If video was playing/modal open
+      if (videoMedia && isVideoModalOpenAtom.get()) {
+        // If video was playing/modal open
         videoMedia.pause(); // Pause video if switching to audio
       }
       setIsVideoModalOpen(false); // Close video modal if switching to audio
     } else if (currentTrack?.fileType === FileType.VIDEO) {
-      if (audioMedia && isPlayingAtom.get()) { // If audio was playing
+      if (audioMedia && isPlayingAtom.get()) {
+        // If audio was playing
         audioMedia.pause(); // Pause audio if switching to video
       }
       // For video, mediaElementRef.current will be set by handleVideoPlayerReady (from VideoModal)
@@ -136,7 +138,15 @@ const SpotifyAppPage: React.FC = () => {
     if (currentTrack.duration) {
       setTrackDuration(currentTrack.duration);
     }
-  }, [currentTrack, mediaElementRef.current, setTrackProgress, setTrackDuration, setLoading, setPlaying, setBuffered]); // Re-run when currentTrack or the active media element changes
+  }, [
+    currentTrack,
+    mediaElementRef.current,
+    setTrackProgress,
+    setTrackDuration,
+    setLoading,
+    setPlaying,
+    setBuffered,
+  ]); // Re-run when currentTrack or the active media element changes
 
   // Event handlers for the active media element, defined at the top level
   const handleTimeUpdate = useCallback(() => {
@@ -147,11 +157,22 @@ const SpotifyAppPage: React.FC = () => {
         setTrackProgress(newProgress);
       }
       // Update duration if it's not set or significantly different (e.g., for streams)
-      if (media.duration && !isNaN(media.duration) && Math.abs(media.duration - duration) > 1) {
+      if (
+        media.duration &&
+        !isNaN(media.duration) &&
+        Math.abs(media.duration - duration) > 1
+      ) {
         setTrackDuration(Math.floor(media.duration));
       }
     }
-  }, [currentTrack, progress, duration, mediaElementRef, setTrackProgress, setTrackDuration]);
+  }, [
+    currentTrack,
+    progress,
+    duration,
+    mediaElementRef,
+    setTrackProgress,
+    setTrackDuration,
+  ]);
 
   // New: Handle 'progress' event to update buffered ranges
   const handleProgress = useCallback(() => {
@@ -168,7 +189,8 @@ const SpotifyAppPage: React.FC = () => {
       if (JSON.stringify(newBufferedRanges) !== JSON.stringify(buffered)) {
         setBuffered(newBufferedRanges);
       }
-    } else if (buffered.length > 0) { // If no buffered ranges, clear them
+    } else if (buffered.length > 0) {
+      // If no buffered ranges, clear them
       setBuffered([]);
     }
   }, [mediaElementRef, buffered, setBuffered]);
@@ -220,27 +242,47 @@ const SpotifyAppPage: React.FC = () => {
         setPlaying(false); // Pause the store if autoplay failed
       });
     }
-  }, [isPlaying, currentTrack?.fileType, mediaElementRef, setError, setPlaying]);
+  }, [
+    isPlaying,
+    currentTrack?.fileType,
+    mediaElementRef,
+    setError,
+    setPlaying,
+  ]);
 
-  const handleError = useCallback((e: Event) => {
-    const mediaTarget = e.target as HTMLMediaElement;
-    const mediaError = mediaTarget.error;
-    let errorMessage = 'Failed to play media. Please try another file.';
+  const handleError = useCallback(
+    (e: Event) => {
+      const mediaTarget = e.target as HTMLMediaElement;
+      const mediaError = mediaTarget.error;
+      let errorMessage = 'Failed to play media. Please try another file.';
 
-    if (mediaError) {
-      switch (mediaError.code) {
-        case MediaError.MEDIA_ERR_ABORTED: errorMessage = 'Media playback aborted by user.'; break;
-        case MediaError.MEDIA_ERR_NETWORK: errorMessage = 'Network error: Media file could not be downloaded.'; break;
-        case MediaError.MEDIA_ERR_DECODE: errorMessage = 'Media decoding error: The media file is corrupted or unsupported.'; break;
-        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED: errorMessage = 'Media format not supported by your browser.'; break;
-        default: errorMessage = `Media playback error (${mediaError.code}): ${mediaError.message || 'Unknown error'}.`; break;
+      if (mediaError) {
+        switch (mediaError.code) {
+          case MediaError.MEDIA_ERR_ABORTED:
+            errorMessage = 'Media playback aborted by user.';
+            break;
+          case MediaError.MEDIA_ERR_NETWORK:
+            errorMessage = 'Network error: Media file could not be downloaded.';
+            break;
+          case MediaError.MEDIA_ERR_DECODE:
+            errorMessage =
+              'Media decoding error: The media file is corrupted or unsupported.';
+            break;
+          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+            errorMessage = 'Media format not supported by your browser.';
+            break;
+          default:
+            errorMessage = `Media playback error (${mediaError.code}): ${mediaError.message || 'Unknown error'}.`;
+            break;
+        }
       }
-    }
-    console.error('Media playback error details:', e, mediaError);
-    setError(errorMessage);
-    setLoading(false);
-    setPlaying(false); // Ensure store reflects paused state on error
-  }, [setError, setLoading, setPlaying]);
+      console.error('Media playback error details:', e, mediaError);
+      setError(errorMessage);
+      setLoading(false);
+      setPlaying(false); // Ensure store reflects paused state on error
+    },
+    [setError, setLoading, setPlaying],
+  );
 
   // Effect to attach and detach event listeners for the active media element
   useEffect(() => {
@@ -308,7 +350,14 @@ const SpotifyAppPage: React.FC = () => {
       }
       setLoading(false);
     }
-  }, [isPlaying, mediaElementRef.current, currentTrack, setLoading, setError, setPlaying]);
+  }, [
+    isPlaying,
+    mediaElementRef.current,
+    currentTrack,
+    setLoading,
+    setError,
+    setPlaying,
+  ]);
 
   // Set initial loading state when a new track is selected
   useEffect(() => {
@@ -367,7 +416,10 @@ const SpotifyAppPage: React.FC = () => {
         />
       )}
 
-      <SpotifyPlayerBar mediaRef={mediaElementRef} playerBarRef={playerBarRef} />
+      <SpotifyPlayerBar
+        mediaRef={mediaElementRef}
+        playerBarRef={playerBarRef}
+      />
     </Box>
   );
 };

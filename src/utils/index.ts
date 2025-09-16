@@ -92,5 +92,3 @@ export * from './fileUtils';
 export * from './mediaUtils';
 export * from './persistentAtom';
 export { createCodeMirrorTheme };
-
-

@@ -87,7 +87,8 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
       return;
     }
     if (!lastLlmGeneratePayload) {
-      const msg = 'Original AI generation payload missing. Cannot report errors.';
+      const msg =
+        'Original AI generation payload missing. Cannot report errors.';
       setError(msg);
       addLog('AI Response Display', msg, 'error', undefined, undefined, true);
       return;
@@ -97,7 +98,11 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
     setApplyingChanges(true); // This action also logs the start of applying changes
     setError(null); // Clear previous immediate error
 
-    addLog('AI Response Display', 'Starting application process for selected changes...', 'info');
+    addLog(
+      'AI Response Display',
+      'Starting application process for selected changes...',
+      'info',
+    );
 
     try {
       const changesToApply = Object.values(selectedChanges);
@@ -106,15 +111,27 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
         currentProjectPath,
       );
       // Individual messages from applyResult.messages are now logged by `addLog` in aiEditorStore
-      applyResult.messages.forEach(msg => addLog('AI Response Display', msg, 'info'));
-
+      applyResult.messages.forEach((msg) =>
+        addLog('AI Response Display', msg, 'info'),
+      );
 
       if (!applyResult.success) {
         const msg = 'Some changes failed to apply. Check logs for details.';
         setError(msg); // For immediate UI feedback
-        addLog('AI Response Display', msg, 'error', applyResult.messages.join('\n'), undefined, true);
+        addLog(
+          'AI Response Display',
+          msg,
+          'error',
+          applyResult.messages.join('\n'),
+          undefined,
+          true,
+        );
       } else {
-        addLog('AI Response Display', 'Changes applied successfully. Proceeding to post-apply actions (build + git).', 'success');
+        addLog(
+          'AI Response Display',
+          'Changes applied successfully. Proceeding to post-apply actions (build + git).',
+          'success',
+        );
         // If changes applied successfully, proceed to post-apply actions (build + git)
         if (lastLlmResponse && lastLlmGeneratePayload) {
           await performPostApplyActions(
@@ -136,35 +153,66 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
     } catch (err) {
       const errorMsg = `Overall failure during application of changes: ${err instanceof Error ? err.message : String(err)}`;
       setError(errorMsg); // For immediate UI feedback
-      addLog('AI Response Display', errorMsg, 'error', String(err), undefined, true);
+      addLog(
+        'AI Response Display',
+        errorMsg,
+        'error',
+        String(err),
+        undefined,
+        true,
+      );
     } finally {
       setApplyingChanges(false); // This action also logs the end of applying changes
     }
   };
 
-  const handleRunGitCommand = async (command: string) => { // Removed index parameter, as status is now global to logStore
+  const handleRunGitCommand = async (command: string) => {
+    // Removed index parameter, as status is now global to logStore
     if (!currentProjectPath) {
       const msg = 'Project root is not set. Cannot run git command.';
       setError(msg); // For immediate UI feedback
       addLog('AI Response Display', msg, 'error', undefined, undefined, true);
       return;
     }
-    addLog('Git Automation', `Manually running git command: \`${command}\``, 'info');
-
+    addLog(
+      'Git Automation',
+      `Manually running git command: \`${command}\``,
+      'info',
+    );
 
     try {
       const result = await runTerminalCommand(command, currentProjectPath);
       // Command execution output is now handled by `addLog`
       if (result.exitCode !== 0) {
         const msg = `Command exited with code ${result.exitCode}`;
-        addLog('Git Automation', `Git command failed: \`${command}\`. ${msg}`, 'error', result.stderr, result, true);
+        addLog(
+          'Git Automation',
+          `Git command failed: \`${command}\`. ${msg}`,
+          'error',
+          result.stderr,
+          result,
+          true,
+        );
         setError(msg); // For immediate UI feedback
       } else {
-        addLog('Git Automation', `Git command succeeded: \`${command}\`.`, 'success', result.stdout, result);
+        addLog(
+          'Git Automation',
+          `Git command succeeded: \`${command}\`.`,
+          'success',
+          result.stdout,
+          result,
+        );
       }
     } catch (err) {
       const errorMsg = `Failed to run command: ${err instanceof Error ? err.message : String(err)}`;
-      addLog('Git Automation', errorMsg, 'error', String(err), { stdout: '', stderr: String(err), exitCode: 1 }, true);
+      addLog(
+        'Git Automation',
+        errorMsg,
+        'error',
+        String(err),
+        { stdout: '', stderr: String(err), exitCode: 1 },
+        true,
+      );
       setError(errorMsg); // For immediate UI feedback
     }
   };
@@ -189,8 +237,14 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
         overflow: 'hidden', // Hide parent scroll to manage internal scroll
       }}
     >
-
-      <Typography variant="body1" color="text.secondary" sx={{ flexShrink: 0 }} gutterBottom> {/* Added flexShrink */}
+      <Typography
+        variant="body1"
+        color="text.secondary"
+        sx={{ flexShrink: 0 }}
+        gutterBottom
+      >
+        {' '}
+        {/* Added flexShrink */}
         {lastLlmResponse.summary}
       </Typography>
       {/*lastLlmResponse.thoughtProcess && (
@@ -222,7 +276,7 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
         </Accordion>
       )*/}
 
-      <Box sx={{ display: 'flex', gap: 1, mb: 2, flexShrink: 0 }}> 
+      <Box sx={{ display: 'flex', gap: 1, mb: 2, flexShrink: 0 }}>
         <Button
           variant="outlined"
           onClick={selectAllChanges} // This action also logs
@@ -250,14 +304,14 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
             ) : null
           }
         >
-          {applyingChanges
-            ? 'Applying...'
-            : 'Apply Selected Changes'}
+          {applyingChanges ? 'Applying...' : 'Apply Selected Changes'}
         </Button>
       </Box>
 
       {applyingChanges && (
-        <Alert severity="info" sx={{ mt: 3, flexShrink: 0 }}> {/* Added flexShrink */}
+        <Alert severity="info" sx={{ mt: 3, flexShrink: 0 }}>
+          {' '}
+          {/* Added flexShrink */}
           Applying selected changes...
           <CircularProgress size={16} color="inherit" sx={{ ml: 1 }} />
         </Alert>
@@ -266,7 +320,9 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
       {/* `appliedMessages`, `buildOutput` are now displayed via the central `OutputLogger` in `AiSidebarContent` */}
 
       {gitInstructions && gitInstructions.length > 0 && (
-        <Accordion sx={{ mt: 3, flexShrink: 0 }}> {/* Added flexShrink */}
+        <Accordion sx={{ mt: 3, flexShrink: 0 }}>
+          {' '}
+          {/* Added flexShrink */}
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography
               variant="subtitle1"

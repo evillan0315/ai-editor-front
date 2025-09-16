@@ -40,11 +40,13 @@ const ConversationList: React.FC = () => {
           alignItems: 'start',
           height: '100%',
           py: 1,
-          
         }}
       >
         <CircularProgress size={20} />
-        <Typography variant="body2" sx={{ ml: 2, color: theme.palette.text.secondary, my:2 }}>
+        <Typography
+          variant="body2"
+          sx={{ ml: 2, color: theme.palette.text.secondary, my: 2 }}
+        >
           Loading conversations...
         </Typography>
       </Box>
@@ -62,7 +64,10 @@ const ConversationList: React.FC = () => {
   if (conversations.length === 0) {
     return (
       <Box sx={{ p: 2 }}>
-        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.text.secondary }}
+        >
           No conversations found. Start a new AI chat!
         </Typography>
       </Box>
@@ -70,7 +75,9 @@ const ConversationList: React.FC = () => {
   }
 
   return (
-    <List dense sx={{ height: '100%', overflowY: 'auto', p: 0 }}> {/* Changed maxHeight to height */}
+    <List dense sx={{ height: '100%', overflowY: 'auto', p: 0 }}>
+      {' '}
+      {/* Changed maxHeight to height */}
       {conversations.map((conv) => (
         <ListItem
           key={conv.conversationId}
@@ -100,9 +107,10 @@ const ConversationList: React.FC = () => {
               fontSize="small"
               sx={{
                 mr: 1.5,
-                color: selectedConversationId === conv.conversationId
-                  ? theme.palette.primary.main
-                  : theme.palette.text.secondary,
+                color:
+                  selectedConversationId === conv.conversationId
+                    ? theme.palette.primary.main
+                    : theme.palette.text.secondary,
               }}
             />
             <ListItemText

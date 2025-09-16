@@ -22,6 +22,7 @@ import {
 import { themeStore } from '@/stores/themeStore';
 import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index'; // Import createCodeMirrorTheme
 import { keymap } from '@codemirror/view'; // Import keymap
+import InitialEditorViewer from './InitialEditorViewer';
 
 interface OpenedFileViewerProps {
   // No specific props needed, all state comes from aiEditorStore
@@ -102,7 +103,10 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
     setOpenedFileContent(value); // This action handles setting `isOpenedFileDirty` implicitly or through the effect above
   };
 
-  if (!openedFile) return null; // Only render if a file is opened
+  if (!openedFile)
+    return (
+      <InitialEditorViewer />
+    ); // Show welcome message when no file is opened
 
   const isLoadingContent = isFetchingFileContent;
   const isDisabled = isLoadingContent || isSavingFileContent; // Disable editing if saving or fetching

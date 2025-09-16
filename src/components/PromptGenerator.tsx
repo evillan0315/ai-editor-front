@@ -65,6 +65,7 @@ import { authStore } from '@/stores/authStore';
 import { fileTreeStore, loadInitialTree } from '@/stores/fileTreeStore';
 import {
   INSTRUCTION,
+  YAML_INSTRUCTION,
   ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT, // JSON default
   MARKDOWN_ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
   YAML_ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
@@ -175,12 +176,15 @@ const PromptGenerator: React.FC = () => {
   // New: Update expectedOutputInstruction based on selected llmOutputFormat
   useEffect(() => {
     let newExpectedOutput = '';
+    let newInstruction = INSTRUCTION;
     switch (llmOutputFormat) {
       case LlmOutputFormat.JSON:
         newExpectedOutput = ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT;
+        newInstruction = INSTRUCTION;
         break;
       case LlmOutputFormat.YAML:
         newExpectedOutput = YAML_ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT;
+        newInstruction = YAML_INSTRUCTION;
         break;
       case LlmOutputFormat.MARKDOWN:
         newExpectedOutput = MARKDOWN_ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT;
@@ -194,6 +198,9 @@ const PromptGenerator: React.FC = () => {
     // Only update if it's actually different to avoid unnecessary store updates
     if (aiEditorStore.get().expectedOutputInstruction !== newExpectedOutput) {
       setExpectedOutputInstruction(newExpectedOutput); // This also logs it via aiEditorStore's setExpectedOutputInstruction
+    }
+    if (aiEditorStore.get().aiInstruction !== newInstruction) {
+      setAiInstruction(newInstruction); // This also logs it via aiEditorStore's setExpectedOutputInstruction
     }
   }, [llmOutputFormat]);
 
@@ -229,7 +236,11 @@ const PromptGenerator: React.FC = () => {
       updateScanPaths([...currentScanPathsArray, trimmedPath]);
       addLog('Prompt Generator', `Added scan path: ${trimmedPath}`, 'info');
     } else if (trimmedPath) {
-      addLog('Prompt Generator', `Scan path "${trimmedPath}" already exists or is invalid.`, 'warning');
+      addLog(
+        'Prompt Generator',
+        `Scan path "${trimmedPath}" already exists or is invalid.`,
+        'warning',
+      );
     }
     setNewScanPathValue(''); // Clear input after adding
     // Keep showAddScanPathInput true if you want to add multiple paths quickly,
@@ -247,7 +258,14 @@ const PromptGenerator: React.FC = () => {
   const handleLoadProject = () => {
     if (!projectInput) {
       setError('Please provide a project root path.');
-      addLog('Prompt Generator', 'Failed to load project: No path provided.', 'warning', undefined, undefined, true);
+      addLog(
+        'Prompt Generator',
+        'Failed to load project: No path provided.',
+        'warning',
+        undefined,
+        undefined,
+        true,
+      );
       return;
     }
     aiEditorStore.setKey('currentProjectPath', projectInput);
@@ -267,7 +285,14 @@ const PromptGenerator: React.FC = () => {
     if (!instruction) {
       setError('Please provide instructions for the AI.');
       showGlobalSnackbar('Please provide instructions for the AI.', 'error');
-      addLog('Prompt Generator', 'AI generation failed: No instructions provided.', 'warning', undefined, undefined, true);
+      addLog(
+        'Prompt Generator',
+        'AI generation failed: No instructions provided.',
+        'warning',
+        undefined,
+        undefined,
+        true,
+      );
       return;
     }
     if (!isLoggedIn) {
@@ -276,7 +301,14 @@ const PromptGenerator: React.FC = () => {
         'You must be logged in to use the AI Editor.',
         'error',
       );
-      addLog('Prompt Generator', 'AI generation failed: User not logged in.', 'error', undefined, undefined, true);
+      addLog(
+        'Prompt Generator',
+        'AI generation failed: User not logged in.',
+        'error',
+        undefined,
+        undefined,
+        true,
+      );
       return;
     }
     if (!currentProjectPath) {
@@ -285,7 +317,14 @@ const PromptGenerator: React.FC = () => {
         'Please load a project first by entering a path above.',
         'error',
       );
-      addLog('Prompt Generator', 'AI generation failed: No project root set.', 'error', undefined, undefined, true);
+      addLog(
+        'Prompt Generator',
+        'AI generation failed: No project root set.',
+        'error',
+        undefined,
+        undefined,
+        true,
+      );
       return;
     }
 
@@ -297,7 +336,11 @@ const PromptGenerator: React.FC = () => {
     setOpenedFile(null);
     // setBuildOutput(null); // Removed: Handled by logStore
     setIsBuilding(false); // Ensure building state is reset
-    addLog('Prompt Generator', 'Sending request to AI for code generation...', 'info');
+    addLog(
+      'Prompt Generator',
+      'Sending request to AI for code generation...',
+      'info',
+    );
 
     try {
       const payload: LlmGeneratePayload = {
@@ -319,7 +362,7 @@ const PromptGenerator: React.FC = () => {
       setLastLlmGeneratePayload(payload); // New: Store the payload before sending, and logs it
 
       const aiResponse: ModelResponse = await generateCode(payload);
-      console.log(aiResponse, 'aiResponse')
+      console.log(aiResponse, 'aiResponse');
       setLastLlmResponse(aiResponse); // This logs the response summary
       showGlobalSnackbar('AI response generated!', 'success');
 
@@ -329,10 +372,15 @@ const PromptGenerator: React.FC = () => {
         aiResponse.changes.length > 0
       ) {
         if (currentProjectPath) {
-          addLog('Prompt Generator', `Auto-apply is ON. Automatically applying ${aiResponse.changes.length} proposed changes.`, 'info');
+          addLog(
+            'Prompt Generator',
+            `Auto-apply is ON. Automatically applying ${aiResponse.changes.length} proposed changes.`,
+            'info',
+          );
           await applyAllProposedChanges(aiResponse.changes, currentProjectPath);
         } else {
-          const msg = 'Auto-apply failed: Current project path not found for applying changes.';
+          const msg =
+            'Auto-apply failed: Current project path not found for applying changes.';
           addLog('Prompt Generator', msg, 'error', undefined, undefined, true);
           setError(msg);
         }
@@ -341,7 +389,14 @@ const PromptGenerator: React.FC = () => {
       const errorMessage = `Failed to generate code: ${err instanceof Error ? err.message : String(err)}`;
       setError(errorMessage);
       showGlobalSnackbar(errorMessage, 'error');
-      addLog('Prompt Generator', errorMessage, 'error', String(err), undefined, true);
+      addLog(
+        'Prompt Generator',
+        errorMessage,
+        'error',
+        String(err),
+        undefined,
+        true,
+      );
     } finally {
       setLoading(false); // This also logs the end of generation
     }
@@ -381,9 +436,17 @@ const PromptGenerator: React.FC = () => {
     if (pathsAdded > 0) {
       updateScanPaths(Array.from(currentPathsSet));
       showGlobalSnackbar('Scan paths updated.', 'info');
-      addLog('Prompt Generator', `Added ${pathsAdded} scan paths from picker.`, 'info');
+      addLog(
+        'Prompt Generator',
+        `Added ${pathsAdded} scan paths from picker.`,
+        'info',
+      );
     } else {
-      addLog('Prompt Generator', 'No new scan paths selected from picker.', 'info');
+      addLog(
+        'Prompt Generator',
+        'No new scan paths selected from picker.',
+        'info',
+      );
     }
   };
 
@@ -401,7 +464,11 @@ const PromptGenerator: React.FC = () => {
     loadInitialTree(selectedPath);
     setIsProjectRootPickerDialogOpen(false);
     showGlobalSnackbar(`Project "${selectedPath}" loaded.`, 'success');
-    addLog('Prompt Generator', `Project root selected via picker: ${selectedPath}`, 'success');
+    addLog(
+      'Prompt Generator',
+      `Project root selected via picker: ${selectedPath}`,
+      'success',
+    );
   };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -420,6 +487,7 @@ const PromptGenerator: React.FC = () => {
 
   const handleSaveInstruction = (type: 'ai' | 'expected', content: string) => {
     if (type === 'ai') {
+      console.log(content, type);
       setAiInstruction(content); // This logs via aiEditorStore's setAiInstruction
       //showGlobalSnackbar('AI instruction updated.', 'success');
     } else if (type === 'expected') {
@@ -427,7 +495,11 @@ const PromptGenerator: React.FC = () => {
       showGlobalSnackbar('Expected output format updated.', 'success');
     } else {
       console.warn('Unknown instruction type for saving:', type);
-      addLog('Prompt Generator', `Unknown instruction type for saving: ${type}`, 'warning');
+      addLog(
+        'Prompt Generator',
+        `Unknown instruction type for saving: ${type}`,
+        'warning',
+      );
     }
 
     setIsInstructionEditorDialogOpen(false);
@@ -484,7 +556,14 @@ const PromptGenerator: React.FC = () => {
                 <Tooltip title="Browse for Project Root">
                   <span>
                     <IconButton
-                      onClick={() => {setIsProjectRootPickerDialogOpen(true); addLog('Prompt Generator', 'Opened project root picker dialog.', 'debug'); }}
+                      onClick={() => {
+                        setIsProjectRootPickerDialogOpen(true);
+                        addLog(
+                          'Prompt Generator',
+                          'Opened project root picker dialog.',
+                          'debug',
+                        );
+                      }}
                       disabled={commonDisabled}
                       color="primary"
                       size="small"
@@ -513,7 +592,14 @@ const PromptGenerator: React.FC = () => {
         <Tooltip title="Clear All Editor State">
           <span>
             <IconButton
-              onClick={() => { clearState(); addLog('Prompt Generator', 'Clear All Editor State button clicked.', 'info'); }}
+              onClick={() => {
+                clearState();
+                addLog(
+                  'Prompt Generator',
+                  'Clear All Editor State button clicked.',
+                  'info',
+                );
+              }}
               disabled={commonDisabled}
               color="secondary"
               size="small"
@@ -651,7 +737,14 @@ const PromptGenerator: React.FC = () => {
         <Tooltip title="Add New Scan Path Manually">
           <span>
             <IconButton
-              onClick={() => { setShowAddScanPathInput(true); addLog('Prompt Generator', 'Opened manual scan path input.', 'debug'); }}
+              onClick={() => {
+                setShowAddScanPathInput(true);
+                addLog(
+                  'Prompt Generator',
+                  'Opened manual scan path input.',
+                  'debug',
+                );
+              }}
               edge="end"
               disabled={commonDisabled}
               sx={{ color: theme.palette.text.secondary }}
@@ -664,7 +757,14 @@ const PromptGenerator: React.FC = () => {
         <Tooltip title="Select Paths from File Tree">
           <span>
             <IconButton
-              onClick={() => { setIsPickerDialogOpen(true); addLog('Prompt Generator', 'Opened file picker for scan paths.', 'debug'); }}
+              onClick={() => {
+                setIsPickerDialogOpen(true);
+                addLog(
+                  'Prompt Generator',
+                  'Opened file picker for scan paths.',
+                  'debug',
+                );
+              }}
               edge="end"
               disabled={commonDisabled}
               sx={{ color: theme.palette.text.secondary }}
@@ -725,28 +825,28 @@ const PromptGenerator: React.FC = () => {
         InputProps={{ style: { color: theme.palette.text.primary } }}
       />
       <Button
-          variant="contained"
-          color="success"
-          onClick={handleGenerateCode}
-          disabled={
-            loading ||
-            !instruction ||
-            !isLoggedIn ||
-            !currentProjectPath ||
-            applyingChanges ||
-            isFetchingFileContent ||
-            isBuilding ||
-            isSavingFileContent || // New: Disable if saving file content
-            isOpenedFileDirty // New: Disable if opened file has unsaved changes
-          }
-          size="small"
-          sx={{ py: 1, px: 2, fontSize: '0.9rem', whiteSpace: 'nowrap' }}
-        >
-          {loading || isBuilding ? (
-            <CircularProgress size={16} color="inherit" sx={{ mr: 1 }} />
-          ) : null}
-          Generate/Modify Code
-        </Button>
+        variant="contained"
+        color="success"
+        onClick={handleGenerateCode}
+        disabled={
+          loading ||
+          !instruction ||
+          !isLoggedIn ||
+          !currentProjectPath ||
+          applyingChanges ||
+          isFetchingFileContent ||
+          isBuilding ||
+          isSavingFileContent || // New: Disable if saving file content
+          isOpenedFileDirty // New: Disable if opened file has unsaved changes
+        }
+        size="small"
+        sx={{ py: 1, px: 2, fontSize: '0.9rem', whiteSpace: 'nowrap' }}
+      >
+        {loading || isBuilding ? (
+          <CircularProgress size={16} color="inherit" sx={{ mr: 1 }} />
+        ) : null}
+        Generate/Modify Code
+      </Button>
       {/* Controls and Generate button */}
       <Box
         sx={{
@@ -763,7 +863,14 @@ const PromptGenerator: React.FC = () => {
           <Tooltip title="Upload File or Paste Base64">
             <span>
               <IconButton
-                onClick={() => { setIsFileUploaderDialogOpen(true); addLog('Prompt Generator', 'Opened file uploader dialog.', 'debug'); }}
+                onClick={() => {
+                  setIsFileUploaderDialogOpen(true);
+                  addLog(
+                    'Prompt Generator',
+                    'Opened file uploader dialog.',
+                    'debug',
+                  );
+                }}
                 disabled={commonDisabled}
                 color="primary"
                 size="small"
@@ -804,8 +911,8 @@ const PromptGenerator: React.FC = () => {
               id="output-format-select"
               value={llmOutputFormat}
               label="Output"
-              onChange={(e) =>
-                setLlmOutputFormat(e.target.value as LlmOutputFormat) // This logs internally
+              onChange={
+                (e) => setLlmOutputFormat(e.target.value as LlmOutputFormat) // This logs internally
               }
               sx={{ color: theme.palette.text.primary }}
               inputProps={{ sx: { color: theme.palette.text.primary } }}
@@ -885,8 +992,6 @@ const PromptGenerator: React.FC = () => {
             </IconButton>
           </Tooltip>
         </Box>
-
-        
       </Box>
     </Box>
   );

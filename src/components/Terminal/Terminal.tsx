@@ -21,14 +21,12 @@ interface XTerminalProps {
   terminalHeight: number;
 }
 
-export const XTerminal: React.FC<XTerminalProps> = ({ onLogout, terminalHeight }) => {
-  const {
-    output,
-    currentPath,
-    isConnected,
-    commandHistory,
-    historyIndex,
-  } = useStore(terminalStore);
+export const XTerminal: React.FC<XTerminalProps> = ({
+  onLogout,
+  terminalHeight,
+}) => {
+  const { output, currentPath, isConnected, commandHistory, historyIndex } =
+    useStore(terminalStore);
 
   const { mode } = useStore(themeStore);
   const theme = useTheme();
@@ -138,7 +136,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({ onLogout, terminalHeight }
   };
 
   const getTruncatedPath = (path: string) => {
-    const parts = path.split('/').filter(part => part !== '');
+    const parts = path.split('/').filter((part) => part !== '');
     if (parts.length <= 3) {
       return path;
     }
@@ -152,8 +150,14 @@ export const XTerminal: React.FC<XTerminalProps> = ({ onLogout, terminalHeight }
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        backgroundColor: mode === 'dark' ? theme.palette.background.default : theme.palette.background.paper,
-        color: mode === 'dark' ? theme.palette.text.primary : theme.palette.text.secondary,
+        backgroundColor:
+          mode === 'dark'
+            ? theme.palette.background.default
+            : theme.palette.background.paper,
+        color:
+          mode === 'dark'
+            ? theme.palette.text.primary
+            : theme.palette.text.secondary,
         overflow: 'hidden',
         position: 'relative', // Make Paper a positioning context
       }}
@@ -179,7 +183,10 @@ export const XTerminal: React.FC<XTerminalProps> = ({ onLogout, terminalHeight }
           flexGrow: 1,
           padding: '8px',
           overflow: 'auto',
-          color: mode === 'dark' ? theme.palette.text.primary : theme.palette.text.secondary,
+          color:
+            mode === 'dark'
+              ? theme.palette.text.primary
+              : theme.palette.text.secondary,
           fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
           fontSize: '12px',
           whiteSpace: 'pre-wrap',
@@ -196,7 +203,10 @@ export const XTerminal: React.FC<XTerminalProps> = ({ onLogout, terminalHeight }
           display: 'flex',
           alignItems: 'center',
           padding: '8px',
-          backgroundColor: mode === 'dark' ? theme.palette.background.default : theme.palette.background.paper,
+          backgroundColor:
+            mode === 'dark'
+              ? theme.palette.background.default
+              : theme.palette.background.paper,
           position: 'sticky', // Stick to the bottom
           bottom: 0,
           left: 0,
@@ -252,7 +262,10 @@ export const XTerminal: React.FC<XTerminalProps> = ({ onLogout, terminalHeight }
 
             backgroundColor: 'transparent',
             border: 'none',
-            color: mode === 'dark' ? theme.palette.text.primary : theme.palette.text.secondary,
+            color:
+              mode === 'dark'
+                ? theme.palette.text.primary
+                : theme.palette.text.secondary,
             fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
             fontSize: '14px',
             outline: 'none',

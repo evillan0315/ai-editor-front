@@ -52,7 +52,9 @@ const VideoModal: React.FC<VideoModalProps> = ({
         },
       }}
     >
-      <DialogContent sx={{ p: 0, position: 'relative', width: '100%', height: '100%' }}>
+      <DialogContent
+        sx={{ p: 0, position: 'relative', width: '100%', height: '100%' }}
+      >
         <Box
           sx={{
             position: 'relative',

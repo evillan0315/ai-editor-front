@@ -1,5 +1,5 @@
-import React from "react";
-import Html5VideoPlayer from "@/components/Html5VideoPlayer";
+import React from 'react';
+import Html5VideoPlayer from '@/components/Html5VideoPlayer';
 
 /**
  * Props for the VideoPlayer component.
@@ -27,7 +27,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   controls = false,
   loop = false,
   muted = false,
-  className = "",
+  className = '',
   onPlayerReady,
 }) => {
   // Ensure the video element from Html5VideoPlayer is assigned to your shared ref

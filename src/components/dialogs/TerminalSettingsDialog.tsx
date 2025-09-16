@@ -6,7 +6,7 @@ import {
   DialogActions,
   Button,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
 } from '@mui/material';
 
 interface TerminalSettingsDialogProps {

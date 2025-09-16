@@ -21,7 +21,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import { useStore } from '@nanostores/react';
-import { $spotifyStore, addMediaToSpecificPlaylist } from '@/stores/spotifyStore'; // Updated import
+import {
+  $spotifyStore,
+  addMediaToSpecificPlaylist,
+} from '@/stores/spotifyStore'; // Updated import
 import { MediaFileResponseDto, Playlist } from '@/types';
 
 interface AddMediaToPlaylistDialogProps {
@@ -43,8 +46,7 @@ const AddMediaToPlaylistDialog: React.FC<AddMediaToPlaylistDialogProps> = ({
   isLoggedIn,
 }) => {
   const theme = useTheme();
-  const { playlists, isLoadingPlaylists } =
-    useStore($spotifyStore); // Removed isAddingMediaToPlaylist and addError from store as they are handled locally
+  const { playlists, isLoadingPlaylists } = useStore($spotifyStore); // Removed isAddingMediaToPlaylist and addError from store as they are handled locally
   const [searchTerm, setSearchTerm] = useState('');
   const [addError, setAddError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false); // Local loading state for adding media
@@ -68,7 +70,10 @@ const AddMediaToPlaylistDialog: React.FC<AddMediaToPlaylistDialogProps> = ({
   const handleAddMediaToPlaylist = useCallback(
     async (playlist: Playlist) => {
       if (!isLoggedIn) {
-        onShowSnackbar('You must be logged in to add media to a playlist.', 'error');
+        onShowSnackbar(
+          'You must be logged in to add media to a playlist.',
+          'error',
+        );
         return;
       }
       if (!mediaFile) {
@@ -81,7 +86,9 @@ const AddMediaToPlaylistDialog: React.FC<AddMediaToPlaylistDialogProps> = ({
 
       try {
         // Call the correct action
-        await addMediaToSpecificPlaylist(playlist.id, { mediaFileId: mediaFile.id });
+        await addMediaToSpecificPlaylist(playlist.id, {
+          mediaFileId: mediaFile.id,
+        });
         onShowSnackbar(
           `'${mediaFile.name}' added to playlist '${playlist.name}'!`,
           'success',
@@ -179,7 +186,13 @@ const AddMediaToPlaylistDialog: React.FC<AddMediaToPlaylistDialogProps> = ({
                   <Button
                     variant="outlined"
                     size="small"
-                    startIcon={isAdding ? <CircularProgress size={16} /> : <PlaylistAddIcon />}
+                    startIcon={
+                      isAdding ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <PlaylistAddIcon />
+                      )
+                    }
                     onClick={() => handleAddMediaToPlaylist(playlist)}
                     disabled={isAdding}
                   >

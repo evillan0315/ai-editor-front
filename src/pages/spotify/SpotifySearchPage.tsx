@@ -14,7 +14,12 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { useStore } from '@nanostores/react';
-import { $spotifyStore, playTrack, isPlayingAtom, currentTrackAtom } from '@/stores/spotifyStore';
+import {
+  $spotifyStore,
+  playTrack,
+  isPlayingAtom,
+  currentTrackAtom,
+} from '@/stores/spotifyStore';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 import AlbumIcon from '@mui/icons-material/Album';
 import MovieIcon from '@mui/icons-material/Movie';
@@ -38,7 +43,7 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
   // Filter for all playable media (audio and video)
   const playableMedia = allAvailableMediaFiles.filter(
     (media) =>
-      (media.fileType === FileType.AUDIO || media.fileType === FileType.VIDEO),
+      media.fileType === FileType.AUDIO || media.fileType === FileType.VIDEO,
   );
 
   const filteredTracks = React.useMemo(() => {
@@ -162,7 +167,10 @@ const SpotifySearchPage: React.FC<SpotifySearchPageProps> = () => {
                               sx={{
                                 width: '100%',
                                 borderRadius: 1,
-                                aspectRatio: track.fileType === FileType.VIDEO ? '16 / 9' : '1 / 1',
+                                aspectRatio:
+                                  track.fileType === FileType.VIDEO
+                                    ? '16 / 9'
+                                    : '1 / 1',
                                 objectFit: 'cover',
                               }}
                             />

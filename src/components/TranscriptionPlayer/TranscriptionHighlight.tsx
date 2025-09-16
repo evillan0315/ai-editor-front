@@ -1,10 +1,7 @@
 // src/components/TranscriptionPlayer/TranscriptionHighlight.tsx
 import React from 'react';
 import { Box, Typography, Chip, Paper } from '@mui/material';
-import {
-  TranscriptionResult,
-  SyncTranscriptionResponse,
-} from '@/types'; 
+import { TranscriptionResult, SyncTranscriptionResponse } from '@/types';
 
 interface TranscriptionHighlightProps {
   syncData: SyncTranscriptionResponse;
@@ -52,7 +49,11 @@ export const TranscriptionHighlight: React.FC<TranscriptionHighlightProps> = ({
           <Chip
             label={`${currentSegment.start.toFixed(1)}s - ${currentSegment.end.toFixed(1)}s`}
             size="small"
-            sx={{ mt: 1, backgroundColor: 'rgba(255,255,255,0.2)', color: 'inherit' }}
+            sx={{
+              mt: 1,
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              color: 'inherit',
+            }}
           />
         </Paper>
       )}

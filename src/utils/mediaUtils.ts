@@ -13,7 +13,11 @@ export const mapMediaFileToTrack = (mediaFile: MediaFileResponseDto): Track => {
     title: metadata?.title || mediaFile.name || 'Unknown Title',
     artist: metadata?.uploader || 'Unknown Artist',
     album: 'Unknown Album', // Assuming no album info from current metadata
-    coverArt: metadata?.thumbnail || (mediaFile.fileType === FileType.VIDEO ? '/default-video-cover.png' : '/default-album-art.png'), // Dynamic default cover
+    coverArt:
+      metadata?.thumbnail ||
+      (mediaFile.fileType === FileType.VIDEO
+        ? '/default-video-cover.png'
+        : '/default-album-art.png'), // Dynamic default cover
     duration: metadata?.duration || 0,
     mediaSrc: getFileStreamUrl(mediaFile.path),
     fileType: mediaFile.fileType,

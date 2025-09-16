@@ -36,7 +36,8 @@ interface TerminalPageProps {}
 
 export const TerminalPage: React.FC<TerminalPageProps> = () => {
   const theme = useTheme();
-  const [selectedSessionType, setSelectedSessionType] = useState<string>('local');
+  const [selectedSessionType, setSelectedSessionType] =
+    useState<string>('local');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sshConfig, setSshConfig] = useState({
     host: '',
@@ -46,7 +47,7 @@ export const TerminalPage: React.FC<TerminalPageProps> = () => {
     privateKey: '',
   });
   const [terminalHeight, setTerminalHeight] = useState(400); // Default height
-  
+
   /*const {
     output,
     currentPath,
@@ -106,7 +107,7 @@ export const TerminalPage: React.FC<TerminalPageProps> = () => {
   };
 
   const handleSshConfigChange = (field: string, value: string | number) => {
-    setSshConfig(prev => ({
+    setSshConfig((prev) => ({
       ...prev,
       [field]: value,
     }));
@@ -128,12 +129,14 @@ export const TerminalPage: React.FC<TerminalPageProps> = () => {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <TerminalIcon sx={{ fontSize: 60, color: theme.palette.secondary.main }} />
+          <TerminalIcon
+            sx={{ fontSize: 60, color: theme.palette.secondary.main }}
+          />
           <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
             Web Terminal
           </Typography>
         </Box>
-        
+
         <Typography variant="body1" color="text.secondary" align="center">
           Connect to a local or remote terminal session.
         </Typography>
@@ -141,7 +144,9 @@ export const TerminalPage: React.FC<TerminalPageProps> = () => {
         <Box sx={{ width: '100%', maxWidth: 800, mt: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
             <FormControl sx={{ minWidth: 120 }}>
-              <InputLabel id="session-type-select-label">Session Type</InputLabel>
+              <InputLabel id="session-type-select-label">
+                Session Type
+              </InputLabel>
               <Select
                 labelId="session-type-select-label"
                 id="session-type-select"
@@ -206,35 +211,56 @@ export const TerminalPage: React.FC<TerminalPageProps> = () => {
           </Box>
 
           {selectedSessionType === 'ssh' /*&& !isConnected*/ && (
-            <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, mb: 3 }}>
+            <Box
+              sx={{
+                p: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                mb: 3,
+              }}
+            >
               <Typography variant="h6" gutterBottom>
                 SSH Connection Details
               </Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <Box
+                sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}
+              >
                 <TextField
                   label="Host"
                   value={sshConfig.host}
-                  onChange={(e) => handleSshConfigChange('host', e.target.value)}
+                  onChange={(e) =>
+                    handleSshConfigChange('host', e.target.value)
+                  }
                   fullWidth
                 />
                 <TextField
                   label="Port"
                   type="number"
                   value={sshConfig.port}
-                  onChange={(e) => handleSshConfigChange('port', parseInt(e.target.value) || 22)}
+                  onChange={(e) =>
+                    handleSshConfigChange(
+                      'port',
+                      parseInt(e.target.value) || 22,
+                    )
+                  }
                   fullWidth
                 />
                 <TextField
                   label="Username"
                   value={sshConfig.username}
-                  onChange={(e) => handleSshConfigChange('username', e.target.value)}
+                  onChange={(e) =>
+                    handleSshConfigChange('username', e.target.value)
+                  }
                   fullWidth
                 />
                 <TextField
                   label="Password"
                   type="password"
                   value={sshConfig.password}
-                  onChange={(e) => handleSshConfigChange('password', e.target.value)}
+                  onChange={(e) =>
+                    handleSshConfigChange('password', e.target.value)
+                  }
                   fullWidth
                 />
                 <TextField
@@ -242,7 +268,9 @@ export const TerminalPage: React.FC<TerminalPageProps> = () => {
                   multiline
                   rows={3}
                   value={sshConfig.privateKey}
-                  onChange={(e) => handleSshConfigChange('privateKey', e.target.value)}
+                  onChange={(e) =>
+                    handleSshConfigChange('privateKey', e.target.value)
+                  }
                   fullWidth
                   sx={{ gridColumn: '1 / -1' }}
                 />
@@ -251,8 +279,8 @@ export const TerminalPage: React.FC<TerminalPageProps> = () => {
           )}
 
           <XTerminal
-              onLogout={handleAppLogout}
-              terminalHeight={terminalHeight}
+            onLogout={handleAppLogout}
+            terminalHeight={terminalHeight}
           />
 
           {/*systemInfo && (
@@ -277,11 +305,17 @@ export const TerminalPage: React.FC<TerminalPageProps> = () => {
         </Box>
       </Paper>
 
-      <Dialog open={settingsOpen} onClose={handleSettingsClose} maxWidth="sm" fullWidth>
+      <Dialog
+        open={settingsOpen}
+        onClose={handleSettingsClose}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Terminal Settings</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Configure your terminal preferences. (Settings implementation pending)
+            Configure your terminal preferences. (Settings implementation
+            pending)
           </Typography>
           {/* Settings form would go here */}
         </DialogContent>

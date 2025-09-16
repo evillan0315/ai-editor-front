@@ -100,7 +100,11 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
     }
     setError(null); // Clear previous error
     setCurrentDiff(null, null); // Clear previous diff before showing a new one
-    addLog('Proposed Change Card', `Fetching git diff for ${change.filePath}...`, 'info');
+    addLog(
+      'Proposed Change Card',
+      `Fetching git diff for ${change.filePath}...`,
+      'info',
+    );
 
     try {
       let diffContent: string;
@@ -120,7 +124,11 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
       }
 
       setCurrentDiff(change.filePath, diffContent); // This also logs it via aiEditorStore's setCurrentDiff
-      addLog('Proposed Change Card', `Git diff loaded successfully for ${change.filePath}.`, 'success');
+      addLog(
+        'Proposed Change Card',
+        `Git diff loaded successfully for ${change.filePath}.`,
+        'success',
+      );
     } catch (err) {
       const errorMsg = `Failed to get diff for ${change.filePath}: ${err instanceof Error ? err.message : String(err)}`;
       setError(errorMsg); // For immediate UI feedback
@@ -128,7 +136,14 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
         change.filePath,
         `Error: ${err instanceof Error ? err.message : String(err)}`,
       );
-      addLog('Proposed Change Card', errorMsg, 'error', String(err), undefined, true);
+      addLog(
+        'Proposed Change Card',
+        errorMsg,
+        'error',
+        String(err),
+        undefined,
+        true,
+      );
     }
   };
 
@@ -143,7 +158,11 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
   const handleCancelEditFilePath = () => {
     setEditedFilePath(change.filePath); // Revert to original
     setIsEditingFilePath(false);
-    addLog('Proposed Change Card', `Cancelled file path edit for ${change.filePath}.`, 'info');
+    addLog(
+      'Proposed Change Card',
+      `Cancelled file path edit for ${change.filePath}.`,
+      'info',
+    );
   };
 
   const handleKeyDownOnInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -252,7 +271,11 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
               onClick={(e) => {
                 e.stopPropagation(); // Prevent accordion collapse
                 setIsEditingFilePath(true);
-                addLog('Proposed Change Card', `Started editing file path for: ${change.filePath}`, 'debug');
+                addLog(
+                  'Proposed Change Card',
+                  `Started editing file path for: ${change.filePath}`,
+                  'debug',
+                );
               }}
               disabled={commonDisabled}
               sx={{ color: muiTheme.palette.text.secondary }}
@@ -308,8 +331,8 @@ const ProposedChangeCard: React.FC<ProposedChangeCardProps> = ({
               </Typography>
               <CodeMirror
                 value={change.newContent || ''}
-                onChange={(value) =>
-                  updateProposedChangeContent(change.filePath, value) // This logs internally
+                onChange={
+                  (value) => updateProposedChangeContent(change.filePath, value) // This logs internally
                 }
                 extensions={[
                   getCodeMirrorLanguage(change.filePath),

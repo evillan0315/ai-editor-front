@@ -1,13 +1,23 @@
 // src/services/socketService.ts
 import { io, Socket } from 'socket.io-client';
-import { ExecDto, SSHConnectPayload, ResizePayload, SystemInfo, PromptData } from '@/types';
+import {
+  ExecDto,
+  SSHConnectPayload,
+  ResizePayload,
+  SystemInfo,
+  PromptData,
+} from '@/types';
 //import { getToken } from '@/stores/authStore';
 
 class SocketService {
   private socket: Socket | null = null;
   private listeners: Map<string, (...args: any[]) => void> = new Map();
 
-  connect(token: string, initialCwd?: string, namespace?: string): Promise<void> {
+  connect(
+    token: string,
+    initialCwd?: string,
+    namespace?: string,
+  ): Promise<void> {
     const terminalNS = '/terminal';
     return new Promise((resolve, reject) => {
       try {
@@ -15,9 +25,12 @@ class SocketService {
 
         this.socket = io(`${namespace ? namespace : terminalNS}`, {
           auth: {
-            token: `Bearer ${token}`
+            token: `Bearer ${token}`,
           },
-          query: initialCwd || initialCwdFromEnv ? { initialCwd: initialCwd || initialCwdFromEnv } : undefined
+          query:
+            initialCwd || initialCwdFromEnv
+              ? { initialCwd: initialCwd || initialCwdFromEnv }
+              : undefined,
         });
 
         this.socket.on('connect', () => {

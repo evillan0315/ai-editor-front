@@ -24,7 +24,6 @@ import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import BugReportOutlinedIcon from '@mui/icons-material/BugReportOutlined';
 
-
 interface OutputLoggerProps {
   // No props needed anymore, it will read from the global logStore
 }
@@ -40,7 +39,9 @@ const getSeverityIcon = (severity: LogEntry['severity']) => {
     case 'warning':
       return <WarningAmberOutlinedIcon fontSize="small" color="warning" />;
     case 'success':
-      return <CheckCircleOutlineOutlinedIcon fontSize="small" color="success" />;
+      return (
+        <CheckCircleOutlineOutlinedIcon fontSize="small" color="success" />
+      );
     case 'debug':
       return <BugReportOutlinedIcon fontSize="small" color="info" />; // or a custom debug color
     case 'info':
@@ -79,7 +80,9 @@ const OutputLogger: React.FC<OutputLoggerProps> = () => {
 
   if (logs.length === 0) {
     return (
-      <Box sx={{ p: 2, textAlign: 'center', color: theme.palette.text.secondary }}>
+      <Box
+        sx={{ p: 2, textAlign: 'center', color: theme.palette.text.secondary }}
+      >
         <Typography variant="body2">No logs to display yet.</Typography>
       </Box>
     );
@@ -107,7 +110,14 @@ const OutputLogger: React.FC<OutputLoggerProps> = () => {
           }}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', pr: 2 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                pr: 2,
+              }}
+            >
               {getSeverityIcon(log.severity)}
               <Typography
                 variant="subtitle2"
@@ -126,7 +136,10 @@ const OutputLogger: React.FC<OutputLoggerProps> = () => {
                 sx={{
                   ml: 1,
                   flexGrow: 1,
-                  color: log.severity === 'error' ? theme.palette.error.main : theme.palette.text.primary,
+                  color:
+                    log.severity === 'error'
+                      ? theme.palette.error.main
+                      : theme.palette.text.primary,
                 }}
               >
                 {log.message}
@@ -174,7 +187,11 @@ const OutputLogger: React.FC<OutputLoggerProps> = () => {
                     <ContentCopyIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
-                <Typography variant="body2" component="pre" sx={{ margin: 0, color: theme.palette.text.primary }}>
+                <Typography
+                  variant="body2"
+                  component="pre"
+                  sx={{ margin: 0, color: theme.palette.text.primary }}
+                >
                   {log.details}
                 </Typography>
               </Box>
@@ -220,17 +237,32 @@ const OutputLogger: React.FC<OutputLoggerProps> = () => {
                   </IconButton>
                 </Tooltip>
                 {log.rawOutput.stdout && (
-                  <Typography variant="body2" component="pre" sx={{ margin: 0, color: theme.palette.text.primary }}>
+                  <Typography
+                    variant="body2"
+                    component="pre"
+                    sx={{ margin: 0, color: theme.palette.text.primary }}
+                  >
                     {log.rawOutput.stdout}
                   </Typography>
                 )}
                 {log.rawOutput.stderr && (
-                  <Typography variant="body2" component="pre" sx={{ margin: 0, color: theme.palette.error.main }}>
+                  <Typography
+                    variant="body2"
+                    component="pre"
+                    sx={{ margin: 0, color: theme.palette.error.main }}
+                  >
                     {log.rawOutput.stderr}
                   </Typography>
                 )}
                 {log.rawOutput.exitCode !== undefined && (
-                  <Typography variant="caption" sx={{ mt: 1, display: 'block', color: theme.palette.text.secondary }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      mt: 1,
+                      display: 'block',
+                      color: theme.palette.text.secondary,
+                    }}
+                  >
                     Exit Code: {log.rawOutput.exitCode}
                   </Typography>
                 )}
@@ -244,7 +276,13 @@ const OutputLogger: React.FC<OutputLoggerProps> = () => {
         color="secondary"
         aria-label="clear logs"
         onClick={clearLogs}
-        sx={{ position: 'sticky', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}
+        sx={{
+          position: 'sticky',
+          bottom: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10,
+        }}
       >
         <ClearAllIcon />
       </Fab>

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from 'react';
 
 interface Html5VideoPlayerProps {
   src: string;
@@ -16,13 +16,13 @@ interface Html5VideoPlayerProps {
 
 const Html5VideoPlayer: React.FC<Html5VideoPlayerProps> = ({
   src,
-  type = "video/mp4",
+  type = 'video/mp4',
   autoplay = false,
   controls = false,
   loop = false,
   muted = false,
   poster,
-  className = "",
+  className = '',
   onReady,
   ...rest
 }) => {

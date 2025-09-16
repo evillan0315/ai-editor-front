@@ -2,13 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { aiEditorStore } from '@/stores/aiEditorStore';
 import { addLog } from '@/stores/logStore';
-import {
-  Box,
-  Typography,
-  Paper,
-  useTheme,
-  IconButton,
-} from '@mui/material';
+import { Box, Typography, Paper, useTheme, IconButton } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import PromptGenerator from '@/components/PromptGenerator';
@@ -63,14 +57,31 @@ const AiSidebarContent: React.FC = () => {
           flexDirection: 'column',
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, height: `${PANEL_HEADER_HEIGHT - 16}px` }}> {/* 48px (panel height) - 16px (2*padding) = 32px */}
-          <Typography variant="subtitle1" sx={{ flexShrink: 0, fontWeight: 'bold' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexShrink: 0,
+            height: `${PANEL_HEADER_HEIGHT - 16}px`,
+          }}
+        >
+          {' '}
+          {/* 48px (panel height) - 16px (2*padding) = 32px */}
+          <Typography
+            variant="subtitle1"
+            sx={{ flexShrink: 0, fontWeight: 'bold' }}
+          >
             Proposed Changes
           </Typography>
           <IconButton
             onClick={() => {
               setShowAiResponseDisplay(!showAiResponseDisplay);
-              addLog('AI Sidebar', `Proposed Changes display ${showAiResponseDisplay ? 'collapsed' : 'expanded'}.`, 'debug');
+              addLog(
+                'AI Sidebar',
+                `Proposed Changes display ${showAiResponseDisplay ? 'collapsed' : 'expanded'}.`,
+                'debug',
+              );
             }}
             sx={{
               p: 0.5,
@@ -103,13 +114,15 @@ const AiSidebarContent: React.FC = () => {
         )}
       </Paper>
 
-      {/* AI Output Log - Positioned above Prompt Generator, fixed height with scroll */}
+      {/* AI Output Log - Positioned above Prompt Generator, fixed height with scroll 
       <Paper
         elevation={3}
         sx={{
           flexShrink: 0,
           p: 1,
-          height: showAiOutputLog ? AI_OUTPUT_LOG_DEFAULT_HEIGHT : PANEL_HEADER_HEIGHT,
+          height: showAiOutputLog
+            ? AI_OUTPUT_LOG_DEFAULT_HEIGHT
+            : PANEL_HEADER_HEIGHT,
           minHeight: PANEL_HEADER_HEIGHT, // Ensures it doesn't shrink below header size
           overflow: 'hidden', // Hide overflow when collapsed (important for unmounted component)
           bgcolor: theme.palette.background.paper,
@@ -120,14 +133,29 @@ const AiSidebarContent: React.FC = () => {
           mb: 2, // Removed, replaced by gap on parent Box
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, height: `${PANEL_HEADER_HEIGHT - 16}px` }}>
-          <Typography variant="subtitle1" sx={{ flexShrink: 0, fontWeight: 'bold' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexShrink: 0,
+            height: `${PANEL_HEADER_HEIGHT - 16}px`,
+          }}
+        >
+          <Typography
+            variant="subtitle1"
+            sx={{ flexShrink: 0, fontWeight: 'bold' }}
+          >
             AI Output Log
           </Typography>
           <IconButton
             onClick={() => {
               setShowAiOutputLog(!showAiOutputLog);
-              addLog('AI Sidebar', `AI Output Log ${showAiOutputLog ? 'collapsed' : 'expanded'}.`, 'debug');
+              addLog(
+                'AI Sidebar',
+                `AI Output Log ${showAiOutputLog ? 'collapsed' : 'expanded'}.`,
+                'debug',
+              );
             }}
             sx={{
               p: 0.5,
@@ -144,8 +172,9 @@ const AiSidebarContent: React.FC = () => {
             )}
           </IconButton>
         </Box>
-        {showAiOutputLog && <OutputLogger />} {/* Conditionally render OutputLogger */}
-      </Paper>
+        {showAiOutputLog && <OutputLogger />}{' '}
+     
+      </Paper>*/}
 
       {/* Prompt Generator Panel (collapsible) - Sticky to the bottom */}
       <Paper
@@ -164,7 +193,7 @@ const AiSidebarContent: React.FC = () => {
           bottom: theme.spacing(2), // Align with the parent Box's bottom padding (p: 2)
           zIndex: theme.zIndex.speedDial, // Ensure it floats above other content when sticky
           transition: 'height 0.2s ease-in-out',
-          marginTop: 'auto', // This pushes the panel to the bottom in a flex column layout when space is available
+          marginTop: 2, // This pushes the panel to the bottom in a flex column layout when space is available
           // No mb here as it's the last element in the column and gap is used
         }}
       >
@@ -184,7 +213,11 @@ const AiSidebarContent: React.FC = () => {
           <IconButton
             onClick={() => {
               setShowPromptGenerator(!showPromptGenerator);
-              addLog('AI Sidebar', `Prompt Generator ${showPromptGenerator ? 'collapsed' : 'expanded'}.`, 'debug');
+              addLog(
+                'AI Sidebar',
+                `Prompt Generator ${showPromptGenerator ? 'collapsed' : 'expanded'}.`,
+                'debug',
+              );
             }}
             sx={{
               p: 0.5,

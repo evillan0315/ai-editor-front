@@ -138,11 +138,14 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
     [playableAudioTracks, playableVideoTracks],
   );
 
-  const handleAddToPlaylist = useCallback((mediaFile: MediaFileResponseDto) => {
-    setMediaFileToAddToPlaylist(mediaFile);
-    setIsAddMediaToPlaylistDialogOpen(true);
-    handleCloseMediaActionsMenu();
-  }, [handleCloseMediaActionsMenu]);
+  const handleAddToPlaylist = useCallback(
+    (mediaFile: MediaFileResponseDto) => {
+      setMediaFileToAddToPlaylist(mediaFile);
+      setIsAddMediaToPlaylistDialogOpen(true);
+      handleCloseMediaActionsMenu();
+    },
+    [handleCloseMediaActionsMenu],
+  );
 
   const handleUpdateMedia = useCallback(
     (mediaFile: MediaFileResponseDto) => {
@@ -281,8 +284,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
                               width: 64,
                               height: 64,
                               flexShrink: 0,
-                              bgcolor:
-                                theme.palette.action.disabledBackground,
+                              bgcolor: theme.palette.action.disabledBackground,
                               display: 'flex',
                               justifyContent: 'center',
                               alignItems: 'center',
@@ -354,7 +356,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
                         edge="end"
                         aria-label="play audio"
                         onClick={(e) => {
-                         e.stopPropagation(); // Prevent ListItem's onClick from firing
+                          e.stopPropagation(); // Prevent ListItem's onClick from firing
                           handlePlayMedia(mediaFile);
                         }}
                         sx={{ color: theme.palette.primary.main, ml: 2 }}
@@ -475,8 +477,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
                               width: '100%',
                               borderRadius: 1,
                               aspectRatio: '16 / 9',
-                              bgcolor:
-                                theme.palette.action.disabledBackground,
+                              bgcolor: theme.palette.action.disabledBackground,
                               display: 'flex',
                               justifyContent: 'center',
                               alignItems: 'center',
@@ -614,7 +615,10 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
                       />
                     </Box>
                     <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ fontWeight: 'bold' }}
+                      >
                         {artist.name}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">

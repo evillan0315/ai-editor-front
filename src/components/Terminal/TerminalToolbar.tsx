@@ -31,7 +31,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
   onDisconnect,
   onSettings,
   onLogout,
-  sx
+  sx,
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));

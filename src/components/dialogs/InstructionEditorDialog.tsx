@@ -55,7 +55,7 @@ const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
   // Determine language extensions for CodeMirror dynamically
   const languageExtensions = useMemo(() => {
     if (instructionType === 'ai') {
-      return getCodeMirrorLanguage('instruction.md'); // Default to markdown for AI instructions
+      return getCodeMirrorLanguage('instruction.yaml'); // Default to markdown for AI instructions
     } else {
       // instructionType === 'expected'
       switch (llmOutputFormat) {

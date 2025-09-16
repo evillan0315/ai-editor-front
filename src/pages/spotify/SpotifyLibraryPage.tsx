@@ -381,10 +381,12 @@ const CreatePlaylistFormDialog: React.FC<CreatePlaylistFormDialogProps> = ({
   };
 
   // Allow both audio and video files to be added to playlists
-  const availableTracks = allAvailableMediaFiles.filter(
-    (media) =>
-      (media.fileType === FileType.AUDIO || media.fileType === FileType.VIDEO),
-  ).map(mapMediaFileToTrack);
+  const availableTracks = allAvailableMediaFiles
+    .filter(
+      (media) =>
+        media.fileType === FileType.AUDIO || media.fileType === FileType.VIDEO,
+    )
+    .map(mapMediaFileToTrack);
 
   const handleMediaSelectionChange = useCallback(
     (event: SelectChangeEvent<string[]>) => {
@@ -1075,10 +1077,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
     if (mediaFileToPlay) {
       playTrack(mediaFileToPlay, playlistTracks);
     } else {
-      showSnackbar(
-        `Media file for track '${track.title}' not found.`,
-        'error',
-      );
+      showSnackbar(`Media file for track '${track.title}' not found.`, 'error');
     }
   };
 
@@ -1236,9 +1235,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       }
       if (playlistError) {
         return (
-          <Alert severity="error">
-            Error loading library: {playlistError}
-          </Alert>
+          <Alert severity="error">Error loading library: {playlistError}</Alert>
         );
       }
     } else if (value === 2) {
@@ -1572,12 +1569,11 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
                   >
                     <ListItemAvatar>
                       {playlist.cover ? (
-                        <Avatar
-                          variant="rounded"
-                          src={playlist.cover}
-                        />
+                        <Avatar variant="rounded" src={playlist.cover} />
                       ) : // Use AlbumIcon for audio playlists, MovieIcon for video playlists, or a generic icon
-                      playlist.tracks.some((t) => t.fileType === FileType.VIDEO) ? (
+                      playlist.tracks.some(
+                          (t) => t.fileType === FileType.VIDEO,
+                        ) ? (
                         <MovieIcon
                           sx={{
                             width: 40,
@@ -1690,12 +1686,11 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       {value === 2 && ( // Audios
         <Box>
           <List>
-            {paginatedAudioFiles.length === 0 &&
-              !isFetchingPaginatedAudio && (
-                <Alert severity="info">
-                  No audio files found in your library.
-                </Alert>
-              )}
+            {paginatedAudioFiles.length === 0 && !isFetchingPaginatedAudio && (
+              <Alert severity="info">
+                No audio files found in your library.
+              </Alert>
+            )}
             {paginatedAudioFiles.map((mediaFile) => {
               const track = mapMediaFileToTrack(mediaFile);
               const isActive = currentTrack?.id === track.id && isPlaying;
@@ -1777,12 +1772,11 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       {value === 3 && ( // Videos
         <Box>
           <List>
-            {paginatedVideoFiles.length === 0 &&
-              !isFetchingPaginatedVideo && (
-                <Alert severity="info">
-                  No video files found in your library.
-                </Alert>
-              )}
+            {paginatedVideoFiles.length === 0 && !isFetchingPaginatedVideo && (
+              <Alert severity="info">
+                No video files found in your library.
+              </Alert>
+            )}
             {paginatedVideoFiles.map((mediaFile) => {
               const track = mapMediaFileToTrack(mediaFile);
               const isActive = currentTrack?.id === track.id && isPlaying;
@@ -1894,8 +1888,7 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
         }}
       >
         {openMenuPlaylistId &&
-          playlists.find((p) => p.id === openMenuPlaylistId) &&
-          [
+          playlists.find((p) => p.id === openMenuPlaylistId) && [
             <MenuItem
               key="edit-playlist"
               onClick={() =>

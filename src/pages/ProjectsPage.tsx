@@ -22,7 +22,6 @@ import {
   deleteProject,
 } from '@/api/project';
 import { Project, CreateProjectDto, UpdateProjectDto } from '@/types';
-
 import {
   Box,
   Typography,
@@ -51,6 +50,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import WorkIcon from '@mui/icons-material/Work';
+import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
 
 // Interfaces for dialog forms
 interface ProjectFormDialogProps {
@@ -64,7 +64,7 @@ interface ProjectFormDialogProps {
   organizationId: string; // New: Pass organizationId to the dialog
 }
 
-const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
+export const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
   open,
   onClose,
   onCreate, // New prop
@@ -87,6 +87,7 @@ const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
     initialData?.repositoryUrl || '',
   );
   const [formError, setFormError] = useState<string | null>(null);
+  const [isDirectoryPickerOpen, setIsDirectoryPickerOpen] = useState(false);
 
   useEffect(() => {
     setName(initialData?.name || '');
@@ -136,107 +137,129 @@ const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
     }
   };
 
+  const handlePathSelect = (selectedPath: string) => {
+    setPath(selectedPath);
+    setIsDirectoryPickerOpen(false);
+  };
+
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      PaperProps={{
-        sx: {
-          bgcolor: theme.palette.background.paper,
-          color: theme.palette.text.primary,
-        },
-      }}
-    >
-      <DialogTitle sx={{ color: theme.palette.text.primary }}>
-        {isEditMode ? 'Edit Project' : 'Create New Project'}
-      </DialogTitle>
-      <DialogContent>
-        {formError && <Alert severity="error">{formError}</Alert>}
-        <TextField
-          autoFocus
-          margin="dense"
-          id="name"
-          label="Project Name"
-          type="text"
-          fullWidth
-          variant="outlined"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          disabled={loading}
-          sx={{ mt: 2 }}
-          InputLabelProps={{ shrink: true }}
-          InputProps={{ style: { color: theme.palette.text.primary } }}
-        />
-        <TextField
-          margin="dense"
-          id="description"
-          label="Description"
-          type="text"
-          fullWidth
-          multiline
-          rows={2}
-          variant="outlined"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          disabled={loading}
-          InputLabelProps={{ shrink: true }}
-          InputProps={{ style: { color: theme.palette.text.primary } }}
-        />
-        <TextField
-          margin="dense"
-          id="path"
-          label="Project Path"
-          type="text"
-          fullWidth
-          variant="outlined"
-          value={path}
-          onChange={(e) => setPath(e.target.value)}
-          disabled={loading}
-          InputLabelProps={{ shrink: true }}
-          InputProps={{ style: { color: theme.palette.text.primary } }}
-        />
-        <TextField
-          margin="dense"
-          id="technologies"
-          label="Technologies (comma-separated)"
-          type="text"
-          fullWidth
-          variant="outlined"
-          value={technologies}
-          onChange={(e) => setTechnologies(e.target.value)}
-          disabled={loading}
-          InputLabelProps={{ shrink: true }}
-          InputProps={{ style: { color: theme.palette.text.primary } }}
-        />
-        <TextField
-          margin="dense"
-          id="repositoryUrl"
-          label="Repository URL"
-          type="text"
-          fullWidth
-          variant="outlined"
-          value={repositoryUrl}
-          onChange={(e) => setRepositoryUrl(e.target.value)}
-          disabled={loading}
-          InputLabelProps={{ shrink: true }}
-          InputProps={{ style: { color: theme.palette.text.primary } }}
-        />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          color="primary"
-          variant="contained"
-          disabled={loading || !name.trim() || !path.trim()}
-          startIcon={loading && <CircularProgress size={20} />}
-        >
-          {isEditMode ? 'Update' : 'Create'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        PaperProps={{
+          sx: {
+            bgcolor: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
+          {isEditMode ? 'Edit Project' : 'Create New Project'}
+        </DialogTitle>
+        <DialogContent>
+          {formError && <Alert severity="error">{formError}</Alert>}
+          <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            label="Project Name"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={loading}
+            sx={{ mt: 2 }}
+            InputLabelProps={{ shrink: true }}
+            InputProps={{ style: { color: theme.palette.text.primary } }}
+          />
+          <TextField
+            margin="dense"
+            id="description"
+            label="Description"
+            type="text"
+            fullWidth
+            multiline
+            rows={2}
+            variant="outlined"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={loading}
+            InputLabelProps={{ shrink: true }}
+            InputProps={{ style: { color: theme.palette.text.primary } }}
+          />
+          <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+            <TextField
+              margin="dense"
+              id="path"
+              label="Project Path"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={path}
+              onChange={(e) => setPath(e.target.value)}
+              disabled={loading}
+              InputLabelProps={{ shrink: true }}
+              InputProps={{ style: { color: theme.palette.text.primary } }}
+            />
+            <Button
+              onClick={() => setIsDirectoryPickerOpen(true)}
+              disabled={loading}
+              sx={{ ml: 1 }}
+            >
+              Browse
+            </Button>
+          </Box>
+          <TextField
+            margin="dense"
+            id="technologies"
+            label="Technologies (comma-separated)"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={technologies}
+            onChange={(e) => setTechnologies(e.target.value)}
+            disabled={loading}
+            InputLabelProps={{ shrink: true }}
+            InputProps={{ style: { color: theme.palette.text.primary } }}
+          />
+          <TextField
+            margin="dense"
+            id="repositoryUrl"
+            label="Repository URL"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={repositoryUrl}
+            onChange={(e) => setRepositoryUrl(e.target.value)}
+            disabled={loading}
+            InputLabelProps={{ shrink: true }}
+            InputProps={{ style: { color: theme.palette.text.primary } }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            color="primary"
+            variant="contained"
+            disabled={loading || !name.trim() || !path.trim()}
+            startIcon={loading && <CircularProgress size={20} />}
+          >
+            {isEditMode ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <DirectoryPickerDialog
+        open={isDirectoryPickerOpen}
+        onClose={() => setIsDirectoryPickerOpen(false)}
+        onSelect={handlePathSelect}
+        initialPath="/" // You might want to make this configurable
+      />
+    </>
   );
 };
 
@@ -376,6 +399,23 @@ const ProjectsPage: React.FC = () => {
       </Container>
     );
   }
+  const kanbanColumns = [
+    {
+      id: 'backlog',
+      title: 'Backlog',
+      projects: projects.filter((p) => p.status === 'backlog'), // Assuming a 'status' field in Project
+    },
+    {
+      id: 'inProgress',
+      title: 'In Progress',
+      projects: projects.filter((p) => p.status === 'inProgress'),
+    },
+    {
+      id: 'completed',
+      title: 'Completed',
+      projects: projects.filter((p) => p.status === 'completed'),
+    },
+  ];
 
   return (
     <Container maxWidth="lg" sx={{ py: 4, flexGrow: 1 }}>
@@ -444,77 +484,55 @@ const ProjectsPage: React.FC = () => {
             to add one.
           </Alert>
         ) : (
-          <TableContainer
-            component={Paper}
-            sx={{ border: `1px solid ${theme.palette.divider}` }}
-          >
-            <Table>
-              <TableHead sx={{ bgcolor: theme.palette.action.hover }}>
-                <TableRow>
-                  <TableCell
+          <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto' }}>
+            {kanbanColumns.map((column) => (
+              <Paper
+                key={column.id}
+                elevation={2}
+                sx={{
+                  width: 300,
+                  minWidth: 300,
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: theme.palette.background.default,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  component="h3"
+                  sx={{ fontWeight: 'bold', mb: 1 }}
+                >
+                  {column.title}
+                </Typography>
+                {column.projects.map((project) => (
+                  <Paper
+                    key={project.id}
+                    elevation={1}
                     sx={{
-                      fontWeight: 'bold',
-                      color: theme.palette.text.primary,
+                      p: 1,
+                      mb: 1,
+                      borderRadius: 1,
+                      bgcolor: theme.palette.background.paper,
+                      cursor: 'grab',
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.hover,
+                      },
                     }}
                   >
-                    Name
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: 'bold',
-                      color: theme.palette.text.primary,
-                    }}
-                  >
-                    Description
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: 'bold',
-                      color: theme.palette.text.primary,
-                    }}
-                  >
-                    Path
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: 'bold',
-                      color: theme.palette.text.primary,
-                    }}
-                  >
-                    Technologies
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      fontWeight: 'bold',
-                      color: theme.palette.text.primary,
-                    }}
-                  >
-                    Actions
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {projects.map((proj) => (
-                  <TableRow key={proj.id} hover>
-                    <TableCell sx={{ color: theme.palette.text.primary }}>
-                      {proj.name}
-                    </TableCell>
-                    <TableCell sx={{ color: theme.palette.text.secondary }}>
-                      {proj.description}
-                    </TableCell>
-                    <TableCell sx={{ color: theme.palette.text.secondary }}>
-                      {proj.path}
-                    </TableCell>
-                    <TableCell sx={{ color: theme.palette.text.secondary }}>
-                      {proj.technologies?.join(', ') || 'N/A'}
-                    </TableCell>
-                    <TableCell align="right">
+                    <Typography variant="subtitle1">{project.name}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {project.description}
+                    </Typography>
+                    <Box sx={{ mt: 1, textAlign: 'right' }}>
                       <Tooltip title="Edit Project">
                         <IconButton
                           color="info"
-                          onClick={() => handleOpenEditDialog(proj)}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent drag from triggering
+                            handleOpenEditDialog(project);
+                          }}
                           disabled={loading}
+                          size="small"
                         >
                           <EditIcon />
                         </IconButton>
@@ -522,18 +540,22 @@ const ProjectsPage: React.FC = () => {
                       <Tooltip title="Delete Project">
                         <IconButton
                           color="error"
-                          onClick={() => handleDeleteProject(proj.id)}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent drag from triggering
+                            handleDeleteProject(project.id);
+                          }}
                           disabled={loading}
+                          size="small"
                         >
                           <DeleteIcon />
                         </IconButton>
                       </Tooltip>
-                    </TableCell>
-                  </TableRow>
+                    </Box>
+                  </Paper>
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              </Paper>
+            ))}
+          </Box>
         )}
       </Paper>
 

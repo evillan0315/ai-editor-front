@@ -6,6 +6,10 @@ import MicIcon from '@mui/icons-material/Mic';
 import BuildIcon from '@mui/icons-material/Build';
 import CodeIcon from '@mui/icons-material/Code';
 import LibraryMusicIcon from '@mui/icons-material/LibraryMusic';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import SettingsIcon from '@mui/icons-material/Settings';
+import DescriptionIcon from '@mui/icons-material/Description';
 
 export const appDefinitions: AppDefinition[] = [
   {
@@ -15,6 +19,22 @@ export const appDefinitions: AppDefinition[] = [
     link: '/editor',
     linkText: 'Open AI Editor',
     icon: CodeIcon,
+  },
+  {
+    id: 'dashboard',
+    title: 'Dashboard',
+    description: 'A central hub to manage your projects and applications.',
+    link: '/dashboard',
+    linkText: 'Open Dashboard',
+    icon: DashboardIcon,
+  },
+  {
+    id: 'resume-builder',
+    title: 'Resume Builder',
+    description: 'Create professional resumes with AI assistance.',
+    link: '/apps/resume-builder',
+    linkText: 'Open Resume Builder',
+    icon: DescriptionIcon,
   },
   {
     id: 'spotify',
@@ -27,7 +47,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'translator',
     title: 'AI Translator',
-    description: 'Translate text content or uploaded files into any language using AI.',
+    description:
+      'Translate text content or uploaded files into any language using AI.',
     link: '/apps/translator',
     linkText: 'Open Translator',
     icon: TranslateIcon,
@@ -35,7 +56,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'gemini-live-audio',
     title: 'Gemini Live Audio Chat',
-    description: 'Interact with Gemini AI using real-time audio input and output.',
+    description:
+      'Interact with Gemini AI using real-time audio input and output.',
     link: '/apps/gemini-live-audio',
     linkText: 'Open Audio Chat',
     icon: MicIcon,
@@ -51,7 +73,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'preview',
     title: 'Preview App',
-    description: 'Preview a successfully built frontend application in an iframe.',
+    description:
+      'Preview a successfully built frontend application in an iframe.',
     link: '/apps/preview',
     linkText: 'Open Preview',
     icon: BuildIcon,
@@ -63,5 +86,37 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/llm-generation',
     linkText: 'Open Code Generator',
     icon: AppsIcon,
+  },
+  {
+    id: 'transcription',
+    title: 'Transcription App',
+    description: 'Transcribe audio files to text.',
+    link: '/apps/transcription',
+    linkText: 'Open Transcription',
+    icon: AppsIcon,
+  },
+  {
+    id: 'organizations',
+    title: 'Organizations',
+    description: 'Manage organizations and projects.',
+    link: '/organizations',
+    linkText: 'Open Organizations',
+    icon: AppsIcon,
+  },
+  {
+    id: 'profile',
+    title: 'User Profile',
+    description: 'View and manage your user profile.',
+    link: '/profile',
+    linkText: 'Open Profile',
+    icon: AccountCircleIcon,
+  },
+  {
+    id: 'settings',
+    title: 'User Settings',
+    description: 'Configure your user settings.',
+    link: '/settings',
+    linkText: 'Open Settings',
+    icon: SettingsIcon,
   },
 ];

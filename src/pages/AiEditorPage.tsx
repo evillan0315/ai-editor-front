@@ -62,7 +62,7 @@ const AiEditorPage: React.FC = () => {
   const [initialMouseY, setInitialMouseY] = useState(0);
   const [initialTerminalHeight, setInitialTerminalHeight] = useState(0);
   const contentAreaRef = useRef<HTMLDivElement>(null); // Ref for the resizable content area
-
+  const [showTerminal, setShowTerminal] = useState(false);
   // New derived state for the loader
   const isAIGeneratingOrModifying = loading || applyingChanges || isBuilding;
 
@@ -222,6 +222,10 @@ const AiEditorPage: React.FC = () => {
     };
   }, [handleTerminalResize]);
 
+const toggleTerminalVisibility = () => {
+    setShowTerminal((prevShowTerminal) => !prevShowTerminal);
+  };
+
   return (
     <Box
       sx={{
@@ -302,7 +306,7 @@ const AiEditorPage: React.FC = () => {
           }}
         >
           {/* File Tabs */}
-          <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
+          <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} setShowTerminal={setShowTerminal} showTerminal={showTerminal} toggleTerminalVisibility={toggleTerminalVisibility} />
 
           {/* Opened File Viewer, Resizer, and Terminal container */}
           <Box
@@ -326,8 +330,9 @@ const AiEditorPage: React.FC = () => {
               <OpenedFileViewer />
             </Box>
 
-            {/* Resize Handle */}
-            <Box
+            {showTerminal && (
+<>
+              <Box
               onMouseDown={startResize}
               sx={{
                 height: RESIZE_HANDLE_HEIGHT,
@@ -338,9 +343,8 @@ const AiEditorPage: React.FC = () => {
                   bgcolor: theme.palette.primary.main, // Visual feedback on hover
                 },
               }}
-            />
-
-            {/* Terminal Container */}
+            >
+            </Box>
             <Box
               sx={{
                 height: terminalHeight, // Controlled height
@@ -351,6 +355,9 @@ const AiEditorPage: React.FC = () => {
             >
               <XTerminal onLogout={handleTerminalLogout} terminalHeight={terminalHeight} />
             </Box>
+              </>
+            )}
+            
           </Box>
 
           {/* Prompt Generator Panel and AiResponseDisplay are now in the right sidebar */}

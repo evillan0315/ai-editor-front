@@ -236,8 +236,6 @@ const Navbar: React.FC = () => {
         zIndex: 1100,
         bgcolor: theme.palette.background.paper,
         borderBottom: `1px solid ${theme.palette.divider}`,
-         
-
       }}
     >
       {/* New: Linear loader for script execution */}

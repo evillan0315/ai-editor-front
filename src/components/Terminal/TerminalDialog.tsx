@@ -110,7 +110,13 @@ const TerminalDialog: React.FC<TerminalDialogProps> = ({
       maxWidth="md"
       fullWidth
     >
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <DialogTitle
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         Terminal Session
         <IconButton aria-label="close" onClick={onClose} size="small">
           <CloseIcon />
@@ -122,7 +128,8 @@ const TerminalDialog: React.FC<TerminalDialogProps> = ({
           ref={outputRef}
           onClick={handleOutputClick}
           sx={{
-            bgcolor: mode === 'dark' ? theme.palette.background.default : 'black',
+            bgcolor:
+              mode === 'dark' ? theme.palette.background.default : 'black',
             color: mode === 'dark' ? theme.palette.text.primary : 'white',
             fontFamily: 'monospace',
             p: 2,
@@ -137,7 +144,9 @@ const TerminalDialog: React.FC<TerminalDialogProps> = ({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ flexDirection: 'column', alignItems: 'stretch', p: 2 }}>
+      <DialogActions
+        sx={{ flexDirection: 'column', alignItems: 'stretch', p: 2 }}
+      >
         <TextField
           inputRef={inputRef}
           fullWidth

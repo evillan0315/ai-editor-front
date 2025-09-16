@@ -58,9 +58,9 @@ export interface ResizePayload {
 }
 
 export interface SSHConnectPayload {
-    host: string;
-    port?: number;
-    username: string;
-    password?: string;
-    privateKeyPath?: string;
+  host: string;
+  port?: number;
+  username: string;
+  password?: string;
+  privateKeyPath?: string;
 }

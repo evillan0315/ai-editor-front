@@ -26,7 +26,8 @@ const SpotifyMainContent: React.FC<SpotifyMainContentProps> = ({
       {currentView === 'home' && <SpotifyHomePage />}
       {currentView === 'search' && <SpotifySearchPage />}
       {currentView === 'library' && <SpotifyLibraryPage />}
-      {currentView === 'settings' && <SpotifySettingsPage />} {/* New: Render Settings page */}
+      {currentView === 'settings' && <SpotifySettingsPage />}{' '}
+      {/* New: Render Settings page */}
     </Box>
   );
 };

@@ -35,7 +35,7 @@ import {
   setPlaying,
   setTrackProgress,
   setTrackDuration, // Added: This was missing
-  setVolume
+  setVolume,
 } from '@/stores/spotifyStore';
 import { TranscriptionHighlight } from './TranscriptionHighlight';
 
@@ -52,7 +52,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
-  
+
   // Get state from spotifyStore
   const spotifyState = useStore($spotifyStore);
   const isPlaying = useStore(isPlayingAtom);
@@ -60,12 +60,12 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
   const progress = useStore(progressAtom);
   const duration = useStore(durationAtom);
   const volume = useStore(volumeAtom);
-  
+
   const {
     transcriptionData,
     transcriptionSyncData,
     isTranscribing,
-    transcriptionError
+    transcriptionError,
   } = spotifyState;
 
   // Audio event handlers
@@ -85,7 +85,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
       const newTime = audioRef.current.currentTime;
       setCurrentTime(newTime);
       setTrackProgress(newTime);
-      
+
       // Update transcription sync data if we have transcription
       if (transcriptionData) {
         updateTranscriptionSync(fileId, newTime);
@@ -98,7 +98,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
       audioRef.current.currentTime = newValue as number;
       setCurrentTime(newValue as number);
       setTrackProgress(newValue as number);
-      
+
       // Update transcription sync data immediately after seeking
       if (transcriptionData) {
         updateTranscriptionSync(fileId, newValue as number);
@@ -123,7 +123,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
   // Load transcription when component mounts or fileId changes
   useEffect(() => {
     loadTranscription(fileId);
-    
+
     // Clean up transcription data when component unmounts
     return () => {
       clearTranscription();
@@ -133,7 +133,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
   // Sync audio element with store state
   useEffect(() => {
     if (!audioRef.current) return;
-    
+
     if (isPlaying) {
       audioRef.current.play().catch(console.error);
     } else {
@@ -142,7 +142,10 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
   }, [isPlaying]);
 
   useEffect(() => {
-    if (audioRef.current && Math.abs(audioRef.current.currentTime - progress) > 0.1) {
+    if (
+      audioRef.current &&
+      Math.abs(audioRef.current.currentTime - progress) > 0.1
+    ) {
       audioRef.current.currentTime = progress;
     }
   }, [progress]);
@@ -160,7 +163,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
         <Typography variant="h6" gutterBottom>
           {title}
         </Typography>
-        
+
         <audio
           ref={audioRef}
           src={audioUrl}
@@ -172,12 +175,12 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
           }}
           onEnded={() => setPlaying(false)}
         />
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <IconButton onClick={handlePlayPause} size="large">
             {isPlaying ? <Pause /> : <PlayArrow />}
           </IconButton>
-          
+
           <Box sx={{ flexGrow: 1 }}>
             <Slider
               value={currentTime}
@@ -186,15 +189,11 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
               sx={{ mb: 1 }}
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="body2">
-                {formatTime(currentTime)}
-              </Typography>
-              <Typography variant="body2">
-                {formatTime(duration)}
-              </Typography>
+              <Typography variant="body2">{formatTime(currentTime)}</Typography>
+              <Typography variant="body2">{formatTime(duration)}</Typography>
             </Box>
           </Box>
-          
+
           <Box sx={{ display: 'flex', alignItems: 'center', width: 100 }}>
             <VolumeUp sx={{ mr: 1 }} />
             <Slider
@@ -213,13 +212,13 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
             {transcriptionError}
           </Alert>
         )}
-        
+
         {isTranscribing && (
           <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
             <CircularProgress />
           </Box>
         )}
-        
+
         {!transcriptionData && !isTranscribing && (
           <Button
             variant="contained"
@@ -239,7 +238,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
             <Typography variant="h6" gutterBottom>
               Transcription
             </Typography>
-            
+
             {transcriptionSyncData ? (
               <TranscriptionHighlight
                 syncData={transcriptionSyncData}
@@ -253,9 +252,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
                 }}
               />
             ) : (
-              <Typography>
-                {transcriptionData.fullText}
-              </Typography>
+              <Typography>{transcriptionData.fullText}</Typography>
             )}
           </CardContent>
         </Card>

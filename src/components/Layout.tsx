@@ -1,4 +1,12 @@
-import React, { useEffect, useState, createContext, useContext, useMemo, useRef, useCallback } from 'react';
+import React, {
+  useEffect,
+  useState,
+  createContext,
+  useContext,
+  useMemo,
+  useRef,
+  useCallback,
+} from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import { checkAuthStatus } from '@/services/authService';
@@ -25,7 +33,9 @@ interface RightSidebarContextType {
 }
 
 // Create a context for the right sidebar
-const RightSidebarContext = createContext<RightSidebarContextType | undefined>(undefined);
+const RightSidebarContext = createContext<RightSidebarContextType | undefined>(
+  undefined,
+);
 
 // Custom hook to use the right sidebar context
 export const useRightSidebar = () => {
@@ -39,12 +49,15 @@ export const useRightSidebar = () => {
 const Layout: React.FC = () => {
   const { loading: authLoading } = useStore(authStore);
   const theme = useTheme();
-  const [rightSidebarContent, setRightSidebarContent] = useState<React.ReactNode | null>(null);
+  const [rightSidebarContent, setRightSidebarContent] =
+    useState<React.ReactNode | null>(null);
 
   // State for resizable sidebar
   const [rightSidebarWidth, setRightSidebarWidth] = useState<number>(() => {
     const storedWidth = localStorage.getItem(RIGHT_SIDEBAR_STORAGE_KEY);
-    return storedWidth ? parseInt(storedWidth, 10) : DEFAULT_RIGHT_SIDEBAR_WIDTH;
+    return storedWidth
+      ? parseInt(storedWidth, 10)
+      : DEFAULT_RIGHT_SIDEBAR_WIDTH;
   });
   const [isResizing, setIsResizing] = useState(false);
   const initialMouseX = useRef(0);
@@ -55,41 +68,56 @@ const Layout: React.FC = () => {
   }, []);
 
   // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    setRightSidebar: setRightSidebarContent,
-  }), []);
+  const contextValue = useMemo(
+    () => ({
+      setRightSidebar: setRightSidebarContent,
+    }),
+    [],
+  );
 
   // --- Resizing Handlers ---
-  const startResizing = useCallback((e: React.MouseEvent) => {
-    setIsResizing(true);
-    initialMouseX.current = e.clientX;
-    initialSidebarWidth.current = rightSidebarWidth;
-    document.body.style.cursor = 'ew-resize'; // Change cursor globally
-    document.body.style.userSelect = 'none'; // Prevent text selection during drag
-    document.body.style.pointerEvents = 'none'; // Prevent interactions with elements below
-  }, [rightSidebarWidth]);
+  const startResizing = useCallback(
+    (e: React.MouseEvent) => {
+      setIsResizing(true);
+      initialMouseX.current = e.clientX;
+      initialSidebarWidth.current = rightSidebarWidth;
+      document.body.style.cursor = 'ew-resize'; // Change cursor globally
+      document.body.style.userSelect = 'none'; // Prevent text selection during drag
+      document.body.style.pointerEvents = 'none'; // Prevent interactions with elements below
+    },
+    [rightSidebarWidth],
+  );
 
   const stopResizing = useCallback(() => {
     setIsResizing(false);
     document.body.style.cursor = 'default';
     document.body.style.userSelect = 'auto';
     document.body.style.pointerEvents = 'auto';
-    localStorage.setItem(RIGHT_SIDEBAR_STORAGE_KEY, rightSidebarWidth.toString()); // Persist the new width
+    localStorage.setItem(
+      RIGHT_SIDEBAR_STORAGE_KEY,
+      rightSidebarWidth.toString(),
+    ); // Persist the new width
   }, [rightSidebarWidth]);
 
-  const resize = useCallback((e: MouseEvent) => {
-    if (isResizing) {
-      const deltaX = e.clientX - initialMouseX.current;
-      // For resizing from right to left (handle on left edge of sidebar):
-      // Moving mouse left (deltaX < 0) should increase width
-      // Moving mouse right (deltaX > 0) should decrease width
-      let newWidth = initialSidebarWidth.current - deltaX;
+  const resize = useCallback(
+    (e: MouseEvent) => {
+      if (isResizing) {
+        const deltaX = e.clientX - initialMouseX.current;
+        // For resizing from right to left (handle on left edge of sidebar):
+        // Moving mouse left (deltaX < 0) should increase width
+        // Moving mouse right (deltaX > 0) should decrease width
+        let newWidth = initialSidebarWidth.current - deltaX;
 
-      // Apply min/max width constraints
-      newWidth = Math.max(MIN_RIGHT_SIDEBAR_WIDTH, Math.min(MAX_RIGHT_SIDEBAR_WIDTH, newWidth));
-      setRightSidebarWidth(newWidth);
-    }
-  }, [isResizing]);
+        // Apply min/max width constraints
+        newWidth = Math.max(
+          MIN_RIGHT_SIDEBAR_WIDTH,
+          Math.min(MAX_RIGHT_SIDEBAR_WIDTH, newWidth),
+        );
+        setRightSidebarWidth(newWidth);
+      }
+    },
+    [isResizing],
+  );
 
   // Effect to add/remove global event listeners for resizing
   useEffect(() => {
@@ -115,7 +143,15 @@ const Layout: React.FC = () => {
       >
         <Navbar />
         {authLoading && (
-          <Box sx={{ width: '100%', position: 'sticky', top: 0, zIndex: 1100, flexShrink: 0 }}>
+          <Box
+            sx={{
+              width: '100%',
+              position: 'sticky',
+              top: 0,
+              zIndex: 1100,
+              flexShrink: 0,
+            }}
+          >
             <LinearProgress />
           </Box>
         )}

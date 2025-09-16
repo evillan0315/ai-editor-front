@@ -51,7 +51,12 @@ const RunScriptMenuItem: React.FC<RunScriptMenuItemProps> = ({
    * Logs the script execution attempt and then calls the provided onClick handler.
    */
   const handleClick = () => {
-    addLog('Script Runner', `Running script: \`${name}\``, 'info', `Command: ${rawScriptContent}`);
+    addLog(
+      'Script Runner',
+      `Running script: \`${name}\``,
+      'info',
+      `Command: ${rawScriptContent}`,
+    );
     onClick(name, rawScriptContent);
   };
 

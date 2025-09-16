@@ -144,10 +144,13 @@ export const scanMediaDirectory = async (
   dto: MediaScanRequestDto,
 ): Promise<MediaScanResponseDto> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/media/scan-directory`, {
-      method: 'POST',
-      body: JSON.stringify(dto),
-    });
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/media/scan-directory`,
+      {
+        method: 'POST',
+        body: JSON.stringify(dto),
+      },
+    );
     return handleResponse<MediaScanResponseDto>(response);
   } catch (error) {
     console.error('Error scanning media directory:', error);
@@ -168,9 +171,12 @@ export const transcribeAudio = async (
   fileId: string,
 ): Promise<TranscriptionResult> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/media/${fileId}/transcribe`, {
-      method: 'POST',
-    });
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/media/${fileId}/transcribe`,
+      {
+        method: 'POST',
+      },
+    );
     return handleResponse<TranscriptionResult>(response);
   } catch (error) {
     console.error('Error transcribing audio:', error);
@@ -187,7 +193,8 @@ export const getTranscription = async (
   fileId: string,
 ): Promise<TranscriptionResult> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/media/${fileId}/transcription
+    const response =
+      await fetchWithAuth(`${API_BASE_URL}/media/${fileId}/transcription
 `);
     return handleResponse<TranscriptionResult>(response);
   } catch (error) {
@@ -207,10 +214,13 @@ export const getSyncTranscription = async (
   currentTime: number,
 ): Promise<SyncTranscriptionResponse> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/media/${fileId}/transcription/sync`, {
-      method: 'POST',
-      body: JSON.stringify({ currentTime }),
-    });
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/media/${fileId}/transcription/sync`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ currentTime }),
+      },
+    );
     return handleResponse<SyncTranscriptionResponse>(response);
   } catch (error) {
     console.error('Error getting synchronized transcription:', error);

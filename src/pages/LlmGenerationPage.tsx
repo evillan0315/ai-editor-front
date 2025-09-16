@@ -23,7 +23,8 @@ const LlmGenerationPage: React.FC = () => {
             LLM Generation Page
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            This page allows you to generate content using Large Language Models.
+            This page allows you to generate content using Large Language
+            Models.
           </Typography>
         </Box>
 
@@ -31,7 +32,9 @@ const LlmGenerationPage: React.FC = () => {
           {/* Main content area */}
           <Box sx={{ flex: 1, mr: 4 }}>
             <Typography variant="h6">Main Content</Typography>
-            <Typography>This is where the main content for LLM generation will go.</Typography>
+            <Typography>
+              This is where the main content for LLM generation will go.
+            </Typography>
           </Box>
 
           {/* Sidebar with LLM Generation Controls */}

@@ -88,14 +88,21 @@ const MediaActionMenu: React.FC<MediaActionMenuProps> = ({
         </ListItemIcon>
         <ListItemText>Download Metadata</ListItemText>
       </MenuItem>
-      <MenuItem onClick={() => handleAction(onDelete)} sx={{ color: theme.palette.error.main }}>
+      <MenuItem
+        onClick={() => handleAction(onDelete)}
+        sx={{ color: theme.palette.error.main }}
+      >
         <ListItemIcon sx={{ color: theme.palette.error.main }}>
           <DeleteIcon fontSize="small" />
         </ListItemIcon>
         <ListItemText>Delete</ListItemText>
       </MenuItem>
       {/* Optional: Add a "View Details" or "Info" option */}
-      <MenuItem onClick={() => handleAction((file) => console.log('View details for', file.name))}>
+      <MenuItem
+        onClick={() =>
+          handleAction((file) => console.log('View details for', file.name))
+        }
+      >
         <ListItemIcon>
           <InfoOutlinedIcon fontSize="small" />
         </ListItemIcon>

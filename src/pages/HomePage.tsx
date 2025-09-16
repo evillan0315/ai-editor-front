@@ -215,13 +215,14 @@ const HomePage: React.FC = () => {
         <Typography variant="h4" component="h2" sx={{ fontWeight: 700, mb: 6 }}>
           Key Features
         </Typography>
-        <Grid container spacing={4} justifyContent="center">
+        {/* Use Tailwind CSS grid for responsiveness */}
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
           {features.map((feature, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index} component="div">
+            <div key={index}>
               <FeatureCard {...feature} />
-            </Grid>
+            </div>
           ))}
-        </Grid>
+        </div>
       </Container>
     </Box>
   );

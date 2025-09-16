@@ -54,7 +54,7 @@ export const browseHistory = (direction: 'up' | 'down') => {
   } else {
     newIndex = Math.min(
       current.commandHistory.length - 1,
-      current.historyIndex + 1
+      current.historyIndex + 1,
     );
   }
 
@@ -93,9 +93,7 @@ export const connectTerminal = async () => {
     // Listeners
     socketService.on('output', (data: string) => appendOutput(data));
     socketService.on('outputMessage', (data: string) => appendOutput(data));
-    socketService.on('error', (data: string) =>
-      appendOutput(`Error: ${data}`)
-    );
+    socketService.on('error', (data: string) => appendOutput(`Error: ${data}`));
     /*socketService.on('outputPath', (data: string) =>
       setCurrentPath(`\x1b[31m${data}\x1b[0m`)
     );*/

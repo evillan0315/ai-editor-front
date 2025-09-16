@@ -6,7 +6,7 @@ import {
   DialogActions,
   Button,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
 } from '@mui/material';
 import { useStore } from '@nanostores/react';
 import { themeStore } from '@/stores/themeStore';
@@ -31,8 +31,12 @@ const TerminalSettingsDialog: React.FC<TerminalSettingsDialogProps> = ({
       fullScreen={fullScreen}
       PaperProps={{
         sx: {
-          color: mode === 'dark' ? theme.palette.text.primary : theme.palette.text.secondary,
-          backgroundColor: mode === 'dark' ? theme.palette.background.default : '#2d2d30',
+          color:
+            mode === 'dark'
+              ? theme.palette.text.primary
+              : theme.palette.text.secondary,
+          backgroundColor:
+            mode === 'dark' ? theme.palette.background.default : '#2d2d30',
         },
       }}
     >

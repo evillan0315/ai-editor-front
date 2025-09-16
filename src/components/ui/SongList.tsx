@@ -22,7 +22,7 @@ import {
   Typography,
   SelectChangeEvent,
   Chip,
-  Divider
+  Divider,
 } from '@mui/material';
 import {
   PlayArrow,
@@ -37,7 +37,7 @@ import {
   Delete,
   Download,
   Update,
-  LibraryMusic
+  LibraryMusic,
 } from '@mui/icons-material';
 
 // Types
@@ -80,8 +80,8 @@ const SongList: React.FC<SongListProps> = ({
     { label: 'Edit', value: 'edit', icon: <Edit /> },
     { label: 'Delete', value: 'delete', icon: <Delete />, divider: true },
     { label: 'Download Metadata', value: 'download', icon: <Download /> },
-    { label: 'Update Metadata', value: 'update', icon: <Update /> }
-  ]
+    { label: 'Update Metadata', value: 'update', icon: <Update /> },
+  ],
 }) => {
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -94,45 +94,46 @@ const SongList: React.FC<SongListProps> = ({
 
   // Derived data
   const genres = useMemo(() => {
-    const allGenres = songs.flatMap(song => song.genre);
+    const allGenres = songs.flatMap((song) => song.genre);
     return ['all', ...Array.from(new Set(allGenres))];
   }, [songs]);
 
   const filteredAndSortedSongs = useMemo(() => {
-  return songs
-    .filter(song => {
-      const matchesSearch = 
-        song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.album.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesGenre = selectedGenre === 'all' || song.genre.includes(selectedGenre);
-      
-      return matchesSearch && matchesGenre;
-    })
-    .sort((a, b) => {
-      const modifier = sortOrder === 'asc' ? 1 : -1;
-      
-      if (sortField === 'duration') {
-        return (a.duration - b.duration) * modifier;
-      }
-      
-      // Handle optional year field
-      if (sortField === 'year') {
-        const aYear = a.year ?? 0;
-        const bYear = b.year ?? 0;
-        return (aYear - bYear) * modifier;
-      }
-      
-      // For string fields (title, artist, album)
-      const aValue = a[sortField] ?? '';
-      const bValue = b[sortField] ?? '';
-      
-      if (aValue < bValue) return -1 * modifier;
-      if (aValue > bValue) return 1 * modifier;
-      return 0;
-    });
-}, [songs, searchQuery, selectedGenre, sortField, sortOrder]);
+    return songs
+      .filter((song) => {
+        const matchesSearch =
+          song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          song.album.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesGenre =
+          selectedGenre === 'all' || song.genre.includes(selectedGenre);
+
+        return matchesSearch && matchesGenre;
+      })
+      .sort((a, b) => {
+        const modifier = sortOrder === 'asc' ? 1 : -1;
+
+        if (sortField === 'duration') {
+          return (a.duration - b.duration) * modifier;
+        }
+
+        // Handle optional year field
+        if (sortField === 'year') {
+          const aYear = a.year ?? 0;
+          const bYear = b.year ?? 0;
+          return (aYear - bYear) * modifier;
+        }
+
+        // For string fields (title, artist, album)
+        const aValue = a[sortField] ?? '';
+        const bValue = b[sortField] ?? '';
+
+        if (aValue < bValue) return -1 * modifier;
+        if (aValue > bValue) return 1 * modifier;
+        return 0;
+      });
+  }, [songs, searchQuery, selectedGenre, sortField, sortOrder]);
 
   // Handlers
   const handleSortChange = (field: SortField) => {
@@ -164,11 +165,11 @@ const SongList: React.FC<SongListProps> = ({
   const renderListItems = () => (
     <List sx={{ bgcolor: 'background.paper' }}>
       {filteredAndSortedSongs.map((song) => (
-        <ListItem 
-          key={song.id} 
+        <ListItem
+          key={song.id}
           secondaryAction={
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton 
+              <IconButton
                 onClick={() => onFavorite(song.id)}
                 color={song.isFavorite ? 'error' : 'default'}
               >
@@ -196,7 +197,14 @@ const SongList: React.FC<SongListProps> = ({
             <ListItemText
               primary={song.title}
               secondary={
-                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 0.5,
+                  }}
+                >
                   <Typography variant="body2" color="text.primary">
                     {song.artist}
                   </Typography>
@@ -218,13 +226,22 @@ const SongList: React.FC<SongListProps> = ({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ display: 'flex', gap: 0.5 }}>
                 {song.genre.slice(0, 2).map((genre) => (
-                  <Chip key={genre} label={genre} size="small" variant="outlined" />
+                  <Chip
+                    key={genre}
+                    label={genre}
+                    size="small"
+                    variant="outlined"
+                  />
                 ))}
                 {song.genre.length > 2 && (
                   <Chip label={`+${song.genre.length - 2}`} size="small" />
                 )}
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ minWidth: 50, textAlign: 'right' }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ minWidth: 50, textAlign: 'right' }}
+              >
                 {formatDuration(song.duration)}
               </Typography>
             </Box>
@@ -238,7 +255,9 @@ const SongList: React.FC<SongListProps> = ({
     <Grid container spacing={2}>
       {filteredAndSortedSongs.map((song) => (
         <Grid item xs={12} sm={6} md={4} lg={3} key={song.id}>
-          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Card
+            sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+          >
             <CardActionArea onClick={() => onPlay(song)} sx={{ flexGrow: 1 }}>
               <CardMedia
                 component="img"
@@ -257,7 +276,13 @@ const SongList: React.FC<SongListProps> = ({
                 <Typography variant="body2" color="text.secondary">
                   {song.album}
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    mt: 1,
+                  }}
+                >
                   <Typography variant="body2" color="text.secondary">
                     {song.year}
                   </Typography>
@@ -267,8 +292,10 @@ const SongList: React.FC<SongListProps> = ({
                 </Box>
               </CardContent>
             </CardActionArea>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1 }}>
-              <IconButton 
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', p: 1 }}
+            >
+              <IconButton
                 onClick={() => onFavorite(song.id)}
                 color={song.isFavorite ? 'error' : 'default'}
               >
@@ -305,9 +332,16 @@ const SongList: React.FC<SongListProps> = ({
               <Typography variant="body2" color="text.secondary" noWrap>
                 {song.artist}
               </Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
-                <IconButton 
-                  size="small" 
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mt: 0.5,
+                }}
+              >
+                <IconButton
+                  size="small"
                   onClick={() => onFavorite(song.id)}
                   color={song.isFavorite ? 'error' : 'default'}
                 >
@@ -316,7 +350,10 @@ const SongList: React.FC<SongListProps> = ({
                 <Typography variant="caption" color="text.secondary">
                   {formatDuration(song.duration)}
                 </Typography>
-                <IconButton size="small" onClick={(e) => handleMenuOpen(e, song)}>
+                <IconButton
+                  size="small"
+                  onClick={(e) => handleMenuOpen(e, song)}
+                >
                   <MoreVert />
                 </IconButton>
               </Box>
@@ -330,7 +367,15 @@ const SongList: React.FC<SongListProps> = ({
   return (
     <Box>
       {/* Controls */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 2,
+          mb: 3,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        }}
+      >
         <TextField
           label="Search songs"
           value={searchQuery}
@@ -341,10 +386,10 @@ const SongList: React.FC<SongListProps> = ({
               <InputAdornment position="start">
                 <Search />
               </InputAdornment>
-            )
+            ),
           }}
         />
-        
+
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Genre</InputLabel>
           <Select
@@ -367,7 +412,7 @@ const SongList: React.FC<SongListProps> = ({
             variant="outlined"
             sx={{ mr: 1 }}
           />
-          <IconButton 
+          <IconButton
             onClick={() => handleSortChange('title')}
             color={sortField === 'title' ? 'primary' : 'default'}
           >
@@ -375,31 +420,32 @@ const SongList: React.FC<SongListProps> = ({
               Title {sortField === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
             </Typography>
           </IconButton>
-          <IconButton 
+          <IconButton
             onClick={() => handleSortChange('artist')}
             color={sortField === 'artist' ? 'primary' : 'default'}
           >
             <Typography variant="body2">
-              Artist {sortField === 'artist' && (sortOrder === 'asc' ? '↑' : '↓')}
+              Artist{' '}
+              {sortField === 'artist' && (sortOrder === 'asc' ? '↑' : '↓')}
             </Typography>
           </IconButton>
         </Box>
 
         <Box sx={{ display: 'flex' }}>
-          <IconButton 
-            onClick={() => setViewMode('list')} 
+          <IconButton
+            onClick={() => setViewMode('list')}
             color={viewMode === 'list' ? 'primary' : 'default'}
           >
             <ViewList />
           </IconButton>
-          <IconButton 
-            onClick={() => setViewMode('grid')} 
+          <IconButton
+            onClick={() => setViewMode('grid')}
             color={viewMode === 'grid' ? 'primary' : 'default'}
           >
             <ViewModule />
           </IconButton>
-          <IconButton 
-            onClick={() => setViewMode('thumb')} 
+          <IconButton
+            onClick={() => setViewMode('thumb')}
             color={viewMode === 'thumb' ? 'primary' : 'default'}
           >
             <ViewComfy />
