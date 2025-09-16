@@ -319,10 +319,10 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
 
       {/* `appliedMessages`, `buildOutput` are now displayed via the central `OutputLogger` in `AiSidebarContent` */}
 
-      {gitInstructions && gitInstructions.length > 0 && (
+      {/*gitInstructions && gitInstructions.length > 0 && (
         <Accordion sx={{ mt: 3, flexShrink: 0 }}>
           {' '}
-          {/* Added flexShrink */}
+        
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography
               variant="subtitle1"
@@ -377,7 +377,7 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
                         disabled={isAnyProcessRunning} // Disabled if any process is running
                         sx={{ color: theme.palette.success.main }}
                       >
-                        {/* No specific per-command loading indicator needed here, as global log will show running state */}
+                    
                         <PlayArrowIcon fontSize="small" />
                       </IconButton>
                     </span>
@@ -385,10 +385,10 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
                 </Box>
               ))}
             </Box>
-            {/* `commandExecutionOutput` and `commandExecutionError` are now displayed via the central `OutputLogger` */}
+        
           </AccordionDetails>
         </Accordion>
-      )}
+      )}*/}
 
       <Typography
         variant="h6"
