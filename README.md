@@ -188,7 +188,7 @@ project-board-front/
 ├── tsconfig.node.json  # TypeScript configuration for Node.js related files
 └── vite.config.ts      # Vite build configuration, including proxy setup for API calls
 
-
+```
 ---
 
 ## 📋 Requirements
