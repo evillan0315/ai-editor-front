@@ -66,18 +66,7 @@ const AiEditorPage: React.FC = () => {
   // New derived state for the loader
   const isAIGeneratingOrModifying = loading || applyingChanges || isBuilding;
 
-  // Effect to set and unset the right sidebar content
-  useEffect(() => {
-    // Set the consolidated AI sidebar content component
-    setRightSidebar(<AiSidebarContent />);
-    addLog('AI Editor Page', 'AI Editor Page mounted, sidebar content set.', 'debug');
-
-    // Cleanup: remove sidebar content when component unmounts
-    return () => {
-      setRightSidebar(null);
-      addLog('AI Editor Page', 'AI Editor Page unmounted, sidebar content cleared.', 'debug');
-    };
-  }, [setRightSidebar]); // Dependencies only include setRightSidebar
+  
 
   useEffect(() => {
     // Clear diff when project or response changes
@@ -194,20 +183,6 @@ const AiEditorPage: React.FC = () => {
     const rows = Math.floor(terminalHeight / 20); // Adjust divisor as needed
     console.log(`Resizing terminal to ${cols} cols and ${rows} rows`);
     console.log(`Terminal Height: ${terminalHeight}`);
-    // console.log(`Window inner Height: ${window.innerHeight}`);
-    // console.log(`Window outer Height: ${window.outerHeight}`);
-    // console.log(`Window screen Height: ${window.screen.height}`);
-    // console.log(`Document client Height: ${document.documentElement.clientHeight}`);
-    // console.log(`Document offset Height: ${document.documentElement.offsetHeight}`);
-    // console.log(`Window devicePixelRatio: ${window.devicePixelRatio}`);
-    // Resize terminal with calculated cols and rows
-    // Adjust divisor as needed
-
-    // Resize terminal with calculated cols and rows
-    // Adjust divisor as needed
-    // resizeTerminal(cols, rows);
-    // console.log(`Resizing terminal to ${cols} cols and ${rows} rows`);
-    //resizeTerminal(cols, rows);
   }, [terminalHeight]);
   useEffect(() => {
     // Add event listener for window resize

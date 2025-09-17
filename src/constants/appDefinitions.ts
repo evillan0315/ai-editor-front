@@ -10,6 +10,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DescriptionIcon from '@mui/icons-material/Description';
+import VideocamIcon from '@mui/icons-material/Videocam';
 
 export const appDefinitions: AppDefinition[] = [
   {
@@ -118,5 +119,13 @@ export const appDefinitions: AppDefinition[] = [
     link: '/settings',
     linkText: 'Open Settings',
     icon: SettingsIcon,
+  },
+  {
+    id: 'recording',
+    title: 'Recording App',
+    description: 'Record your screen.',
+    link: '/apps/recording',
+    linkText: 'Open Recording',
+    icon: VideocamIcon,
   },
 ];

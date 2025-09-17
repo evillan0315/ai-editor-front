@@ -12,9 +12,11 @@ import Navbar from './Navbar';
 import { checkAuthStatus } from '@/services/authService';
 import { useStore } from '@nanostores/react';
 import { authStore } from '@/stores/authStore';
+import { isRightSidebarVisible } from '@/stores/uiStore';
 import LinearProgress from '@mui/material/LinearProgress';
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
+import  AiSidebarContent  from '@/components/AiSidebarContent';
 
 // Constants for layout
 const NAVBAR_HEIGHT = 64; // Approximate height of MUI AppBar
@@ -49,6 +51,7 @@ export const useRightSidebar = () => {
 const Layout: React.FC = () => {
   const { loading: authLoading } = useStore(authStore);
   const theme = useTheme();
+  const $isRightSidebarVisible = useStore(isRightSidebarVisible);
   const [rightSidebarContent, setRightSidebarContent] =
     useState<React.ReactNode | null>(null);
 
@@ -171,7 +174,7 @@ const Layout: React.FC = () => {
           >
             <Outlet />
           </main>
-          {rightSidebarContent && (
+          {$isRightSidebarVisible &&  (
             <>
               {/* Resizer handle for the right sidebar */}
               <div
@@ -195,7 +198,7 @@ const Layout: React.FC = () => {
                   flexDirection: 'column',
                 }}
               >
-                {rightSidebarContent}
+                <AiSidebarContent />
               </aside>
             </>
           )}

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@nanostores/react';
 import { authStore } from '@/stores/authStore';
 import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore'; // Import showGlobalSnackbar
+import { isRightSidebarVisible } from '@/stores/uiStore';
 import { handleLogout } from '@/services/authService';
 import { runTerminalCommand, fetchProjectScripts } from '@/api/terminal';
 import ThemeToggle from './ThemeToggle';
@@ -34,6 +35,9 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import LinearProgress from '@mui/material/LinearProgress'; // New: Import LinearProgress
 import AppsIcon from '@mui/icons-material/Apps'; // New: Import AppsIcon
 import IconButton from '@mui/material/IconButton'; // Explicitly import IconButton
+import MenuIcon from '@mui/material/Menu';
+import ViewSidebar from '@mui/icons-material/ViewSidebar';
+import ViewSidebarOff from '@mui/icons-material/ViewSidebar';
 
 interface ScriptExecutionState {
   status: ScriptStatus;
@@ -46,6 +50,7 @@ const Navbar: React.FC = () => {
   const { currentProjectPath } = useStore(aiEditorStore);
   const navigate = useNavigate();
   const theme = useTheme();
+  const $isRightSidebarVisible = useStore(isRightSidebarVisible);
 
   const [packageScripts, setPackageScripts] = useState<PackageScript[]>([]);
   const [packageManager, setPackageManager] = useState<PackageManager>(null);
@@ -54,13 +59,13 @@ const Navbar: React.FC = () => {
     Record<string, ScriptExecutionState>
   >({});
 
-  const [scriptMenuAnchorEl, setScriptMenuAnchorEl] =
-    useState<null | HTMLElement>(null);
+  const [scriptMenuAnchorEl, setScriptMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [appsMenuAnchorEl, setAppsMenuAnchorEl] = useState<null | HTMLElement>(
     null,
   ); // New state for apps menu anchor
-  const [profileMenuAnchorEl, setProfileMenuAnchorEl] =
-    useState<null | HTMLElement>(null); // State for profile menu anchor
+  const [profileMenuAnchorEl, setProfileMenuAnchorEl] = useState<null | HTMLElement>(
+    null,
+  ); // State for profile menu anchor
 
   const isScriptMenuOpen = Boolean(scriptMenuAnchorEl);
   const isAppsMenuOpen = Boolean(appsMenuAnchorEl);
@@ -71,8 +76,9 @@ const Navbar: React.FC = () => {
       setScriptsLoading(true);
       const loadScripts = async () => {
         try {
-          const { scripts, packageManager: detectedPackageManager } =
-            await fetchProjectScripts(currentProjectPath);
+          const { scripts, packageManager: detectedPackageManager } = await fetchProjectScripts(
+            currentProjectPath,
+          );
           setPackageScripts(scripts);
           setPackageManager(detectedPackageManager);
         } finally {
@@ -225,6 +231,7 @@ const Navbar: React.FC = () => {
       'gemini-live-audio',
       'music-player',
       'project-management',
+      'recording',
     ].includes(app.id),
   );
 
@@ -419,6 +426,19 @@ const Navbar: React.FC = () => {
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <ThemeToggle />
+          {/* Toggle button for right sidebar */}
+          <IconButton
+            color="inherit"
+            onClick={() => isRightSidebarVisible.set(!$isRightSidebarVisible)}
+            aria-label="toggle sidebar"
+            sx={{ color: theme.palette.text.primary }}
+          >
+            {$isRightSidebarVisible ? (
+              <ViewSidebar />
+            ) : (
+              <ViewSidebarOff />
+            )}
+          </IconButton>
           {authLoading ? (
             <CircularProgress
               size={24}

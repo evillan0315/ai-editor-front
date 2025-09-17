@@ -10,3 +10,5 @@ export * from './terminal';
 export * from './auth';
 export * from './resume';
 export * from './project';
+export * from './recording';
+export * from './conversation';
