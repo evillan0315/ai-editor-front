@@ -207,7 +207,7 @@ cd project-board-front
 # Install dependencies
 pnpm install # or npm install / yarn install
 
-
+```
 ---
 
 ## ⚙️ Usage
@@ -221,7 +221,7 @@ pnpm run build
 
 # Start production build (requires a build first)
 pnpm run preview
-
+```
 
 ---
 
@@ -260,7 +260,7 @@ VITE_WS_URL=ws://localhost:3000             # The URL of your Project Board back
 VITE_FRONTEND_URL=http://localhost:3001     # The URL where your frontend is hosted (e.g., for OAuth redirects from backend)
 VITE_BASE_DIR=/path/to/your/project/root    # **Optional**: Default project root to pre-fill in the editor's project path input. Can be overridden in the UI. If not set, the user must provide one. This variable is useful for local development to avoid repeatedly typing the project path.
 VITE_PREVIEW_APP_URL=http://localhost:8080  # **Optional**: URL of a built frontend application to preview in an iframe. e.g., points to a server serving /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/dist
-
+```
 
 ---
 
@@ -273,7 +273,7 @@ npm test
 # With coverage
 npm run test:coverage
 
-
+```
 ---
 
 ## 📦 Deployment
@@ -296,14 +296,14 @@ We recommend a feature-branch workflow. All new features, bug fixes, or improvem
     ```bash
     git checkout main
     git pull origin main
-    
+    ```
 
 2.  **Create a new feature branch:**
     ```bash
     git checkout -b feature/your-feature-name
     # or for bug fixes:
     git checkout -b bugfix/issue-description
-    
+    ```
 
 ### 📝 Making Changes and Committing
 
@@ -313,7 +313,7 @@ As you make changes, frequently stage and commit your work with clear, concise m
 
     ```bash
     git status
-    
+    ```
 
 2.  **Stage your changes (add files to the staging area):**
 
@@ -321,7 +321,7 @@ As you make changes, frequently stage and commit your work with clear, concise m
     git add .
     # or to add specific files:
     git add src/path/to/your/file.ts src/other/file.tsx
-    
+    ```
 
 3.  **Commit your staged changes:**
 
@@ -330,7 +330,7 @@ As you make changes, frequently stage and commit your work with clear, concise m
     # or for a bug fix:
     git commit -m "fix: Resolve navigation issue in Navbar"
     # Use imperative mood, start with type (feat, fix, docs, chore, style, refactor, test, build, ci, perf)
-    
+    ```
 
 4.  **Push your branch to the remote repository:**
     ```bash
@@ -347,7 +347,7 @@ Once your feature branch is ready and pushed, you can open a Pull Request.
     git checkout feature/your-feature-name
     git pull origin main # This will pull changes from main into your branch. Resolve any conflicts.
     git push origin feature/your-feature-name
-    
+    ```
 
 2.  **Go to the GitHub repository and open a new Pull Request** from your feature branch to the `main` branch.
 
