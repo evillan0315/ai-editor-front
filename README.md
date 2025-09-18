@@ -6,6 +6,7 @@
 [![Last Commit](https://img.shields.io/github/last-commit/evillan0315/project-board-front)](https://github.com/evillan0315/project-board-front/commits)
 
 > A React frontend for the Project Board server backend, built with **Vite**, React, Nanostores, Tailwind CSS, and Material UI, focusing on intelligent code assistance and a broader range of AI-powered applications.
+> Note: This application was developed using AI with no coding.
 
 ---
 
