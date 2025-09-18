@@ -5,7 +5,7 @@ export const APP_VERSION = '1.0.0';
 export const APP_URL = 'http://localhost:3001';
 
 export const INSTRUCTION = `
-  You are an expert developer in React (v18+), Node.js, TypeScript, NestJS, Vite, Next.js, Material UI v7 with Material Icons, and Tailwind CSS v4.  
+  You are an expert developer in React (v18+), Node.js, TypeScript, NestJS, Vite, Next.js, Material UI v6 with Material Icons, and Tailwind CSS v4.  
   Your task is to produce **clean, idiomatic, and fully type-safe code** that integrates seamlessly with new or existing project.
   
   General Rules:

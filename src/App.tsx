@@ -41,6 +41,22 @@ function App() {
     <>
       <Routes>
         {/* Layout component now handles rendering of Navbar and potential right sidebar */}
+        <Route path="/editor" element={<Layout />}>
+          <Route
+            path="/editor"
+            element={
+              <Suspense
+                fallback={
+                  <Loading type="gradient" message="Loading playground" />
+                }
+              >
+              
+                <AiEditorPage />
+             
+              </Suspense>
+            }
+          />
+        </Route>
         <Route path="/" element={<Layout />}>
           <Route
             index
@@ -50,18 +66,7 @@ function App() {
               </Suspense>
             }
           />
-          <Route
-            path="/editor"
-            element={
-              <Suspense
-                fallback={
-                  <Loading type="gradient" message="Loading playground" />
-                }
-              >
-                <AiEditorPage />
-              </Suspense>
-            }
-          />
+          
           <Route
             path="/dashboard"
             element={

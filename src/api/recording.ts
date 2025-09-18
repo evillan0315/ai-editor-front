@@ -74,7 +74,7 @@ export const recordingApi = {
           method: 'POST',
         },
       );
-      return handleResponse<BaseReponseDto>(response);
+      return handleResponse<RecordingStopResponse>(response);
     } catch (error) {
       console.error('Error capturing screenshot:', error);
       throw error;
@@ -83,7 +83,7 @@ export const recordingApi = {
   recordingStatus: async () => {
     try {
       const response = await fetchWithAuth(`${API_BASE_URL}/recording/status`);
-      return handleResponse<BaseReponseDto>(response);
+      return handleResponse<RecordingStatusDto>(response);
     } catch (error) {
       console.error('Error getting recording status:', error);
       throw error;

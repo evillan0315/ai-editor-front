@@ -12,7 +12,7 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Button as MuiButton, // Alias to avoid conflict with custom Button component
+  Button,
   Typography,
   CircularProgress,
   Dialog,
@@ -20,8 +20,9 @@ import {
   DialogTitle,
   LinearProgress,
   TextField,
+  useTheme,
 } from '@mui/material';
-import Button from '@/components/ui/Button';
+
 import Loading from '@/components/Loading';
 import VideoModal from '@/components/VideoModal'; // Assuming this is how it imports the player
 import {
@@ -52,22 +53,25 @@ import {
 import { useNavigate } from 'react-router-dom';
 import path from 'path-browserify';
 import { deleteMediaFile, getFileStreamUrl } from '@/api/media'; // Import media functions
-import { currentRecordingIdStore } from '@/stores/recordingStore';
+import { currentRecordingIdStore, isCurrentRecording } from '@/stores/recordingStore';
 
 interface RecordingComponentProps {
   initialPage?: number;
   initialLimit?: number;
 }
 
+type SnackbarSeverity = 'success' | 'error' | 'warning';
+
 const RecordingComponent: React.FC<RecordingComponentProps> = ({
   initialPage = 1,
   initialLimit = 5,
 }) => {
+  const theme = useTheme();
   const [recordings, setRecordings] = useState<RecordingResultDto[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
+  // const [isRecording, setIsRecording] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>(
+  const [snackbarSeverity, setSnackbarSeverity] = useState<SnackbarSeverity>(
     'success',
   );
   const navigate = useNavigate();
@@ -92,6 +96,7 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const videoPlayerRef = useRef<HTMLVideoElement>(null);
   const $currentRecordingId = useStore(currentRecordingIdStore);
+  const $isCurrentRecording = useStore(isCurrentRecording);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<RecordingResultDto | null>(null);
   const [editedRecordingData, setEditedRecordingData] = useState<UpdateRecordingDto>({
@@ -100,7 +105,7 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
 
   const showSnackbar = (
     message: string,
-    severity: 'success' | 'error' = 'success',
+    severity: SnackbarSeverity = 'success',
   ) => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
@@ -116,11 +121,11 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
     }
     setSnackbarOpen(false);
   };
-  useEffect(() => {
-    if ($currentRecordingId) {
-      setIsRecording(true);
-    }
-  }, [$currentRecordingId]);
+  // useEffect(() => {
+  //   if ($currentRecordingId) {
+  //     setIsRecording(true);
+  //   }
+  // }, [$currentRecordingId]);
   useEffect(() => {
     loadRecordings();
   }, [currentPage, limit]);
@@ -129,7 +134,8 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
     setIsLoadingStatus(true);
     try {
       const status = await recordingApi.recordingStatus();
-      setIsRecording(status.isRecording);
+      //setIsRecording(status.isRecording);
+      currentRecordingIdStore.set(status.isRecording);
       setCurrentRecordingPath(status.path || null);
       setCurrentRecordingStartedAt(status.startedAt || null);
     } catch (error) {
@@ -163,7 +169,8 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
       const recordingData = await recordingApi.startRecording();
       console.log(recordingData, 'recordingData');
       currentRecordingIdStore.set(recordingData.id);
-      setIsRecording(true);
+      //setIsRecording(true);
+      isCurrentRecording.set(true);
       showSnackbar('Recording started successfully!', 'success');
       //loadRecordingStatus();
     } catch (error) {
@@ -183,6 +190,7 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
         if (recordingData) {
           showSnackbar('Recording stopped successfully!', 'success');
           if ($currentRecordingId) currentRecordingIdStore.set(null);
+          isCurrentRecording.set(false);
           await loadRecordings(); // Reload recordings after stopping
           await loadRecordingStatus();
         }
@@ -190,7 +198,8 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
         const recordingData =
           await recordingApi.stopRecording($currentRecordingId);
         if (recordingData) {
-          setIsRecording(false);
+          //setIsRecording(false);
+          isCurrentRecording.set(false);
           showSnackbar('Recording stopped successfully!', 'success');
           currentRecordingIdStore.set(null);
           await loadRecordings(); // Reload recordings after stopping
@@ -392,11 +401,11 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
         />
       )}
 
-      <Box className="p-4 bg-dark min-h-screen">
+      <Box className="p-4" sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
         <Typography
           variant="h5"
           component="h1"
-          className="text-2xl font-bold mb-6"
+          sx={{ fontSize: '2rem', fontWeight: 'bold', mb: 6, color: theme.palette.text.primary }}
         >
           Screen Recording & Capture
         </Typography>
@@ -405,31 +414,31 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
           {/* Recording Controls */}
           <Paper
             elevation={3}
-            className="bg-secondary p-4 rounded-lg shadow-md border"
+            sx={{ p: 4, borderRadius: '0.5rem', boxShadow: theme.shadows[3], border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper }}
           >
-            <Typography variant="h6" className="text-xl font-semibold mb-4">
+            <Typography variant="h6" sx={{ fontSize: '1.25rem', fontWeight: 'semibold', mb: 4, color: theme.palette.text.primary }}>
               Controls
             </Typography>
             <Box className="flex items-center gap-4">
               <Box>
                 <IconButton
-                  color="primary"
+              
                   aria-label="start recording"
-                  disabled={isRecording}
+                  disabled={$isCurrentRecording}
                   onClick={handleStartRecording}
                 >
                   <Videocam />
                 </IconButton>
                 <IconButton
-                  color="secondary"
+             
                   aria-label="stop recording"
-                  disabled={!isRecording}
+                  disabled={!$isCurrentRecording}
                   onClick={handleStopRecording}
                 >
                   <Stop />
                 </IconButton>
                 <IconButton
-                  color="info"
+   
                   aria-label="capture screenshot"
                   disabled={isCapturing}
                   onClick={handleCaptureScreenshot}
@@ -447,27 +456,27 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
           {/* Current Status */}
           <Paper
             elevation={3}
-            className="bg-secondary p-4 rounded-lg shadow-md border"
+            sx={{ p: 4, borderRadius: '0.5rem', boxShadow: theme.shadows[3], border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper }}
           >
-            <Typography variant="h6" className="text-xl font-semibold mb-4">
+            <Typography variant="h6" sx={{ fontSize: '1.25rem', fontWeight: 'semibold', mb: 4, color: theme.palette.text.primary }}>
               Current Status
             </Typography>
             {isLoadingStatus ? (
               <CircularProgress />
             ) : (
               <div>
-                <Typography variant="body1" className="text-lg">
+                <Typography variant="body1" sx={{ fontSize: '1rem', color: theme.palette.text.primary }}>
                   Status:{' '}
                   <span
                     className={`font-semibold ${
-                      isRecording ? 'text-green-400' : 'text-red-400'
+                      $isCurrentRecording ? 'text-green-400' : 'text-red-400'
                     }`}
                   >
-                    {isRecording ? 'RECORDING' : 'Idle'}
+                    {$isCurrentRecording ? 'RECORDING' : 'Idle'}
                   </span>
                 </Typography>
                 {currentRecordingPath && (
-                  <Typography variant="body2" className="text-sm mt-2">
+                  <Typography variant="body2" sx={{ fontSize: '0.875rem', mt: 2, color: theme.palette.text.secondary }}>
                     File:{' '}
                     <span className="font-mono text-gray-300 break-all">
                       {currentRecordingPath.split('/').pop()}
@@ -475,15 +484,15 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                   </Typography>
                 )}
                 {currentRecordingStartedAt && (
-                  <Typography variant="body2" className="text-sm">
+                  <Typography variant="body2" sx={{ fontSize: '0.875rem', color: theme.palette.text.secondary }}>
                     Started At:{' '}
                     {new Date(currentRecordingStartedAt).toLocaleString()}
                   </Typography>
                 )}
-                {!isRecording && (
+                {!$isCurrentRecording && (
                   <Typography
                     variant="body2"
-                    className="text-sm italic text-gray-400 mt-2"
+                    sx={{ fontSize: '0.875rem', fontStyle: 'italic', color: theme.palette.text.disabled, mt: 2 }}
                   >
                     No active recording. Click 'Start Recording' to begin.
                   </Typography>
@@ -494,34 +503,34 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
         </Box>
 
         {/* Recordings List */}
-        <Typography variant="h6" className="text-lg my-3">
+        <Typography variant="h6" sx={{ fontSize: '1rem', my: 3, color: theme.palette.text.primary }}>
           Saved Recordings & Screenshots
         </Typography>
-        <Paper elevation={3} className="bg-dark rounded-lg shadow-md border">
+        <Paper elevation={3} sx={{ borderRadius: '0.5rem', boxShadow: theme.shadows[3], border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper }}>
           {isLoadingRecordings ? (
             <LinearProgress
               sx={{ width: '100%', flexShrink: 0, zIndex: 1200 }}
             />
           ) : recordings.length === 0 ? (
-            <Typography variant="body1" className="text-gray-400">
+            <Typography variant="body1" sx={{ color: theme.palette.text.disabled }}>
               No recordings or screenshots saved yet.
             </Typography>
           ) : (
             <>
               <TableContainer className="overflow-x-auto">
                 <Table className="min-w-full divide-y divide-neutral-300 dark:divide-neutral-800">
-                  <TableHead className="bg-secondary">
+                  <TableHead sx={{ bgcolor: theme.palette.background.paper }}>
                     <TableRow>
-                      <TableCell className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <TableCell sx={{ px: 2, py: 3, textAlign: 'left', fontSize: '0.75rem', fontWeight: 'medium', color: theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: 1 }}>
                         Name
                       </TableCell>
-                      <TableCell className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <TableCell sx={{ px: 2, py: 3, textAlign: 'left', fontSize: '0.75rem', fontWeight: 'medium', color: theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: 1 }}>
                         Status
                       </TableCell>
-                      <TableCell className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <TableCell sx={{ px: 2, py: 3, textAlign: 'left', fontSize: '0.75rem', fontWeight: 'medium', color: theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: 1 }}>
                         Size
                       </TableCell>
-                      <TableCell className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <TableCell sx={{ px: 2, py: 3, textAlign: 'left', fontSize: '0.75rem', fontWeight: 'medium', color: theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: 1 }}>
                         Created At
                       </TableCell>
                       <TableCell className="relative px-6 py-3">
@@ -532,44 +541,46 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                   <TableBody className="divide-y divide-neutral-800">
                     {recordings.map((rec) => (
                       <TableRow key={rec.id} className="hover:bg-neutral-800">
-                        <TableCell className="px-2 py-3 whitespace-nowrap text-sm font-medium text-neutral-300 break-all flex items-center gap-2">
+                        <TableCell sx={{ px: 2, py: 3, whiteSpace: 'nowrap', fontSize: '0.875rem', fontWeight: 'medium', color: theme.palette.text.primary, wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: 2 }}>
                           {rec.type === 'screenRecord' &&
                             (rec.status === 'finished' ||
                               rec.status === 'ready') && (
-                              <Button
+                              <IconButton
+                                color="primary"
+                                aria-label="Play recording"
                                 onClick={() => handleOpenMedia(rec)}
-                                variant="primary"
-                                size="sm"
                                 title="Play Recording"
                                 className="flex-shrink-0"
                               >
                                 <PlayArrow />
-                              </Button>
+                              </IconButton>
                             )}
                           {rec.type === 'screenRecord' &&
                             rec.status === 'recording' && (
-                              <Button
-                                onClick={() => handleStopRecording(rec)}
-                                variant="primary"
-                                size="sm"
-                                title="Stop Recording"
-                                className="flex-shrink-0"
-                              >
-                                <Stop />
-                              </Button>
+                            <IconButton
+                              onClick={() => handleStopRecording(rec)}
+            
+                              color="primary"
+
+                              title="Stop Recording"
+                              className="flex-shrink-0"
+                            >
+                              <Stop />
+                            </IconButton>
                             )}
                           {rec.type === 'screenShot' &&
                             (rec.status === 'finished' ||
                               rec.status === 'ready') && (
-                              <Button
+                              <IconButton
                                 onClick={() => handleOpenMedia(rec)}
-                                variant="primary"
-                                size="sm"
+                 
+                                color="primary"
+
                                 title="View Screenshot"
                                 className="flex-shrink-0"
                               >
                                 <PhotoCamera />
-                              </Button>
+                              </IconButton>
                             )}
                           {rec.type === 'screenRecord' && <ScreenShare />}
                           {rec.type === 'screenShot' && <CameraOutlined />}
@@ -577,34 +588,35 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                             {rec.path.split('/').pop()}
                           </span>
                         </TableCell>
-                        <TableCell className="px-2 py-3 whitespace-nowrap text-sm">
+                        <TableCell sx={{ px: 2, py: 3, whiteSpace: 'nowrap', fontSize: '0.875rem', color: theme.palette.text.primary }}>
                           {/* Status Indicator (replace with a visual cue if desired) */}
                           {rec.status}
                         </TableCell>
-                        <TableCell className="px-2 py-3 whitespace-nowrap text-sm text-neutral-400">
+                        <TableCell sx={{ px: 2, py: 3, whiteSpace: 'nowrap', fontSize: '0.875rem', color: theme.palette.text.secondary }}>
                           {rec.data?.fileSize &&
                           typeof rec.data.fileSize === 'number'
                             ? formatBytes(rec.data.fileSize)
                             : 'N/A'}
                         </TableCell>
-                        <TableCell className="px-2 py-3 whitespace-nowrap text-sm text-neutral-400">
+                        <TableCell sx={{ px: 2, py: 3, whiteSpace: 'nowrap', fontSize: '0.875rem', color: theme.palette.text.secondary }}>
                           {new Date(rec.createdAt).toLocaleString()}
                         </TableCell>
                         <TableCell className="px-2 py-3 whitespace-nowrap text-right text-sm font-medium">
                           <Box className="flex justify-end space-x-2">
                             {rec.type === 'screenRecord' &&
                               !rec.data?.animatedGif && (
-                                <Button
+                                <IconButton
                                   onClick={() => handleConvertToGif(rec)}
-                                  variant="secondary"
-                                  size="sm"
+                    
+                                  color="secondary"
+                          
                                   title="Convert to GIF"
                                 >
                                   <Gif />
-                                </Button>
+                                </IconButton>
                               )}
                             {rec.data?.animatedGif && (
-                              <Button
+                              <IconButton
                                 onClick={() =>
                                   handleOpenMedia({
                                     ...rec,
@@ -612,42 +624,43 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                                     type: 'animatedGif',
                                   })
                                 }
-                                variant="secondary"
-                                size="sm"
+                      
+                                color="secondary"
+                       
                                 title="View Animated GIF"
                               >
                                 <Gif />
-                              </Button>
+                              </IconButton>
                             )}
-                            <Button
+                            <IconButton
                               onClick={() =>
                                 handleDownloadFile(
                                   rec.path,
                                   rec.path.split('/').pop()!,
                                 )
                               }
-                              variant="secondary"
-                              size="sm"
+                   
+                              color="secondary"
+                       
                               title="Download"
                             >
                               <Download />
-                            </Button>
-                             <Button
+                            </IconButton>
+                             <IconButton
                               onClick={() => handleEditRecording(rec)}
-                              variant="secondary"
-                              size="sm"
+                   
+                              color="secondary"
+                 
                               title="Edit"
                             >
                               <Edit />
-                            </Button>
-                            <Button
+                            </IconButton>
+                            <IconButton
                               onClick={() => handleDeleteRecording(rec)}
-                              variant="error"
-                              size="sm"
                               title="Delete"
                             >
                               <Delete />
-                            </Button>
+                            </IconButton>
                           </Box>
                         </TableCell>
                       </TableRow>
@@ -663,8 +676,6 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                     <Button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      variant="secondary"
-                      size="sm"
                       className="mr-2"
                     >
                       Previous
@@ -672,8 +683,6 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                     <Button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      variant="secondary"
-                      size="sm"
                     >
                       Next
                     </Button>
@@ -681,7 +690,7 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                   <Box className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-center">
                     <Typography
                       variant="body2"
-                      className="text-sm text-gray-400"
+                      sx={{ fontSize: '0.875rem', color: theme.palette.text.secondary }}
                     >
                       Page <span className="font-medium">{currentPage}</span> of{' '}
                       <span className="font-medium">{totalPages}</span>
@@ -713,31 +722,35 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
           onClose={handleCloseMediaModal}
           fullWidth
           maxWidth="md"
+          PaperProps={{ style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary } }}
         >
-          <DialogTitle>{selectedMedia?.path.split('/').pop()}</DialogTitle>
+          <DialogTitle sx={{ color: theme.palette.text.primary }}>{selectedMedia?.path.split('/').pop()}</DialogTitle>
           <DialogContent>
             {selectedMedia && (
-              <Box className="flex items-center justify-center bg-secondary rounded-md flex-grow">
+              <Box className="flex items-center justify-center flex-grow" sx={{ bgcolor: theme.palette.background.paper, borderRadius: '0.5rem' }}>
                 {selectedMedia.type === 'screenRecord' ? (
                   <video
                     src={getMediaUrl(selectedMedia.path)}
                     autoPlay={true}
                     controls={true}
+                    style={{ maxWidth: '100%', maxHeight: '100%' }}
                   ></video>
                 ) : selectedMedia.type === 'screenShot' ? (
                   <img
                     src={getMediaUrl(selectedMedia.path)}
                     alt={selectedMedia.path.split('/').pop()}
                     className="w-full h-auto object-contain rounded-md"
+                    style={{ maxWidth: '100%', maxHeight: '100%' }}
                   />
                 ) : selectedMedia.type === 'animatedGif' ? (
                   <img
                     src={getMediaUrl(selectedMedia.path)}
                     alt={selectedMedia.path.split('/').pop()}
                     className="w-full h-auto object-contain rounded-md"
+                    style={{ maxWidth: '100%', maxHeight: '100%' }}
                   />
                 ) : (
-                  <Typography variant="body1" className="text-gray-400">
+                  <Typography variant="body1" sx={{ color: theme.palette.text.disabled }}>
                     Unsupported media type.
                   </Typography>
                 )}
@@ -746,8 +759,10 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
           </DialogContent>
         </Dialog>
         {/* Edit Recording Dialog */}
-        <Dialog open={editDialogOpen} onClose={handleCloseEditDialog} fullWidth maxWidth="sm">
-          <DialogTitle>Edit Recording Data</DialogTitle>
+        <Dialog open={editDialogOpen} onClose={handleCloseEditDialog} fullWidth maxWidth="sm"
+         PaperProps={{ style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary } }}
+        >
+          <DialogTitle sx={{ color: theme.palette.text.primary }}>Edit Recording Data</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -759,6 +774,8 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
               fullWidth
               value={editedRecordingData.data?.duration || ''}
               onChange={handleDataChange}
+              InputProps={{ style: { color: theme.palette.text.primary } }}
+              InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
             />
             <TextField
               margin="dense"
@@ -769,11 +786,13 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
               fullWidth
               value={editedRecordingData.data?.fileSize || ''}
               onChange={handleDataChange}
+               InputProps={{ style: { color: theme.palette.text.primary } }}
+              InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
             />
           </DialogContent>
           <Box className="flex justify-end p-4">
-            <Button onClick={handleCloseEditDialog} variant="secondary" className="mr-2">Cancel</Button>
-            <Button onClick={handleUpdateRecording} variant="primary">Update</Button>
+            <Button onClick={handleCloseEditDialog} variant="outlined" color="secondary" className="mr-2">Cancel</Button>
+            <Button onClick={handleUpdateRecording} variant="contained" color="primary">Update</Button>
           </Box>
         </Dialog>
       </Box>

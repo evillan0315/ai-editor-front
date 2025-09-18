@@ -35,9 +35,15 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import LinearProgress from '@mui/material/LinearProgress'; // New: Import LinearProgress
 import AppsIcon from '@mui/icons-material/Apps'; // New: Import AppsIcon
 import IconButton from '@mui/material/IconButton'; // Explicitly import IconButton
-import MenuIcon from '@mui/material/Menu';
+import MenuIcon from '@mui/icons-material/Menu';
 import ViewSidebar from '@mui/icons-material/ViewSidebar';
 import ViewSidebarOff from '@mui/icons-material/ViewSidebar';
+// New imports for recording
+import { recordingApi } from '@/api/recording';
+import Videocam from '@mui/icons-material/Videocam';
+import Stop from '@mui/icons-material/Stop';
+import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import { currentRecordingIdStore, isCurrentRecording, setIsRecording } from '@/stores/recordingStore';
 
 interface ScriptExecutionState {
   status: ScriptStatus;
@@ -55,17 +61,12 @@ const Navbar: React.FC = () => {
   const [packageScripts, setPackageScripts] = useState<PackageScript[]>([]);
   const [packageManager, setPackageManager] = useState<PackageManager>(null);
   const [scriptsLoading, setScriptsLoading] = useState(false);
-  const [scriptExecutionStatus, setScriptExecutionStatus] = useState<
-    Record<string, ScriptExecutionState>
-  >({});
+  const [scriptExecutionStatus, setScriptExecutionStatus] = useState<Record<string, ScriptExecutionState>>({});
 
-  const [scriptMenuAnchorEl, setScriptMenuAnchorEl] =
-    useState<null | HTMLElement>(null);
-  const [appsMenuAnchorEl, setAppsMenuAnchorEl] = useState<null | HTMLElement>(
-    null,
-  ); // New state for apps menu anchor
-  const [profileMenuAnchorEl, setProfileMenuAnchorEl] =
-    useState<null | HTMLElement>(null); // State for profile menu
+  const [scriptMenuAnchorEl, setScriptMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [appsMenuAnchorEl, setAppsMenuAnchorEl] = useState<null | HTMLElement>(null); // New state for apps menu anchor
+  const [profileMenuAnchorEl, setProfileMenuAnchorEl] = useState<null | HTMLElement>(null); // State for profile menu
+  const isRecording = useStore(isCurrentRecording);
 
   const isScriptMenuOpen = Boolean(scriptMenuAnchorEl);
   const isAppsMenuOpen = Boolean(appsMenuAnchorEl);
@@ -76,8 +77,7 @@ const Navbar: React.FC = () => {
       setScriptsLoading(true);
       const loadScripts = async () => {
         try {
-          const { scripts, packageManager: detectedPackageManager } =
-            await fetchProjectScripts(currentProjectPath);
+          const { scripts, packageManager: detectedPackageManager } = await fetchProjectScripts(currentProjectPath);
           setPackageScripts(scripts);
           setPackageManager(detectedPackageManager);
         } finally {
@@ -220,6 +220,48 @@ const Navbar: React.FC = () => {
   const isAnyScriptRunning = Object.values(scriptExecutionStatus).some(
     (state) => state.status === ScriptStatus.RUNNING,
   );
+
+    const handleStartRecording = async () => {
+    try {
+     const recordingData = await recordingApi.startRecording();
+      if(recordingData && recordingData.id){
+      currentRecordingIdStore.set(recordingData.id);
+      setIsRecording(true);
+      showGlobalSnackbar('Recording started successfully!', 'success');
+      }
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      showGlobalSnackbar(`Error starting recording: ${error}`, 'error');
+    }
+  };
+
+  const handleStopRecording = async () => {
+    try {
+      if (currentRecordingIdStore.get()) {
+      const recordingData = await recordingApi.stopRecording(currentRecordingIdStore.get());
+        if(recordingData){
+          currentRecordingIdStore.set(null);
+        }
+      setIsRecording(false);
+      showGlobalSnackbar('Recording stopped successfully!', 'success');
+      } else {
+          showGlobalSnackbar('No recording in progress to stop.', 'warning');
+      }
+    } catch (error) {
+      console.error('Error stopping recording:', error);
+      showGlobalSnackbar(`Error stopping recording: ${error}`, 'error');
+    }
+  };
+
+  const handleCaptureScreenshot = async () => {
+    try {
+      await recordingApi.capture();
+      showGlobalSnackbar('Screenshot captured successfully!', 'success');
+    } catch (error) {
+      console.error('Error capturing screenshot:', error);
+      showGlobalSnackbar(`Error capturing screenshot: ${error}`, 'error');
+    }
+  };
 
   // Curate a subset of apps for the Navbar dropdown, e.g., the first few AI-related and main apps.
   const navbarApps = appDefinitions.filter((app) =>
@@ -421,6 +463,31 @@ const Navbar: React.FC = () => {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <IconButton
+              color="inherit"
+              aria-label="start recording"
+              disabled={isRecording}
+              onClick={handleStartRecording}
+            >
+              <Videocam />
+            </IconButton>
+
+            <IconButton
+              color="inherit"
+              aria-label="stop recording"
+              disabled={!isRecording}
+              onClick={handleStopRecording}
+            >
+              <Stop />
+            </IconButton>
+
+            <IconButton
+              color="inherit"
+              aria-label="capture screenshot"
+              onClick={handleCaptureScreenshot}
+            >
+              <PhotoCamera />
+            </IconButton>
           <ThemeToggle />
           {/* Toggle button for right sidebar */}
           <IconButton

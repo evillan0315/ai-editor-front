@@ -162,6 +162,33 @@ export const getAppTheme = (mode: PaletteMode) => {
                   : 'rgba(25, 118, 210, 0.04)',
             },
           },
+          containedSecondary: {
+            backgroundColor: mode === 'dark' ? '#f48fb1' : '#dc004e',
+            color: mode === 'dark' ? '#000000' : '#ffffff',
+            '&:hover': {
+              backgroundColor: mode === 'dark' ? '#f06292' : '#b71c1c',
+            },
+          },
+          outlinedSecondary: {
+            borderColor: mode === 'dark' ? '#f48fb1' : '#dc004e',
+            color: mode === 'dark' ? '#f48fb1' : '#dc004e',
+            '&:hover': {
+              borderColor: mode === 'dark' ? '#f06292' : '#b71c1c',
+              backgroundColor:
+                mode === 'dark'
+                  ? 'rgba(244, 143, 177, 0.08)'
+                  : 'rgba(220, 0, 78, 0.04)',
+            },
+          },
+          textSecondary: {
+            color: mode === 'dark' ? '#f48fb1' : '#dc004e',
+            '&:hover': {
+              backgroundColor:
+                mode === 'dark'
+                  ? 'rgba(244, 143, 177, 0.04)'
+                  : 'rgba(220, 0, 78, 0.04)',
+            },
+          },
         },
       },
       MuiTextField: {

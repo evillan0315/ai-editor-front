@@ -12,3 +12,12 @@ export * from './resume';
 export * from './project';
 export * from './recording';
 //export * from './conversation';
+
+
+export interface BaseReponseDto {
+  message?: string;
+  statusCode?: number;
+  error?: string;
+  timestamp?: string;
+  path?: string;
+}

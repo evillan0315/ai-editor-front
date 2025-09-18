@@ -1,12 +1,4 @@
-import React, {
-  useEffect,
-  useState,
-  createContext,
-  useContext,
-  useMemo,
-  useRef,
-  useCallback,
-} from 'react';
+import React, { useEffect, useState, createContext, useContext, useMemo, useRef, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import { checkAuthStatus } from '@/services/authService';
@@ -20,7 +12,7 @@ import AiSidebarContent from '@/components/AiSidebarContent';
 
 // Constants for layout
 const NAVBAR_HEIGHT = 64; // Approximate height of MUI AppBar
-const FOOTER_HEIGHT = 0; // Keeping footer height minimal as it's not present globally
+const FOOTER_HEIGHT = 30; // Keeping footer height minimal as it's not present globally
 
 // Constants for resizable right sidebar
 const RIGHT_SIDEBAR_STORAGE_KEY = 'rightSidebarWidth';
@@ -32,6 +24,10 @@ const SIDEBAR_RESIZER_WIDTH = 4; // Width of the draggable handle in pixels
 // Define context type for the right sidebar
 interface RightSidebarContextType {
   setRightSidebar: (content: React.ReactNode | null) => void;
+}
+
+interface LayoutProps {
+  footer?: React.ReactNode | null;
 }
 
 // Create a context for the right sidebar
@@ -48,19 +44,16 @@ export const useRightSidebar = () => {
   return context;
 };
 
-const Layout: React.FC = () => {
+const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const { loading: authLoading } = useStore(authStore);
   const theme = useTheme();
   const $isRightSidebarVisible = useStore(isRightSidebarVisible);
-  const [rightSidebarContent, setRightSidebarContent] =
-    useState<React.ReactNode | null>(null);
+  const [rightSidebarContent, setRightSidebarContent] = useState<React.ReactNode | null>(null);
 
   // State for resizable sidebar
   const [rightSidebarWidth, setRightSidebarWidth] = useState<number>(() => {
     const storedWidth = localStorage.getItem(RIGHT_SIDEBAR_STORAGE_KEY);
-    return storedWidth
-      ? parseInt(storedWidth, 10)
-      : DEFAULT_RIGHT_SIDEBAR_WIDTH;
+    return storedWidth ? parseInt(storedWidth, 10) : DEFAULT_RIGHT_SIDEBAR_WIDTH;
   });
   const [isResizing, setIsResizing] = useState(false);
   const initialMouseX = useRef(0);
@@ -96,10 +89,7 @@ const Layout: React.FC = () => {
     document.body.style.cursor = 'default';
     document.body.style.userSelect = 'auto';
     document.body.style.pointerEvents = 'auto';
-    localStorage.setItem(
-      RIGHT_SIDEBAR_STORAGE_KEY,
-      rightSidebarWidth.toString(),
-    ); // Persist the new width
+    localStorage.setItem(RIGHT_SIDEBAR_STORAGE_KEY, rightSidebarWidth.toString()); // Persist the new width
   }, [rightSidebarWidth]);
 
   const resize = useCallback(
@@ -112,10 +102,7 @@ const Layout: React.FC = () => {
         let newWidth = initialSidebarWidth.current - deltaX;
 
         // Apply min/max width constraints
-        newWidth = Math.max(
-          MIN_RIGHT_SIDEBAR_WIDTH,
-          Math.min(MAX_RIGHT_SIDEBAR_WIDTH, newWidth),
-        );
+        newWidth = Math.max(MIN_RIGHT_SIDEBAR_WIDTH, Math.min(MAX_RIGHT_SIDEBAR_WIDTH, newWidth));
         setRightSidebarWidth(newWidth);
       }
     },
@@ -203,6 +190,24 @@ const Layout: React.FC = () => {
             </>
           )}
         </div>
+        {footer && (
+          <footer
+            style={{
+              position: 'fixed', 
+              bottom: 0,
+              zIndex: 1300,
+              height: FOOTER_HEIGHT,
+              backgroundColor: theme.palette.background.paper,
+              borderTop: `1px solid ${theme.palette.divider}`,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            {footer}
+          </footer>
+        )}
       </div>
     </RightSidebarContext.Provider>
   );
