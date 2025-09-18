@@ -202,7 +202,7 @@ project-board-front/
 ## 📋 Requirements
 
 - Node.js >= 18
-- Project Board Backend (running and accessible via `VITE_API_URL` and `VITE_WS_URL`)
+- [Project Board Backend](https://github.com/evillan0315/project-board-server) (running and accessible via `VITE_API_URL` and `VITE_WS_URL`)
 
 ---
 
