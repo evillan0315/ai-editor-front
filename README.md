@@ -23,6 +23,7 @@
 - [Deployment](#-deployment)
 - [Git Workflow](#-git-workflow)
 - [Resume Builder](#resume-builder)
+- [Screen Recording](#screen-recording)
 - [Roadmap](#-roadmap)
 - [Contributing](#-contributing)
 - [License](#-license)
@@ -55,6 +56,7 @@
 - ⚡ **Vite Development**: Fast development and build times powered by Vite, providing a modern and efficient development workflow.
 - 🌗 **Dark/Light Theme Toggle**: Effortlessly switch between dark and light modes, enhancing readability and user comfort.
 - 🗂️ **Resume Builder**: Build and export resumes using AI and custom templates.
+- ⏺️ **Screen Recording**: Capture your screen, record videos, and take screenshots directly within the application.
 
 ---
 
@@ -371,6 +373,27 @@ The Resume Builder is a powerful tool that allows users to create professional r
 3.  **Select a Template**: Choose a template that suits your style and preferences.
 4.  **Preview Your Resume**: Review the live preview to ensure everything looks correct.
 5.  **Export to PDF**: Click the "Export PDF" button to download your resume.
+
+---
+
+## ⏺️ Screen Recording
+
+The Screen Recording feature enables you to capture your screen, record videos, and take screenshots directly within the application.
+
+### Key Features
+
+- **Screen Recording**: Record your screen activities with audio.
+- **Screenshot Capture**: Capture screenshots of your current screen.
+- **Recording Management**: Manage your recordings, including playing, downloading, and deleting.
+- **GIF Conversion**: Convert screen recordings into animated GIFs.
+
+### Usage
+
+1. **Navigate to the Recording Page**: Click on the "Recording" in the apps page.
+2. **Start Recording**: Click the "Start Recording" button to begin recording your screen.
+3. **Stop Recording**: Click the "Stop Recording" button to stop the recording.
+4. **Capture Screenshot**: Click the "Capture Screenshot" button to take a screenshot of your screen.
+5. **Manage Recordings**: View the list of saved recordings and screenshots. You can play, download, convert to GIF, edit, and delete recordings.
 
 ---
 
