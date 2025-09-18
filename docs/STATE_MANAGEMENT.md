@@ -75,6 +75,8 @@ All global stores are located in the `src/stores/` directory. Each store manages
 -   **`contextMenuStore.ts`**: Manages the visibility, position, and items of dynamic context menus (e.g., for the file tree).
 -   **`organizationStore.ts`**: Manages a list of `Organization` objects and the `currentOrganization` for project management.
 -   **`projectStore.ts`**: Manages a list of `Project` objects and the `currentProject` for a selected organization.
+-   **`recordingStore.ts`**: Manages state for the screen recording functionality.
+    -   `currentRecordingIdStore`: Stores the ID of the currently active recording, enabling components to track the recording state across the application.
 
 ## Best Practices with Nanostores
 

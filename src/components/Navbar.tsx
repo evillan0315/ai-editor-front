@@ -65,7 +65,7 @@ const Navbar: React.FC = () => {
     null,
   ); // New state for apps menu anchor
   const [profileMenuAnchorEl, setProfileMenuAnchorEl] =
-    useState<null | HTMLElement>(null); // State for profile menu anchor
+    useState<null | HTMLElement>(null); // State for profile menu
 
   const isScriptMenuOpen = Boolean(scriptMenuAnchorEl);
   const isAppsMenuOpen = Boolean(appsMenuAnchorEl);
@@ -224,12 +224,9 @@ const Navbar: React.FC = () => {
   // Curate a subset of apps for the Navbar dropdown, e.g., the first few AI-related and main apps.
   const navbarApps = appDefinitions.filter((app) =>
     [
-      'ai-code-editor',
-      'llm-code-generator',
-      'ai-translator',
-      'gemini-live-audio',
-      'music-player',
-      'project-management',
+      'ai-editor',
+      'llm-generation',
+      'media-player',
       'recording',
     ].includes(app.id),
   );

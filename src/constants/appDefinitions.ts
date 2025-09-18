@@ -11,6 +11,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DescriptionIcon from '@mui/icons-material/Description';
 import VideocamIcon from '@mui/icons-material/Videocam';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 export const appDefinitions: AppDefinition[] = [
   {
@@ -38,8 +39,8 @@ export const appDefinitions: AppDefinition[] = [
     icon: DescriptionIcon,
   },
   {
-    id: 'spotify',
-    title: 'Spotify-like Music Player',
+    id: 'media-player',
+    title: 'Media Player',
     description: 'Explore and enjoy a simulated music streaming experience.',
     link: '/apps/spotify',
     linkText: 'Open Music Player',
@@ -53,15 +54,6 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/translator',
     linkText: 'Open Translator',
     icon: TranslateIcon,
-  },
-  {
-    id: 'gemini-live-audio',
-    title: 'Gemini Live Audio Chat',
-    description:
-      'Interact with Gemini AI using real-time audio input and output.',
-    link: '/apps/gemini-live-audio',
-    linkText: 'Open Audio Chat',
-    icon: MicIcon,
   },
   {
     id: 'terminal',
@@ -127,5 +119,13 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/recording',
     linkText: 'Open Recording',
     icon: VideocamIcon,
+  },
+  {
+    id: 'kanban-board',
+    title: 'Project Kanban Board',
+    description: 'Manage your projects using a Kanban board.',
+    link: '/apps/kanban-board',
+    linkText: 'Open Kanban Board',
+    icon: AssignmentIcon,
   },
 ];

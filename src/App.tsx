@@ -27,6 +27,7 @@ const TerminalPage = lazy(() => import('./pages/TerminalPage')); // NEW: Transcr
 const LlmGenerationPage = lazy(() => import('./pages/LlmGenerationPage')); // NEW: LLM Generation Page
 const ResumeBuilderPage = lazy(() => import('./pages/ResumeBuilderPage')); // NEW: Resume Builder Page
 const RecordingPage = lazy(() => import('./pages/RecordingPage')); // NEW: Recording Page
+const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage')); // NEW: Kanban Board Page
 
 import '@xterm/xterm/css/xterm.css';
 function App() {
@@ -155,6 +156,15 @@ function App() {
             element={
               <Suspense fallback={<Loading />}>
                 <RecordingPage />
+              </Suspense>
+            }
+          />
+          {/* NEW: Route for Kanban Board Page */}
+          <Route
+            path="/apps/kanban-board"
+            element={
+              <Suspense fallback={<Loading />}>
+                <KanbanBoardPage />
               </Suspense>
             }
           />

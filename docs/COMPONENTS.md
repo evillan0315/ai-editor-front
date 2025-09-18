@@ -61,3 +61,14 @@ Simple wrapper components around Material UI elements, primarily used to enforce
 -   **`Snackbar.tsx`**: A custom notification component for displaying ephemeral messages (success, error, info).
 -   **`ThemeToggle.tsx`**: A button to switch between light and dark UI themes.
 -   **`RunScriptMenuItem.tsx`**: A menu item component used in the Navbar to run specific project scripts defined in `package.json`.
+
+### 7. Recording Components (`src/components/recording/`)
+
+Components used for screen recording and capture functionality.
+
+-   **`RecordingComponent.tsx`**: This component provides screen recording and screenshot capture capabilities. It handles user interactions to start, stop, and manage recordings. It presents saved recordings and screenshots in a table with options to play, convert to GIF, download, edit, and delete each item.  It uses the `recordingApi` to interact with the backend.
+    -   **Key Features:**
+        -   **Controls Section:** Provides buttons to start, stop, and capture screenshots.  The UI visually indicates the current recording state.
+        -   **Recordings List:** Displays saved recordings and screenshots in a table, providing actions for each item.
+        -   **Video Modal:**  A modal dialog powered by `VideoModal.tsx` that enables playing recorded videos and viewing screenshots.
+

@@ -59,7 +59,7 @@ const SpotifySidebar: React.FC<SpotifySidebarProps> = ({
     >
       <Box sx={{ p: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
-          🎵 Project Stream
+          🎵 Media Player
         </Typography>
       </Box>
 
