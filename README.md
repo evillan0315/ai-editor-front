@@ -63,10 +63,11 @@
 ## 🖼️ Screenshots
 
 ![Project Board Demo](recorded2.gif)
+![Project Board Editor](full-editor.png)
 ![Project Board Music App](project-board-music-app.png)
 ![Project Board Homepage](porject-board-homepage.png)
 ![Project Board Apps](project-board-apps.png)
-![Project Board Editor](project-board-editor.png)
+
 
 ---
 
