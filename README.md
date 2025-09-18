@@ -62,7 +62,8 @@
 
 ## 🖼️ Screenshots
 
-![Project Board Demo](recorded2.gif)
+![Project Board Demo 1](recorded2.gif)
+![Project Board Demo 2](recorded3.gif)
 ![Project Board Editor](full-editor.png)
 ![Project Board Music App](project-board-music-app.png)
 ![Project Board Homepage](porject-board-homepage.png)

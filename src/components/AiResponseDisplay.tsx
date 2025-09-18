@@ -38,7 +38,6 @@ import { ModelResponse, FileChange, RequestType } from '@/types';
 interface AiResponseDisplayProps {
   // No specific props needed, all state comes from aiEditorStore
 }
-
 /**
  * Displays the AI's proposed changes, thought process, and provides controls
  * for reviewing, selecting, and applying these changes. It now logs detailed
