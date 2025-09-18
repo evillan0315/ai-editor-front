@@ -24,22 +24,54 @@ interface TemplatesTabProps {
   templates: Template[];
 }
 
-const TemplatesTab = ({ selectedTemplate, setSelectedTemplate, templates }: TemplatesTabProps) => (
+const TemplatesTab = ({
+  selectedTemplate,
+  setSelectedTemplate,
+  templates,
+}: TemplatesTabProps) => (
   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>Choose a resume template</Typography>
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
-      {templates.map(template => (
-        <StyledTemplateCard 
-          key={template.id} 
+    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+      Choose a resume template
+    </Typography>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: {
+          xs: '1fr',
+          sm: 'repeat(2, 1fr)',
+          md: 'repeat(3, 1fr)',
+        },
+        gap: 2,
+      }}
+    >
+      {templates.map((template) => (
+        <StyledTemplateCard
+          key={template.id}
           selected={selectedTemplate.id === template.id}
           onClick={() => setSelectedTemplate(template)}
         >
-          <Box sx={{ height: 120, bgcolor: template.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Box
+            sx={{
+              height: 120,
+              bgcolor: template.color,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <AppsIcon sx={{ color: 'white', fontSize: '2.5rem' }} />
           </Box>
           <CardContent sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 'medium' }}>{template.name}</Typography>
-            <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary', mt: 0.5 }}>
+            <Typography
+              variant="h6"
+              sx={{ fontSize: '1rem', fontWeight: 'medium' }}
+            >
+              {template.name}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ fontSize: '0.75rem', color: 'text.secondary', mt: 0.5 }}
+            >
               Professional design
             </Typography>
           </CardContent>
@@ -49,4 +81,4 @@ const TemplatesTab = ({ selectedTemplate, setSelectedTemplate, templates }: Temp
   </Box>
 );
 
-export default  TemplatesTab;
+export default TemplatesTab;

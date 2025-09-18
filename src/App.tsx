@@ -149,8 +149,8 @@ function App() {
               </Suspense>
             }
           />
-           {/* NEW: Route for Recording Page */}
-           <Route
+          {/* NEW: Route for Recording Page */}
+          <Route
             path="/apps/recording"
             element={
               <Suspense fallback={<Loading />}>

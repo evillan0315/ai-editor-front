@@ -163,7 +163,7 @@ project-board-front/
 │   │   ├── file-tree/  # Components for rendering and interacting with the project's file tree (`FileTree.tsx`, `FileTreeItem.tsx`, `FileTreeContextMenuRenderer.tsx`, `index.ts` for exports)
 │   │   ├── resume/     # Components for the Resume Builder feature (`EducationTab.tsx`, `ExperienceTab.tsx`, `Header.tsx`, `PersonalInfoTab.tsx`, `ResumeDisplay.tsx`, `ResumeParserContainer.tsx`, `ResumePreview.tsx`, `ResumeUploadDialog.tsx`, `Sidebar.tsx`, `SkillsTab.tsx`, `TemplatesTab.tsx`, `index.ts` for exports)
 │   │   ├── ui/         # Wrapper components for Material-UI elements (e.g., `Button.tsx`, `TextField.tsx`, `CircularProgress.tsx`)
-│   │   └── ...         # Other general UI components (e.g., `AiResponseDisplay.tsx`, `AiSidebarContent.tsx`, `AppsMenuContent.tsx`, `Button.tsx`, `ConversationList.tsx`, `FilePickerDialog.tsx`, `FileTabs.tsx`, `Html5VideoPlayer.tsx`, `InitialEditorViewer.tsx`, `Layout.tsx`, `LlmGenerationContent.tsx`, `Loading.tsx`, `Navbar.tsx`, `OpenedFileViewer.tsx`, `OutputLogger.tsx`, `ProfileMenuContent.tsx`, `PromptGenerator.tsx`, `ProposedChangeCard.tsx`, `resume/`, `RunScriptMenuItem.tsx`, `Snackbar.tsx`, `Terminal/`, `ThemeToggle.tsx`, `TranscriptionPlayer/`, `VideoModal.tsx`, `WelcomeMessage.tsx`)
+│   │   └── ...         # Other general UI components (e.g., `AiResponseDisplay.tsx`, `AiSidebarContent.tsx`, `AppsMenuContent.tsx`, `Button.tsx`, `ConversationList.tsx`, `FilePickerDialog.tsx`, `FileTabs.tsx`, `Html5VideoPlayer.tsx`, `InitialEditorViewer.tsx`, `Layout.tsx`, `LlmGenerationContent.tsx`, `Loading.tsx`, `Navbar.tsx`, `OpenedFileViewer.tsx`, `OutputLogger.tsx`, `ProfileMenuContent.tsx`, `PromptGenerator.tsx`, `ProposedChangeCard.tsx`, `resume/`, `RunScriptMenuItem.tsx`, `Snackbar.tsx`, `Terminal/`, `ThemeToggle.tsx`, `TranscriptionPlayer/`, `VideoModal.tsx`, `WelcomeMessage.tsx`, `CodeMirror/`)
 │   ├── constants/      # Global constants, default AI instruction templates, and configuration values (e.g., `fileIcons.tsx`, `requestTypeIcons.ts`, `scriptIcons.ts`, `appDefinitions.ts`, `markdown-instruction.ts`, `text-instruction.ts`, `yaml-instruction.ts`, `transcription.ts`, `index.ts` for exports)
 │   ├── hooks/          # Custom React hooks for reusable logic
 │   ├── pages/          # Top-level page components, defining the main views of the application
@@ -300,7 +300,7 @@ We recommend a feature-branch workflow. All new features, bug fixes, or improvem
 
 2.  **Create a new feature branch:**
     ```bash
-    git checkout -b feature/your-feature-name
+git checkout -b feature/your-feature-name
     # or for bug fixes:
     git checkout -b bugfix/issue-description
     ```
@@ -334,7 +334,7 @@ As you make changes, frequently stage and commit your work with clear, concise m
 
 4.  **Push your branch to the remote repository:**
     ```bash
-    git push origin feature/your-feature-name
+git push origin feature/your-feature-name
     
 
 ### 🚀 Submitting a Pull Request (PR)

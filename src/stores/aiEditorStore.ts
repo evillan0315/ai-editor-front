@@ -12,13 +12,10 @@ import {
   INSTRUCTION,
   ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
 } from '@/constants';
-import {
-  applyProposedChanges as apiApplyProposedChanges,
-} from '@/api/llm';
+import { applyProposedChanges as apiApplyProposedChanges } from '@/api/llm';
 import { runTerminalCommand } from '@/api/terminal';
 import { writeFileContent } from '@/api/file';
 import { addLog, LogEntry } from './logStore'; // NEW: Import addLog and LogEntry
-
 
 // --- Start Type Definitions for AiEditorState ---
 // Moved here for self-containment as types/index.ts was not explicitly mentioned.
@@ -365,19 +362,37 @@ export const updateProposedChangePath = (
 ) => {
   const state = aiEditorStore.get();
   if (!state.lastLlmResponse) {
-    addLog('Proposed Change Card', 'Cannot update proposed change path: No LLM response available.', 'warning', undefined, undefined, true);
+    addLog(
+      'Proposed Change Card',
+      'Cannot update proposed change path: No LLM response available.',
+      'warning',
+      undefined,
+      undefined,
+      true,
+    );
     setError('New file path cannot be empty.'); // For immediate UI error
     return;
   }
 
   const trimmedNewFilePath = newFilePath.trim();
   if (!trimmedNewFilePath) {
-    addLog('Proposed Change Card', 'Cannot update proposed change path: New file path cannot be empty.', 'error', undefined, undefined, true);
+    addLog(
+      'Proposed Change Card',
+      'Cannot update proposed change path: New file path cannot be empty.',
+      'error',
+      undefined,
+      undefined,
+      true,
+    );
     setError('New file path cannot be empty.');
     return;
   }
   if (trimmedNewFilePath === oldFilePath) {
-    addLog('Proposed Change Card', `File path for ${oldFilePath} not changed.`, 'debug');
+    addLog(
+      'Proposed Change Card',
+      `File path for ${oldFilePath} not changed.`,
+      'debug',
+    );
     return;
   }
 
@@ -394,7 +409,14 @@ export const updateProposedChangePath = (
 
   if (!foundAndUpdated) {
     const errMsg = `File change for path '${oldFilePath}' not found in lastLlmResponse. No update performed.`;
-    addLog('Proposed Change Card', errMsg, 'warning', undefined, undefined, true);
+    addLog(
+      'Proposed Change Card',
+      errMsg,
+      'warning',
+      undefined,
+      undefined,
+      true,
+    );
     setError(errMsg);
     return;
   }
@@ -424,7 +446,11 @@ export const updateProposedChangePath = (
     diffFilePath: newDiffFilePath,
     currentDiff: newCurrentDiff,
   });
-  addLog('Proposed Change Card', `File path updated from '${oldFilePath}' to '${trimmedNewFilePath}'.`, 'info');
+  addLog(
+    'Proposed Change Card',
+    `File path updated from '${oldFilePath}' to '${trimmedNewFilePath}'.`,
+    'info',
+  );
 };
 
 export const addOpenedTab = (filePath: string) => {
@@ -495,7 +521,14 @@ export const setIsFetchingFileContent = (isLoading: boolean) => {
 export const setFetchFileContentError = (message: string | null) => {
   aiEditorStore.setKey('fetchFileContentError', message);
   if (message) {
-    addLog('File Editor', `Failed to fetch file content: ${message}`, 'error', message, undefined, true);
+    addLog(
+      'File Editor',
+      `Failed to fetch file content: ${message}`,
+      'error',
+      message,
+      undefined,
+      true,
+    );
   }
 };
 
@@ -511,7 +544,14 @@ export const setIsSavingFileContent = (isLoading: boolean) => {
 export const setSaveFileContentError = (message: string | null) => {
   aiEditorStore.setKey('saveFileContentError', message);
   if (message) {
-    addLog('File Editor', `Failed to save file content: ${message}`, 'error', message, undefined, true);
+    addLog(
+      'File Editor',
+      `Failed to save file content: ${message}`,
+      'error',
+      message,
+      undefined,
+      true,
+    );
   }
 };
 
@@ -527,7 +567,11 @@ export const setIsOpenedFileDirty = (isDirty: boolean) => {
 
 export const setAutoApplyChanges = (value: boolean) => {
   aiEditorStore.setKey('autoApplyChanges', value);
-  addLog('Prompt Generator', `Auto-apply changes toggled: ${value ? 'ON' : 'OFF'}`, 'info');
+  addLog(
+    'Prompt Generator',
+    `Auto-apply changes toggled: ${value ? 'ON' : 'OFF'}`,
+    'info',
+  );
 };
 
 export const setIsBuilding = (building: boolean) => {
@@ -556,7 +600,12 @@ export const showGlobalSnackbar = (
   } else if (severity === 'info') {
     addLog('UI Notification', `Snackbar Info: ${message}`, 'info', message);
   } else if (severity === 'success') {
-    addLog('UI Notification', `Snackbar Success: ${message}`, 'success', message);
+    addLog(
+      'UI Notification',
+      `Snackbar Success: ${message}`,
+      'success',
+      message,
+    );
   }
 };
 
@@ -572,7 +621,14 @@ export const saveActiveFile = async () => {
 
   if (!openedFile || openedFileContent === null) {
     showGlobalSnackbar('No file or content to save.', 'error');
-    addLog('File Editor', 'Attempted to save, but no file or content available.', 'warning', undefined, undefined, true);
+    addLog(
+      'File Editor',
+      'Attempted to save, but no file or content available.',
+      'warning',
+      undefined,
+      undefined,
+      true,
+    );
     return;
   }
 
@@ -590,28 +646,43 @@ export const saveActiveFile = async () => {
       const msg = result.message || 'Failed to save file.';
       setSaveFileContentError(msg);
       showGlobalSnackbar(`Failed to save: ${msg}`, 'error');
-      addLog('File Editor', `Failed to save file: ${openedFile}`, 'error', msg, undefined, true);
+      addLog(
+        'File Editor',
+        `Failed to save file: ${openedFile}`,
+        'error',
+        msg,
+        undefined,
+        true,
+      );
     }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     setSaveFileContentError(`Failed to save file: ${errorMessage}`);
     showGlobalSnackbar(`Error saving: ${errorMessage}`, 'error');
-    addLog('File Editor', `Error saving file: ${openedFile}`, 'error', errorMessage, undefined, true);
+    addLog(
+      'File Editor',
+      `Error saving file: ${openedFile}`,
+      'error',
+      errorMessage,
+      undefined,
+      true,
+    );
   } finally {
     setIsSavingFileContent(false);
   }
 };
 
 export const discardActiveFileChanges = () => {
-  const {
-    openedFile,
-    initialFileContentSnapshot,
-    isOpenedFileDirty,
-  } = aiEditorStore.get();
+  const { openedFile, initialFileContentSnapshot, isOpenedFileDirty } =
+    aiEditorStore.get();
 
   if (!openedFile || !isOpenedFileDirty) {
     showGlobalSnackbar('No unsaved changes to discard.', 'info');
-    addLog('File Editor', 'Attempted to discard, but no unsaved changes.', 'info');
+    addLog(
+      'File Editor',
+      'Attempted to discard, but no unsaved changes.',
+      'info',
+    );
     return;
   }
 
@@ -637,19 +708,46 @@ export const performPostApplyActions = async (
   setIsBuilding(true); // Sets state for UI, and also logs start of build
   let buildPassed = false;
   try {
-    addLog('Build Process', 'Running `pnpm run build`...', 'info', `Command: pnpm run build in ${projectRoot}`);
+    addLog(
+      'Build Process',
+      'Running `pnpm run build`...',
+      'info',
+      `Command: pnpm run build in ${projectRoot}`,
+    );
     const buildResult = await runTerminalCommand('pnpm run build', projectRoot);
-    
+
     if (buildResult.exitCode !== 0) {
-      addLog('Build Process', `Build failed with exit code ${buildResult.exitCode}.`, 'error', buildResult.stderr, buildResult, true);
-      setError(`Build failed with exit code ${buildResult.exitCode}. Check output.`); // For immediate UI error
+      addLog(
+        'Build Process',
+        `Build failed with exit code ${buildResult.exitCode}.`,
+        'error',
+        buildResult.stderr,
+        buildResult,
+        true,
+      );
+      setError(
+        `Build failed with exit code ${buildResult.exitCode}. Check output.`,
+      ); // For immediate UI error
     } else {
-      addLog('Build Process', 'Project built successfully.', 'success', buildResult.stdout, buildResult);
+      addLog(
+        'Build Process',
+        'Project built successfully.',
+        'success',
+        buildResult.stdout,
+        buildResult,
+      );
       buildPassed = true;
     }
   } catch (buildError) {
     const errorMsg = `Failed to run build script: ${buildError instanceof Error ? buildError.message : String(buildError)}`;
-    addLog('Build Process', errorMsg, 'error', String(buildError), { stdout: '', stderr: String(buildError), exitCode: 1 }, true);
+    addLog(
+      'Build Process',
+      errorMsg,
+      'error',
+      String(buildError),
+      { stdout: '', stderr: String(buildError), exitCode: 1 },
+      true,
+    );
     setError(errorMsg);
   } finally {
     setIsBuilding(false); // Sets state for UI, and also logs end of build
@@ -660,34 +758,74 @@ export const performPostApplyActions = async (
     llmResponse?.gitInstructions &&
     llmResponse.gitInstructions.length > 0
   ) {
-    addLog('Git Automation', 'Executing AI-suggested git instructions...', 'info');
+    addLog(
+      'Git Automation',
+      'Executing AI-suggested git instructions...',
+      'info',
+    );
     let gitCommandsSuccessful = true;
     for (const command of llmResponse.gitInstructions) {
-      addLog('Git Automation', `Running git command: \`${command}\``, 'info', `Command: ${command} in ${projectRoot}`);
+      addLog(
+        'Git Automation',
+        `Running git command: \`${command}\``,
+        'info',
+        `Command: ${command} in ${projectRoot}`,
+      );
       try {
         const gitExecResult = await runTerminalCommand(command, projectRoot);
-        
+
         if (gitExecResult.exitCode !== 0) {
           const errMsg = `Git command failed: \`${command}\` (Exit Code: ${gitExecResult.exitCode}). See stderr.`;
-          addLog('Git Automation', errMsg, 'error', gitExecResult.stderr, gitExecResult, true);
+          addLog(
+            'Git Automation',
+            errMsg,
+            'error',
+            gitExecResult.stderr,
+            gitExecResult,
+            true,
+          );
           setError(errMsg);
           gitCommandsSuccessful = false;
           break;
         } else {
-          addLog('Git Automation', `Git command succeeded: \`${command}\`.`, 'success', gitExecResult.stdout, gitExecResult);
+          addLog(
+            'Git Automation',
+            `Git command succeeded: \`${command}\`.`,
+            'success',
+            gitExecResult.stdout,
+            gitExecResult,
+          );
         }
       } catch (gitExecError) {
         const errMsg = `Failed to execute git command \`${command}\`: ${gitExecError instanceof Error ? gitExecError.message : String(gitExecError)}`;
-        addLog('Git Automation', errMsg, 'error', String(gitExecError), { stdout: '', stderr: String(gitExecError), exitCode: 1 }, true);
+        addLog(
+          'Git Automation',
+          errMsg,
+          'error',
+          String(gitExecError),
+          { stdout: '', stderr: String(gitExecError), exitCode: 1 },
+          true,
+        );
         setError(errMsg);
         gitCommandsSuccessful = false;
         break;
       }
     }
     if (gitCommandsSuccessful) {
-      addLog('Git Automation', 'All AI-suggested git instructions executed successfully.', 'success');
+      addLog(
+        'Git Automation',
+        'All AI-suggested git instructions executed successfully.',
+        'success',
+      );
     } else {
-      addLog('Git Automation', 'Some AI-suggested git instructions failed.', 'warning', undefined, undefined, true);
+      addLog(
+        'Git Automation',
+        'Some AI-suggested git instructions failed.',
+        'warning',
+        undefined,
+        undefined,
+        true,
+      );
     }
   }
 };
@@ -699,17 +837,32 @@ export const applyAllProposedChanges = async (
   const state = aiEditorStore.get(); // Get current state for payload/response references
 
   if (changes.length === 0) {
-    addLog('AI Response Display', 'No changes to apply.', 'warning', undefined, undefined, true);
+    addLog(
+      'AI Response Display',
+      'No changes to apply.',
+      'warning',
+      undefined,
+      undefined,
+      true,
+    );
     setError('No changes to apply.');
     return;
   }
   if (!projectRoot) {
-    addLog('AI Response Display', 'Project root is not set for applying changes.', 'error', undefined, undefined, true);
+    addLog(
+      'AI Response Display',
+      'Project root is not set for applying changes.',
+      'error',
+      undefined,
+      undefined,
+      true,
+    );
     setError('Project root is not set for applying changes.');
     return;
   }
   if (!state.lastLlmResponse || !state.lastLlmGeneratePayload) {
-    const msg = 'AI generation response or payload missing for post-apply actions. Cannot proceed automatically.';
+    const msg =
+      'AI generation response or payload missing for post-apply actions. Cannot proceed automatically.';
     addLog('AI Response Display', msg, 'error', undefined, undefined, true);
     setError(msg);
     return;
@@ -718,17 +871,34 @@ export const applyAllProposedChanges = async (
   setApplyingChanges(true); // Logs start of apply process
   setError(null);
   setIsBuilding(false); // Make sure build is not considered running initially
-  addLog('AI Response Display', `Initiating automatic application of ${changes.length} proposed changes...`, 'info');
+  addLog(
+    'AI Response Display',
+    `Initiating automatic application of ${changes.length} proposed changes...`,
+    'info',
+  );
 
   try {
     const result = await apiApplyProposedChanges(changes, projectRoot);
-    result.messages.forEach(msg => addLog('AI Response Display', msg, 'info'));
+    result.messages.forEach((msg) =>
+      addLog('AI Response Display', msg, 'info'),
+    );
 
     if (!result.success) {
-      addLog('AI Response Display', 'Some changes failed to apply during automation.', 'error', result.messages.join('\n'), undefined, true);
+      addLog(
+        'AI Response Display',
+        'Some changes failed to apply during automation.',
+        'error',
+        result.messages.join('\n'),
+        undefined,
+        true,
+      );
       setError('Some changes failed to apply during automation. Check logs.');
     } else {
-      addLog('AI Response Display', 'All changes applied successfully via automation. Proceeding with post-apply actions (build & git).', 'success');
+      addLog(
+        'AI Response Display',
+        'All changes applied successfully via automation. Proceeding with post-apply actions (build & git).',
+        'success',
+      );
       await performPostApplyActions(
         projectRoot,
         state.lastLlmResponse,
@@ -744,7 +914,14 @@ export const applyAllProposedChanges = async (
     clearDiff();
   } catch (err) {
     const errorMsg = `Overall failure during automatic application of changes: ${err instanceof Error ? err.message : String(err)}`;
-    addLog('AI Response Display', errorMsg, 'error', String(err), undefined, true);
+    addLog(
+      'AI Response Display',
+      errorMsg,
+      'error',
+      String(err),
+      undefined,
+      true,
+    );
     setError(errorMsg);
   } finally {
     setApplyingChanges(false); // Logs end of apply process

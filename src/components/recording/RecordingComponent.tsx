@@ -1,15 +1,58 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from '@components/ui/Button';
-import { Icon } from '@mdi/react';
-import { Loading } from '@components/Loading';
-import { Modal } from '@components/VideoModal';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { editRecordingStore } from '@/stores/recordingStore';
+import {
+  Snackbar,
+  IconButton,
+  Box,
+  Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Button as MuiButton, // Alias to avoid conflict with custom Button component
+  Typography,
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  LinearProgress,
+  TextField,
+} from '@mui/material';
+import Button from '@/components/ui/Button';
+import Loading from '@/components/Loading';
+import VideoModal from '@/components/VideoModal'; // Assuming this is how it imports the player
+import {
+  Close,
+  CameraOutlined,
+  Mic,
+  PlayArrow,
+  Stop,
+  Videocam,
+  PhotoCamera,
+  MoreVert,
+  Download,
+  Delete,
+  Gif,
+  ScreenShare,
+  Edit,
+} from '@mui/icons-material';
 import { useStore } from '@nanostores/react';
-import { authStore } from '@stores/authStore';
+import { authStore } from '@/stores/authStore';
 import { recordingApi } from '@/api/recording';
 import {
   PaginationRecordingQueryDto,
   RecordingResultDto,
+  TranscodeToGifDto, // Import TranscodeToGifDto
+  TranscodeToGifResult,
+  UpdateRecordingDto,
 } from '@/types';
+import { useNavigate } from 'react-router-dom';
+import path from 'path-browserify';
+import { deleteMediaFile, getFileStreamUrl } from '@/api/media'; // Import media functions
+import { currentRecordingIdStore } from '@/stores/recordingStore';
 
 interface RecordingComponentProps {
   initialPage?: number;
@@ -22,156 +65,230 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
 }) => {
   const [recordings, setRecordings] = useState<RecordingResultDto[]>([]);
   const [isRecording, setIsRecording] = useState(false);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [isStartingRecording, setIsStartingRecording] = useState(false);
-  const [isStoppingRecording, setIsStoppingRecording] = useState(false);
-  const [isLoadingRecordings, setIsLoadingRecordings] = useState(true);
-  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
-  const [currentRecordingPath, setCurrentRecordingPath] = useState<string | null>(null);
-  const [currentRecordingStartedAt, setCurrentRecordingStartedAt] = useState<string | null>(null);
-  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<RecordingResultDto | null>(null);
-  const [currentPage, setCurrentPage] = useState(initialPage);
-  const [limit, setLimit] = useState(initialLimit);
-  const [totalRecordings, setTotalRecordings] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-
-  const $auth = useStore(authStore);
-  const userId = $auth.user?.id;
-
-  const fetchRecordings = useCallback(
-    async (page: number, limit: number) => {
-      setIsLoadingRecordings(true);
-      try {
-        if (!userId) {
-          console.warn('User ID not found');
-          return;
-        }
-
-        const params: PaginationRecordingQueryDto = { page, limit };
-        const response = await recordingApi.getRecordings(params);
-
-        setRecordings(response.items);
-        setTotalRecordings(response.total);
-        setTotalPages(Math.ceil(response.total / limit));
-        setCurrentPage(response.page);
-        setLimit(response.limit);
-      } catch (error) {
-        console.error('Error fetching recordings:', error);
-      } finally {
-        setIsLoadingRecordings(false);
-      }
-    },
-    [userId],
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>(
+    'success',
   );
+  const navigate = useNavigate();
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [selectedVideoSrc, setSelectedVideoSrc] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const [currentRecordingPath, setCurrentRecordingPath] = useState<
+    string | null
+  >(null);
+  const [currentRecordingStartedAt, setCurrentRecordingStartedAt] = useState<
+    string | null
+  >(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [isLoadingRecordings, setIsLoadingRecordings] = useState(false);
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(initialLimit);
+  const [selectedMedia, setSelectedMedia] = useState<RecordingResultDto | null>(
+    null,
+  );
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const videoPlayerRef = useRef<HTMLVideoElement>(null);
+  const $currentRecordingId = useStore(currentRecordingIdStore);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedRecording, setSelectedRecording] = useState<RecordingResultDto | null>(null);
+  const [editedRecordingData, setEditedRecordingData] = useState<UpdateRecordingDto>({
+    data: {},
+  });
 
-  const fetchRecordingStatus = useCallback(async () => {
+  const showSnackbar = (
+    message: string,
+    severity: 'success' | 'error' = 'success',
+  ) => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+  const handleSnackbarClose = (
+    event: React.SyntheticEvent | Event,
+    reason?: string,
+  ) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+  useEffect(() => {
+    if ($currentRecordingId) {
+      setIsRecording(true);
+    }
+  }, [$currentRecordingId]);
+  useEffect(() => {
+    loadRecordings();
+  }, [currentPage, limit]);
+
+  const loadRecordingStatus = async () => {
     setIsLoadingStatus(true);
     try {
-      if (!userId) {
-        console.warn('User ID not found');
-        return;
-      }
       const status = await recordingApi.recordingStatus();
       setIsRecording(status.isRecording);
-      setCurrentRecordingPath(status.currentRecordingPath);
-      setCurrentRecordingStartedAt(status.currentRecordingStartedAt || null);
+      setCurrentRecordingPath(status.path || null);
+      setCurrentRecordingStartedAt(status.startedAt || null);
     } catch (error) {
-      console.error('Error fetching recording status:', error);
+      console.error('Error loading recording status:', error);
+      showSnackbar(`Error loading recording status: ${error}`, 'error');
     } finally {
       setIsLoadingStatus(false);
     }
-  }, [userId]);
+  };
 
-  useEffect(() => {
-    if (userId) {
-      fetchRecordings(currentPage, limit);
-      fetchRecordingStatus();
+  const loadRecordings = async () => {
+    setIsLoadingRecordings(true);
+    try {
+      const recordingFiles = await recordingApi.getRecordings({
+        page: currentPage,
+        limit: limit,
+      });
+      setRecordings(recordingFiles.items);
+      setTotalPages(recordingFiles.totalPages || 1);
+    } catch (error) {
+      console.error('Error loading recordings:', error);
+      showSnackbar(`Error loading recordings: ${error}`, 'error');
+    } finally {
+      setIsLoadingRecordings(false);
     }
-  }, [userId, currentPage, limit, fetchRecordings, fetchRecordingStatus]);
+  };
 
-  const handleCaptureScreen = async () => {
+  const handleStartRecording = async () => {
+    setIsLoadingStatus(true);
+    try {
+      const recordingData = await recordingApi.startRecording();
+      console.log(recordingData, 'recordingData');
+      currentRecordingIdStore.set(recordingData.id);
+      setIsRecording(true);
+      showSnackbar('Recording started successfully!', 'success');
+      //loadRecordingStatus();
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      showSnackbar(`Error starting recording: ${error}`, 'error');
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  };
+
+  const handleStopRecording = async (recording?: RecordingResultDto) => {
+    setIsLoadingStatus(true);
+    try {
+      if (recording && recording.id) {
+        const recordingData =
+          await recordingApi.stopRecording(recording.id);
+        if (recordingData) {
+          showSnackbar('Recording stopped successfully!', 'success');
+          if ($currentRecordingId) currentRecordingIdStore.set(null);
+          await loadRecordings(); // Reload recordings after stopping
+          await loadRecordingStatus();
+        }
+      } else if ($currentRecordingId) {
+        const recordingData =
+          await recordingApi.stopRecording($currentRecordingId);
+        if (recordingData) {
+          setIsRecording(false);
+          showSnackbar('Recording stopped successfully!', 'success');
+          currentRecordingIdStore.set(null);
+          await loadRecordings(); // Reload recordings after stopping
+          await loadRecordingStatus();
+        }
+      } else {
+        showSnackbar('No recording in progress to stop.', 'warning');
+      }
+    } catch (error) {
+      console.error('Error stopping recording:', error);
+      showSnackbar(`Error stopping recording: ${error}`, 'error');
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  };
+
+  const handleCaptureScreenshot = async () => {
     setIsCapturing(true);
     try {
-      if (!userId) {
-        console.warn('User ID not found');
-        return;
-      }
       await recordingApi.capture();
-      await fetchRecordings(currentPage, limit);
-      await fetchRecordingStatus();
+      showSnackbar('Screenshot captured successfully!', 'success');
+      loadRecordings();
     } catch (error) {
-      console.error('Error capturing screen:', error);
+      console.error('Error capturing screenshot:', error);
+      showSnackbar(`Error capturing screenshot: ${error}`, 'error');
     } finally {
       setIsCapturing(false);
     }
   };
 
-  const handleStartRecording = async () => {
-    setIsStartingRecording(true);
+  const handleConvertToGif = async (recording: RecordingResultDto) => {
+    setIsLoadingStatus(true);
     try {
-      if (!userId) {
-        console.warn('User ID not found');
-        return;
-      }
-      await recordingApi.startRecording();
-      await fetchRecordingStatus();
+      console.log(recording);
+      const transcodeDto: TranscodeToGifDto = {
+        inputFilename: path.basename(recording.path),
+        fps: 15, // You can adjust these values
+        width: 720,
+        loop: 0,
+      };
+
+      const convertToGif = await recordingApi.convertToGif(transcodeDto);
+
+      showSnackbar(
+        `Converted ${transcodeDto.inputFilename} to GIF...`,
+        'success',
+      );
+
+      // Update recording data with animatedGif path
+      const updatedRecordingData = {
+        ...recording.data,
+        animatedGif: convertToGif.fullPath,
+      };
+
+      await recordingApi.updateRecording(recording.id, {
+        data: updatedRecordingData,
+      });
+
+      loadRecordings(); // Reload recordings after converting
     } catch (error) {
-      console.error('Error starting recording:', error);
+      console.error('Error converting to GIF:', error);
+      showSnackbar(
+        `Error converting ${recording.path} to GIF: ${error}`,
+        'error',
+      );
     } finally {
-      setIsStartingRecording(false);
+      setIsLoadingStatus(false);
     }
   };
 
-  const handleStopRecording = async () => {
-    setIsStoppingRecording(true);
+  const handleDeleteRecording = async (recording: RecordingResultDto) => {
+    setIsLoadingStatus(true);
     try {
-      if (!userId) {
-        console.warn('User ID not found');
-        return;
-      }
-      await recordingApi.stopRecording(currentRecordingPath || '');
-      await fetchRecordings(currentPage, limit);
-      await fetchRecordingStatus();
+      await recordingApi.deleteRecording(recording.id);
+      showSnackbar('Recording deleted successfully!', 'success');
+      loadRecordings();
     } catch (error) {
-      console.error('Error stopping recording:', error);
+      console.error('Error deleting recording:', error);
+      showSnackbar(`Error deleting recording: ${error}`, 'error');
     } finally {
-      setIsStoppingRecording(false);
+      setIsLoadingStatus(false);
     }
   };
 
-  const handleDeleteRecording = async (id: string, path: string) => {
-    if (window.confirm(`Are you sure you want to delete ${path}?`)) {
-      try {
-        // await recordingService.deleteRecording(id);
-        await fetchRecordings(currentPage, limit);
-      } catch (error) {
-        console.error('Error deleting recording:', error);
-      }
-    }
+  const handlePlayRecording = (recording: RecordingResultDto) => {
+    const videoUrl = getFileStreamUrl(recording.path);
+    setSelectedVideoSrc(videoUrl);
+    setVideoModalOpen(true);
   };
 
-  const handleDownloadFile = async (filePath: string, fileName: string) => {
-    try {
-      // await recordingService.downloadFile(filePath, fileName);
-    } catch (error) {
-      console.error('Error downloading file:', error);
-    }
-  };
-
-  const handleOpenMedia = (rec: RecordingResultDto) => {
-    setSelectedMedia(rec);
-    setIsMediaModalOpen(true);
-  };
-
-  const handleCloseMediaModal = () => {
-    setIsMediaModalOpen(false);
-    setSelectedMedia(null);
+  const handleCloseVideoModal = () => {
+    setVideoModalOpen(false);
+    setSelectedVideoSrc(null);
   };
 
   const getMediaUrl = (filePath: string) => {
-    // return recordingService.getMediaUrl(filePath);
-    return filePath; // temp fix
+    const videoUrl = getFileStreamUrl(filePath);
+    return videoUrl; // temp fix
   };
 
   const formatBytes = (bytes: number, decimals: number = 2) => {
@@ -192,310 +309,475 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
     }
   };
 
+  const handleOpenMedia = (recording: RecordingResultDto) => {
+    setSelectedMedia(recording);
+    setIsMediaModalOpen(true);
+  };
+
+  const handleCloseMediaModal = () => {
+    setIsMediaModalOpen(false);
+    setSelectedMedia(null);
+  };
+
+  const handleDownloadFile = async (filePath: string, fileName: string) => {
+    setIsLoadingStatus(true);
+    try {
+      const response = await fetch(getFileStreamUrl(filePath));
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      showSnackbar('Download started successfully!', 'success');
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      showSnackbar(`Error downloading file: ${error}`, 'error');
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  };
+  const handleEditRecording = (recording: RecordingResultDto) => {
+    setSelectedRecording(recording);
+    setEditedRecordingData({
+      data: recording.data,
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setSelectedRecording(null);
+    setEditedRecordingData({
+      data: {},
+    });
+  };
+
+  const handleUpdateRecording = async () => {
+    setIsLoadingStatus(true);
+    try {
+      if (selectedRecording) {
+        await recordingApi.updateRecording(selectedRecording.id, editedRecordingData);
+        showSnackbar('Recording updated successfully!', 'success');
+        loadRecordings();
+      }
+    } catch (error) {
+      console.error('Error updating recording:', error);
+      showSnackbar(`Error updating recording: ${error}`, 'error');
+    } finally {
+      setIsLoadingStatus(false);
+      handleCloseEditDialog();
+    }
+  };
+
+  const handleDataChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setEditedRecordingData((prev) => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        [name]: value,
+      },
+    }));
+  };
+
   return (
-    <div className="p-4 bg-dark  min-h-screen">
-      <h1 className="text-2xl font-bold mb-6">Screen Recording & Capture</h1>
+    <>
+      {isLoadingStatus && (
+        <LinearProgress
+          sx={{ width: '100%', flexShrink: 0, zIndex: 1200 }}
+        />
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* Recording Controls */}
-        <div className="bg-secondary p-4 rounded-lg shadow-md border">
-          <h2 className="text-xl font-semibold mb-4">Controls</h2>
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={handleCaptureScreen}
-              disabled={
-                isCapturing || isStartingRecording || isStoppingRecording
-              }
-              loading={isCapturing}
-              variant="primary"
-              size="lg"
-              title="Capture Screenshot"
-            >
-              <Icon icon="mdi:camera-outline" className="mr-2" />
-              {/* No text, icon only as per request */}
-            </Button>
+      <Box className="p-4 bg-dark min-h-screen">
+        <Typography
+          variant="h5"
+          component="h1"
+          className="text-2xl font-bold mb-6"
+        >
+          Screen Recording & Capture
+        </Typography>
 
-            {isRecording ? (
-              <Button
-                onClick={handleStopRecording}
-                disabled={
-                  isCapturing || isStartingRecording || isStoppingRecording
-                }
-                loading={isStoppingRecording}
-                variant="error"
-                size="lg"
-                title="Stop Recording"
-              >
-                <Icon icon="mdi:stop" />
-                {/* No text, icon only as per request */}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleStartRecording}
-                disabled={
-                  isCapturing || isStartingRecording || isStoppingRecording
-                }
-                loading={isStartingRecording}
-                variant="success"
-                size="lg"
-                title="Start Recording"
-              >
-                <Icon icon="mdi:record" />
-                {/* No text, icon only as per request */}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Current Status */}
-        <div className="bg-secondary p-4 rounded-lg shadow-md border ">
-          <h2 className="text-xl font-semibold mb-4">Current Status</h2>
-          {isLoadingStatus ? (
-            <Loading />
-          ) : (
-            <div>
-              <p className="text-lg">
-                Status:{' '}
-                <span
-                  className={`font-semibold ${isRecording ? 'text-green-400' : 'text-red-400'}`}
+        <Box className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Recording Controls */}
+          <Paper
+            elevation={3}
+            className="bg-secondary p-4 rounded-lg shadow-md border"
+          >
+            <Typography variant="h6" className="text-xl font-semibold mb-4">
+              Controls
+            </Typography>
+            <Box className="flex items-center gap-4">
+              <Box>
+                <IconButton
+                  color="primary"
+                  aria-label="start recording"
+                  disabled={isRecording}
+                  onClick={handleStartRecording}
                 >
-                  {isRecording ? 'RECORDING' : 'Idle'}
-                </span>
-              </p>
-              {currentRecordingPath && (
-                <p className="text-sm mt-2">
-                  File:{' '}
-                  <span className="font-mono text-gray-300 break-all">
-                    {currentRecordingPath.split('/').pop()}
-                  </span>
-                </p>
-              )}
-              {currentRecordingStartedAt && (
-                <p className="text-sm">
-                  Started At:{' '}
-                  {new Date(currentRecordingStartedAt).toLocaleString()}
-                </p>
-              )}
-              {!isRecording && (
-                <p className="text-sm italic text-gray-400 mt-2">
-                  No active recording. Click 'Start Recording' to begin.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+                  <Videocam />
+                </IconButton>
+                <IconButton
+                  color="secondary"
+                  aria-label="stop recording"
+                  disabled={!isRecording}
+                  onClick={handleStopRecording}
+                >
+                  <Stop />
+                </IconButton>
+                <IconButton
+                  color="info"
+                  aria-label="capture screenshot"
+                  disabled={isCapturing}
+                  onClick={handleCaptureScreenshot}
+                >
+                  {isCapturing ? (
+                    <CircularProgress size="small" />
+                  ) : (
+                    <PhotoCamera />
+                  )}
+                </IconButton>
+              </Box>
+            </Box>
+          </Paper>
 
-      {/* Recordings List */}
-      <h2 className="text-lg my-3">Saved Recordings & Screenshots</h2>
-      <div className="bg-dark rounded-lg shadow-md border">
-        {isLoadingRecordings ? (
-          <Loading />
-        ) : recordings.length === 0 ? (
-          <p className="text-gray-400">
-            No recordings or screenshots saved yet.
-          </p>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-neutral-300 dark:divide-neutral-800">
-                <thead className="bg-secondary">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                    >
-                      Name
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                    >
-                      Size
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                    >
-                      Created At
-                    </th>
-                    <th scope="col" className="relative px-6 py-3">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-800">
-                  {recordings.map((rec) => (
-                    <tr key={rec.id} className="hover:bg-neutral-800">
-                      <td className="px-2 py-3 whitespace-nowrap text-sm font-medium text-neutral-300 break-all flex items-center gap-2">
-                        {rec.type === 'screenRecord' &&
-                          (rec.status === 'finished' ||
-                            rec.status === 'ready') && (
-                            <Button
-                              onClick={() => handleOpenMedia(rec)}
-                              variant="primary"
-                              size="sm"
-                              title="Play Recording"
-                              className="flex-shrink-0"
-                            >
-                              <Icon icon="mdi:play" />
-                            </Button>
-                          )}
-                        {rec.type === 'screenShot' &&
-                          (rec.status === 'finished' ||
-                            rec.status === 'ready') && (
-                            <Button
-                              onClick={() => handleOpenMedia(rec)}
-                              variant="primary"
-                              size="sm"
-                              title="View Screenshot"
-                              className="flex-shrink-0"
-                            >
-                              <Icon icon="mdi:play" />
-                            </Button>
-                          )}
-                        <span className="flex-grow">
-                          {rec.path.split('/').pop()}
-                        </span>
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm">
-                        <Icon
-                          icon="mdi:circle"
-                          className={`
-                            w-3 h-3 rounded-full inline-block mr-2
-                            ${
-                              rec.status === 'finished' ||
-                              rec.status === 'ready'
-                                ? 'text-green-500' // Success
-                                : rec.status === 'started'
-                                  ? 'text-blue-500' // Info
-                                  : 'text-red-500' // Error/Other
-                            }
-                          `}
-                          title={rec.status}
-                        />
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-neutral-400">
-                        {rec.data?.fileSize &&
-                        typeof rec.data.fileSize === 'number'
-                          ? formatBytes(rec.data.fileSize)
-                          : 'N/A'}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-neutral-400">
-                        {new Date(rec.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end space-x-2">
-                          <Button
-                            onClick={() =>
-                              handleDownloadFile(
-                                rec.path,
-                                rec.path.split('/').pop()!,
-                              )
-                            }
-                            variant="secondary"
-                            size="sm"
-                            title="Download"
-                          >
-                            <Icon icon="mdi:download" />
-                          </Button>
-                          <Button
-                            onClick={() =>
-                              handleDeleteRecording(
-                                rec.id,
-                                rec.path.split('/').pop()!,
-                              )
-                            }
-                            variant="error"
-                            size="sm"
-                            title="Delete"
-                          >
-                            <Icon icon="mdi:trash-can-outline" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <nav className="flex items-center justify-between p-2 border-t">
-                <div className="flex-1 flex justify-between sm:justify-end">
-                  <Button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    variant="secondary"
-                    size="sm"
-                    className="mr-2"
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    variant="secondary"
-                    size="sm"
-                  >
-                    Next
-                  </Button>
-                </div>
-                <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-center">
-                  <p className="text-sm text-gray-400">
-                    Page <span className="font-medium">{currentPage}</span> of{' '}
-                    <span className="font-medium">{totalPages}</span>
-                  </p>
-                </div>
-              </nav>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Media Playback Modal */}
-      <Modal
-        isOpen={isMediaModalOpen}
-        onClose={handleCloseMediaModal}
-        title={
-          selectedMedia
-            ? `Opened: ${selectedMedia.path.split('/').pop()}`
-            : 'Media Player'
-        }
-        size="lg" // Changed to fullscreen as per request for modal sizes
-        className="bg-secondary flex flex-col" // Added flex flex-col for internal layout
-      >
-        {selectedMedia && (
-          <div className="flex items-center justify-center bg-secondary rounded-md flex-grow">
-            {selectedMedia.type === 'screenRecord' ? (
-              <video
-                controls
-                src={getMediaUrl(selectedMedia.path)}
-                className="w-full h-full object-contain"
-                autoPlay
-              >
-                Your browser does not support the video tag.
-              </video>
-            ) : selectedMedia.type === 'screenShot' ? (
-              <img
-                src={getMediaUrl(selectedMedia.path)}
-                alt={selectedMedia.path.split('/').pop()}
-                className="w-full h-full object-contain"
-              />
+          {/* Current Status */}
+          <Paper
+            elevation={3}
+            className="bg-secondary p-4 rounded-lg shadow-md border"
+          >
+            <Typography variant="h6" className="text-xl font-semibold mb-4">
+              Current Status
+            </Typography>
+            {isLoadingStatus ? (
+              <CircularProgress />
             ) : (
-              <p className="text-gray-400">Unsupported media type.</p>
+              <div>
+                <Typography variant="body1" className="text-lg">
+                  Status:{' '}
+                  <span
+                    className={`font-semibold ${
+                      isRecording ? 'text-green-400' : 'text-red-400'
+                    }`}
+                  >
+                    {isRecording ? 'RECORDING' : 'Idle'}
+                  </span>
+                </Typography>
+                {currentRecordingPath && (
+                  <Typography variant="body2" className="text-sm mt-2">
+                    File:{' '}
+                    <span className="font-mono text-gray-300 break-all">
+                      {currentRecordingPath.split('/').pop()}
+                    </span>
+                  </Typography>
+                )}
+                {currentRecordingStartedAt && (
+                  <Typography variant="body2" className="text-sm">
+                    Started At:{' '}
+                    {new Date(currentRecordingStartedAt).toLocaleString()}
+                  </Typography>
+                )}
+                {!isRecording && (
+                  <Typography
+                    variant="body2"
+                    className="text-sm italic text-gray-400 mt-2"
+                  >
+                    No active recording. Click 'Start Recording' to begin.
+                  </Typography>
+                )}
+              </div>
             )}
-          </div>
-        )}
-      </Modal>
-    </div>
+          </Paper>
+        </Box>
+
+        {/* Recordings List */}
+        <Typography variant="h6" className="text-lg my-3">
+          Saved Recordings & Screenshots
+        </Typography>
+        <Paper elevation={3} className="bg-dark rounded-lg shadow-md border">
+          {isLoadingRecordings ? (
+            <LinearProgress
+              sx={{ width: '100%', flexShrink: 0, zIndex: 1200 }}
+            />
+          ) : recordings.length === 0 ? (
+            <Typography variant="body1" className="text-gray-400">
+              No recordings or screenshots saved yet.
+            </Typography>
+          ) : (
+            <>
+              <TableContainer className="overflow-x-auto">
+                <Table className="min-w-full divide-y divide-neutral-300 dark:divide-neutral-800">
+                  <TableHead className="bg-secondary">
+                    <TableRow>
+                      <TableCell className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Name
+                      </TableCell>
+                      <TableCell className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Status
+                      </TableCell>
+                      <TableCell className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Size
+                      </TableCell>
+                      <TableCell className="px-2 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Created At
+                      </TableCell>
+                      <TableCell className="relative px-6 py-3">
+                        <span className="sr-only">Actions</span>
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody className="divide-y divide-neutral-800">
+                    {recordings.map((rec) => (
+                      <TableRow key={rec.id} className="hover:bg-neutral-800">
+                        <TableCell className="px-2 py-3 whitespace-nowrap text-sm font-medium text-neutral-300 break-all flex items-center gap-2">
+                          {rec.type === 'screenRecord' &&
+                            (rec.status === 'finished' ||
+                              rec.status === 'ready') && (
+                              <Button
+                                onClick={() => handleOpenMedia(rec)}
+                                variant="primary"
+                                size="sm"
+                                title="Play Recording"
+                                className="flex-shrink-0"
+                              >
+                                <PlayArrow />
+                              </Button>
+                            )}
+                          {rec.type === 'screenRecord' &&
+                            rec.status === 'recording' && (
+                              <Button
+                                onClick={() => handleStopRecording(rec)}
+                                variant="primary"
+                                size="sm"
+                                title="Stop Recording"
+                                className="flex-shrink-0"
+                              >
+                                <Stop />
+                              </Button>
+                            )}
+                          {rec.type === 'screenShot' &&
+                            (rec.status === 'finished' ||
+                              rec.status === 'ready') && (
+                              <Button
+                                onClick={() => handleOpenMedia(rec)}
+                                variant="primary"
+                                size="sm"
+                                title="View Screenshot"
+                                className="flex-shrink-0"
+                              >
+                                <PhotoCamera />
+                              </Button>
+                            )}
+                          {rec.type === 'screenRecord' && <ScreenShare />}
+                          {rec.type === 'screenShot' && <CameraOutlined />}
+                          <span className="flex-grow">
+                            {rec.path.split('/').pop()}
+                          </span>
+                        </TableCell>
+                        <TableCell className="px-2 py-3 whitespace-nowrap text-sm">
+                          {/* Status Indicator (replace with a visual cue if desired) */}
+                          {rec.status}
+                        </TableCell>
+                        <TableCell className="px-2 py-3 whitespace-nowrap text-sm text-neutral-400">
+                          {rec.data?.fileSize &&
+                          typeof rec.data.fileSize === 'number'
+                            ? formatBytes(rec.data.fileSize)
+                            : 'N/A'}
+                        </TableCell>
+                        <TableCell className="px-2 py-3 whitespace-nowrap text-sm text-neutral-400">
+                          {new Date(rec.createdAt).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="px-2 py-3 whitespace-nowrap text-right text-sm font-medium">
+                          <Box className="flex justify-end space-x-2">
+                            {rec.type === 'screenRecord' &&
+                              !rec.data?.animatedGif && (
+                                <Button
+                                  onClick={() => handleConvertToGif(rec)}
+                                  variant="secondary"
+                                  size="sm"
+                                  title="Convert to GIF"
+                                >
+                                  <Gif />
+                                </Button>
+                              )}
+                            {rec.data?.animatedGif && (
+                              <Button
+                                onClick={() =>
+                                  handleOpenMedia({
+                                    ...rec,
+                                    path: rec.data.animatedGif!,
+                                    type: 'animatedGif',
+                                  })
+                                }
+                                variant="secondary"
+                                size="sm"
+                                title="View Animated GIF"
+                              >
+                                <Gif />
+                              </Button>
+                            )}
+                            <Button
+                              onClick={() =>
+                                handleDownloadFile(
+                                  rec.path,
+                                  rec.path.split('/').pop()!,
+                                )
+                              }
+                              variant="secondary"
+                              size="sm"
+                              title="Download"
+                            >
+                              <Download />
+                            </Button>
+                             <Button
+                              onClick={() => handleEditRecording(rec)}
+                              variant="secondary"
+                              size="sm"
+                              title="Edit"
+                            >
+                              <Edit />
+                            </Button>
+                            <Button
+                              onClick={() => handleDeleteRecording(rec)}
+                              variant="error"
+                              size="sm"
+                              title="Delete"
+                            >
+                              <Delete />
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <Box className="flex items-center justify-between p-2 border-t">
+                  <Box className="flex-1 flex justify-between sm:justify-end">
+                    <Button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      variant="secondary"
+                      size="sm"
+                      className="mr-2"
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      Next
+                    </Button>
+                  </Box>
+                  <Box className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-center">
+                    <Typography
+                      variant="body2"
+                      className="text-sm text-gray-400"
+                    >
+                      Page <span className="font-medium">{currentPage}</span> of{' '}
+                      <span className="font-medium">{totalPages}</span>
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+            </>
+          )}
+        </Paper>
+
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={handleSnackbarClose}
+            severity={snackbarSeverity}
+            sx={{ width: '100%' }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+
+        <Dialog
+          open={isMediaModalOpen}
+          onClose={handleCloseMediaModal}
+          fullWidth
+          maxWidth="md"
+        >
+          <DialogTitle>{selectedMedia?.path.split('/').pop()}</DialogTitle>
+          <DialogContent>
+            {selectedMedia && (
+              <Box className="flex items-center justify-center bg-secondary rounded-md flex-grow">
+                {selectedMedia.type === 'screenRecord' ? (
+                  <video
+                    src={getMediaUrl(selectedMedia.path)}
+                    autoPlay={true}
+                    controls={true}
+                  ></video>
+                ) : selectedMedia.type === 'screenShot' ? (
+                  <img
+                    src={getMediaUrl(selectedMedia.path)}
+                    alt={selectedMedia.path.split('/').pop()}
+                    className="w-full h-auto object-contain rounded-md"
+                  />
+                ) : selectedMedia.type === 'animatedGif' ? (
+                  <img
+                    src={getMediaUrl(selectedMedia.path)}
+                    alt={selectedMedia.path.split('/').pop()}
+                    className="w-full h-auto object-contain rounded-md"
+                  />
+                ) : (
+                  <Typography variant="body1" className="text-gray-400">
+                    Unsupported media type.
+                  </Typography>
+                )}
+              </Box>
+            )}
+          </DialogContent>
+        </Dialog>
+        {/* Edit Recording Dialog */}
+        <Dialog open={editDialogOpen} onClose={handleCloseEditDialog} fullWidth maxWidth="sm">
+          <DialogTitle>Edit Recording Data</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              id="duration"
+              name="duration"
+              label="Duration"
+              type="number"
+              fullWidth
+              value={editedRecordingData.data?.duration || ''}
+              onChange={handleDataChange}
+            />
+            <TextField
+              margin="dense"
+              id="fileSize"
+              name="fileSize"
+              label="File Size"
+              type="number"
+              fullWidth
+              value={editedRecordingData.data?.fileSize || ''}
+              onChange={handleDataChange}
+            />
+          </DialogContent>
+          <Box className="flex justify-end p-4">
+            <Button onClick={handleCloseEditDialog} variant="secondary" className="mr-2">Cancel</Button>
+            <Button onClick={handleUpdateRecording} variant="primary">Update</Button>
+          </Box>
+        </Dialog>
+      </Box>
+    </>
   );
 };
 

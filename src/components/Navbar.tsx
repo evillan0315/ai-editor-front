@@ -59,13 +59,13 @@ const Navbar: React.FC = () => {
     Record<string, ScriptExecutionState>
   >({});
 
-  const [scriptMenuAnchorEl, setScriptMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [scriptMenuAnchorEl, setScriptMenuAnchorEl] =
+    useState<null | HTMLElement>(null);
   const [appsMenuAnchorEl, setAppsMenuAnchorEl] = useState<null | HTMLElement>(
     null,
   ); // New state for apps menu anchor
-  const [profileMenuAnchorEl, setProfileMenuAnchorEl] = useState<null | HTMLElement>(
-    null,
-  ); // State for profile menu anchor
+  const [profileMenuAnchorEl, setProfileMenuAnchorEl] =
+    useState<null | HTMLElement>(null); // State for profile menu anchor
 
   const isScriptMenuOpen = Boolean(scriptMenuAnchorEl);
   const isAppsMenuOpen = Boolean(appsMenuAnchorEl);
@@ -76,9 +76,8 @@ const Navbar: React.FC = () => {
       setScriptsLoading(true);
       const loadScripts = async () => {
         try {
-          const { scripts, packageManager: detectedPackageManager } = await fetchProjectScripts(
-            currentProjectPath,
-          );
+          const { scripts, packageManager: detectedPackageManager } =
+            await fetchProjectScripts(currentProjectPath);
           setPackageScripts(scripts);
           setPackageManager(detectedPackageManager);
         } finally {
@@ -433,11 +432,7 @@ const Navbar: React.FC = () => {
             aria-label="toggle sidebar"
             sx={{ color: theme.palette.text.primary }}
           >
-            {$isRightSidebarVisible ? (
-              <ViewSidebar />
-            ) : (
-              <ViewSidebarOff />
-            )}
+            {$isRightSidebarVisible ? <ViewSidebar /> : <ViewSidebarOff />}
           </IconButton>
           {authLoading ? (
             <CircularProgress

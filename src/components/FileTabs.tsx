@@ -37,7 +37,13 @@ interface FileTabsProps extends BoxProps {
   toggleTerminalVisibility: () => void;
 }
 
-const FileTabs: React.FC<FileTabsProps> = ({ sx, setShowTerminal, showTerminal, toggleTerminalVisibility, ...otherProps }) => {
+const FileTabs: React.FC<FileTabsProps> = ({
+  sx,
+  setShowTerminal,
+  showTerminal,
+  toggleTerminalVisibility,
+  ...otherProps
+}) => {
   const {
     openedTabs,
     openedFile,
@@ -61,6 +67,9 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, setShowTerminal, showTerminal, 
 
   const handleCloseAllTabs = (event: React.MouseEvent) => {
     event.stopPropagation();
+    openedTabs.forEach((filePath) => {
+      removeOpenedTab(filePath);
+    });
     //removeAllOpenedTabs();
   };
 

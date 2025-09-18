@@ -13,7 +13,7 @@ import {
   setError, // For global errors to be displayed at the top level
 } from '@/stores/aiEditorStore';
 import { addLog } from '@/stores/logStore'; // NEW: Import addLog for logging page events
-import { resizeTerminal } from '@/stores/terminalStore'; 
+import { resizeTerminal } from '@/stores/terminalStore';
 
 import {
   Box,
@@ -66,8 +66,6 @@ const AiEditorPage: React.FC = () => {
   // New derived state for the loader
   const isAIGeneratingOrModifying = loading || applyingChanges || isBuilding;
 
-  
-
   useEffect(() => {
     // Clear diff when project or response changes
     clearDiff();
@@ -92,12 +90,20 @@ const AiEditorPage: React.FC = () => {
         setUploadedFile(null, null, null);
         setLastLlmResponse(null);
         setOpenedFile(null); // Close any currently viewed file when switching generator types
-        addLog('AI Editor Page', `Request type set from URL: ${newRequestType}`, 'info');
+        addLog(
+          'AI Editor Page',
+          `Request type set from URL: ${newRequestType}`,
+          'info',
+        );
       }
     } else if (aiEditorStore.get().requestType !== RequestType.LLM_GENERATION) {
       // If no requestType param, default to LLM_GENERATION
       setRequestType(RequestType.LLM_GENERATION); // This action also logs internally
-      addLog('AI Editor Page', `Defaulting request type to LLM_GENERATION (no URL param).`, 'info');
+      addLog(
+        'AI Editor Page',
+        `Defaulting request type to LLM_GENERATION (no URL param).`,
+        'info',
+      );
     }
 
     // Update LlmOutputFormat from URL
@@ -109,42 +115,62 @@ const AiEditorPage: React.FC = () => {
         LlmOutputFormat[outputFormatParam as keyof typeof LlmOutputFormat];
       if (aiEditorStore.get().llmOutputFormat !== newLlmOutputFormat) {
         setLlmOutputFormat(newLlmOutputFormat); // This action also logs internally
-        addLog('AI Editor Page', `Output format set from URL: ${newLlmOutputFormat}`, 'info');
+        addLog(
+          'AI Editor Page',
+          `Output format set from URL: ${newLlmOutputFormat}`,
+          'info',
+        );
       }
     } else if (aiEditorStore.get().llmOutputFormat !== LlmOutputFormat.YAML) {
       // If no outputFormat param, default to YAML (matching store default)
       setLlmOutputFormat(LlmOutputFormat.YAML); // This action also logs internally
-      addLog('AI Editor Page', `Defaulting output format to YAML (no URL param).`, 'info');
+      addLog(
+        'AI Editor Page',
+        `Defaulting output format to YAML (no URL param).`,
+        'info',
+      );
     }
   }, [searchParams]);
 
   // Resizing handlers
-  const startResize = useCallback((e: React.MouseEvent) => {
-    setIsResizing(true);
-    setInitialMouseY(e.clientY);
-    setInitialTerminalHeight(terminalHeight);
-    document.body.style.cursor = 'ns-resize'; // Change cursor globally
-  }, [terminalHeight]);
+  const startResize = useCallback(
+    (e: React.MouseEvent) => {
+      setIsResizing(true);
+      setInitialMouseY(e.clientY);
+      setInitialTerminalHeight(terminalHeight);
+      document.body.style.cursor = 'ns-resize'; // Change cursor globally
+    },
+    [terminalHeight],
+  );
 
-  const resize = useCallback((e: MouseEvent) => {
-    if (!isResizing) return;
-    const deltaY = e.clientY - initialMouseY;
-    // For bottom-to-top resize:
-    // If mouse moves up (deltaY is negative), terminal height increases.
-    // If mouse moves down (deltaY is positive), terminal height decreases.
-    let newHeight = initialTerminalHeight - deltaY;
+  const resize = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing) return;
+      const deltaY = e.clientY - initialMouseY;
+      // For bottom-to-top resize:
+      // If mouse moves up (deltaY is negative), terminal height increases.
+      // If mouse moves down (deltaY is positive), terminal height decreases.
+      let newHeight = initialTerminalHeight - deltaY;
 
-    const MIN_TERMINAL_HEIGHT = 30; // Minimum pixel height for terminal
-    const MIN_VIEWER_HEIGHT = 150; // Minimum pixel height for OpenedFileViewer
+      const MIN_TERMINAL_HEIGHT = 30; // Minimum pixel height for terminal
+      const MIN_VIEWER_HEIGHT = 150; // Minimum pixel height for OpenedFileViewer
 
-    const totalResizableHeight = contentAreaRef.current?.clientHeight || 0;
-    // Calculate max possible terminal height respecting minimum viewer height
-    const maxPossibleTerminalHeight = Math.max(0, totalResizableHeight - MIN_VIEWER_HEIGHT - RESIZE_HANDLE_HEIGHT);
+      const totalResizableHeight = contentAreaRef.current?.clientHeight || 0;
+      // Calculate max possible terminal height respecting minimum viewer height
+      const maxPossibleTerminalHeight = Math.max(
+        0,
+        totalResizableHeight - MIN_VIEWER_HEIGHT - RESIZE_HANDLE_HEIGHT,
+      );
 
-    // Constrain newHeight within min and max bounds
-    newHeight = Math.max(MIN_TERMINAL_HEIGHT, Math.min(newHeight, maxPossibleTerminalHeight));
-    setTerminalHeight(newHeight);
-  }, [isResizing, initialMouseY, initialTerminalHeight]);
+      // Constrain newHeight within min and max bounds
+      newHeight = Math.max(
+        MIN_TERMINAL_HEIGHT,
+        Math.min(newHeight, maxPossibleTerminalHeight),
+      );
+      setTerminalHeight(newHeight);
+    },
+    [isResizing, initialMouseY, initialTerminalHeight],
+  );
 
   const stopResize = useCallback(() => {
     setIsResizing(false);
@@ -197,7 +223,7 @@ const AiEditorPage: React.FC = () => {
     };
   }, [handleTerminalResize]);
 
-const toggleTerminalVisibility = () => {
+  const toggleTerminalVisibility = () => {
     setShowTerminal((prevShowTerminal) => !prevShowTerminal);
   };
 
@@ -262,10 +288,10 @@ const toggleTerminalVisibility = () => {
             <FileTree projectRoot={currentProjectPath} />
           ) : (
             <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              No project opened.
-            </Typography>
-          </Box>
+              <Typography variant="body2" color="text.secondary">
+                No project opened.
+              </Typography>
+            </Box>
           )}
         </Box>
 
@@ -281,7 +307,12 @@ const toggleTerminalVisibility = () => {
           }}
         >
           {/* File Tabs */}
-          <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} setShowTerminal={setShowTerminal} showTerminal={showTerminal} toggleTerminalVisibility={toggleTerminalVisibility} />
+          <FileTabs
+            sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }}
+            setShowTerminal={setShowTerminal}
+            showTerminal={showTerminal}
+            toggleTerminalVisibility={toggleTerminalVisibility}
+          />
 
           {/* Opened File Viewer, Resizer, and Terminal container */}
           <Box
@@ -306,33 +337,34 @@ const toggleTerminalVisibility = () => {
             </Box>
 
             {showTerminal && (
-<>
-              <Box
-              onMouseDown={startResize}
-              sx={{
-                height: RESIZE_HANDLE_HEIGHT,
-                bgcolor: theme.palette.divider,
-                cursor: 'ns-resize',
-                flexShrink: 0, // Prevent the handle from shrinking
-                '&:hover': {
-                  bgcolor: theme.palette.primary.main, // Visual feedback on hover
-                },
-              }}
-            >
-            </Box>
-            <Box
-              sx={{
-                height: terminalHeight, // Controlled height
-                minHeight: '50px', // Minimum terminal height
-                flexShrink: 0, // Prevent terminal from shrinking below its height
-                overflow: 'hidden', // XTerminal component itself handles internal scrolling
-              }}
-            >
-              <XTerminal onLogout={handleTerminalLogout} terminalHeight={terminalHeight} />
-            </Box>
+              <>
+                <Box
+                  onMouseDown={startResize}
+                  sx={{
+                    height: RESIZE_HANDLE_HEIGHT,
+                    bgcolor: theme.palette.divider,
+                    cursor: 'ns-resize',
+                    flexShrink: 0, // Prevent the handle from shrinking
+                    '&:hover': {
+                      bgcolor: theme.palette.primary.main, // Visual feedback on hover
+                    },
+                  }}
+                ></Box>
+                <Box
+                  sx={{
+                    height: terminalHeight, // Controlled height
+                    minHeight: '50px', // Minimum terminal height
+                    flexShrink: 0, // Prevent terminal from shrinking below its height
+                    overflow: 'hidden', // XTerminal component itself handles internal scrolling
+                  }}
+                >
+                  <XTerminal
+                    onLogout={handleTerminalLogout}
+                    terminalHeight={terminalHeight}
+                  />
+                </Box>
               </>
             )}
-            
           </Box>
 
           {/* Prompt Generator Panel and AiResponseDisplay are now in the right sidebar */}

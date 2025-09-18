@@ -1,8 +1,15 @@
 import { getToken } from '@/stores/authStore';
 import {
   BaseReponseDto,
+  RecordingStartResponse,
+  RecordingStopResponse,
+  PaginationRecordingQueryDto,
+  PaginationRecordingResultDto,
+  TranscodeToGifDto,
+  RecordingResultDto,
+  UpdateRecordingDto,
+  TranscodeToGifResult
 } from '@/types';
-import { PaginationRecordingQueryDto, PaginationRecordingResultDto, TranscodeToGifDto } from '@/types/recording';
 
 const API_BASE_URL = `/api`;
 
@@ -30,14 +37,16 @@ const fetchWithAuth = async (url: string, options?: RequestInit) => {
   return fetch(url, { ...options, headers });
 };
 
-
 export const recordingApi = {
   startRecording: async () => {
     try {
-      const response = await fetchWithAuth(`${API_BASE_URL}/recording/record-start`, {
-        method: 'POST',
-      });
-      return handleResponse<BaseReponseDto>(response);
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/recording/record-start`,
+        {
+          method: 'POST',
+        },
+      );
+      return handleResponse<RecordingStartResponse>(response);
     } catch (error) {
       console.error('Error starting recording:', error);
       throw error;
@@ -45,10 +54,13 @@ export const recordingApi = {
   },
   stopRecording: async (id: string) => {
     try {
-       const response = await fetchWithAuth(`${API_BASE_URL}/recording/record-stop?id=${id}`, {
-        method: 'POST',
-      });
-      return handleResponse<BaseReponseDto>(response);
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/recording/record-stop?id=${id}`,
+        {
+          method: 'POST',
+        },
+      );
+      return handleResponse<RecordingStopResponse>(response);
     } catch (error) {
       console.error('Error stopping recording:', error);
       throw error;
@@ -56,9 +68,12 @@ export const recordingApi = {
   },
   capture: async () => {
     try {
-      const response = await fetchWithAuth(`${API_BASE_URL}/recording/capture`, {
-        method: 'POST',
-      });
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/recording/capture`,
+        {
+          method: 'POST',
+        },
+      );
       return handleResponse<BaseReponseDto>(response);
     } catch (error) {
       console.error('Error capturing screenshot:', error);
@@ -66,7 +81,7 @@ export const recordingApi = {
     }
   },
   recordingStatus: async () => {
-     try {
+    try {
       const response = await fetchWithAuth(`${API_BASE_URL}/recording/status`);
       return handleResponse<BaseReponseDto>(response);
     } catch (error) {
@@ -75,18 +90,23 @@ export const recordingApi = {
     }
   },
   convertToGif: async (dto: TranscodeToGifDto) => {
-     try {
-      const response = await fetchWithAuth(`${API_BASE_URL}/ffmpeg/transcode-gif`, {
-         method: 'POST',
-        body: JSON.stringify(dto),
-      });
-      return handleResponse<BaseReponseDto>(response);
+    try {
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/ffmpeg/transcode-gif`,
+        {
+          method: 'POST',
+          body: JSON.stringify(dto),
+        },
+      );
+      return handleResponse<TranscodeToGifResult>(response);
     } catch (error) {
       console.error('Error converting to GIF:', error);
       throw error;
     }
   },
-  getRecordings: async (query: PaginationRecordingQueryDto = {}): Promise<PaginationRecordingResultDto> => {
+  getRecordings: async (
+    query: PaginationRecordingQueryDto = {},
+  ): Promise<PaginationRecordingResultDto> => {
     try {
       const queryString = new URLSearchParams(
         query as Record<string, any>,
@@ -100,6 +120,58 @@ export const recordingApi = {
       return handleResponse<PaginationRecordingResultDto>(response);
     } catch (error) {
       console.error('Error fetching paginated recordings:', error);
+      throw error;
+    }
+  },
+  getRecording: async (id: string): Promise<RecordingResultDto> => {
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/recording/${id}`, {
+        method: 'GET',
+      });
+      return handleResponse<RecordingResultDto>(response);
+    } catch (error) {
+      console.error('Error fetching recording:', error);
+      throw error;
+    }
+  },
+  updateRecording: async (
+    id: string,
+    dto: UpdateRecordingDto,
+  ): Promise<UpdateRecordingDto> => {
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/recording/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(dto),
+      });
+      return handleResponse<UpdateRecordingDto>(response);
+    } catch (error) {
+      console.error('Error updating recording:', error);
+      throw error;
+    }
+  },
+  findRecording: async (id: string): Promise<RecordingResultDto> => {
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/recording/${id}`, {
+        method: 'GET',
+      });
+      return handleResponse<RecordingResultDto>(response);
+    } catch (error) {
+      console.error('Error fetching recording:', error);
+      throw error;
+    }
+  },
+  deleteRecording: async (id: string): Promise<void> => {
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/recording/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const errorData: ApiError = await response.json();
+        throw new Error(errorData.message || `API error: ${response.status}`);
+      }
+      return;
+    } catch (error) {
+      console.error('Error deleting recording:', error);
       throw error;
     }
   },

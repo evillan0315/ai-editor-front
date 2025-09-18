@@ -9,10 +9,14 @@ export interface PaginationRecordingResultDto {
   page: number;
   limit: number;
 }
-
-export interface RecordingResultDto {
+export interface RecordingStartResponse {
   id: string;
   path: string;
+}
+export interface RecordingStopResponse extends RecordingStartResponse {
+  status: string;
+}
+export interface RecordingResultDto extends RecordingStartResponse {
   type: string;
   pid: string;
   status: string;

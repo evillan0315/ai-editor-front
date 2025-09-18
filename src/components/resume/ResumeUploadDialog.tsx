@@ -26,7 +26,7 @@ interface ResumeUploadDialogProps {
   error: string | null;
 }
 
-const StyledDropzone = styled('div')<{disabled?: boolean}>({
+const StyledDropzone = styled('div')<{ disabled?: boolean }>({
   border: '2px dashed #cccccc',
   borderRadius: '4px',
   padding: '20px',
@@ -46,7 +46,13 @@ const StyledErrorMessage = styled(Typography)({
   marginTop: '16px',
 });
 
-const ResumeUploadDialog = ({ open, onClose, onUpload, loading, error }: ResumeUploadDialogProps) => {
+const ResumeUploadDialog = ({
+  open,
+  onClose,
+  onUpload,
+  loading,
+  error,
+}: ResumeUploadDialogProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -54,7 +60,10 @@ const ResumeUploadDialog = ({ open, onClose, onUpload, loading, error }: ResumeU
     setSelectedFile(file);
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, multiple: false });
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    multiple: false,
+  });
 
   const handleUpload = () => {
     if (selectedFile) {
@@ -90,15 +99,32 @@ const ResumeUploadDialog = ({ open, onClose, onUpload, loading, error }: ResumeU
           {isDragActive ? (
             <Typography>Drop the file here...</Typography>
           ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}
+            >
               <CloudUploadIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-              <Typography>Drag 'n' drop a file here, or click to select file</Typography>
-              <Typography variant="caption">Supported formats: PDF, DOCX</Typography>
+              <Typography>
+                Drag 'n' drop a file here, or click to select file
+              </Typography>
+              <Typography variant="caption">
+                Supported formats: PDF, DOCX
+              </Typography>
             </Box>
           )}
         </StyledDropzone>
         {selectedFile && (
-          <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box
+            sx={{
+              mt: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
             <Typography>Selected File: {selectedFile.name}</Typography>
           </Box>
         )}
@@ -112,7 +138,11 @@ const ResumeUploadDialog = ({ open, onClose, onUpload, loading, error }: ResumeU
         <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedFile}>
+        <Button
+          variant="contained"
+          onClick={handleUpload}
+          disabled={loading || !selectedFile}
+        >
           {loading ? <CircularProgress size={24} color="inherit" /> : 'Upload'}
         </Button>
       </DialogActions>

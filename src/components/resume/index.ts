@@ -9,5 +9,3 @@ export * from './SkillsTab';
 export * from './PersonalInfoTab';
 export * from './Sidebar';
 export * from './EducationTab';
-
-

@@ -110,7 +110,9 @@ const KanbanBoardPage: React.FC = () => {
   const handleSave = (taskData: Task) => {
     if (taskData.id) {
       // Update existing task
-      setTasks(tasks.map((task) => (task.id === taskData.id ? taskData : task)));
+      setTasks(
+        tasks.map((task) => (task.id === taskData.id ? taskData : task)),
+      );
     } else {
       // Create new task
       const newTask = {
@@ -127,7 +129,10 @@ const KanbanBoardPage: React.FC = () => {
     handleClose();
   };
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, taskId: number) => {
+  const handleDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    taskId: number,
+  ) => {
     e.dataTransfer.setData('taskId', taskId.toString());
   };
 
@@ -140,9 +145,7 @@ const KanbanBoardPage: React.FC = () => {
     const taskId = parseInt(e.dataTransfer.getData('taskId'));
 
     setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, status } : task
-      )
+      tasks.map((task) => (task.id === taskId ? { ...task, status } : task)),
     );
   };
 
@@ -180,7 +183,9 @@ const KanbanBoardPage: React.FC = () => {
                   {column.title}
                 </Typography>
                 <Chip
-                  label={tasks.filter((task) => task.status === column.id).length}
+                  label={
+                    tasks.filter((task) => task.status === column.id).length
+                  }
                   size="small"
                   color="primary"
                 />
@@ -200,7 +205,14 @@ const KanbanBoardPage: React.FC = () => {
                         <Typography variant="subtitle1" component="div">
                           {task.title}
                         </Typography>
-                        <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        <Box
+                          sx={{
+                            mt: 1,
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 0.5,
+                          }}
+                        >
                           {task.labels.map((label) => (
                             <Chip key={label} label={label} size="small" />
                           ))}
@@ -230,7 +242,8 @@ const KanbanBoardPage: React.FC = () => {
                       </CardContent>
                     </Card>
                   ))}
-                {tasks.filter((task) => task.status === column.id).length === 0 && (
+                {tasks.filter((task) => task.status === column.id).length ===
+                  0 && (
                   <Typography variant="body2" color="textSecondary">
                     No tasks in this column
                   </Typography>
@@ -266,7 +279,12 @@ interface TaskModalProps {
   onClose: () => void;
 }
 
-const TaskModal: React.FC<TaskModalProps> = ({ task, onSave, onDelete, onClose }) => {
+const TaskModal: React.FC<TaskModalProps> = ({
+  task,
+  onSave,
+  onDelete,
+  onClose,
+}) => {
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
   const [status, setStatus] = useState(task?.status || 'todo');
@@ -288,9 +306,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onSave, onDelete, onClose }
       title,
       description,
       status,
-      labels: labels.split(',').map((l) => l.trim()).filter((l) => l),
+      labels: labels
+        .split(',')
+        .map((l) => l.trim())
+        .filter((l) => l),
       dueDate,
-      assignee: assignees.find((a) => a.id === parseInt(assignee)) || assignees[0],
+      assignee:
+        assignees.find((a) => a.id === parseInt(assignee)) || assignees[0],
     });
   };
 

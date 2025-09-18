@@ -19,20 +19,24 @@ const InitialEditorViewer: React.FC = () => {
 
   return (
     <Box
-      className='flex flex-col items-center justify-center h-full'
+      className="flex flex-col items-center justify-center h-full"
       sx={{
         bgcolor: theme.palette.background.default,
         color: theme.palette.text.primary,
       }}
     >
-      <Typography variant='h4' gutterBottom>
+      <Typography variant="h4" gutterBottom>
         Welcome to the AI Editor
       </Typography>
-      <Typography variant='body1' paragraph>
+      <Typography variant="body1" paragraph>
         Start by opening an existing file or creating a new one.
       </Typography>
-      <Box className='flex gap-4'>
-        <Button variant='contained' startIcon={<AddIcon />} onClick={handleOpenNewProjectDialog}>
+      <Box className="flex gap-4">
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenNewProjectDialog}
+        >
           New Project
         </Button>
       </Box>

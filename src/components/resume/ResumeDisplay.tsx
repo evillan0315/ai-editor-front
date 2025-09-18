@@ -21,9 +21,7 @@ const ResumeDisplay = ({ content }: ResumeDisplayProps) => {
   return (
     <StyledPaper elevation={3}>
       {content ? (
-        <StyledTypography variant="body1">
-          {content}
-        </StyledTypography>
+        <StyledTypography variant="body1">{content}</StyledTypography>
       ) : (
         <Typography variant="body1">No resume content to display.</Typography>
       )}

@@ -16,7 +16,7 @@ import { isRightSidebarVisible } from '@/stores/uiStore';
 import LinearProgress from '@mui/material/LinearProgress';
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
-import  AiSidebarContent  from '@/components/AiSidebarContent';
+import AiSidebarContent from '@/components/AiSidebarContent';
 
 // Constants for layout
 const NAVBAR_HEIGHT = 64; // Approximate height of MUI AppBar
@@ -174,7 +174,7 @@ const Layout: React.FC = () => {
           >
             <Outlet />
           </main>
-          {$isRightSidebarVisible &&  (
+          {$isRightSidebarVisible && (
             <>
               {/* Resizer handle for the right sidebar */}
               <div

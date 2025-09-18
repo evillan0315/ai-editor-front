@@ -282,8 +282,6 @@ export const TerminalPage: React.FC<TerminalPageProps> = () => {
             onLogout={handleAppLogout}
             terminalHeight={terminalHeight}
           />
-
-          
         </Box>
       </Paper>
 

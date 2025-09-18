@@ -213,7 +213,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
           right: 0,
         }}
       >
-        { /*<Box
+        {/*<Box
           sx={{
             color: '#4ec9b0',
             marginRight: '8px',
@@ -260,7 +260,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
           placeholder="Type a command..."
           style={{
             flexGrow: 1,
-       
+
             backgroundColor: 'transparent',
             border: 'none',
             color:

@@ -39,8 +39,6 @@ const LlmGenerationContent: React.FC = () => {
         color: theme.palette.text.primary,
       }}
     >
-      
-
       {/* Prompt Generator Panel (collapsible) - Sticky to the bottom */}
       <Paper
         elevation={3}
@@ -62,7 +60,7 @@ const LlmGenerationContent: React.FC = () => {
           // No mb here as it's the last element in the column and gap is used
         }}
       >
-        {<AiResponseDisplay /> }
+        {<AiResponseDisplay />}
         <Box
           sx={{
             display: 'flex',

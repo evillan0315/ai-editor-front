@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Box, Container, Grid, Paper, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 
-import TemplatesTab  from '@/components/resume/TemplatesTab';
+import TemplatesTab from '@/components/resume/TemplatesTab';
 import ResumePreview from '@/components/resume/ResumePreview';
 import SkillsTab from '@/components/resume/SkillsTab';
 import EducationTab from '@/components/resume/EducationTab';
@@ -16,7 +16,7 @@ import {
   ExperienceDto,
   PersonalInfoDto,
   ResumeTemplateDto,
-  Template
+  Template,
 } from '@/types';
 
 // Styled components
@@ -54,9 +54,27 @@ interface ResumeForm {
 
 // Constants
 const templates: Template[] = [
-  { id: 1, name: 'Modern Blue', color: '#1976d2', textColor: '#1976d2', borderColor: '#1976d2' },
-  { id: 2, name: 'Professional Grey', color: '#616161', textColor: '#616161', borderColor: '#616161' },
-  { id: 3, name: 'Executive Purple', color: '#7b1fa2', textColor: '#7b1fa2', borderColor: '#7b1fa2' },
+  {
+    id: 1,
+    name: 'Modern Blue',
+    color: '#1976d2',
+    textColor: '#1976d2',
+    borderColor: '#1976d2',
+  },
+  {
+    id: 2,
+    name: 'Professional Grey',
+    color: '#616161',
+    textColor: '#616161',
+    borderColor: '#616161',
+  },
+  {
+    id: 3,
+    name: 'Executive Purple',
+    color: '#7b1fa2',
+    textColor: '#7b1fa2',
+    borderColor: '#7b1fa2',
+  },
 ];
 
 const initialFormData: ResumeForm = {
@@ -71,16 +89,25 @@ const initialFormData: ResumeForm = {
   experiences: [
     { id: 1, position: '', company: '', duration: '', description: '' },
   ],
-  education: [
-    { id: 1, degree: '', institution: '', year: '' },
-  ],
+  education: [{ id: 1, degree: '', institution: '', year: '' }],
   skills: [],
 };
 
 const skillOptions: string[] = [
-  'JavaScript', 'React', 'Node.js', 'Python', 'HTML/CSS', 'UI/UX Design',
-  'Project Management', 'Communication', 'Team Leadership', 'Problem Solving',
-  'Data Analysis', 'Cloud Computing', 'DevOps', 'Agile Methodologies',
+  'JavaScript',
+  'React',
+  'Node.js',
+  'Python',
+  'HTML/CSS',
+  'UI/UX Design',
+  'Project Management',
+  'Communication',
+  'Team Leadership',
+  'Problem Solving',
+  'Data Analysis',
+  'Cloud Computing',
+  'DevOps',
+  'Agile Methodologies',
 ];
 
 // Main ResumeBuilder Component
@@ -91,8 +118,12 @@ function ResumeBuilder() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const resumeRef = useRef<HTMLDivElement>(null);
 
-  const handleInputChange = (section: keyof ResumeForm, field: string, value: string) => {
-    setFormData(prev => ({
+  const handleInputChange = (
+    section: keyof ResumeForm,
+    field: string,
+    value: string,
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       [section]: {
         ...(prev[section] as any),
@@ -101,17 +132,21 @@ function ResumeBuilder() {
     }));
   };
 
-  const handleExperienceChange = (id: number, field: keyof ExperienceDto, value: string) => {
-    setFormData(prev => ({
+  const handleExperienceChange = (
+    id: number,
+    field: keyof ExperienceDto,
+    value: string,
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      experiences: prev.experiences.map(exp =>
+      experiences: prev.experiences.map((exp) =>
         exp.id === id ? { ...exp, [field]: value } : exp,
       ),
     }));
   };
 
   const addExperience = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       experiences: [
         ...prev.experiences,
@@ -128,24 +163,28 @@ function ResumeBuilder() {
 
   const removeExperience = (id: number) => {
     if (formData.experiences.length > 1) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        experiences: prev.experiences.filter(exp => exp.id !== id),
+        experiences: prev.experiences.filter((exp) => exp.id !== id),
       }));
     }
   };
 
-  const handleEducationChange = (id: number, field: keyof EducationDto, value: string) => {
-    setFormData(prev => ({
+  const handleEducationChange = (
+    id: number,
+    field: keyof EducationDto,
+    value: string,
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      education: prev.education.map(edu =>
+      education: prev.education.map((edu) =>
         edu.id === id ? { ...edu, [field]: value } : edu,
       ),
     }));
   };
 
   const addEducation = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       education: [
         ...prev.education,
@@ -161,18 +200,16 @@ function ResumeBuilder() {
 
   const removeEducation = (id: number) => {
     if (formData.education.length > 1) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        education: prev.education.filter(edu => edu.id !== id),
+        education: prev.education.filter((edu) => edu.id !== id),
       }));
     }
   };
 
   const toggleSkill = (skill: string) => {
-    setSelectedSkills(prev =>
-      prev.includes(skill)
-        ? prev.filter(s => s !== skill)
-        : [...prev, skill],
+    setSelectedSkills((prev) =>
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
     );
   };
 
@@ -181,14 +218,14 @@ function ResumeBuilder() {
     let total = 0;
 
     // Personal info
-    Object.values(formData.personalInfo).forEach(value => {
+    Object.values(formData.personalInfo).forEach((value) => {
       total++;
       if (value && value.trim() !== '') completed++;
     });
 
     // Experiences
-    formData.experiences.forEach(exp => {
-      Object.values(exp).forEach(value => {
+    formData.experiences.forEach((exp) => {
+      Object.values(exp).forEach((value) => {
         if (typeof value === 'string') {
           total++;
           if (value && value.trim() !== '') completed++;
@@ -197,8 +234,8 @@ function ResumeBuilder() {
     });
 
     // Education
-    formData.education.forEach(edu => {
-      Object.values(edu).forEach(value => {
+    formData.education.forEach((edu) => {
+      Object.values(edu).forEach((value) => {
         if (typeof value === 'string') {
           total++;
           if (value && value.trim() !== '') completed++;
@@ -227,7 +264,12 @@ function ResumeBuilder() {
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'personal':
-        return <PersonalInfoTab formData={formData} handleInputChange={handleInputChange} />;
+        return (
+          <PersonalInfoTab
+            formData={formData}
+            handleInputChange={handleInputChange}
+          />
+        );
       case 'experience':
         return (
           <ExperienceTab
@@ -247,7 +289,13 @@ function ResumeBuilder() {
           />
         );
       case 'skills':
-        return <SkillsTab selectedSkills={selectedSkills} toggleSkill={toggleSkill} skillOptions={skillOptions} />;
+        return (
+          <SkillsTab
+            selectedSkills={selectedSkills}
+            toggleSkill={toggleSkill}
+            skillOptions={skillOptions}
+          />
+        );
       case 'templates':
         return (
           <TemplatesTab
@@ -257,7 +305,12 @@ function ResumeBuilder() {
           />
         );
       default:
-        return <PersonalInfoTab formData={formData} handleInputChange={handleInputChange} />;
+        return (
+          <PersonalInfoTab
+            formData={formData}
+            handleInputChange={handleInputChange}
+          />
+        );
     }
   };
 

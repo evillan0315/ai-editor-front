@@ -103,10 +103,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
     setOpenedFileContent(value); // This action handles setting `isOpenedFileDirty` implicitly or through the effect above
   };
 
-  if (!openedFile)
-    return (
-      <InitialEditorViewer />
-    ); // Show welcome message when no file is opened
+  if (!openedFile) return <InitialEditorViewer />; // Show welcome message when no file is opened
 
   const isLoadingContent = isFetchingFileContent;
   const isDisabled = isLoadingContent || isSavingFileContent; // Disable editing if saving or fetching

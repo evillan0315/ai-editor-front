@@ -256,7 +256,6 @@ export interface ProfileMenuItem {
   icon: React.ElementType; // For Material UI Icons
 }
 
-
 export interface ContextMenuItem {
   type?: 'item' | 'divider' | 'header';
   label?: string;
@@ -369,4 +368,3 @@ export interface GeminiLiveAudioState {
   loading: boolean; // General loading state for session actions or turns
   error: string | null;
 }
-

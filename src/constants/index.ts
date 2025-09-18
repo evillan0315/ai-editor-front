@@ -136,9 +136,6 @@ export const ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT = `
   }
 `.replace(/^\s+/gm, '');
 
-
-
-
 // ---------------- TypeScript Types ----------------
 
 export type FileAction = 'add' | 'modify' | 'delete' | 'repair' | 'analyze';
