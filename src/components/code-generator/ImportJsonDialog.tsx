@@ -16,8 +16,8 @@ import { Diagnostic, linter } from '@codemirror/lint';
 
 import { CodeGeneratorData } from './CodeGeneratorMain';
 import { useStore } from '@nanostores/react';
-import { aiEditorStore, setLastLlmResponse } from '@/stores/aiEditorStore';
-import CodeMirrorComponent from '@/components/codemirror/CodeMirror';
+import { llmStore, setLastLlmResponse } from '@/stores/llmStore';
+import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 export interface ImportDialogProps {
   open: boolean;
   onClose: () => void;
@@ -31,7 +31,7 @@ export const ImportJsonDialog: React.FC<ImportDialogProps> = ({
 }) => {
   const theme = useTheme();
   const [jsonContent, setJsonContent] = useState<string>('');
-  const { lastLlmResponse } = useStore(aiEditorStore);
+  const { lastLlmResponse } = useStore(llmStore);
 
   const validateJson = useCallback((text: string): readonly Diagnostic[] => {
     const diagnostics: Diagnostic[] = [];
@@ -52,7 +52,7 @@ export const ImportJsonDialog: React.FC<ImportDialogProps> = ({
     try {
       console.log(jsonContent, 'jsonContent');
       const data: CodeGeneratorData = JSON.parse(jsonContent);
-
+      console.log(data, 'data');
       setLastLlmResponse(data);
       onImport(data);
     } catch (e: any) {
@@ -96,10 +96,11 @@ export const ImportJsonDialog: React.FC<ImportDialogProps> = ({
         }}
       >
         <Box>
-          <CodeMirrorComponent
+          <CodeMirrorEditor
             value={jsonContent}
             onChange={onChange}
             filePath={`temp.json`}
+            height="200px"
           />
         </Box>
       </DialogContent>

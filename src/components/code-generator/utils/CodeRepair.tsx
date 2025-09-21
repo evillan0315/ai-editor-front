@@ -1,5 +1,5 @@
 import React from 'react';
-import CodeMirrorComponent from '@/components/codemirror/CodeMirror';
+import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { Undo as UndoIcon, Redo as RedoIcon } from '@mui/icons-material';
 import AutoFixIcon from '@mui/icons-material/DeveloperMode';
@@ -7,12 +7,16 @@ interface CodeRepairProps {
   value: string;
   onChange: (value: string) => void;
   filePath: string;
+  height?: string;
+  width?: string;
 }
 
 export const CodeRepair: React.FC<CodeRepairProps> = ({
   value,
   onChange,
   filePath,
+  height,
+  width,
 }) => {
   const handleFix = () => {
     console.log('Fixing code...');
@@ -38,16 +42,18 @@ export const CodeRepair: React.FC<CodeRepairProps> = ({
         position: 'relative',
       }}
     >
-      <CodeMirrorComponent
+      <CodeMirrorEditor
         value={value}
         onChange={onChange}
         filePath={filePath}
+        height={height ? height : '100%'}
+        width={width ? width : '100%'}
       />
       <Box
         sx={{
           position: 'absolute',
           top: 0,
-          right: 0,
+          right: -4,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',

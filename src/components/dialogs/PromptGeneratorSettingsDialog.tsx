@@ -23,7 +23,7 @@ import {
   setAiInstruction,
   setExpectedOutputInstruction,
 } from '@/stores/llmStore';
-import CodeMirrorComponent from '@/components/codemirror/CodeMirror';
+import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import MarkdownEditor from '@/components/MarkdownEditor'; // ✅ New rich editor
 
 interface PromptGeneratorSettingsDialogProps {
@@ -40,10 +40,12 @@ const PromptGeneratorSettingsDialog: React.FC<
   /** Local editable states */
   const [localAiInstruction, setLocalAiInstruction] =
     React.useState(aiInstruction);
-  const [localInstructionSchema, setLocalInstructionSchema] =
-    React.useState(INSTRUCTION_SCHEMA_OUTPUT);
-  const [localInstructionExample, setLocalInstructionExample] =
-    React.useState(INSTRUCTION_EXAMPLE_OUTPUT);
+  const [localInstructionSchema, setLocalInstructionSchema] = React.useState(
+    INSTRUCTION_SCHEMA_OUTPUT,
+  );
+  const [localInstructionExample, setLocalInstructionExample] = React.useState(
+    INSTRUCTION_EXAMPLE_OUTPUT,
+  );
 
   React.useEffect(() => {
     setLocalAiInstruction(aiInstruction);
@@ -116,15 +118,22 @@ ${localInstructionExample}
           }}
         >
           <AccordionSummary
-            expandIcon={<ExpandMoreIcon sx={{ color: theme.palette.text.primary }} />}
+            expandIcon={
+              <ExpandMoreIcon sx={{ color: theme.palette.text.primary }} />
+            }
           >
             <Typography sx={{ color: theme.palette.text.primary }}>
               Instruction Schema Output (JSON Schema)
             </Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0 }}>
-            <Box sx={{ borderTop: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }}>
-              <CodeMirrorComponent
+            <Box
+              sx={{
+                borderTop: `1px solid ${theme.palette.divider}`,
+                overflow: 'hidden',
+              }}
+            >
+              <CodeMirrorEditor
                 value={localInstructionSchema}
                 onChange={setLocalInstructionSchema}
                 language="json"
@@ -143,15 +152,22 @@ ${localInstructionExample}
           }}
         >
           <AccordionSummary
-            expandIcon={<ExpandMoreIcon sx={{ color: theme.palette.text.primary }} />}
+            expandIcon={
+              <ExpandMoreIcon sx={{ color: theme.palette.text.primary }} />
+            }
           >
             <Typography sx={{ color: theme.palette.text.primary }}>
               Instruction Example Output (Valid JSON)
             </Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0 }}>
-            <Box sx={{ borderTop: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }}>
-              <CodeMirrorComponent
+            <Box
+              sx={{
+                borderTop: `1px solid ${theme.palette.divider}`,
+                overflow: 'hidden',
+              }}
+            >
+              <CodeMirrorEditor
                 value={localInstructionExample}
                 onChange={setLocalInstructionExample}
                 language="json"

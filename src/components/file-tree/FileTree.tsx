@@ -7,18 +7,19 @@ import {
   Alert,
   Paper,
   IconButton,
-  useTheme, // New: Import Chip for dirty file indicator
+  useTheme,
+  TextField, // Import TextField for the search component
 } from '@mui/material';
 import FileTreeItem from './FileTreeItem';
 import {
   fileTreeStore,
   loadInitialTree,
   clearFileTree,
-  loadChildrenForDirectory, // New: Import for refreshing a directory
+  loadChildrenForDirectory,
   setSelectedFile,
   projectRootDirectoryStore,
 } from '@/stores/fileTreeStore';
-import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
+import { llmStore, showGlobalSnackbar } from '@/stores/llmStore';
 
 import { ContextMenuItem, FileEntry } from '@/types';
 import { showFileTreeContextMenu } from '@/stores/contextMenuStore';
@@ -34,15 +35,16 @@ import {
   FolderOpenOutlined as FolderOpenIcon,
   DriveFileMove as DriveFileMoveIcon,
   FileCopy as FileCopyIcon,
+  ArrowUpward as ArrowUpwardIcon, // Icon for going up a directory
 } from '@mui/icons-material';
 import { FileTreeContextMenuRenderer } from './FileTreeContextMenuRenderer';
 import {
   CreateFileOrFolderDialog,
-  RenameDialog, // New: Import RenameDialog
-  OperationPathDialog, // New: Import OperationPathDialog
-} from '@/components/dialogs'; // New: Import dialogs
-import { deleteFile as apiDeleteFile } from '@/api/file'; // New: Import deleteFile API
-import * as path from 'path-browserify'; // Import path-browserify
+  RenameDialog,
+  OperationPathDialog,
+} from '@/components/dialogs';
+import { deleteFile as apiDeleteFile } from '@/api/file';
+import * as path from 'path-browserify';
 import {
   isTerminalVisible,
   setShowTerminal,
@@ -52,34 +54,34 @@ import {
 interface FileTreeProps {
   //projectRoot?: string;
 }
+
 const FileTree: React.FC<FileTreeProps> = () => {
-  const {
-    files: treeFiles,
-    isFetchingTree,
-    fetchTreeError,
-  } = useStore(fileTreeStore);
-  const { scanPathsInput } = useStore(aiEditorStore);
+  const { files: treeFiles, isFetchingTree, fetchTreeError } = useStore(
+    fileTreeStore,
+  );
+  const { scanPathsInput } = useStore(llmStore);
   const projectRoot = useStore(projectRootDirectoryStore);
   const showTerminal = useStore(isTerminalVisible);
   const theme = useTheme();
 
-  // State for create file/folder dialog
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false); // True for folder, false for file
-  const [pathForNewItem, setPathForNewItem] = useState(''); // The parent path for the new item
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [pathForNewItem, setPathForNewItem] = useState('');
 
-  // States for rename dialog
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [itemToRename, setItemToRename] = useState<FileEntry | null>(null);
 
-  // States for copy/move dialog
-  const [isOperationPathDialogOpen, setIsOperationPathDialogOpen] =
-    useState(false);
+  const [isOperationPathDialogOpen, setIsOperationPathDialogOpen] = useState(
+    false,
+  );
   const [itemForOperation, setItemForOperation] = useState<FileEntry | null>(
     null,
   );
   const [operationMode, setOperationMode] = useState<'copy' | 'move'>('copy');
   const [terminalDialogOpen, setTerminalDialogOpen] = useState(false);
+
+  // State for search
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (projectRoot) {
@@ -90,21 +92,15 @@ const FileTree: React.FC<FileTreeProps> = () => {
     };
   }, [projectRoot]);
 
-  // Helper to refresh a directory based on its path
   const refreshPath = useCallback(
     async (targetPath: string) => {
-      // Determine if the targetPath is a file or a folder.
-      // For operations on files (delete, rename), refresh its parent.
-      // For operations on folders, refresh the folder itself (to show new children if any)
-      // or its parent.
       const parentDir = path.dirname(targetPath);
-      const isRoot = parentDir === targetPath; // If dirname returns same path, it's likely a root or drive letter
+      const isRoot = parentDir === targetPath;
       const pathToRefresh = isRoot ? targetPath : parentDir;
 
       if (pathToRefresh) {
         await loadChildrenForDirectory(pathToRefresh);
       } else if (projectRoot) {
-        // Fallback to refresh project root if no specific parent
         await loadInitialTree(projectRoot);
       }
     },
@@ -114,18 +110,18 @@ const FileTree: React.FC<FileTreeProps> = () => {
   const handleRefreshTree = () => {
     if (projectRoot) {
       loadInitialTree(projectRoot);
-      showGlobalSnackbar('File tree refreshed.', 'info'); // Use global snackbar
+      showGlobalSnackbar('File tree refreshed.', 'info');
     }
   };
 
   const handleCreateSuccess = useCallback(
     (newPath: string) => {
       const parentDir = path.dirname(newPath);
-      refreshPath(parentDir); // Refresh the parent directory of the new item
+      refreshPath(parentDir);
       showGlobalSnackbar(
         `${isCreatingFolder ? 'Folder' : 'File'} created successfully at ${newPath}`,
         'success',
-      ); // Use global snackbar
+      );
     },
     [isCreatingFolder, refreshPath],
   );
@@ -134,23 +130,22 @@ const FileTree: React.FC<FileTreeProps> = () => {
     async (node: FileEntry) => {
       if (
         window.confirm(
-          `Are you sure you want to delete ${node.name}? This action cannot be undone.`, // Corrected template string
+          `Are you sure you want to delete ${node.name}? This action cannot be undone.`,
         )
       ) {
         try {
           const result = await apiDeleteFile(node.path);
           if (result.success) {
-            showGlobalSnackbar(result.message, 'success'); // Use global snackbar
-            // After deletion, refresh the parent directory
+            showGlobalSnackbar(result.message, 'success');
             refreshPath(node.path);
           } else {
-            showGlobalSnackbar(result.message || 'Failed to delete.', 'error'); // Use global snackbar
+            showGlobalSnackbar(result.message || 'Failed to delete.', 'error');
           }
         } catch (err: any) {
           showGlobalSnackbar(
             `Error deleting: ${err.message || String(err)}`,
             'error',
-          ); // Use global snackbar
+          );
         }
       }
     },
@@ -159,9 +154,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
   const handleRenameSuccess = useCallback(
     (oldPath: string, newPath: string) => {
-      // Refresh old parent directory (in case path changes significantly, e.g. move-rename)
       refreshPath(oldPath);
-      // Refresh new parent directory
       refreshPath(newPath);
       showGlobalSnackbar('Item renamed successfully!', 'success');
     },
@@ -170,11 +163,10 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
   const handleOperationSuccess = useCallback(
     (sourcePath: string, destinationPath: string) => {
-      // For move, refresh both source's parent and destination's parent
       if (operationMode === 'move') {
-        refreshPath(sourcePath); // Refresh old parent
+        refreshPath(sourcePath);
       }
-      refreshPath(destinationPath); // Refresh new parent/destination folder
+      refreshPath(destinationPath);
       showGlobalSnackbar(
         `${operationMode === 'copy' ? 'Copied' : 'Moved'} successfully!`,
         'success',
@@ -186,26 +178,23 @@ const FileTree: React.FC<FileTreeProps> = () => {
   const renderContextMenuItems = useCallback(
     (node: FileEntry): ContextMenuItem[] => {
       const isFile = node.type === 'file';
-      const parentPath = path.dirname(node.path); // Always get the immediate parent
+      const parentPath = path.dirname(node.path);
 
       const items: ContextMenuItem[] = [
-        // Open File / Open Folder
         {
           label: isFile ? 'Open File' : 'Open Folder',
           icon: <OpenInNewIcon fontSize="small" />,
           action: (file) => {
             if (file.type === 'file') {
               setSelectedFile(file.path);
-              showGlobalSnackbar(`Opening file: ${file.name}`, 'info'); // Use global snackbar
+              showGlobalSnackbar(`Opening file: ${file.name}`, 'info');
             } else {
-              // For folders, just expand/collapse in tree and show info
-              showGlobalSnackbar(`Folder selected: ${file.name}`, 'info'); // Use global snackbar
+              showGlobalSnackbar(`Folder selected: ${file.name}`, 'info');
             }
           },
         },
         { type: 'divider' },
         {
-          // New File
           label: 'New File...',
           icon: <NoteAddIcon fontSize="small" />,
           action: (file) => {
@@ -216,7 +205,6 @@ const FileTree: React.FC<FileTreeProps> = () => {
           },
         },
         {
-          // New Folder
           label: 'New Folder...',
           icon: <CreateNewFolderIcon fontSize="small" />,
           action: (file) => {
@@ -228,7 +216,6 @@ const FileTree: React.FC<FileTreeProps> = () => {
         },
         { type: 'divider' },
         {
-          // Rename
           label: 'Rename...',
           icon: <EditIcon fontSize="small" />,
           action: (file) => {
@@ -237,7 +224,6 @@ const FileTree: React.FC<FileTreeProps> = () => {
           },
         },
         {
-          // Copy
           label: 'Copy...',
           icon: <FileCopyIcon fontSize="small" />,
           action: (file) => {
@@ -247,7 +233,6 @@ const FileTree: React.FC<FileTreeProps> = () => {
           },
         },
         {
-          // Move
           label: 'Move...',
           icon: <DriveFileMoveIcon fontSize="small" />,
           action: (file) => {
@@ -258,16 +243,14 @@ const FileTree: React.FC<FileTreeProps> = () => {
         },
         { type: 'divider' },
         {
-          // Copy Path
           label: 'Copy Path',
           icon: <ContentCopyIcon fontSize="small" />,
           action: (file) => {
             navigator.clipboard.writeText(file.path);
-            showGlobalSnackbar('Path copied to clipboard!', 'success'); // Use global snackbar
+            showGlobalSnackbar('Path copied to clipboard!', 'success');
           },
         },
         {
-          // Open Terminal Here (for folders only)
           label: 'Open Terminal Here',
           icon: <TerminalIcon fontSize="small" />,
           action: (file) => {
@@ -281,11 +264,10 @@ const FileTree: React.FC<FileTreeProps> = () => {
         },
         { type: 'divider' },
         {
-          // Delete
           label: `Delete ${isFile ? 'File' : 'Folder'}...`,
           icon: <DeleteIcon fontSize="small" />,
           action: handleDeleteItem,
-          className: '!text-red-500 hover:!bg-red-900/50', // Tailwind class for red text
+          className: '!text-red-500 hover:!bg-red-900/50',
         },
       ];
 
@@ -310,13 +292,30 @@ const FileTree: React.FC<FileTreeProps> = () => {
     [renderContextMenuItems],
   );
 
+  // Function to handle search term changes
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    // Implement your search logic here.  Consider filtering the `treeFiles`
+    // and updating the display accordingly.  Since `treeFiles` is a nanostore,
+    // you'll need to manage a separate state for the filtered results.
+    // For example, update the `fileTreeStore` with the search results.
+  };
+
+  // Function to handle going up a directory
+  const handleGoUpDirectory = () => {
+    if (projectRoot) {
+      const parentDir = path.dirname(projectRoot);
+      projectRootDirectoryStore.set(parentDir);
+      loadInitialTree(parentDir);
+    }
+  };
+
   return (
     <Paper
       elevation={3}
       sx={{
         height: '100%',
         overflowY: 'auto',
-        p: 2,
         bgcolor: theme.palette.background.paper,
         display: 'flex',
         flexDirection: 'column',
@@ -324,35 +323,53 @@ const FileTree: React.FC<FileTreeProps> = () => {
         borderColor: theme.palette.divider,
       }}
     >
+      {/* Sticky Header */}
       <Box
         sx={{
+          position: 'sticky',
+          top: 0,
+          left: 0,
+          zIndex: 1, // Ensure it stays on top of the file list
+          bgcolor: theme.palette.background.paper, // Match background color
+          p: 0.7,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          mb: 2,
+          borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 'bold',
-            color: theme.palette.text.primary,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          <FolderOpenIcon sx={{ mr: 1 }} /> Project Files
-        </Typography>
-        <IconButton
-          onClick={handleRefreshTree}
-          disabled={isFetchingTree || !projectRoot}
+        <Box className="flex items-center gap-0">
+          <IconButton
+            onClick={handleGoUpDirectory}
+            disabled={!projectRoot || projectRoot === '/'}
+            size="small"
+            sx={{ color: theme.palette.text.secondary, mr: 1 }}
+          >
+            <ArrowUpwardIcon fontSize="small" />
+          </IconButton>
+
+        </Box>
+        <TextField
           size="small"
-          sx={{ color: theme.palette.text.secondary }}
-        >
-          <RefreshIcon fontSize="small" />
-        </IconButton>
+          placeholder="Search files..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          sx={{ width: '100%', maxWidth: 300, mr: 0.5 }} // Adjust width as needed
+        />
+
+        <Box className="flex items-center gap-0">
+          <IconButton
+            onClick={handleRefreshTree}
+            disabled={isFetchingTree || !projectRoot}
+            size="small"
+            sx={{ color: theme.palette.text.secondary }}
+          >
+            <RefreshIcon fontSize="small" />
+          </IconButton>
+        </Box>
       </Box>
 
+      {/* File List */}
       {isFetchingTree ? (
         <Box className="flex justify-center items-center flex-grow">
           <CircularProgress size={24} />
@@ -394,23 +411,21 @@ const FileTree: React.FC<FileTreeProps> = () => {
         onCreateSuccess={handleCreateSuccess}
       />
 
-      {/* New: Rename Dialog */}
       <RenameDialog
         open={isRenameDialogOpen}
         onClose={() => setIsRenameDialogOpen(false)}
         item={itemToRename}
         onRenameSuccess={handleRenameSuccess}
-        snackbar={{ show: showGlobalSnackbar }} // Pass global snackbar
+        snackbar={{ show: showGlobalSnackbar }}
       />
 
-      {/* New: Copy/Move Operation Path Dialog */}
       <OperationPathDialog
         open={isOperationPathDialogOpen}
         onClose={() => setIsOperationPathDialogOpen(false)}
         item={itemForOperation}
         mode={operationMode}
         onOperationSuccess={handleOperationSuccess}
-        snackbar={{ show: showGlobalSnackbar }} // Pass global snackbar
+        snackbar={{ show: showGlobalSnackbar }}
         projectRoot={projectRoot}
       />
 

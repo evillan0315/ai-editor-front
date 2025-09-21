@@ -4,37 +4,37 @@ import {
   AddOrModifyFileChange,
   LlmOutputFormat,
   LlmGeneratePayload,
-  LlmGenerateResponse,
   RequestType,
+  ModelResponse,
 } from '@/types/llm';
 import {
   INSTRUCTION,
   ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
 } from '@/constants/instruction';
-import { setError } from '@/stores/errorStore';
+import { applyProposedChanges } from '@/api/llm';
 import { addLog } from '@/stores/logStore';
+import { ErrorStoreState, errorStore, setError } from '@/stores/errorStore';
+import { runTerminalCommand } from '@/api/terminal';
 
-export * from './utils/llmStoreHelpers';
-
-interface LlmStoreState {
+export interface LlmStoreState {
   instruction: string;
   aiInstruction: string;
   expectedOutputInstruction: string;
   requestType: RequestType;
   llmOutputFormat: LlmOutputFormat;
-  uploadedFileData: string | null;
-  uploadedFileMimeType: string | null;
-  uploadedFileName: string | null;
+  response: string | null;
+  loading: boolean;
+  error: string | null;
+  scanPathsInput: string;
+  lastLlmResponse: ModelResponse | null;
   lastLlmGeneratePayload: LlmGeneratePayload | null;
   lastLlmGeneratePayloadString: string | null;
-  scanPathsInput: string;
-  // Added for diff and LLM response handling:
-  lastLlmResponse: LlmGenerateResponse | null;
   selectedChanges: Record<string, FileChange>;
-  diffFilePath: string | null;
   currentDiff: string | null;
+  diffFilePath: string | null;
   applyingChanges: boolean;
-  
+  gitInstructions: string[] | null;
+  isBuilding: boolean;
 }
 
 export const llmStore = map<LlmStoreState>({
@@ -42,19 +42,36 @@ export const llmStore = map<LlmStoreState>({
   aiInstruction: INSTRUCTION,
   expectedOutputInstruction: ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
   requestType: RequestType.LLM_GENERATION,
-  llmOutputFormat: LlmOutputFormat.JSON,
-  uploadedFileData: null,
-  uploadedFileMimeType: null,
-  uploadedFileName: null,
+  llmOutputFormat: LlmOutputFormat.JSON, // or YAML if preferred
+
+  response: null,
+  loading: false,
+  error: null,
+  scanPathsInput: 'src,package.json,README.md',
+  lastLlmResponse: null,
   lastLlmGeneratePayload: null,
   lastLlmGeneratePayloadString: null,
-  lastLlmResponse: null,
   selectedChanges: {},
-  diffFilePath: null,
   currentDiff: null,
+  diffFilePath: null,
   applyingChanges: false,
-  scanPathsInput: 'src,package.json,README.md',
+  gitInstructions: null,
+  isBuilding: false,
 });
+
+/**
+ * Set loading state for LLM generation
+ */
+export const setLoading = (isLoading: boolean) => {
+  const state = llmStore.get();
+  llmStore.set({ ...state, loading: isLoading });
+
+  if (isLoading) {
+    addLog('AI Generation', 'LLM generation started...', 'info');
+  } else {
+    addLog('AI Generation', 'LLM generation finished.', 'info');
+  }
+};
 
 // ────────────────────────────
 // Basic setters
@@ -77,24 +94,35 @@ export const setLlmOutputFormat = (format: LlmOutputFormat) =>
 export const setScanPathsInput = (paths: string) =>
   llmStore.setKey('scanPathsInput', paths);
 
-export const setUploadedFile = (
-  data: string | null,
-  mimeType: string | null,
-  fileName: string | null,
-) => {
-  llmStore.setKey('uploadedFileData', data);
-  llmStore.setKey('uploadedFileMimeType', mimeType);
-  llmStore.setKey('uploadedFileName', fileName);
-};
-
 export const setLastLlmGeneratePayload = (
   payload: LlmGeneratePayload | null,
 ) => {
   llmStore.setKey('lastLlmGeneratePayload', payload);
 };
 
-export const setLastLlmResponse = (response: LlmGenerateResponse | null) => {
-  llmStore.setKey('lastLlmResponse', response);
+// ────────────────────────────
+// Safe setter for last LLM response
+// ────────────────────────────
+export const setLastLlmResponse = (response: ModelResponse | null) => {
+  if (!response) {
+    llmStore.setKey('lastLlmResponse', null);
+    return;
+  }
+
+  // Ensure error is a string, changes and gitInstructions are arrays
+  const safeResponse: ModelResponse = {
+    ...response,
+    error:
+      typeof response.error === 'string'
+        ? response.error
+        : (response.error?.message ?? null),
+    changes: Array.isArray(response.changes) ? response.changes : [],
+    gitInstructions: Array.isArray(response.gitInstructions)
+      ? response.gitInstructions
+      : [],
+  };
+
+  llmStore.setKey('lastLlmResponse', safeResponse);
 };
 
 // ────────────────────────────
@@ -109,10 +137,12 @@ export const selectAllChanges = () => {
   }
 };
 
-export const deselectAllChanges = () =>
-  llmStore.setKey('selectedChanges', {});
+export const deselectAllChanges = () => llmStore.setKey('selectedChanges', {});
 
-export const setCurrentDiff = (filePath: string | null, diff: string | null) => {
+export const setCurrentDiff = (
+  filePath: string | null,
+  diff: string | null,
+) => {
   llmStore.setKey('diffFilePath', filePath);
   llmStore.setKey('currentDiff', diff);
 };
@@ -209,4 +239,100 @@ export const updateProposedChangePath = (oldPath: string, newPath: string) => {
     'info',
   );
 };
+export const setIsBuilding = (building: boolean) => {
+  llmStore.setKey('isBuilding', building);
+  addLog(
+    'Build Process',
+    building ? 'Build script started...' : 'Build script finished.',
+    'info',
+  );
+};
+export const performPostApplyActions = async (
+  projectRoot: string,
+  changes: FileChange[],
+  llmGeneratePayload: LlmGeneratePayload,
+  llmResponse: ModelResponse,
+) => {
+  setIsBuilding(true);
+  let buildPassed = false;
+  try {
+    addLog('Build Process', 'Running `pnpm run build`...', 'info');
+    const buildResult = await runTerminalCommand('pnpm run build', projectRoot);
 
+    if (buildResult.exitCode !== 0) {
+      addLog(
+        'Build Process',
+        `Build failed stdout error: ${buildResult.stdout}.`,
+        'error',
+      );
+      setError(`Build failed with exit code ${buildResult.stdout}.`);
+    } else {
+      addLog('Build Process', 'Project built successfully.', 'success');
+      buildPassed = true;
+    }
+  } catch (err) {
+    const errorMsg = `Failed to run build script: ${err instanceof Error ? err.message : String(err)}`;
+    addLog('Build Process', errorMsg, 'error');
+    setError(errorMsg);
+  } finally {
+    setIsBuilding(false);
+  }
+
+  if (buildPassed && llmResponse?.gitInstructions?.length) {
+    addLog(
+      'Git Automation',
+      'Executing AI-suggested git instructions...',
+      'info',
+    );
+    let gitCommandsSuccessful = true;
+    for (const command of llmResponse.gitInstructions) {
+      addLog('Git Automation', `Running git command: \`${command}\``, 'info');
+      try {
+        const gitExecResult = await runTerminalCommand(command, projectRoot);
+
+        if (gitExecResult.exitCode !== 0) {
+          const errMsg = `Git command failed: \`${command}\` (Exit Code: ${gitExecResult.exitCode}).`;
+          addLog('Git Automation', errMsg, 'error');
+          setError(errMsg);
+          gitCommandsSuccessful = false;
+          break;
+        } else {
+          addLog(
+            'Git Automation',
+            `Git command succeeded: \`${command}\`.`,
+            'success',
+          );
+        }
+      } catch (err) {
+        const errMsg = `Failed to execute git command \`${command}\`: ${err instanceof Error ? err.message : String(err)}`;
+        addLog('Git Automation ', errMsg, 'error');
+        setError(errMsg);
+        gitCommandsSuccessful = false;
+        break;
+      }
+    }
+
+    if (gitCommandsSuccessful) {
+      addLog(
+        'Git Automation',
+        'All git instructions executed successfully.',
+        'success',
+      );
+    }
+  }
+
+  // Apply proposed changes via API
+  try {
+    await applyProposedChanges(changes, projectRoot);
+    addLog(
+      'Post Apply',
+      'Proposed changes applied and scan completed.',
+      'success',
+    );
+  } catch (err) {
+    const errMsg = `Failed to apply proposed changes: ${err instanceof Error ? err.message : String(err)}`;
+    addLog('Post Apply', errMsg, 'error');
+    setError(errMsg);
+  }
+};
+export * from './snackbarStore';

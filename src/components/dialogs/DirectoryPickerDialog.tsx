@@ -55,9 +55,8 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const $projectRootDirectory = useStore(projectRootDirectoryStore);
 
-  const projectRoot = $projectRootDirectory || '/';
+  const projectRoot = useStore(projectRootDirectoryStore);
 
   useEffect(() => {
     if (open) {
@@ -116,6 +115,8 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
 
   const handleSelectCurrent = useCallback(() => {
     onSelect(currentBrowsingPath);
+    projectRootDirectoryStore.set(currentBrowsingPath);
+    fetchContents(currentBrowsingPath);
     onClose();
   }, [currentBrowsingPath, onSelect, onClose]);
 

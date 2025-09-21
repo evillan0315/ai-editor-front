@@ -1,10 +1,22 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useStore } from '@nanostores/react';
+import { EditorView, keymap } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
+import { javascript } from '@codemirror/lang-javascript';
+import CodeMirror from '@uiw/react-codemirror';
+import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
+import { diffLanguage } from '@/utils/diffLanguage';
+
+import { oneDark } from '@codemirror/theme-one-dark';
+
+import { themeStore } from '@/stores/themeStore';
 import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
   Typography,
   Box,
+  useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -29,6 +41,8 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
   label = 'Git Diff',
   codeExpanded,
 }) => {
+  const muiTheme = useTheme();
+  const { mode } = useStore(themeStore);
   const [isDiffExpanded, setIsDiffExpanded] = useState(false);
 
   const handleToggle = useCallback(
@@ -63,15 +77,24 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
       </AccordionSummary>
       <AccordionDetails>
         <Box
-          component="pre"
           sx={{
-            whiteSpace: 'pre-wrap',
             overflowX: 'auto',
             fontFamily: 'monospace',
             fontSize: '0.875rem',
           }}
         >
-          {diffContent}
+          <CodeMirror
+            value={diffContent}
+            height={'200px'}
+            extensions={[
+              getCodeMirrorLanguage('test.tsx'),
+              createCodeMirrorTheme(muiTheme),
+              EditorView.lineWrapping,
+            ]}
+            theme={mode}
+            editable={true}
+          />
+     
         </Box>
       </AccordionDetails>
     </Accordion>

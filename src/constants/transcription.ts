@@ -17,6 +17,7 @@ export const appDefinitions: AppDefinition[] = [
     icon: CodeIcon,
     link: '/editor',
     linkText: 'Open Editor',
+    category: 'AI Tools',
   },
   {
     id: 'ai-translator',
@@ -25,6 +26,7 @@ export const appDefinitions: AppDefinition[] = [
     icon: TranslateIcon,
     link: '/apps/translator',
     linkText: 'Open Translator',
+    category: 'AI Tools',
   },
   {
     id: 'gemini-live-audio',
@@ -33,6 +35,7 @@ export const appDefinitions: AppDefinition[] = [
     icon: MicIcon,
     link: '/apps/gemini-live-audio',
     linkText: 'Start Chat',
+    category: 'AI Tools',
   },
   {
     id: 'music-player',
@@ -41,6 +44,7 @@ export const appDefinitions: AppDefinition[] = [
     icon: PlayCircleFilledWhiteIcon,
     link: '/apps/spotify',
     linkText: 'Open Player',
+    category: 'Entertainment',
   },
   {
     id: 'preview-app',
@@ -49,6 +53,7 @@ export const appDefinitions: AppDefinition[] = [
     icon: PreviewIcon,
     link: '/apps/preview',
     linkText: 'Open Preview',
+    category: 'Development',
   },
   {
     id: 'project-management',
@@ -57,6 +62,7 @@ export const appDefinitions: AppDefinition[] = [
     icon: CorporateFareIcon,
     link: '/organizations',
     linkText: 'Go to Management',
+    category: 'Management',
   },
   // NEW: Audio Transcription App
   {
@@ -66,5 +72,6 @@ export const appDefinitions: AppDefinition[] = [
     icon: TranscribeIcon, // Use TranscribeIcon
     link: '/apps/transcription',
     linkText: 'Open Transcriber',
+    category: 'Utilities',
   },
 ];

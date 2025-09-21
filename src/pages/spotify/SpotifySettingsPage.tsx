@@ -24,6 +24,7 @@ import {
   triggerMediaScan,
 } from '@/stores/spotifyStore';
 import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
+import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
 import { DirectoryPickerDialog } from '@/components/dialogs';
 
 interface SpotifySettingsPageProps {}
@@ -32,7 +33,7 @@ const SpotifySettingsPage: React.FC<SpotifySettingsPageProps> = () => {
   const theme = useTheme();
   const { mediaScanPath, isScanningMedia, mediaScanError } =
     useStore($spotifyStore);
-  const { currentProjectPath } = useStore(aiEditorStore);
+  const currentProjectPath = useStore(projectRootDirectoryStore);
 
   const [isPickerDialogOpen, setIsPickerDialogOpen] = React.useState(false);
 

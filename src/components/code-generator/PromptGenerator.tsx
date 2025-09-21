@@ -1,61 +1,14 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useRef,
-} from 'react';
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
-import {
-  Box,
-  TextField,
-  Typography,
-  IconButton,
-  CircularProgress,
-  Tooltip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  useTheme,
-} from '@mui/material';
-import {
-  DriveFolderUpload as DriveFolderUploadIcon,
-  FolderOpen as FolderOpenIcon,
-  AddRoad as AddRoadIcon,
-  CloudUpload as CloudUploadIcon,
-  Send as SendIcon,
-  FormatClear as ClearIcon,
-  Settings as SettingsIcon,
-  ExpandMore as ExpandMoreIcon,
-} from '@mui/icons-material';
-import { errorStore, setError } from '@/stores/errorStore';
-import {
-  aiEditorStore,
-  setLoading,
-  setIsBuilding,
-} from '@/stores/aiEditorStore';
-import {
-  llmStore,
-  setInstruction,
-  setAiInstruction,
-  setExpectedOutputInstruction,
-  setLastLlmGeneratePayload,
-  setScanPathsInput,
-  setLastLlmResponse,
-  setCurrentDiff,
-} from '@/stores/llmStore';
+import { Box, TextField, Typography, IconButton, CircularProgress, Tooltip, Accordion, AccordionSummary, AccordionDetails, useTheme } from '@mui/material';
+import { DriveFolderUpload as DriveFolderUploadIcon, FolderOpen as FolderOpenIcon, AddRoad as AddRoadIcon, CloudUpload as CloudUploadIcon, Send as SendIcon, FormatClear as ClearIcon, Settings as SettingsIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import { setError } from '@/stores/errorStore';
+import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
+import { llmStore, setInstruction, setAiInstruction, setExpectedOutputInstruction, setLastLlmGeneratePayload, setScanPathsInput, setLastLlmResponse, setCurrentDiff, setIsBuilding, setLoading } from '@/stores/llmStore';
 import { authStore } from '@/stores/authStore';
-import {
-  fileTreeStore,
-  loadInitialTree,
-  projectRootDirectoryStore,
-  setCurrentProjectPath
-} from '@/stores/fileTreeStore';
+import { fileTreeStore, loadInitialTree, projectRootDirectoryStore, setCurrentProjectPath } from '@/stores/fileTreeStore';
 import { addLog } from '@/stores/logStore';
-import {
-  INSTRUCTION,
-  ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
-} from '@/constants/instruction';
+import { INSTRUCTION, ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT } from '@/constants/instruction';
 import { generateCode, applyProposedChanges } from '@/api/llm';
 import FilePickerDialog from '@/components/dialogs/FilePickerDialog';
 import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
@@ -66,54 +19,47 @@ import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import { LlmOutputFormat, LlmGeneratePayload, ModelResponse } from '@/types';
 import { CodeGeneratorData } from './CodeGeneratorMain';
 
-const PromptGenerator: React.FC = () => {
+interface PromptGeneratorProps {
+}
+
+const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const ref = useRef<HTMLTextAreaElement | null>(null);
   const theme = useTheme();
 
-  // ---- stores ----
-  const { loading, isBuilding } = useStore(aiEditorStore);
   const currentProjectPath = useStore(projectRootDirectoryStore);
-  const {
-    instruction,
-    aiInstruction,
-    expectedOutputInstruction,
-    requestType,
-    llmOutputFormat,
-    uploadedFileData,
-    uploadedFileMimeType,
-    scanPathsInput,
-    lastLlmResponse,
-    applyingChanges,
-  } = useStore(llmStore);
+  const { instruction, aiInstruction, expectedOutputInstruction, requestType, llmOutputFormat, scanPathsInput, loading, isBuilding, lastLlmResponse } = useStore(llmStore);
   const { isLoggedIn } = useStore(authStore);
   const { flatFileList } = useStore(fileTreeStore);
 
+
+  const { uploadedFileData, uploadedFileMimeType } = useStore(llmStore);
   // ---- local state ----
   const [projectInput, setProjectInput] = useState(
     currentProjectPath || import.meta.env.VITE_BASE_DIR || ''
   );
   const [editorContent, setEditorContent] = useState('');
   const [isPickerDialogOpen, setIsPickerDialogOpen] = useState(false);
-  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] =
-    useState(false);
+  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] = useState(false);
   const [isScanPathsDialogOpen, setIsScanPathsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [importedData, setImportedData] = useState<CodeGeneratorData | null>(
-    null
-  );
+  const [importedData, setImportedData] = useState<CodeGeneratorData | null>(null);
 
   const commonDisabled =
-    !isLoggedIn || loading || applyingChanges || isBuilding;
+    !isLoggedIn || loading || isBuilding;
 
   // ---- memoized values ----
   const currentScanPathsArray = useMemo(
-    () => scanPathsInput.split(',').map(s => s.trim()).filter(Boolean),
-    [scanPathsInput]
+    () =>
+      scanPathsInput
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [scanPathsInput],
   );
 
   const scanPathAutocompleteOptions = useMemo(() => {
-    const options = flatFileList.map(e => e.filePath).filter(Boolean);
+    const options = flatFileList.map((e) => e.filePath).filter(Boolean);
     return Array.from(
       new Set([
         ...options,
@@ -122,13 +68,14 @@ const PromptGenerator: React.FC = () => {
         'package.json',
         'README.md',
         '.env',
-      ])
+      ]),
     ).sort();
   }, [flatFileList]);
 
   // ---- effects ----
   useEffect(() => {
-    if (lastLlmResponse?.rawContent) setEditorContent(lastLlmResponse.rawContent);
+    if (lastLlmResponse?.rawResponse)
+      setEditorContent(lastLlmResponse.rawResponse);
   }, [lastLlmResponse]);
 
   useEffect(() => {
@@ -157,13 +104,13 @@ const PromptGenerator: React.FC = () => {
   const updateScanPaths = useCallback(
     (paths: string[]) =>
       setScanPathsInput([...new Set(paths)].sort().join(', ')),
-    []
+    [],
   );
 
   const handleLoadProject = useCallback(() => {
     if (!projectInput) return setError('Please provide a project root path.');
     setCurrentProjectPath(projectInput);
-    setError(null);
+    setError('');
     setLastLlmResponse(null);
     setCurrentDiff(null, null);
     setIsBuilding(false);
@@ -172,15 +119,24 @@ const PromptGenerator: React.FC = () => {
   }, [projectInput]);
 
   const handleGenerateCode = useCallback(async () => {
-    if (!instruction)
-      return setError('Please provide instructions for the AI.');
-    if (!isLoggedIn)
-      return setError('You must be logged in to use the AI Editor.');
-    if (!currentProjectPath)
-      return setError('Please load a project first.');
+    if (!instruction) {
+      showGlobalSnackbar('Please provide instructions for the AI.', 'error');
+      return;
+    }
+    if (!isLoggedIn) {
+      showGlobalSnackbar(
+        'You must be logged in to use the AI Editor',
+        'error',
+      );
+      return;
+    }
+    if (!currentProjectPath) {
+      showGlobalSnackbar('Please load a project first.', 'error');
+      return;
+    }
 
     setLoading(true);
-    setError(null);
+    setError('');
     setLastLlmResponse(null);
     setCurrentDiff(null, null);
     setIsBuilding(false);
@@ -201,23 +157,66 @@ const PromptGenerator: React.FC = () => {
       };
 
       setLastLlmGeneratePayload(payload);
-      const aiResponse: ModelResponse = await generateCode(payload);
 
-      if (aiResponse.rawContent && !aiResponse.error) {
-        setEditorContent(aiResponse.rawContent);
-        setLastLlmResponse(aiResponse);
-      } else {
-        if (aiResponse.summary) setLastLlmResponse(aiResponse);
-        if (aiEditorStore.get().autoApplyChanges && aiResponse.changes?.length) {
-          await applyProposedChanges(aiResponse.changes, currentProjectPath);
+      const aiResponse: ModelResponse = await generateCode(payload);
+      console.log(aiResponse, 'aiResponse');
+
+      // Normalize errors to strings
+      let errorMessage: string | null = null;
+      if (aiResponse.error) {
+        errorMessage =
+          aiResponse.error instanceof Error
+            ? aiResponse.error.message
+            : typeof aiResponse.error === 'string'
+              ? aiResponse.error
+              : JSON.stringify(aiResponse.error);
+      }
+
+      // If rawResponse is available, set it in the editor safely
+      if (aiResponse.rawResponse) {
+        try {
+          setEditorContent(JSON.parse(aiResponse.rawResponse));
+        } catch {
+          setEditorContent(String(aiResponse.rawResponse));
         }
       }
+
+      // Only update store if there’s no error to avoid rendering [object Error]
+      if (!errorMessage) {
+        setLastLlmResponse(aiResponse);
+        // Auto-apply changes if enabled
+        if (
+          aiEditorStore.get().autoApplyChanges &&
+          aiResponse.changes?.length
+        ) {
+          try {
+            await applyProposedChanges(aiResponse.changes, currentProjectPath);
+            addLog(
+              'Prompt Generator',
+              'Proposed changes auto-applied.',
+              'success',
+            );
+          } catch (err) {
+            const applyErr =
+              err instanceof Error
+                ? err.message
+                : typeof err === 'string'
+                  ? err
+                  : JSON.stringify(err);
+            setError(applyErr);
+            addLog('Prompt Generator', applyErr, 'error');
+          }
+        }
+      } else {
+        setError(errorMessage);
+        addLog('Prompt Generator', errorMessage, 'error');
+        showGlobalSnackbar(errorMessage, 'error');
+      }
     } catch (err) {
-      const msg = `Failed to generate code: ${
-        err instanceof Error ? err.message : String(err)
-      }`;
+      const msg = `Failed to generate code: ${err instanceof Error ? err.message : String(err)}`;
       setError(msg);
       addLog('Prompt Generator', msg, 'error');
+      showGlobalSnackbar(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -240,18 +239,19 @@ const PromptGenerator: React.FC = () => {
 
   // ---- render ----
   return (
-    <Box className="flex flex-col gap-2 w-full">
+    <Box className='flex flex-col gap-2 w-full relative'>
       {editorContent && (
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography>Code Editor</Typography>
           </AccordionSummary>
           <AccordionDetails>
-            <Box className="rounded-5 h-full">
+            <Box className='rounded-5 h-full'>
               <CodeRepair
                 value={editorContent}
                 onChange={setEditorContent}
-                filePath="temp.json"
+                filePath='temp.json'
+                height='200px'
               />
             </Box>
           </AccordionDetails>
@@ -259,54 +259,53 @@ const PromptGenerator: React.FC = () => {
       )}
 
       <Box
-        position="relative"
-        className="mt-2 px-2 pr-12 overflow-auto max-h-[100px] items-end h-full"
-        onKeyDown={e => {
+        position='relative'
+        className='mt-2 px-2 pr-12 overflow-auto max-h-[100px] items-end h-full'
+        onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
             handleGenerateCode();
           }
         }}
       >
-        <Box className="mb-2">
+        <Box className='mb-2'>
           <TextField
             multiline
             fullWidth
-            placeholder="Type your instruction..."
+            placeholder='Type your instruction...'
             value={instruction}
-            onChange={e => setInstruction(e.target.value)}
-            variant="standard"
+            onChange={(e) => setInstruction(e.target.value)}
+            variant='standard'
             InputProps={{ disableUnderline: true }}
-            className="mb-2"
+            className='mb-2'
           />
-          {loading && (
-            <Box className="mt-2 flex items-center">
-              <CircularProgress size={20} className="mr-1" />
-              <Typography variant="body2">Generating...</Typography>
-            </Box>
-          )}
-        </Box>
-        <Box
-          className="absolute top-0 right-0 h-full flex items-center"
-          sx={{ paddingRight: theme.spacing(1) }}
-        >
-          <Tooltip title="Generate/Modify Code">
-            <IconButton
-              color="success"
-              onClick={handleGenerateCode}
-              disabled={commonDisabled || loading || !instruction}
-            >
-              {loading ? <CircularProgress size={16} /> : <SendIcon />}
-            </IconButton>
-          </Tooltip>
         </Box>
       </Box>
-
-      {/* Bottom Toolbar */}
-      <Box className="flex flex-wrap gap-2 mb-2">
-        <Tooltip title="Load the selected project">
+      <Box
+        className='absolute top-2 right-0 flex items-center'
+        sx={{ paddingRight: theme.spacing(1) }}
+      >
+        <Tooltip title='Generate/Modify Code'>
           <IconButton
-            color="primary"
+            color='success'
+            onClick={handleGenerateCode}
+            disabled={commonDisabled || loading || !instruction}
+          >
+            {loading ? <CircularProgress size={16} /> : <SendIcon />}
+          </IconButton>
+        </Tooltip>
+      </Box>
+                {loading && (
+            <Box className='mt-2 flex items-center'>
+              <CircularProgress size={20} className='mr-1' />
+              <Typography variant='body2'>Generating...</Typography>
+            </Box>
+          )}
+      {/* Bottom Toolbar */}
+      <Box className='flex flex-wrap gap-2 mb-2'>
+        <Tooltip title='Load the selected project'>
+          <IconButton
+            color='primary'
             disabled={commonDisabled}
             onClick={handleLoadProject}
           >
@@ -314,41 +313,45 @@ const PromptGenerator: React.FC = () => {
           </IconButton>
         </Tooltip>
 
-        <Tooltip title="Pick project root directory">
+        <Tooltip title='Pick project root directory'>
           <IconButton
-            color="primary"
+            color='primary'
             onClick={() => setIsProjectRootPickerDialogOpen(true)}
           >
             <FolderOpenIcon />
           </IconButton>
         </Tooltip>
 
-        <Tooltip title="Manage scan paths for the AI search">
+        <Tooltip title='Manage scan paths for the AI search'>
           <IconButton
-            color="primary"
+            color='primary'
             onClick={() => setIsScanPathsDialogOpen(true)}
           >
             <AddRoadIcon />
           </IconButton>
         </Tooltip>
 
-        <Tooltip title="Import prompt data from JSON file">
+        <Tooltip title='Import prompt data from JSON file'>
           <IconButton
-            color="primary"
+            color='primary'
             onClick={() => setIsImportDialogOpen(true)}
           >
             <CloudUploadIcon />
           </IconButton>
         </Tooltip>
 
-        <Tooltip title="Prompt generator settings">
-          <IconButton color="primary" onClick={() => setIsSettingsOpen(true)}>
+        <Tooltip title='Prompt generator settings'>
+          <IconButton color='primary' onClick={() => setIsSettingsOpen(true)}>
             <SettingsIcon />
           </IconButton>
         </Tooltip>
 
-        <Tooltip title="Clear editor and AI response">
-          <IconButton color="error" onClick={handleClear} disabled={commonDisabled}>
+        <Tooltip title='Clear editor and AI response'>
+          <IconButton
+            color='error'
+            onClick={handleClear}
+            disabled={commonDisabled}
+          >
             <ClearIcon />
           </IconButton>
         </Tooltip>
@@ -366,7 +369,7 @@ const PromptGenerator: React.FC = () => {
       <FilePickerDialog
         open={isPickerDialogOpen}
         onClose={() => setIsPickerDialogOpen(false)}
-        onSelect={paths =>
+        onSelect={(paths) =>
           updateScanPaths([...currentScanPathsArray, ...paths])
         }
         currentScanPaths={currentScanPathsArray}
@@ -374,8 +377,8 @@ const PromptGenerator: React.FC = () => {
       <DirectoryPickerDialog
         open={isProjectRootPickerDialogOpen}
         onClose={() => setIsProjectRootPickerDialogOpen(false)}
-        onSelect={path => {
-          setProjectInput(path);
+        onSelect={(path) => {
+          setCurrentProjectPath(path);
           handleLoadProject();
         }}
         initialPath={projectInput || currentProjectPath || '/'}
@@ -388,7 +391,7 @@ const PromptGenerator: React.FC = () => {
       <ImportJsonDialog
         open={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
-        onImport={data => {
+        onImport={(data) => {
           setImportedData(data);
           setIsImportDialogOpen(false);
         }}
@@ -398,4 +401,3 @@ const PromptGenerator: React.FC = () => {
 };
 
 export default PromptGenerator;
-

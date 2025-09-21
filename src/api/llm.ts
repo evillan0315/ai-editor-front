@@ -59,42 +59,66 @@ export const convertYamlToJson = async (data: string): Promise<any> => {
     throw error;
   }
 };
-function parseJSONSafe(jsonString: string) {
-  try {
-    const parsed = JSON.parse(jsonString);
-    return parsed;
-  } catch (err) {
-    console.error('JSON parse error:', err);
 
-    // Optionally, return the raw content for debugging
-    return { rawContent: jsonString, error: JSON.stringify(err) };
+function parseJSONSafe(jsonString: string): ModelResponse {
+  try {
+    return JSON.parse(jsonString);
+  } catch (err: any) {
+    console.error('JSON parse error:', err);
+    return {
+      summary: null,
+      changes: [],
+      rawResponse: jsonString,
+      error: err instanceof Error ? err.message : String(err),
+      gitInstructions: [],
+    };
   }
 }
+
+// ────────────────────────────
+// Safe LLM code generation
+// ────────────────────────────
+
 export const generateCode = async (
   data: LlmGeneratePayload,
 ): Promise<ModelResponse> => {
+  let rawText: string | null = null;
+
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/llm/generate-llm`, {
+    const response = await fetchWithAuth(`/api/llm/generate-llm`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
 
-    // get raw string response
-    const rawText = await response.text();
+    rawText = await response.text();
+    const extractedText = extractCodeFromMarkdown(rawText);
 
-    // try extracting fenced code block
-    const text = extractCodeFromMarkdown(rawText);
-
-    if (data.output === 'yaml') {
-      const json = await convertYamlToJson(text);
-      return json.json;
+    try {
+      // Attempt to parse JSON
+      const parsed: ModelResponse = JSON.parse(extractedText);
+      return {
+        ...parsed,
+        rawResponse: rawText,
+        error: null, // Ensure error is null
+      };
+    } catch (jsonErr) {
+      // If parsing fails, return raw content safely
+      return {
+        rawResponse: rawText,
+        summary: null,
+        changes: [],
+        error: jsonErr instanceof Error ? jsonErr.message : String(jsonErr),
+      };
     }
-    return parseJSONSafe(text) as ModelResponse;
-    // otherwise treat as JSON response
-    //return JSON.parse(text) as ModelResponse;
-  } catch (error) {
-    console.error('Error generating code:', error);
-    return error;
+  } catch (err) {
+    // Network or fetch error
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return {
+      rawResponse: rawText,
+      summary: null,
+      changes: [],
+      error: errorMsg,
+    };
   }
 };
 

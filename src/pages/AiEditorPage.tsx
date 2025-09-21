@@ -2,144 +2,133 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useStore } from '@nanostores/react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  aiEditorStore,
+  llmStore,
   clearDiff,
-  setOpenedFile,
   setLastLlmResponse,
   setRequestType,
   setLlmOutputFormat,
   setInstruction,
-  setUploadedFile,
-  setError, // For global errors to be displayed at the top level
-} from '@/stores/aiEditorStore';
-import { addLog } from '@/stores/logStore'; // NEW: Import addLog for logging page events
+} from '@/stores/llmStore';
+import { setError } from '@/stores/errorStore';
+import { addLog } from '@/stores/logStore';
 import { isTerminalVisible, setShowTerminal } from '@/stores/terminalStore';
+import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
+import { setUploadedFile } from '@/stores/fileStore';
 
 import {
   Box,
   Typography,
-  Alert, // Added for global error display
+  Alert,
   useTheme,
   LinearProgress,
 } from '@mui/material';
 import { FileTree } from '@/components/file-tree';
 import OpenedFileViewer from '@/components/OpenedFileViewer';
-import { RequestType, LlmOutputFormat } from '@/types';
 import FileTabs from '@/components/FileTabs';
-import { rightSidebarContent } from '@/stores/uiStore';
-// NEW: Import the consolidated AI sidebar content
-import { XTerminal } from '@/components/Terminal/Terminal'; // NEW: Import XTerminal component
+import { RequestType, LlmOutputFormat } from '@/types/llm';
+import { rightSidebarContent, leftSidebarContent } from '@/stores/uiStore';
+import { fileStore } from '@/stores/fileStore';
+import { XTerminal } from '@/components/Terminal/Terminal';
 import { handleLogout } from '@/services/authService';
 import LlmGenerationContent from '@/components/LlmGenerationContent';
-// Constants for layout.
-const FILE_TREE_WIDTH = 300; // Fixed width for the file tree when visible
-const FILE_TABS_HEIGHT = 48; // Approximate height of the new file tabs component (can be theme-driven later)
-const RESIZE_HANDLE_HEIGHT = 4; // Height of the draggable divider
 
-/**
- * The main AI Editor page component, displaying the file tree, file editor,
- * and integrating the AI sidebar content. It handles global loading, errors,
- * and URL parameter parsing for AI request types and output formats.
- */
+const FILE_TREE_WIDTH = 400;
+const FILE_TABS_HEIGHT = 48;
+const RESIZE_HANDLE_HEIGHT = 4;
+
 const AiEditorPage: React.FC = () => {
   const $rightSidebarContent = useStore(rightSidebarContent);
+   const $leftSidebarContent = useStore(leftSidebarContent);
+  const currentProjectPath = useStore(projectRootDirectoryStore);
   const {
-    error: globalError, // Renamed to avoid conflict, used for immediate page-level alerts
-    currentProjectPath,
+    error: globalError,
     lastLlmResponse,
     loading,
     applyingChanges,
     isBuilding,
-  } = useStore(aiEditorStore);
+    requestType,
+    llmOutputFormat,
+    
+  } = useStore(llmStore);
+  const  { openedFile, openedTabs } = useStore(fileStore);
+  
   const theme = useTheme();
   const [searchParams] = useSearchParams();
-  const [showFileTree, setShowFileTree] = useState(true); // State for toggling file tree visibility
-
-  const navigate = useNavigate(); // For redirecting after terminal logout
-
-  // State for resizable terminal
-  const [terminalHeight, setTerminalHeight] = useState(300); // Initial height for terminal
+  const [showFileTree, setShowFileTree] = useState(true);
+  const [terminalHeight, setTerminalHeight] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
   const [initialMouseY, setInitialMouseY] = useState(0);
   const [initialTerminalHeight, setInitialTerminalHeight] = useState(0);
-  const contentAreaRef = useRef<HTMLDivElement>(null); // Ref for the resizable content area
+
+  const contentAreaRef = useRef<HTMLDivElement>(null);
   const showTerminal = useStore(isTerminalVisible);
-  // New derived state for the loader
+  const navigate = useNavigate();
+
   const isAIGeneratingOrModifying = loading || isBuilding;
 
+  // Clear diff on response/project change
   useEffect(() => {
-    // Clear diff when project or response changes
     clearDiff();
   }, [lastLlmResponse, currentProjectPath]);
 
-  // Handle requestType and llmOutputFormat from URL query parameters
+  // Update requestType and llmOutputFormat from URL
   useEffect(() => {
     const requestTypeParam = searchParams.get('requestType');
     const outputFormatParam = searchParams.get('output');
 
-    // Update RequestType from URL
     if (
       requestTypeParam &&
       RequestType[requestTypeParam as keyof typeof RequestType]
     ) {
       const newRequestType =
         RequestType[requestTypeParam as keyof typeof RequestType];
-      if (aiEditorStore.get().requestType !== newRequestType) {
-        setRequestType(newRequestType); // This action also logs internally
-        // Clear related states when switching generator types via URL
+      if (requestType !== newRequestType) {
+        setRequestType(newRequestType);
         setInstruction('');
         setUploadedFile(null, null, null);
         setLastLlmResponse(null);
-        setOpenedFile(null); // Close any currently viewed file when switching generator types
         addLog(
           'AI Editor Page',
           `Request type set from URL: ${newRequestType}`,
           'info',
         );
       }
-    } else if (aiEditorStore.get().requestType !== RequestType.LLM_GENERATION) {
-      // If no requestType param, default to LLM_GENERATION
-      setRequestType(RequestType.LLM_GENERATION); // This action also logs internally
+    } else if (requestType !== RequestType.LLM_GENERATION) {
+      setRequestType(RequestType.LLM_GENERATION);
       addLog(
         'AI Editor Page',
-        `Defaulting request type to LLM_GENERATION (no URL param).`,
+        `Defaulting request type to LLM_GENERATION`,
         'info',
       );
     }
 
-    // Update LlmOutputFormat from URL
     if (
       outputFormatParam &&
       LlmOutputFormat[outputFormatParam as keyof typeof LlmOutputFormat]
     ) {
       const newLlmOutputFormat =
         LlmOutputFormat[outputFormatParam as keyof typeof LlmOutputFormat];
-      if (aiEditorStore.get().llmOutputFormat !== newLlmOutputFormat) {
-        setLlmOutputFormat(newLlmOutputFormat); // This action also logs internally
+      if (llmOutputFormat !== newLlmOutputFormat) {
+        setLlmOutputFormat(newLlmOutputFormat);
         addLog(
           'AI Editor Page',
           `Output format set from URL: ${newLlmOutputFormat}`,
           'info',
         );
       }
-    } else if (aiEditorStore.get().llmOutputFormat !== LlmOutputFormat.YAML) {
-      // If no outputFormat param, default to YAML (matching store default)
-      setLlmOutputFormat(LlmOutputFormat.YAML); // This action also logs internally
-      addLog(
-        'AI Editor Page',
-        `Defaulting output format to YAML (no URL param).`,
-        'info',
-      );
+    } else if (llmOutputFormat !== LlmOutputFormat.YAML) {
+      setLlmOutputFormat(LlmOutputFormat.YAML);
+      addLog('AI Editor Page', `Defaulting output format to YAML`, 'info');
     }
-  }, [searchParams]);
+  }, [searchParams, requestType, llmOutputFormat]);
 
-  // Resizing handlers
+  // Terminal resize handlers
   const startResize = useCallback(
     (e: React.MouseEvent) => {
       setIsResizing(true);
       setInitialMouseY(e.clientY);
       setInitialTerminalHeight(terminalHeight);
-      document.body.style.cursor = 'ns-resize'; // Change cursor globally
+      document.body.style.cursor = 'ns-resize';
     },
     [terminalHeight],
   );
@@ -148,22 +137,16 @@ const AiEditorPage: React.FC = () => {
     (e: MouseEvent) => {
       if (!isResizing) return;
       const deltaY = e.clientY - initialMouseY;
-      // For bottom-to-top resize:
-      // If mouse moves up (deltaY is negative), terminal height increases.
-      // If mouse moves down (deltaY is positive), terminal height decreases.
       let newHeight = initialTerminalHeight - deltaY;
 
-      const MIN_TERMINAL_HEIGHT = 30; // Minimum pixel height for terminal
-      const MIN_VIEWER_HEIGHT = 150; // Minimum pixel height for OpenedFileViewer
-
+      const MIN_TERMINAL_HEIGHT = 30;
+      const MIN_VIEWER_HEIGHT = 150;
       const totalResizableHeight = contentAreaRef.current?.clientHeight || 0;
-      // Calculate max possible terminal height respecting minimum viewer height
       const maxPossibleTerminalHeight = Math.max(
         0,
         totalResizableHeight - MIN_VIEWER_HEIGHT - RESIZE_HANDLE_HEIGHT,
       );
 
-      // Constrain newHeight within min and max bounds
       newHeight = Math.max(
         MIN_TERMINAL_HEIGHT,
         Math.min(newHeight, maxPossibleTerminalHeight),
@@ -175,7 +158,7 @@ const AiEditorPage: React.FC = () => {
 
   const stopResize = useCallback(() => {
     setIsResizing(false);
-    document.body.style.cursor = 'default'; // Reset cursor
+    document.body.style.cursor = 'default';
   }, []);
 
   useEffect(() => {
@@ -195,56 +178,46 @@ const AiEditorPage: React.FC = () => {
   const handleTerminalLogout = useCallback(async () => {
     try {
       await handleLogout();
-      navigate('/login'); // Redirect to login page after logout
+      navigate('/login');
       addLog('Terminal', 'User logged out successfully via terminal.', 'info');
     } catch (error) {
       console.error('Failed to log out from terminal:', error);
-      setError('Failed to log out from terminal.'); // Use global error store
+      setError('Failed to log out from terminal.');
       addLog('Terminal', `Failed to log out from terminal: ${error}`, 'error');
     }
   }, [navigate]);
 
-  // Function to handle terminal resizing
   const handleTerminalResize = useCallback(() => {
-    const cols = Math.floor(window.innerWidth / 10); // Adjust divisor as needed
-    const rows = Math.floor(terminalHeight / 20); // Adjust divisor as needed
-
+    const cols = Math.floor(window.innerWidth / 10);
+    const rows = Math.floor(terminalHeight / 20);
   }, [terminalHeight]);
+
   useEffect(() => {
-    // Add event listener for window resize
     window.addEventListener('resize', handleTerminalResize);
-
-    // Call handleTerminalResize on component mount to set initial terminal size
     handleTerminalResize();
-
-    // Clean up event listener on component unmount
     return () => {
       window.removeEventListener('resize', handleTerminalResize);
     };
   }, [handleTerminalResize]);
 
-  const toggleTerminalVisibility = () => {
-    setShowTerminal((prevShowTerminal) => !prevShowTerminal);
-  };
+  const toggleTerminalVisibility = () => setShowTerminal(!showTerminal);
+
   useEffect(() => {
     rightSidebarContent.set(<LlmGenerationContent />);
+    leftSidebarContent.set(<FileTree />);
   }, []);
+
   return (
     <Box
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%', // Changed from 100dvh to 100% to fit within Layout's main content area
+        height: '100%',
         width: '100%',
-        // bgcolor: theme.palette.background.default, // Layout now provides this background
         color: theme.palette.text.primary,
-        overflow: 'hidden', // Prevent outer scrollbars
+        overflow: 'hidden',
       }}
     >
-      {isAIGeneratingOrModifying && (
-        <LinearProgress sx={{ width: '100%', flexShrink: 0, zIndex: 1200 }} />
-      )}
-
       {globalError && (
         <Alert
           severity="error"
@@ -256,80 +229,48 @@ const AiEditorPage: React.FC = () => {
             flexShrink: 0,
           }}
         >
-          <Typography variant="body2">{globalError}</Typography>
+          <Typography variant="body2">{String(globalError)}</Typography>
         </Alert>
       )}
 
-      {/* Main content area: FileTree + Editor/Response + PromptGenerator */}
       <Box
         sx={{
           display: 'flex',
           flexDirection: 'row',
-          flexGrow: 1, // Allow this box to take up remaining vertical space
+          flexGrow: 1,
           width: '100%',
-          minHeight: 0, // Crucial for flex containers
-          position: 'relative', // For absolutely positioned elements inside if needed
+          minHeight: 0,
+          position: 'relative',
         }}
       >
-        {/* File Tree Panel */}
-        <Box
-          sx={{
-            width: showFileTree ? FILE_TREE_WIDTH : 0,
-            flexShrink: 0,
-            overflow: 'hidden', // Hide content when collapsed
-            transition: 'width 0.2s ease-in-out, border-right 0.2s ease-in-out',
-            display: 'flex',
-            flexDirection: 'column',
-            bgcolor: theme.palette.background.paper,
-            borderRight: showFileTree
-              ? `1px solid ${theme.palette.divider}`
-              : 'none',
-          }}
-        >
-          {currentProjectPath ? (
-            <FileTree projectRoot={currentProjectPath} />
-          ) : (
-            <Box sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                No project opened.
-              </Typography>
-            </Box>
-          )}
-        </Box>
-
-        {/* Main Editor/Response Area */}
+        
+{/* File Tree Panel */}
+       
+        {/* Main Editor */}
         <Box
           sx={{
             flexGrow: 1,
-            minWidth: 0, // Allow shrinking
+            minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
-            position: 'relative', // For toggle buttons
-            bgcolor: theme.palette.background.default,
+            position: 'relative',
+            bgcolor: theme.palette.background.main,
           }}
         >
-          {/* File Tabs */}
+          {openedTabs.length > 0 && (
           <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
-
-          {/* Opened File Viewer, Resizer, and Terminal container */}
+          )}
           <Box
-            ref={contentAreaRef} // Attach ref here to get total height for resizing calculations
+            ref={contentAreaRef}
             sx={{
               display: 'flex',
               flexDirection: 'column',
-              flexGrow: 1, // Takes all available vertical space in its parent
-              minHeight: 0, // Allows children to properly manage their height within this flex container
-              overflow: 'hidden', // Ensures inner scrollbars are respected
+              flexGrow: 1,
+              minHeight: 0,
+              overflow: 'hidden',
             }}
           >
-            {/* Opened File Viewer */}
-            <Box
-              sx={{
-                flexGrow: 1, // Allows OpenedFileViewer to take all remaining space above the terminal
-                minHeight: '150px', // Minimum height for the file viewer (adjust as needed)
-                overflow: 'auto', // Add scrollbar if content overflows
-              }}
-            >
+            <Box sx={{ flexGrow: 1, minHeight: '150px', overflow: 'auto' }}>
               <OpenedFileViewer />
             </Box>
 
@@ -341,18 +282,16 @@ const AiEditorPage: React.FC = () => {
                     height: RESIZE_HANDLE_HEIGHT,
                     bgcolor: theme.palette.divider,
                     cursor: 'ns-resize',
-                    flexShrink: 0, // Prevent the handle from shrinking
-                    '&:hover': {
-                      bgcolor: theme.palette.primary.main, // Visual feedback on hover
-                    },
+                    flexShrink: 0,
+                    '&:hover': { bgcolor: theme.palette.primary.main },
                   }}
-                ></Box>
+                />
                 <Box
                   sx={{
-                    height: terminalHeight, // Controlled height
-                    minHeight: '50px', // Minimum terminal height
-                    flexShrink: 0, // Prevent terminal from shrinking below its height
-                    overflow: 'hidden', // XTerminal component itself handles internal scrolling
+                    height: terminalHeight,
+                    minHeight: '50px',
+                    flexShrink: 0,
+                    overflow: 'hidden',
                   }}
                 >
                   <XTerminal
@@ -363,8 +302,6 @@ const AiEditorPage: React.FC = () => {
               </>
             )}
           </Box>
-
-          {/* Prompt Generator Panel and AiResponseDisplay are now in the right sidebar */}
         </Box>
       </Box>
     </Box>

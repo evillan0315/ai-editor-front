@@ -35,4 +35,3 @@ export const setLoading = (isLoading: boolean) =>
 
 export const setError = (message: string | null) =>
   authStore.setKey('error', message);
-

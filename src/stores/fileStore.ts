@@ -3,6 +3,9 @@ import { writeFileContent, readFileContent } from '@/api/file';
 import { addLog } from './logStore';
 
 export interface FileStoreState {
+  uploadedFileData: string | null;
+  uploadedFileMimeType: string | null;
+  uploadedFileName: string | null;
   openedFile: string | null;
   openedFileContent: string | null;
   initialFileContentSnapshot: string | null;
@@ -15,6 +18,9 @@ export interface FileStoreState {
 }
 
 export const fileStore = map<FileStoreState>({
+  uploadedFileData: null,
+  uploadedFileMimeType: null,
+  uploadedFileName: null,
   openedFile: null,
   openedFileContent: null,
   initialFileContentSnapshot: null,
@@ -227,4 +233,17 @@ export const fetchFileContent = async (filePath: string) => {
   } finally {
     setIsFetchingFileContent(false);
   }
+};
+
+// ────────────────────────────
+// File upload
+// ────────────────────────────
+export const setUploadedFile = (
+  data: string | null,
+  mimeType: string | null,
+  fileName: string | null,
+) => {
+  fileStore.setKey('uploadedFileData', data);
+  fileStore.setKey('uploadedFileMimeType', mimeType);
+  fileStore.setKey('uploadedFileName', fileName);
 };

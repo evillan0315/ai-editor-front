@@ -72,7 +72,7 @@ export const getAppTheme = (mode: PaletteMode) => {
           '.markdown-body': {
             backgroundColor:
               mode === 'dark'
-                ? '#0d1117' // GitHub dark background
+                ? '#42a5f5' // GitHub dark background
                 : '#ffffff', // GitHub light background
           },
         },
@@ -149,4 +149,3 @@ export const getAppTheme = (mode: PaletteMode) => {
 
   return createTheme(themeOptions);
 };
-

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useStore } from '@nanostores/react';
+
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
-  Checkbox,
   List,
   ListItem,
   ListItemIcon,
@@ -18,135 +19,134 @@ import {
   TextField as MuiTextField,
   InputAdornment,
   useTheme,
+  Tooltip,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import SearchIcon from '@mui/icons-material/Search';
-import { useStore } from '@nanostores/react';
-import { fileTreeStore, loadInitialTree } from '@/stores/fileTreeStore';
-import { aiEditorStore } from '@/stores/aiEditorStore';
-import { FileEntry } from '@/types';
-import { getFileTypeIcon } from '@/constants/fileIcons';
-import path from 'path';
+import FolderOpenIcon from '@mui/icons-material/FolderOutlined';
+import FolderIcon from '@mui/icons-material/FolderOutlined';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import CheckIcon from '@mui/icons-material/Check';
+import * as path from 'path-browserify';
+import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
+import { fetchDirectoryContents } from '@/api/file';
+import { FileTreeNode } from '@/types';
+import {
+  llmStore,
+} from '@/stores/llmStore';
 
-interface FilePickerDialogProps {
+interface DirectoryPickerDialogProps {
   open: boolean;
   onClose: () => void;
-  onSelect: (selectedPaths: string[]) => void;
-  currentScanPaths: string[];
+  onSelect: (selectedPath: string) => void;
+  initialPath?: string;
   allowExternalPaths?: boolean;
-  initialRootPath?: string;
 }
 
-// Flatten hierarchical file tree
-const flattenTree = (nodes: FileEntry[]): FileEntry[] => {
-  let flat: FileEntry[] = [];
-  nodes.forEach((node) => {
-    flat.push(node);
-    if (node.type === 'folder' && node.children) {
-      flat = flat.concat(flattenTree(node.children));
-    }
-  });
-  return flat;
-};
-
-const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
+const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
   open,
   onClose,
   onSelect,
-  currentScanPaths,
-  allowExternalPaths,
-  initialRootPath,
+  initialPath = '/',
+  allowExternalPaths = false,
 }) => {
-  const {
-    files: treeFiles,
-    isFetchingTree,
-    fetchTreeError,
-    lastFetchedProjectRoot,
-  } = useStore(fileTreeStore);
-
-  const { currentProjectPath } = useStore(aiEditorStore);
   const theme = useTheme();
+  const [currentBrowsingPath, setCurrentBrowsingPath] = useState<string>(initialPath);
+  const [tempPathInput, setTempPathInput] = useState<string>(initialPath);
+  const [directoryContents, setDirectoryContents] = useState<FileTreeNode[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentDir, setCurrentDir] = useState(
-    initialRootPath || currentProjectPath || '/',
-  );
-
-  // Load file tree if open
-  useEffect(() => {
-    if (open && currentDir && !lastFetchedProjectRoot) {
-      loadInitialTree(currentDir);
-    }
-  }, [open, currentDir, lastFetchedProjectRoot]);
+  const projectRoot = useStore(projectRootDirectoryStore);
+  const currentProjectPath = useStore(projectRootDirectoryStore);
 
   useEffect(() => {
-    if (open) setSelectedPaths(new Set(currentScanPaths));
-    else {
-      setSelectedPaths(new Set());
-      setSearchTerm('');
+    if (open) {
+      const resolvedPath = initialPath || projectRoot;
+      setCurrentBrowsingPath(resolvedPath);
+      setTempPathInput(resolvedPath);
+      fetchContents(resolvedPath);
+    } else {
+      setDirectoryContents([]);
+      setIsLoading(false);
+      setError(null);
     }
-  }, [open, currentScanPaths]);
+  }, [open, initialPath, projectRoot]);
 
-  const handleTogglePath = useCallback((filePath: string) => {
-    setSelectedPaths((prev) => {
-      const newSet = new Set(prev);
-      newSet.has(filePath) ? newSet.delete(filePath) : newSet.add(filePath);
-      return newSet;
-    });
+  useEffect(() => {
+    setTempPathInput(currentBrowsingPath);
+  }, [currentBrowsingPath]);
+
+  const fetchContents = useCallback(async (dirPath: string) => {
+    setIsLoading(true);
+    setError(null);
+    setDirectoryContents([]);
+    try {
+      const contents = await fetchDirectoryContents(dirPath);
+      const foldersOnly = contents.filter((item) => item.type === 'folder');
+      foldersOnly.sort((a, b) => a.name.localeCompare(b.name));
+      setDirectoryContents(foldersOnly);
+    } catch (err) {
+      console.error(`Error fetching directory contents for ${dirPath}:`, err);
+      setError(
+        `Failed to load directory contents: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const allFilesAndFolders = useMemo(() => flattenTree(treeFiles), [treeFiles]);
+  const handleGoUp = useCallback(() => {
+    const parentPath = path.dirname(currentBrowsingPath);
+    const canGoAboveRoot =
+      allowExternalPaths || parentPath.startsWith(projectRoot);
+    if (parentPath && parentPath !== currentBrowsingPath && canGoAboveRoot) {
+      setCurrentBrowsingPath(parentPath);
+      fetchContents(parentPath);
+    }
+  }, [currentBrowsingPath, fetchContents, allowExternalPaths, projectRoot]);
 
-  const filteredFiles = useMemo(() => {
-    if (!searchTerm) return allFilesAndFolders;
-    const term = searchTerm.toLowerCase();
-    return allFilesAndFolders.filter(
-      (file) =>
-        file.path.toLowerCase().includes(term) ||
-        file.name.toLowerCase().includes(term),
-    );
-  }, [allFilesAndFolders, searchTerm]);
-
-  const sortedFiles = useMemo(
-    () =>
-      [...filteredFiles].sort((a, b) => {
-        if (a.type === 'folder' && b.type !== 'folder') return -1;
-        if (a.type !== 'folder' && b.type === 'folder') return 1;
-        return a.path.localeCompare(b.path);
-      }),
-    [filteredFiles],
+  const handleOpenDirectory = useCallback(
+    (dirPath: string) => {
+      setCurrentBrowsingPath(dirPath);
+      projectRootDirectoryStore.set(dirPath);
+      fetchContents(dirPath);
+    },
+    [fetchContents],
   );
 
-  const handleSelectAll = useCallback(() => {
-    setSelectedPaths(new Set(sortedFiles.map((f) => f.path)));
-  }, [sortedFiles]);
-
-  const handleDeselectAll = useCallback(() => setSelectedPaths(new Set()), []);
-
-  const handleConfirm = useCallback(() => {
-    onSelect(Array.from(selectedPaths));
+  const handleSelectCurrent = useCallback(() => {
+    onSelect(currentBrowsingPath);
+    projectRootDirectoryStore.set(currentBrowsingPath);
+    fetchContents(currentBrowsingPath);
     onClose();
-  }, [onSelect, onClose, selectedPaths]);
+  }, [currentBrowsingPath, onSelect, onClose]);
 
-  // Navigate up directory tree
-  const handleNavigateUp = useCallback(() => {
-    const parent = path.dirname(currentDir);
-    if (
-      allowExternalPaths ||
-      parent.startsWith(initialRootPath || currentProjectPath || '/')
-    ) {
-      setCurrentDir(parent);
-      loadInitialTree(parent);
+  const handleTempPathInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setTempPathInput(e.target.value);
+  };
+
+  const handleGoToPath = useCallback(() => {
+    const trimmedPath = tempPathInput.trim();
+    if (trimmedPath) {
+      setCurrentBrowsingPath(trimmedPath);
+      fetchContents(trimmedPath);
     }
-  }, [currentDir, allowExternalPaths, initialRootPath, currentProjectPath]);
+  }, [tempPathInput, fetchContents]);
 
-  const currentRootLabel = allowExternalPaths
-    ? `Browsing: ${currentDir}`
-    : currentProjectPath
-      ? `Relative to: ${currentProjectPath}`
-      : 'No project root loaded';
+  const canGoUp = useMemo(() => {
+    const normalizedPath = currentBrowsingPath.replace(/\\/g, '/');
+    const rootPatterns = ['/', /^[a-zA-Z]:\\$/];
+    if (allowExternalPaths) return true;
+    return (
+      !rootPatterns.some((pattern) =>
+        typeof pattern === 'string'
+          ? normalizedPath === pattern
+          : pattern.test(normalizedPath),
+      ) && normalizedPath.startsWith(projectRoot)
+    );
+  }, [currentBrowsingPath, allowExternalPaths, projectRoot]);
 
   return (
     <Dialog
@@ -171,7 +171,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
         }}
       >
         <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
-          Select Files and Folders
+          Select Project Root Folder
         </Typography>
         <IconButton
           onClick={onClose}
@@ -183,88 +183,84 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
       </DialogTitle>
 
       <DialogContent sx={{ p: 2 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {currentRootLabel}
-        </Typography>
-
-        {allowExternalPaths && (
-          <Button
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <MuiTextField
+            fullWidth
             variant="outlined"
-            size="small"
-            startIcon={<AddIcon />}
-            sx={{ mb: 2 }}
-            onClick={handleNavigateUp}
-          >
-            Up One Directory
-          </Button>
-        )}
-
-        <MuiTextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search files and folders..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon color="action" />
-              </InputAdornment>
-            ),
-            sx: {
-              color: theme.palette.text.primary,
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: theme.palette.divider,
+            placeholder="Enter path or browse..."
+            value={tempPathInput}
+            onChange={handleTempPathInputChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <FolderOpenIcon color="action" />
+                </InputAdornment>
+              ),
+              sx: {
+                color: theme.palette.text.primary,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: theme.palette.divider,
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: theme.palette.primary.main,
+                },
               },
-              '&:hover .MuiOutlinedInput-notchedOutline': {
-                borderColor: theme.palette.primary.main,
-              },
-            },
-          }}
-          sx={{ mb: 2 }}
-          size="small"
-        />
-
-        <Box
-          sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}
-        >
-          <Button
-            variant="outlined"
+            }}
             size="small"
-            onClick={handleSelectAll}
-            disabled={isFetchingTree || !filteredFiles.length}
-          >
-            Select All
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={handleDeselectAll}
-            disabled={isFetchingTree || !filteredFiles.length}
-          >
-            Deselect All
-          </Button>
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') handleGoToPath();
+            }}
+          />
+          <Tooltip title="Go to path">
+            <Button
+              variant="contained"
+              onClick={handleGoToPath}
+              disabled={!tempPathInput.trim()}
+              size="small"
+              sx={{ whiteSpace: 'nowrap' }}
+            >
+              Go
+            </Button>
+          </Tooltip>
+          <Tooltip title="Go up one level">
+            <span>
+              <IconButton
+                onClick={handleGoUp}
+                disabled={!canGoUp || isLoading}
+                size="small"
+                sx={{ color: theme.palette.text.secondary }}
+              >
+                <ArrowUpwardIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
         </Box>
 
-        {isFetchingTree ? (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Current: {
+          <Typography component="span" fontWeight="bold">
+            {currentBrowsingPath}
+          </Typography>
+          }
+        </Typography>
+
+        {isLoading ? (
           <Box className="flex justify-center items-center h-48">
             <CircularProgress size={24} />
             <Typography
               variant="body2"
               sx={{ ml: 2, color: theme.palette.text.secondary }}
             >
-              Loading files...
+              Loading folders...
             </Typography>
           </Box>
-        ) : fetchTreeError ? (
+        ) : error ? (
           <Alert severity="error" sx={{ mt: 2 }}>
-            {fetchTreeError}
+            {error}
           </Alert>
-        ) : filteredFiles.length === 0 ? (
+        ) : directoryContents.length === 0 ? (
           <Alert severity="info" sx={{ mt: 2 }}>
-            {searchTerm
-              ? 'No matching files found.'
-              : 'No files available in this directory.'}
+            No subfolders found in "{currentBrowsingPath}".
           </Alert>
         ) : (
           <List
@@ -277,24 +273,23 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
               bgcolor: theme.palette.background.default,
             }}
           >
-            {sortedFiles.map((file) => (
+            {directoryContents.map((folder) => (
               <ListItem
-                key={file.path}
-                secondaryAction={
-                  <Checkbox
-                    edge="end"
-                    checked={selectedPaths.has(file.path)}
-                    onChange={() => handleTogglePath(file.path)}
-                    sx={{ color: theme.palette.primary.main }}
-                  />
-                }
-                sx={{ '&:hover': { bgcolor: theme.palette.action.hover } }}
+                key={folder.path}
+                onClick={() => handleOpenDirectory(folder.path)}
+                sx={{
+                  '&:hover': { bgcolor: theme.palette.action.hover },
+                  cursor: 'pointer',
+                }}
               >
                 <ListItemIcon>
-                  {getFileTypeIcon(file.name, file.type)}
+                  <FolderIcon
+                    fontSize="small"
+                    sx={{ color: theme.palette.warning.main }}
+                  />
                 </ListItemIcon>
                 <ListItemText
-                  primary={file.path}
+                  primary={folder.name}
                   primaryTypographyProps={{
                     style: { color: theme.palette.text.primary },
                   }}
@@ -316,7 +311,11 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           variant="body2"
           sx={{ color: theme.palette.text.secondary }}
         >
-          Selected: {selectedPaths.size}
+          Selected: {
+          <Typography component="span" fontWeight="bold">
+            {currentBrowsingPath}
+          </Typography>
+          }
         </Typography>
         <Box>
           <Button
@@ -326,12 +325,13 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
             Cancel
           </Button>
           <Button
-            onClick={handleConfirm}
+            onClick={handleSelectCurrent}
             variant="contained"
             color="primary"
-            disabled={selectedPaths.size === 0}
+            startIcon={<CheckIcon />}
+            disabled={isLoading || error !== null}
           >
-            Add Selected
+            Select This Folder
           </Button>
         </Box>
       </DialogActions>
@@ -339,4 +339,4 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
   );
 };
 
-export default FilePickerDialog;
+export default DirectoryPickerDialog;

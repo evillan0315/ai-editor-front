@@ -4,7 +4,7 @@ import { map } from 'nanostores';
  * Shape of the error store state.
  * Extend later (e.g., severity, timestamp) if needed.
  */
-interface ErrorStoreState {
+export interface ErrorStoreState {
   /** Latest error message to display or log. */
   message: string | null;
 }
@@ -28,4 +28,3 @@ export function setError(message: string): void {
 export function clearError(): void {
   errorStore.setKey('message', null);
 }
-

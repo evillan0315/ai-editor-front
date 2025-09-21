@@ -1,11 +1,9 @@
 import { map } from 'nanostores';
 import { FileTreeState, FileEntry } from '@/types/refactored/fileTree'; // Updated import
 import { fetchDirectoryContents, fetchScannedFilesForAI } from '@/api/file';
-import { setOpenedFile, setIsOpenedFileDirty } from './fileStore';
-import { aiEditorStore } from './aiEditorStore';
+import { fileStore, setOpenedFile, setIsOpenedFileDirty } from './fileStore';
+import { llmStore } from './llmStore';
 import { getRelativePath, persistentAtom } from '@/utils';
-
-
 
 export const projectRootDirectoryStore = persistentAtom<string>(
   'projectRootDirectory',
@@ -13,7 +11,7 @@ export const projectRootDirectoryStore = persistentAtom<string>(
 );
 export const setCurrentProjectPath = (path: string) => {
   projectRootDirectoryStore.set(path);
-}
+};
 export const fileTreeStore = map<FileTreeState>({
   files: [], // Hierarchical file tree
   flatFileList: [], // Flat list from API (for AI context)
@@ -24,6 +22,7 @@ export const fileTreeStore = map<FileTreeState>({
   lastFetchedProjectRoot: null,
   lastFetchedScanPaths: [], // Retained for AI context scan paths, not directly for visual tree
   loadingChildren: new Set(), // Initialize new state for loading children
+  projectRootDirectory: '/', // Added to align with FileTreeState
 });
 
 export const setFiles = (files: FileEntry[]) => {
@@ -56,7 +55,7 @@ export const toggleDirExpansion = async (dirPath: string) => {
 };
 
 export const setSelectedFile = (filePath: string | null) => {
-  const { isOpenedFileDirty } = aiEditorStore.get();
+  const { isOpenedFileDirty } = fileStore.get();
   if (isOpenedFileDirty) {
     // Alert user about unsaved changes. If they cancel, don't change selection.
     const confirmDiscard = window.confirm(
@@ -69,7 +68,7 @@ export const setSelectedFile = (filePath: string | null) => {
   }
 
   fileTreeStore.setKey('selectedFile', filePath);
-  // When a file is selected in the tree, also set it in aiEditorStore to display its content.
+  // When a file is selected in the tree, also set it in fileStore to display its content.
   // addOpenedTab is implicitly handled by setOpenedFile now
   setOpenedFile(filePath);
 };
@@ -149,8 +148,8 @@ export const loadInitialTree = async (projectRoot: string) => {
     fileTreeStore.setKey('files', initialTreeNodes);
 
     // Additionally, fetch *all* relevant files for AI context using scan API
-    // This uses aiEditorStore.scanPathsInput
-    const { scanPathsInput } = aiEditorStore.get();
+    // This uses llmStore.scanPathsInput
+    const { scanPathsInput } = llmStore.get();
     const parsedScanPaths = scanPathsInput
       .split(',')
       .map((s) => s.trim())
@@ -272,10 +271,11 @@ export const clearFileTree = () => {
     selectedFile: null,
     isFetchingTree: false,
     fetchTreeError: null,
-    lastFetchedProjectRoot: null, // Clear these on full tree clear
-    lastFetchedScanPaths: [], // Clear these on full tree clear
-    loadingChildren: new Set(), // Clear loading children as well
+    lastFetchedProjectRoot: null,
+    lastFetchedScanPaths: [],
+    loadingChildren: new Set(),
+    projectRootDirectory: projectRootDirectoryStore.get(), // <-- add this
   });
-  // Also clear any opened file content in aiEditorStore
+  // Also clear any opened file content in fileStore
   setOpenedFile(null);
 };

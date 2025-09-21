@@ -86,6 +86,31 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
       }}
       {...otherProps} // Pass any other props to the Box
     >
+      {openedTabs.length > 0 && (
+      <Box           
+        sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0,
+            mr: 'auto',
+            pl: 1,
+          }}>
+        <Tooltip title="Close All Tabs">
+            <IconButton
+              onClick={handleCloseAllTabs}
+              size="small"
+              sx={{
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                },
+              }}
+            >
+              <CloseMultipleIcon />
+            </IconButton>
+          </Tooltip>
+      </Box>
+      )}
       <Tabs
         value={openedFile || false} // Use openedFile as the value for the active tab
         onChange={handleTabChange}
@@ -185,7 +210,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
             alignItems: 'center',
             gap: 1,
             ml: 'auto',
-            pr: 2,
+            pr: 1,
           }}
         >
           {isOpenedFileDirty && (
@@ -244,20 +269,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
               {showTerminal ? <VisibilityOffIcon /> : <VisibilityIcon />}
             </IconButton>
           </Tooltip>
-          <Tooltip title="Close All Tabs">
-            <IconButton
-              onClick={handleCloseAllTabs}
-              size="small"
-              sx={{
-                color: theme.palette.text.secondary,
-                '&:hover': {
-                  color: theme.palette.text.primary,
-                },
-              }}
-            >
-              <CloseMultipleIcon />
-            </IconButton>
-          </Tooltip>
+
         </Box>
       )}
     </Box>

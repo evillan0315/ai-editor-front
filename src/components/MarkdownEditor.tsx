@@ -24,7 +24,6 @@ import TaskIcon from '@mui/icons-material/CheckBox';
 import { keymap } from '@codemirror/view';
 import CodeMirror from '@uiw/react-codemirror';
 import { markdown } from '@codemirror/lang-markdown';
-import { oneDark } from '@codemirror/theme-one-dark';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -54,11 +53,10 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   onSave,
   disabled = false,
 }) => {
- 
   const { mode } = useStore(themeStore); // 'light' | 'dark'
   const theme = useTheme();
   const [internalValue, setInternalValue] = useState(
-    value ?? localStorage.getItem('markdown-editor-content') ?? initialValue
+    value ?? localStorage.getItem('markdown-editor-content') ?? initialValue,
   );
   const [tab, setTab] = useState(0); // 0 = Write, 1 = Preview
 
@@ -91,11 +89,13 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   };
 
   /** ---------- Dynamic GitHub Markdown class ---------- */
-  const markdownClass =
-    mode === 'dark' ? 'markdown-body' : 'markdown-body';
+  const markdownClass = mode === 'dark' ? 'markdown-body' : 'markdown-body';
 
   return (
-    <Paper variant="outlined" sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Paper
+      variant="outlined"
+      sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+    >
       <AppBar position="static" color="default" elevation={0}>
         <Toolbar
           variant="dense"
@@ -108,18 +108,55 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         >
           {/* ---------- Left: Editor tool icons ---------- */}
           <Box>
-            <Tooltip title="Bold"><IconButton onClick={() => insertText('**bold**')}><BoldIcon /></IconButton></Tooltip>
-            <Tooltip title="Italic"><IconButton onClick={() => insertText('*italic*')}><ItalicIcon /></IconButton></Tooltip>
-            <Tooltip title="Heading"><IconButton onClick={() => insertText('# Heading\n')}><TitleIcon /></IconButton></Tooltip>
-            <Tooltip title="Code"><IconButton onClick={() => insertText('```\ncode\n```')}><CodeIcon /></IconButton></Tooltip>
-            <Tooltip title="List"><IconButton onClick={() => insertText('- item\n')}><ListIcon /></IconButton></Tooltip>
-            <Tooltip title="Blockquote"><IconButton onClick={() => insertText('> quote\n')}><QuoteIcon /></IconButton></Tooltip>
-            <Tooltip title="Task list"><IconButton onClick={() => insertText('- [ ] task\n')}><TaskIcon /></IconButton></Tooltip>
-            <Tooltip title="Link"><IconButton onClick={() => insertText('[text](url)')}><LinkIcon /></IconButton></Tooltip>
+            <Tooltip title="Bold">
+              <IconButton onClick={() => insertText('**bold**')}>
+                <BoldIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Italic">
+              <IconButton onClick={() => insertText('*italic*')}>
+                <ItalicIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Heading">
+              <IconButton onClick={() => insertText('# Heading\n')}>
+                <TitleIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Code">
+              <IconButton onClick={() => insertText('```\ncode\n```')}>
+                <CodeIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="List">
+              <IconButton onClick={() => insertText('- item\n')}>
+                <ListIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Blockquote">
+              <IconButton onClick={() => insertText('> quote\n')}>
+                <QuoteIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Task list">
+              <IconButton onClick={() => insertText('- [ ] task\n')}>
+                <TaskIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Link">
+              <IconButton onClick={() => insertText('[text](url)')}>
+                <LinkIcon />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Image">
               <IconButton component="label">
                 <ImageIcon />
-                <input hidden type="file" accept="image/*" onChange={handleImageUpload} />
+                <input
+                  hidden
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
               </IconButton>
             </Tooltip>
           </Box>
@@ -183,4 +220,3 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 };
 
 export default MarkdownEditor;
-

@@ -16,4 +16,3 @@ export const isLeftSidebarVisible = atom(false);
 
 // What content should be rendered inside the left sidebar
 export const leftSidebarContent = atom<ReactNode | null>(null);
-

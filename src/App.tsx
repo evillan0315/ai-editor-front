@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, type JSX } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Loading from './components/Loading';
@@ -59,7 +59,9 @@ function App() {
             element={
               <RequireAuth>
                 <Suspense
-                  fallback={<Loading type="gradient" message="Loading playground" />}
+                  fallback={
+                    <Loading type="gradient" message="Loading playground" />
+                  }
                 >
                   <AiEditorPage />
                 </Suspense>
@@ -284,4 +286,3 @@ function App() {
 }
 
 export default App;
-

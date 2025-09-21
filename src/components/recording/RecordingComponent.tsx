@@ -88,7 +88,7 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
     null,
   );
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
-  const videoPlayerRef = useRef<HTMLVideoElement>(null);
+  const videoPlayerRef = useRef<HTMLVideoElement | null>(null);
   const $currentRecordingId = useStore(currentRecordingIdStore);
   const $isCurrentRecording = useStore(isCurrentRecording);
   const [editDialogOpen, setEditDialogOpen] = useState(false);

@@ -1,71 +1,68 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@nanostores/react';
 import {
+  llmStore,
+  setCurrentDiff,
+  updateProposedChangeContent,
+  updateProposedChangePath,
+  LlmStoreState
+} from '@/stores/llmStore';
+import { addLog } from '@/stores/logStore'; // NEW: Import addLog
+import { setError } from '@/stores/errorStore'; 
+import { getGitDiff } from '@/api/llm';
+import { FileChange, FileAction } from '@/types';
+import { truncateFilePath } from '@/utils/fileUtils';
+import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
+import { GitDiffViewer } from '@/components/GitDiffViewer';
+
+import CodeMirror from '@uiw/react-codemirror';
+import {
   Box,
-  Checkbox,
   Typography,
+  Button,
+  Checkbox,
   Chip,
+  Paper,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  ListItem,
-  ListItemText,
   useTheme,
   IconButton,
   TextField,
   InputAdornment,
+  ListItem,
+  ListItemText
 } from '@mui/material';
 import { type SvgIconProps } from '@mui/material/SvgIcon';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import InsightsIcon from '@mui/icons-material/Insights';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import SaveIcon from '@mui/icons-material/Save';
-import CancelIcon from '@mui/icons-material/Cancel';
-import { oneDark } from '@codemirror/theme-one-dark';
-import { javascript } from '@codemirror/lang-javascript';
-import CodeMirror from '@uiw/react-codemirror';
+
 import * as path from 'path-browserify';
-
-import { getGitDiff } from '@/api/llm';
-import { addLog } from '@/stores/logStore';
-import { truncateFilePath, getRelativePath } from '@/utils/fileUtils';
-import { CodeRepair } from './utils/CodeRepair';
-import { GitDiffViewer } from '@/components/GitDiffViewer';
-
 import {
-  updateProposedChangeContent,
-  updateProposedChangePath,
-  llmStore,
-  setCurrentDiff,
-} from '@/stores/llmStore';
-import {
-  aiEditorStore,
-} from '@/stores/aiEditorStore';
-import {
-  setError,
-} from '@/stores/errorStore';
+  getRelativePath,
+  getCodeMirrorLanguage,
+  createCodeMirrorTheme,
+} from '@/utils/index'; // Import createCodeMirrorTheme
+import { themeStore } from '@/stores/themeStore';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
-
-export interface ChangeEntry {
-  id: number;
-  filePath: string;
-  action: 'add' | 'modify' | 'repair' | 'analyze' | 'delete';
-  reason: string;
-  newContent: string;
-}
 
 interface ChangeItemProps {
   index: number;
-  change: ChangeEntry;
+  change: FileChange;
   selected: boolean;
   onToggle: () => void;
 }
 
-const ACTION_COLOR: Record<ChangeEntry['action'],
-  'success' | 'primary' | 'warning' | 'info' | 'error'> = {
+const ACTION_COLOR: Record<
+  FileChange['action'],
+  'success' | 'primary' | 'warning' | 'info' | 'error'
+> = {
   add: 'success',
   modify: 'primary',
   repair: 'warning',
@@ -73,7 +70,10 @@ const ACTION_COLOR: Record<ChangeEntry['action'],
   delete: 'error',
 };
 
-const ACTION_ICON: Record<ChangeEntry['action'], React.ComponentType<SvgIconProps>> = {
+const ACTION_ICON: Record<
+  FileChange['action'],
+  React.ComponentType<SvgIconProps>
+> = {
   add: AddCircleOutlineIcon,
   modify: EditIcon,
   repair: BuildCircleIcon,
@@ -93,15 +93,20 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
 
   const [isEditingFilePath, setIsEditingFilePath] = useState(false);
   const [editedFilePath, setEditedFilePath] = useState(change.filePath);
-  const [codeMirrorValue, setCodeMirrorValue] = useState(change.newContent || '');
+  const [codeMirrorValue, setCodeMirrorValue] = useState(
+    change.newContent || '',
+  );
   const [isCodeExpanded, setIsCodeExpanded] = useState(false);
 
-  const { currentDiff, diffFilePath, applyingChanges } = useStore(llmStore);
-  const { loading } = useStore(aiEditorStore);
+  const { loading, currentDiff, diffFilePath, applyingChanges } = useStore(llmStore);
+
   const currentProjectPath = useStore(projectRootDirectoryStore);
 
+  // Update editedFilePath if the actual change.filePath from store changes
   useEffect(() => {
-    if (!isEditingFilePath) setEditedFilePath(change.filePath);
+    if (!isEditingFilePath) {
+      setEditedFilePath(change.filePath);
+    }
   }, [change.filePath, isEditingFilePath]);
 
   useEffect(() => {
@@ -127,7 +132,11 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
         : getGitDiff(relPath, currentProjectPath));
 
       setCurrentDiff(change.filePath, diffContent);
-      addLog('ChangeItem', `Git diff loaded for ${change.filePath}.`, 'success');
+      addLog(
+        'ChangeItem',
+        `Git diff loaded for ${change.filePath}.`,
+        'success',
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(`Failed to get diff for ${change.filePath}: ${message}`);
@@ -137,15 +146,16 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
   }, [change, currentProjectPath]);
 
   const createAddDiff = (content: string, relPath: string): string =>
-    `--- /dev/null\n+++ a/${relPath}\n@@ -0,0 +1,${content.split('\n').length} @@\n${
-      content.split('\n').map(line => `+${line}`).join('\n')
-    }`;
+    `--- /dev/null\n+++ a/${relPath}\n@@ -0,0 +1,${content.split('\n').length} @@\n${content
+      .split('\n')
+      .map((line) => `+${line}`)
+      .join('\n')}`;
 
   const commonDisabled = loading || applyingChanges;
 
   const handleSaveFilePath = () => {
-    if (editedFilePath.trim() && editedFilePath !== change.filePath) {
-      updateProposedChangePath(change.filePath, editedFilePath.trim());
+    if (editedFilePath !== change.filePath) {
+      updateProposedChangePath(change.filePath, editedFilePath);
     }
     setIsEditingFilePath(false);
   };
@@ -177,8 +187,14 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
             onChange={(e) => setEditedFilePath(e.target.value)}
             onBlur={handleSaveFilePath}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); handleSaveFilePath(); }
-              if (e.key === 'Escape') { e.preventDefault(); handleCancelEdit(); }
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSaveFilePath();
+              }
+              if (e.key === 'Escape') {
+                e.preventDefault();
+                handleCancelEdit();
+              }
             }}
             disabled={commonDisabled}
             autoFocus
@@ -196,10 +212,18 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
               },
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton size="small" onClick={handleSaveFilePath} disabled={commonDisabled}>
+                  <IconButton
+                    size="small"
+                    onClick={handleSaveFilePath}
+                    disabled={commonDisabled}
+                  >
                     <SaveIcon fontSize="small" />
                   </IconButton>
-                  <IconButton size="small" onClick={handleCancelEdit} disabled={commonDisabled}>
+                  <IconButton
+                    size="small"
+                    onClick={handleCancelEdit}
+                    disabled={commonDisabled}
+                  >
                     <CancelIcon fontSize="small" />
                   </IconButton>
                 </InputAdornment>
@@ -209,7 +233,12 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
         ) : (
           <Typography
             variant="body1"
-            sx={{ fontFamily: 'monospace', flexGrow: 1, color: muiTheme.palette.text.primary, mr: 1 }}
+            sx={{
+              fontFamily: 'monospace',
+              flexGrow: 1,
+              color: muiTheme.palette.text.primary,
+              mr: 1,
+            }}
           >
             {currentProjectPath
               ? truncateFilePath(path.join(currentProjectPath, change.filePath))
@@ -220,14 +249,26 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
         {!isEditingFilePath && (
           <IconButton
             size="small"
-            onClick={(e) => { e.stopPropagation(); setIsEditingFilePath(true); }}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent accordion collapse
+              setIsEditingFilePath(true);
+              addLog(
+                'ChangeItem',
+                `Started editing file path for: ${change.filePath}`,
+                'debug',
+              );
+            }}
             disabled={commonDisabled}
             sx={{ color: muiTheme.palette.text.secondary }}
           >
             <IconComponent color={ACTION_COLOR[change.action]} />
           </IconButton>
         )}
-        <Chip label={change.action.toUpperCase()} color={ACTION_COLOR[change.action]} size="small" />
+        <Chip
+          label={change.action.toUpperCase()}
+          color={ACTION_COLOR[change.action]}
+          size="small"
+        />
       </Box>
 
       {change.newContent && (
@@ -237,20 +278,29 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
             expanded={isCodeExpanded}
             onChange={(_, expanded) => setIsCodeExpanded(expanded)}
           >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />} onClick={handleShowDiff}>
-              <Typography variant="body2" fontWeight="medium">View Code</Typography>
+            <AccordionSummary
+              component="div" // 👈 prevents <button> nesting
+              expandIcon={<ExpandMoreIcon />}
+              onClick={handleShowDiff}
+            >
+              <Typography variant="body2" fontWeight="medium">
+                View Code
+              </Typography>
             </AccordionSummary>
             <AccordionDetails>
               <CodeRepair
                 value={codeMirrorValue}
                 onChange={handleCodeChange}
                 filePath={change.filePath}
+                height={`180px`}
               />
             </AccordionDetails>
           </Accordion>
 
           <GitDiffViewer
-            diffContent={diffFilePath === change.filePath ? currentDiff || '' : ''}
+            diffContent={
+              diffFilePath === change.filePath ? currentDiff || '' : ''
+            }
             label={`Git Diff for: ${diffFilePath}`}
             codeExpanded={isCodeExpanded}
           />
@@ -267,4 +317,3 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
     </ListItem>
   );
 };
-

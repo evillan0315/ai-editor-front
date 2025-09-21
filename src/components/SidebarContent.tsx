@@ -1,6 +1,6 @@
-import {rightSidebarContent, leftSidebarContent} from '@/stores/uiStore';
+import { rightSidebarContent, leftSidebarContent } from '@/stores/uiStore';
 import { useStore } from '@nanostores/react';
-import { Box, Paper, useTheme } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 
 export const RightSidebarContent: React.FC = () => {
   const theme = useTheme();
@@ -18,6 +18,7 @@ export const RightSidebarContent: React.FC = () => {
         height: '100%', // ensure it stretches fully inside sidebar
       }}
     >
+      
       {content}
     </Box>
   );

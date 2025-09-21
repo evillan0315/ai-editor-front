@@ -62,7 +62,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
       } catch (err) {
         console.error(`Error reading file ${openedFile}:`, err);
         setFetchFileContentError(
-          `Failed to read file: ${err instanceof Error ? err.message : String(err)}`
+          `Failed to read file: ${err instanceof Error ? err.message : String(err)}`,
         );
         setOpenedFileContent(null);
         setInitialFileContentSnapshot(null);

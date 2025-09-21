@@ -7,12 +7,13 @@ import { useTheme } from '@mui/material/styles';
 import { checkAuthStatus } from '@/services/authService';
 import { useStore } from '@nanostores/react';
 import { authStore } from '@/stores/authStore';
-import {
-  isRightSidebarVisible,
-  isLeftSidebarVisible,
-} from '@/stores/uiStore';
+import { llmStore } from '@/stores/llmStore';
+import { isRightSidebarVisible, isLeftSidebarVisible } from '@/stores/uiStore';
 import Navbar from './Navbar';
-import { RightSidebarContent, LeftSidebarContent } from '@/components/SidebarContent';
+import {
+  RightSidebarContent,
+  LeftSidebarContent,
+} from '@/components/SidebarContent';
 
 const NAVBAR_HEIGHT = 64;
 const FOOTER_HEIGHT = 30;
@@ -31,8 +32,10 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const { loading: authLoading } = useStore(authStore);
+  const { loading: llmLoading, isBuilding } = useStore(llmStore);
+  
   const theme = useTheme();
-
+  const layoutLoader = authLoading || llmLoading || isBuilding;
   const $isRightSidebarVisible = useStore(isRightSidebarVisible);
   const $isLeftSidebarVisible = useStore(isLeftSidebarVisible);
 
@@ -58,16 +61,15 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
 
   /** Start resizing a sidebar */
   const startResizing = useCallback(
-    (side: 'left' | 'right') =>
-      (e: React.MouseEvent) => {
-        setIsResizing(side);
-        initialMouseX.current = e.clientX;
-        initialSidebarWidth.current =
-          side === 'left' ? leftSidebarWidth : rightSidebarWidth;
-        document.body.style.cursor = 'ew-resize';
-        document.body.style.userSelect = 'none';
-        document.body.style.pointerEvents = 'none';
-      },
+    (side: 'left' | 'right') => (e: React.MouseEvent) => {
+      setIsResizing(side);
+      initialMouseX.current = e.clientX;
+      initialSidebarWidth.current =
+        side === 'left' ? leftSidebarWidth : rightSidebarWidth;
+      document.body.style.cursor = 'ew-resize';
+      document.body.style.userSelect = 'none';
+      document.body.style.pointerEvents = 'none';
+    },
     [leftSidebarWidth, rightSidebarWidth],
   );
 
@@ -97,11 +99,17 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
       const deltaX = e.clientX - initialMouseX.current;
       if (isResizing === 'left') {
         let newWidth = initialSidebarWidth.current + deltaX;
-        newWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, newWidth));
+        newWidth = Math.max(
+          MIN_SIDEBAR_WIDTH,
+          Math.min(MAX_SIDEBAR_WIDTH, newWidth),
+        );
         setLeftSidebarWidth(newWidth);
       } else {
         let newWidth = initialSidebarWidth.current - deltaX;
-        newWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, newWidth));
+        newWidth = Math.max(
+          MIN_SIDEBAR_WIDTH,
+          Math.min(MAX_SIDEBAR_WIDTH, newWidth),
+        );
         setRightSidebarWidth(newWidth);
       }
     },
@@ -129,7 +137,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
     >
       <Navbar />
 
-      {authLoading && (
+      {layoutLoader && (
         <Box className="w-full sticky top-0 z-[1100] flex-shrink-0">
           <LinearProgress />
         </Box>
@@ -227,4 +235,3 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
 };
 
 export default Layout;
-

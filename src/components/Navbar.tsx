@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@nanostores/react';
 import { authStore } from '@/stores/authStore';
 import { aiEditorStore } from '@/stores/aiEditorStore'; // Only the store, no globalSnackbar
-import { isRightSidebarVisible } from '@/stores/uiStore';
+import { isRightSidebarVisible, isLeftSidebarVisible } from '@/stores/uiStore';
 import { snackbarState, setSnackbarState } from '@/stores/snackbarStore';
 import { handleLogout } from '@/services/authService';
 import { runTerminalCommand, fetchProjectScripts } from '@/api/terminal';
@@ -63,8 +63,8 @@ const Navbar: React.FC = () => {
   const $snackbarState = useStore(snackbarState);
   const navigate = useNavigate();
   const theme = useTheme();
+  const $isLeftSidebarVisible = useStore(isLeftSidebarVisible);
   const $isRightSidebarVisible = useStore(isRightSidebarVisible);
-
   const [packageScripts, setPackageScripts] = useState<PackageScript[]>([]);
   const [packageManager, setPackageManager] = useState<PackageManager>(null);
   const [scriptsLoading, setScriptsLoading] = useState(false);
@@ -275,10 +275,18 @@ const Navbar: React.FC = () => {
             mx: 'auto',
             width: '100%',
             py: 0,
-            px: { xs: 1, sm: 2, lg: 2 },
+            px: { xs: 1, sm: 1, lg: 1 },
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              color="inherit"
+              onClick={() => isLeftSidebarVisible.set(!$isLeftSidebarVisible)}
+              aria-label="toggle left sidebar"
+              sx={{ color: theme.palette.text.primary }}
+            >
+              {$isLeftSidebarVisible ? <ViewSidebar /> : <ViewSidebarOff />}
+            </IconButton>
             <Typography
               variant="h6"
               component={Link}

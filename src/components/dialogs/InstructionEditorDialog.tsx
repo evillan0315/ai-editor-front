@@ -8,7 +8,11 @@ import {
   TextField,
 } from '@mui/material';
 import { useStore } from '@nanostores/react';
-import { aiEditorStore } from '@/stores/aiEditorStore'; // Import aiEditorStore
+import {
+  llmStore,
+  setAiInstruction,
+  setExpectedOutputInstruction,
+} from '@/stores/llmStore'; // Import aiEditorStore
 // Import LlmOutputFormat
 
 interface InstructionEditorDialogProps {
@@ -22,9 +26,9 @@ const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
   onClose,
   type,
 }) => {
-  const aiInstruction = useStore(aiEditorStore).aiInstruction;
-  const expectedOutputInstruction =
-    useStore(aiEditorStore).expectedOutputInstruction;
+  const store = useStore(llmStore).get();
+  const aiInstruction = store.aiInstruction;
+  const expectedOutputInstruction = store.expectedOutputInstruction;
 
   const [localValue, setLocalValue] = useState(
     type === 'ai' ? aiInstruction : expectedOutputInstruction,

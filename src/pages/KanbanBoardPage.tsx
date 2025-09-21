@@ -290,7 +290,9 @@ const TaskModal: React.FC<TaskModalProps> = ({
   const [status, setStatus] = useState(task?.status || 'todo');
   const [labels, setLabels] = useState(task?.labels?.join(', ') || '');
   const [dueDate, setDueDate] = useState(task?.dueDate || '');
-  const [assignee, setAssignee] = useState(task?.assignee?.id || '');
+  const [assignee, setAssignee] = useState<number | ''>(
+    task?.assignee?.id || '',
+  );
 
   const assignees = [
     { id: 1, name: 'John Smith', initials: 'JS', color: '#f44336' },
@@ -311,8 +313,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
         .map((l) => l.trim())
         .filter((l) => l),
       dueDate,
-      assignee:
-        assignees.find((a) => a.id === parseInt(assignee)) || assignees[0],
+      assignee: assignees.find((a) => a.id === assignee) || assignees[0],
     });
   };
 
@@ -401,7 +402,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
               id="assignee"
               value={assignee}
               label="Assignee"
-              onChange={(e) => setAssignee(e.target.value)}
+              onChange={(e) => setAssignee(e.target.value as any)}
             >
               {assignees.map((a) => (
                 <MenuItem key={a.id} value={a.id}>

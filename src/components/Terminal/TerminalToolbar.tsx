@@ -12,7 +12,7 @@ import { Close as CloseIcon } from '@mui/icons-material';
 import {
   isTerminalVisible,
   setShowTerminal,
-  disconnectTerminal,   // ✅ import the disconnect function
+  disconnectTerminal, // ✅ import the disconnect function
 } from '@/stores/terminalStore';
 
 interface TerminalToolbarProps {

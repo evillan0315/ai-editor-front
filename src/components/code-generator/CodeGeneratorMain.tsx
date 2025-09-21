@@ -21,7 +21,7 @@ import { ThoughtProcess } from './ThoughtProcess';
 import { ChangesList } from './ChangesList';
 import { GitInstructions } from './GitInstructions';
 import { DocumentationViewer } from './DocumentationViewer';
-import { type ChangeEntry } from './ChangeItem';
+import { FileChange } from '@/types/llm';
 
 export interface CodeGeneratorData {
   title: string;
@@ -29,7 +29,7 @@ export interface CodeGeneratorData {
   thoughtProcess: string;
   documentation: string;
   gitInstructions: string[]; // ← change from string to string[]
-  changes: ChangeEntry[];
+  changes: FileChange[];
 }
 
 interface Props {
@@ -59,7 +59,7 @@ export const CodeGeneratorMain: React.FC<Props> = ({ data }) => {
             {data.title}
           </Typography>
 
-          <Typography variant="body" color="text.secondary" paragraph>
+          <Typography variant="body1" color="text.secondary" paragraph>
             {data.summary}
           </Typography>
 
@@ -70,7 +70,7 @@ export const CodeGeneratorMain: React.FC<Props> = ({ data }) => {
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Box display="flex" alignItems="center" gap={1}>
                 <PsychologyIcon color="primary" />
-                <Typography variant="p">Thought Process</Typography>
+                <Typography variant="body1">Thought Process</Typography>
               </Box>
             </AccordionSummary>
             <AccordionDetails>
@@ -82,7 +82,7 @@ export const CodeGeneratorMain: React.FC<Props> = ({ data }) => {
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Box display="flex" alignItems="center" gap={1}>
                 <ChangeCircleIcon color="secondary" />
-                <Typography variant="p">Proposed Changes</Typography>
+                <Typography variant="body1">Proposed Changes</Typography>
               </Box>
             </AccordionSummary>
             <AccordionDetails>
@@ -94,7 +94,7 @@ export const CodeGeneratorMain: React.FC<Props> = ({ data }) => {
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Box display="flex" alignItems="center" gap={1}>
                   <GitHubIcon color="action" />
-                  <Typography variant="p">Git Instructions</Typography>
+                  <Typography variant="body1">Git Instructions</Typography>
                 </Box>
               </AccordionSummary>
               <AccordionDetails>
@@ -108,7 +108,7 @@ export const CodeGeneratorMain: React.FC<Props> = ({ data }) => {
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Box display="flex" alignItems="center" gap={1}>
                   <DescriptionIcon color="info" />
-                  <Typography variant="p">Documentation</Typography>
+                  <Typography variant="body1">Documentation</Typography>
                 </Box>
               </AccordionSummary>
               <AccordionDetails>

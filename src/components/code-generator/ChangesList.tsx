@@ -9,10 +9,10 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { ChangeItem, type ChangeEntry } from './ChangeItem';
+import { ChangeItem } from './ChangeItem';
+import OutputLogger from '@/components/OutputLogger';
 import { addLog } from '@/stores/logStore';
 import {
-  aiEditorStore,
   setError, // Still used for immediate, transient UI error
 } from '@/stores/aiEditorStore';
 import {
@@ -21,23 +21,24 @@ import {
   setApplyingChanges,
   setLastLlmResponse,
   clearDiff,
+  performPostApplyActions,
 } from '@/stores/llmStore';
-import { applyProposedChanges } from '@/api/llm';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
+import { FileChange } from '@/types/llm';
 
 interface Props {
-  changes: ChangeEntry[];
+  changes: FileChange[];
 }
 
 // Define the state type
 type ChangesListState = {
-  selectedChanges: Record<string, ChangeEntry>;
+  selectedChanges: Record<string, FileChange>;
 };
 
 // Define the action type
 type ChangesListAction = {
   type: 'SELECT_CHANGE' | 'DESELECT_CHANGE';
-  change: ChangeEntry;
+  change: FileChange;
 };
 
 // Reducer function to manage selected changes
@@ -70,6 +71,12 @@ const initialChangesListState: ChangesListState = {
   selectedChanges: {},
 };
 
+// Define the type for the apply result
+interface ApplyResult {
+  success: boolean;
+  messages: string[];
+}
+
 export const ChangesList: React.FC<Props> = ({ changes }) => {
   const {
     lastLlmResponse,
@@ -77,6 +84,8 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
     gitInstructions,
     lastLlmGeneratePayload,
     scanPathsInput,
+    isBuilding,
+    error,
   } = useStore(llmStore);
   const currentProjectPath = useStore(projectRootDirectoryStore);
 
@@ -88,19 +97,20 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
   const selectedChanges = state.selectedChanges;
 
   const handleApplySelectedChanges = async () => {
-    console.log(selectedChanges, 'selectedChanges');
     if (Object.keys(selectedChanges).length === 0) {
       const msg = 'No changes selected to apply.';
-      setError(msg); // For immediate UI feedback
+      setError(msg);
       addLog('AI Response Display', msg, 'warning', undefined, undefined, true);
       return;
     }
+
     if (!currentProjectPath) {
       const msg = 'Project root is not set.';
       setError(msg);
       addLog('AI Response Display', msg, 'error', undefined, undefined, true);
       return;
     }
+
     if (!lastLlmGeneratePayload) {
       const msg =
         'Original AI generation payload missing. Cannot report errors.';
@@ -109,67 +119,69 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
       return;
     }
 
-    // Start the overall application process indicator
-    setApplyingChanges(true); // This action also logs the start of applying changes
-    setError(null); // Clear previous immediate error
-
+    setApplyingChanges(true);
+    setError(null);
     addLog(
       'AI Response Display',
-      'Starting application process for selected changes...',
-      'info',
+      'Starting application process for selected changes...',      'info',
     );
 
     try {
       const changesToApply = Object.values(selectedChanges);
-      console.log(changesToApply, 'changesToApply');
-      const applyResult = await applyProposedChanges(
-        changesToApply,
-        currentProjectPath,
-      );
-      console.log(applyResult, 'applyResult');
-      // Individual messages from applyResult.messages are now logged by `addLog` in aiEditorStore
-      applyResult.messages.forEach((msg) =>
-        addLog('AI Response Display', msg, 'info'),
-      );
 
-      if (!applyResult.success) {
-        const msg = 'Some changes failed to apply. Check logs for details.';
-        setError(msg); // For immediate UI feedback
-        addLog(
-          'AI Response Display',
-          msg,
-          'error',
-          applyResult.messages.join('\n'),
-          undefined,
-          true,
-        );
+      // Call your API or store action to apply changes
+      const applyResult = await performPostApplyActions(
+        currentProjectPath,
+        changesToApply,
+        lastLlmGeneratePayload,
+        lastLlmResponse || {},
+      ) as ApplyResult; // Cast the result to ApplyResult
+
+      // ApplyResult could have messages & success status
+      if (applyResult) {
+        if (applyResult.messages) {
+          applyResult.messages.forEach((msg) =>
+            addLog('AI Response Display', msg, 'info'),
+          );
+        }
+
+        if (applyResult.success === false) {
+          const msg = 'Some changes failed to apply. Check logs for details.';
+          setError(msg);
+          addLog(
+            'AI Response Display',
+            msg,
+            'error',
+            applyResult.messages.join('\n'),
+            undefined,
+            true,
+          );
+        } else {
+          addLog(
+            'AI Response Display',
+            'Changes applied successfully.',
+            'success',
+          );
+
+          // Perform post-apply actions like build + git
+          await performPostApplyActions(
+            currentProjectPath,
+            changesToApply,
+            lastLlmGeneratePayload,
+            lastLlmResponse || {},
+          );
+        }
       } else {
-        addLog(
-          'AI Response Display',
-          'Changes applied successfully. Proceeding to post-apply actions (build + git).',
-          'success',
-        );
-        // // If changes applied successfully, proceed to post-apply actions (build + git)
-        // if (lastLlmResponse && lastLlmGeneratePayload) {
-        //   await performPostApplyActions(
-        //     currentProjectPath,
-        //     lastLlmResponse,
-        //     lastLlmGeneratePayload,
-        //     scanPathsInput
-        //       .split(',')
-        //       .map((s) => s.trim())
-        //       .filter(Boolean),
-        //   );
-        // }
+        console.warn('applyResult is undefined or null.');
       }
 
-      // Clear the response and selected changes after applying (and building/git)
+      // Clear state after successful apply
       setLastLlmResponse(null);
       deselectAllChanges();
       clearDiff();
     } catch (err) {
-      const errorMsg = `Overall failure during application of changes: ${err instanceof Error ? err.message : String(err)}`;
-      setError(errorMsg); // For immediate UI feedback
+      const errorMsg = `Failure during application of changes: ${err instanceof Error ? err.message : String(err)}`;
+      setError(errorMsg);
       addLog(
         'AI Response Display',
         errorMsg,
@@ -179,7 +191,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
         true,
       );
     } finally {
-      setApplyingChanges(false); // This action also logs the end of applying changes
+      setApplyingChanges(false);
     }
   };
   const isAnyProcessRunning = applyingChanges;
@@ -188,7 +200,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
   const ChangeItemMemo = useMemo(() => ChangeItem, []);
 
   const toggleChange = useCallback(
-    (change: ChangeEntry) => {
+    (change: FileChange) => {
       const isSelected = !!selectedChanges[change.filePath];
 
       dispatch({
@@ -275,8 +287,10 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
           <CircularProgress size={16} color="inherit" sx={{ ml: 1 }} />
         </Alert>
       )}
+      <Box className="flex items-start h-[140px] overflow-auto">
+        <OutputLogger />
+      </Box>
 
-      {/* Scrollable list with elevation */}
       <Paper
         elevation={3}
         sx={{

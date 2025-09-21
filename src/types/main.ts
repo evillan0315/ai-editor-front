@@ -5,7 +5,7 @@ import {
   LlmOutputFormat,
   LlmGeneratePayload,
   ModelResponse,
-  FileChange
+  FileChange,
 } from './llm';
 import { TerminalCommandResponse } from './terminal';
 

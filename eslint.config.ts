@@ -76,13 +76,13 @@ export default tseslint.config(
     },
     rules: {
       // General rules
-      'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
+      'no-console': 'off',
       'arrow-body-style': ['error', 'as-needed'],
       'prefer-const': 'error',
 
       // React rules – import recommended sets directly from plugin
       ...pluginReact.configs.recommended.rules,
-      ...pluginReact.configs['jsx-runtime'].rules,
+      //...pluginReact.configs['jsx-runtime'].rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
 
@@ -95,25 +95,14 @@ export default tseslint.config(
       // TypeScript rules
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-unused-vars': 'off',
 
       // Unused imports
       'unused-imports/no-unused-imports': 'warn',
-      'unused-imports/no-unused-vars': [
-        'warn',
-        {
-          vars: 'all',
-          varsIgnorePattern: '^_',
-          args: 'after-used',
-          argsIgnorePattern: '^_',
-        },
-      ],
+      'unused-imports/no-unused-vars': 'off',
 
       // Prettier
-      /*'prettier/prettier': [
+      'prettier/prettier': [
         'error',
         {
           endOfLine: 'lf',
@@ -123,11 +112,11 @@ export default tseslint.config(
           trailingComma: 'all',
           printWidth: 100,
         },
-      ],*/
+      ],
     },
   },
 
   // Must be last: disables rules that conflict with Prettier
-  //eslintConfigPrettier,
+  eslintConfigPrettier,
 );
 

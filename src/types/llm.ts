@@ -2,6 +2,7 @@ import { TerminalCommandResponse } from './terminal';
 // =========================================================================
 // AI/LLM Related Types
 // =========================================================================
+
 // Request Types
 export enum RequestType {
   TEXT_ONLY = 'TEXT_ONLY',
