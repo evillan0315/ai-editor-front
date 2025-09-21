@@ -2,7 +2,6 @@ import { getToken } from '@/stores/authStore';
 import {
   ApiFileScanResult,
   FileTreeNode,
-  FileContentResponse,
   FileOperationResult, // Import new type
   RenameResult, // Import new type
   CopyResult, // Import new type

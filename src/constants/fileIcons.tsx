@@ -9,7 +9,7 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description'; // Generic text file
 import CodeIcon from '@mui/icons-material/Code'; // Generic code file
 import TerminalIcon from '@mui/icons-material/Terminal'; // For shell scripts, .env, .gitignore
-import WebIcon from '@mui/icons-material/Web'; // For web-related files
+// For web-related files
 import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined';
 import FolderIcon from '@mui/icons-material/FolderOutlined';
 

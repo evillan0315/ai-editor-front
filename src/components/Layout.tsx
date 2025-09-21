@@ -1,61 +1,54 @@
-import React, { useEffect, useState, createContext, useContext, useMemo, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
-import Navbar from './Navbar';
-import { checkAuthStatus } from '@/services/authService';
-import { useStore } from '@nanostores/react';
-import { authStore } from '@/stores/authStore';
-import { isRightSidebarVisible } from '@/stores/uiStore';
 import LinearProgress from '@mui/material/LinearProgress';
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
-import AiSidebarContent from '@/components/AiSidebarContent';
 
-// Constants for layout
-const NAVBAR_HEIGHT = 64; // Approximate height of MUI AppBar
-const FOOTER_HEIGHT = 30; // Keeping footer height minimal as it's not present globally
+import { checkAuthStatus } from '@/services/authService';
+import { useStore } from '@nanostores/react';
+import { authStore } from '@/stores/authStore';
+import {
+  isRightSidebarVisible,
+  isLeftSidebarVisible,
+} from '@/stores/uiStore';
+import Navbar from './Navbar';
+import { RightSidebarContent, LeftSidebarContent } from '@/components/SidebarContent';
 
-// Constants for resizable right sidebar
+const NAVBAR_HEIGHT = 64;
+const FOOTER_HEIGHT = 30;
+
 const RIGHT_SIDEBAR_STORAGE_KEY = 'rightSidebarWidth';
-const DEFAULT_RIGHT_SIDEBAR_WIDTH = 300;
-const MIN_RIGHT_SIDEBAR_WIDTH = 300;
-const MAX_RIGHT_SIDEBAR_WIDTH = 1000;
-const SIDEBAR_RESIZER_WIDTH = 4; // Width of the draggable handle in pixels
+const LEFT_SIDEBAR_STORAGE_KEY = 'leftSidebarWidth';
 
-// Define context type for the right sidebar
-interface RightSidebarContextType {
-  setRightSidebar: (content: React.ReactNode | null) => void;
-}
+const DEFAULT_SIDEBAR_WIDTH = 300;
+const MIN_SIDEBAR_WIDTH = 300;
+const MAX_SIDEBAR_WIDTH = 1000;
+const SIDEBAR_RESIZER_WIDTH = 4;
 
 interface LayoutProps {
   footer?: React.ReactNode | null;
 }
 
-// Create a context for the right sidebar
-const RightSidebarContext = createContext<RightSidebarContextType | undefined>(
-  undefined,
-);
-
-// Custom hook to use the right sidebar context
-export const useRightSidebar = () => {
-  const context = useContext(RightSidebarContext);
-  if (context === undefined) {
-    throw new Error('useRightSidebar must be used within a Layout component');
-  }
-  return context;
-};
-
 const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const { loading: authLoading } = useStore(authStore);
   const theme = useTheme();
-  const $isRightSidebarVisible = useStore(isRightSidebarVisible);
-  const [rightSidebarContent, setRightSidebarContent] = useState<React.ReactNode | null>(null);
 
-  // State for resizable sidebar
+  const $isRightSidebarVisible = useStore(isRightSidebarVisible);
+  const $isLeftSidebarVisible = useStore(isLeftSidebarVisible);
+
+  // Sidebar widths (persisted)
   const [rightSidebarWidth, setRightSidebarWidth] = useState<number>(() => {
-    const storedWidth = localStorage.getItem(RIGHT_SIDEBAR_STORAGE_KEY);
-    return storedWidth ? parseInt(storedWidth, 10) : DEFAULT_RIGHT_SIDEBAR_WIDTH;
+    const stored = localStorage.getItem(RIGHT_SIDEBAR_STORAGE_KEY);
+    return stored ? parseInt(stored, 10) : DEFAULT_SIDEBAR_WIDTH;
   });
-  const [isResizing, setIsResizing] = useState(false);
+
+  const [leftSidebarWidth, setLeftSidebarWidth] = useState<number>(() => {
+    const stored = localStorage.getItem(LEFT_SIDEBAR_STORAGE_KEY);
+    return stored ? parseInt(stored, 10) : DEFAULT_SIDEBAR_WIDTH;
+  });
+
+  // Resizing state
+  const [isResizing, setIsResizing] = useState<null | 'left' | 'right'>(null);
   const initialMouseX = useRef(0);
   const initialSidebarWidth = useRef(0);
 
@@ -63,53 +56,58 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
     checkAuthStatus();
   }, []);
 
-  // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useMemo(
-    () => ({
-      setRightSidebar: setRightSidebarContent,
-    }),
-    [],
-  );
-
-  // --- Resizing Handlers ---
+  /** Start resizing a sidebar */
   const startResizing = useCallback(
-    (e: React.MouseEvent) => {
-      setIsResizing(true);
-      initialMouseX.current = e.clientX;
-      initialSidebarWidth.current = rightSidebarWidth;
-      document.body.style.cursor = 'ew-resize'; // Change cursor globally
-      document.body.style.userSelect = 'none'; // Prevent text selection during drag
-      document.body.style.pointerEvents = 'none'; // Prevent interactions with elements below
-    },
-    [rightSidebarWidth],
+    (side: 'left' | 'right') =>
+      (e: React.MouseEvent) => {
+        setIsResizing(side);
+        initialMouseX.current = e.clientX;
+        initialSidebarWidth.current =
+          side === 'left' ? leftSidebarWidth : rightSidebarWidth;
+        document.body.style.cursor = 'ew-resize';
+        document.body.style.userSelect = 'none';
+        document.body.style.pointerEvents = 'none';
+      },
+    [leftSidebarWidth, rightSidebarWidth],
   );
 
   const stopResizing = useCallback(() => {
-    setIsResizing(false);
-    document.body.style.cursor = 'default';
-    document.body.style.userSelect = 'auto';
-    document.body.style.pointerEvents = 'auto';
-    localStorage.setItem(RIGHT_SIDEBAR_STORAGE_KEY, rightSidebarWidth.toString()); // Persist the new width
-  }, [rightSidebarWidth]);
+    if (isResizing) {
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+      document.body.style.pointerEvents = 'auto';
+      if (isResizing === 'left') {
+        localStorage.setItem(
+          LEFT_SIDEBAR_STORAGE_KEY,
+          leftSidebarWidth.toString(),
+        );
+      } else {
+        localStorage.setItem(
+          RIGHT_SIDEBAR_STORAGE_KEY,
+          rightSidebarWidth.toString(),
+        );
+      }
+      setIsResizing(null);
+    }
+  }, [isResizing, leftSidebarWidth, rightSidebarWidth]);
 
   const resize = useCallback(
     (e: MouseEvent) => {
-      if (isResizing) {
-        const deltaX = e.clientX - initialMouseX.current;
-        // For resizing from right to left (handle on left edge of sidebar):
-        // Moving mouse left (deltaX < 0) should increase width
-        // Moving mouse right (deltaX > 0) should decrease width
+      if (!isResizing) return;
+      const deltaX = e.clientX - initialMouseX.current;
+      if (isResizing === 'left') {
+        let newWidth = initialSidebarWidth.current + deltaX;
+        newWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, newWidth));
+        setLeftSidebarWidth(newWidth);
+      } else {
         let newWidth = initialSidebarWidth.current - deltaX;
-
-        // Apply min/max width constraints
-        newWidth = Math.max(MIN_RIGHT_SIDEBAR_WIDTH, Math.min(MAX_RIGHT_SIDEBAR_WIDTH, newWidth));
+        newWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, newWidth));
         setRightSidebarWidth(newWidth);
       }
     },
     [isResizing],
   );
 
-  // Effect to add/remove global event listeners for resizing
   useEffect(() => {
     if (isResizing) {
       document.addEventListener('mousemove', resize);
@@ -118,99 +116,115 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
       document.removeEventListener('mousemove', resize);
       document.removeEventListener('mouseup', stopResizing);
     }
-    // Cleanup function
     return () => {
       document.removeEventListener('mousemove', resize);
       document.removeEventListener('mouseup', stopResizing);
     };
-  }, [isResizing, resize, stopResizing]); // Dependencies are crucial for useCallback
+  }, [isResizing, resize, stopResizing]);
 
   return (
-    <RightSidebarContext.Provider value={contextValue}>
-      <div
-        className="h-screen flex flex-col overflow-hidden"
-        style={{ backgroundColor: theme.palette.background.default }}
+    <Box
+      className="h-screen flex flex-col overflow-hidden"
+      sx={{ backgroundColor: theme.palette.background.default }}
+    >
+      <Navbar />
+
+      {authLoading && (
+        <Box className="w-full sticky top-0 z-[1100] flex-shrink-0">
+          <LinearProgress />
+        </Box>
+      )}
+
+      {/* Main content + optional sidebars */}
+      <Box
+        className="flex-grow w-full flex flex-row overflow-hidden"
+        sx={{ height: `calc(100vh - ${NAVBAR_HEIGHT}px - ${FOOTER_HEIGHT}px)` }}
       >
-        <Navbar />
-        {authLoading && (
-          <Box
-            sx={{
-              width: '100%',
-              position: 'sticky',
-              top: 0,
-              zIndex: 1100,
-              flexShrink: 0,
-            }}
-          >
-            <LinearProgress />
-          </Box>
+        {/* Left sidebar */}
+        {$isLeftSidebarVisible && (
+          <>
+            <Box
+              className="flex-shrink-0 overflow-auto flex flex-col border-r"
+              sx={{
+                width: leftSidebarWidth,
+                backgroundColor: theme.palette.background.paper,
+                borderColor: theme.palette.divider,
+              }}
+            >
+              <LeftSidebarContent />
+            </Box>
+            {/* Draggable resizer */}
+            <Box
+              onMouseDown={startResizing('left')}
+              className="flex-shrink-0 cursor-ew-resize z-10"
+              sx={{
+                width: SIDEBAR_RESIZER_WIDTH,
+                backgroundColor: theme.palette.divider,
+                transition: 'background-color 0.2s ease',
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+              title="Resize sidebar"
+            />
+          </>
         )}
-        {/* Main content area and optional right sidebar */}
-        <div
-          className="flex-grow w-full flex flex-row overflow-hidden" // New flex row container for main content + sidebar
-          style={{
-            height: `calc(100vh - ${NAVBAR_HEIGHT}px - ${FOOTER_HEIGHT}px)`,
+
+        {/* Main Outlet content */}
+        <Box
+          className="flex-grow flex flex-col overflow-auto min-w-0"
+          sx={{ backgroundColor: theme.palette.background.default }}
+        >
+          <Outlet />
+        </Box>
+
+        {/* Right sidebar */}
+        {$isRightSidebarVisible && (
+          <>
+            {/* Draggable resizer */}
+            <Box
+              onMouseDown={startResizing('right')}
+              className="flex-shrink-0 cursor-ew-resize z-10"
+              sx={{
+                width: SIDEBAR_RESIZER_WIDTH,
+                backgroundColor: theme.palette.divider,
+                transition: 'background-color 0.2s ease',
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
+              }}
+              title="Resize sidebar"
+            />
+            <Box
+              className="flex-shrink-0 overflow-auto flex flex-col border-l pb-8"
+              sx={{
+                width: rightSidebarWidth,
+                backgroundColor: theme.palette.background.paper,
+                borderColor: theme.palette.divider,
+              }}
+            >
+              <RightSidebarContent />
+            </Box>
+          </>
+        )}
+      </Box>
+
+      {/* Sticky footer */}
+      {footer && (
+        <Box
+          className="fixed bottom-0 z-[1300] w-full flex justify-center items-center border-t"
+          sx={{
+            height: FOOTER_HEIGHT,
+            backgroundColor: theme.palette.background.paper,
+            borderColor: theme.palette.divider,
           }}
         >
-          <main
-            className="flex-grow flex flex-col overflow-auto" // Main content area, takes available width
-            style={{
-              minWidth: 0, // Allow main content to shrink
-              backgroundColor: theme.palette.background.default, // Background for the main content area
-            }}
-          >
-            <Outlet />
-          </main>
-          {$isRightSidebarVisible && (
-            <>
-              {/* Resizer handle for the right sidebar */}
-              <div
-                onMouseDown={startResizing}
-                className="flex-shrink-0 cursor-ew-resize" // Tailwind utility for cursor
-                style={{
-                  width: SIDEBAR_RESIZER_WIDTH,
-                  backgroundColor: theme.palette.divider, // Match theme divider color
-                  zIndex: 10, // Ensure it's above other content if necessary
-                }}
-                title="Resize sidebar"
-              />
-              <aside
-                className="flex-shrink-0"
-                style={{
-                  width: rightSidebarWidth,
-                  backgroundColor: theme.palette.background.paper, // Sidebar background
-                  borderLeft: `1px solid ${theme.palette.divider}`,
-                  overflow: 'auto', // Allow sidebar content to scroll
-                  display: 'flex', // Ensure sidebar content fills height
-                  flexDirection: 'column',
-                }}
-              >
-                <AiSidebarContent />
-              </aside>
-            </>
-          )}
-        </div>
-        {footer && (
-          <footer
-            style={{
-              position: 'fixed', 
-              bottom: 0,
-              zIndex: 1300,
-              height: FOOTER_HEIGHT,
-              backgroundColor: theme.palette.background.paper,
-              borderTop: `1px solid ${theme.palette.divider}`,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              width: '100%',
-            }}
-          >
-            {footer}
-          </footer>
-        )}
-      </div>
-    </RightSidebarContext.Provider>
+          {footer}
+        </Box>
+      )}
+    </Box>
   );
 };
 
 export default Layout;
+

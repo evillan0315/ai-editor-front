@@ -31,7 +31,7 @@ const Root = () => {
     <React.StrictMode>
       <BrowserRouter>
         <ThemeProvider theme={theme}>
-          <CssBaseline enableColorScheme />{' '}
+          <CssBaseline />
           {/* enableColorScheme respects system preference and theme.palette.mode */}
           <App />
         </ThemeProvider>

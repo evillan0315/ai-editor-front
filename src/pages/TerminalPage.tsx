@@ -1,5 +1,5 @@
 // src/pages/TerminalPage.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -10,8 +10,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress,
-  Alert,
   SelectChangeEvent,
   Button,
   IconButton,
@@ -23,8 +21,6 @@ import {
   TextField,
 } from '@mui/material';
 import TerminalIcon from '@mui/icons-material/Terminal';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import StopIcon from '@mui/icons-material/Stop';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { XTerminal } from '@/components/Terminal/Terminal';

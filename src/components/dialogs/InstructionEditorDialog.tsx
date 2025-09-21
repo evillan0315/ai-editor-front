@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -6,142 +6,61 @@ import {
   DialogActions,
   Button,
   TextField,
-  Typography,
-  IconButton,
-  useTheme,
-  Box,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import CodeMirror from '@uiw/react-codemirror';
 import { useStore } from '@nanostores/react';
-import { themeStore } from '@/stores/themeStore';
 import { aiEditorStore } from '@/stores/aiEditorStore'; // Import aiEditorStore
-import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
-import { LlmOutputFormat } from '@/types'; // Import LlmOutputFormat
+// Import LlmOutputFormat
 
 interface InstructionEditorDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (type: 'ai' | 'expected', content: string) => void;
-  instructionType: 'ai' | 'expected';
-  initialContent: string;
+  type: 'ai' | 'expected';
 }
 
 const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
   open,
   onClose,
-  onSave,
-  instructionType,
-  initialContent,
+  type,
 }) => {
-  const muiTheme = useTheme(); // Get MUI theme
-  const { mode } = useStore(themeStore);
-  const { llmOutputFormat } = useStore(aiEditorStore); // Get llmOutputFormat from store
-  const [content, setContent] = useState(initialContent);
+  const aiInstruction = useStore(aiEditorStore).aiInstruction;
+  const expectedOutputInstruction =
+    useStore(aiEditorStore).expectedOutputInstruction;
+
+  const [localValue, setLocalValue] = useState(
+    type === 'ai' ? aiInstruction : expectedOutputInstruction,
+  );
 
   useEffect(() => {
-    setContent(initialContent);
-  }, [initialContent]);
+    setLocalValue(type === 'ai' ? aiInstruction : expectedOutputInstruction);
+  }, [type, aiInstruction, expectedOutputInstruction]);
 
   const handleSave = () => {
-    onSave(instructionType, content);
+    if (type === 'ai') setAiInstruction(localValue);
+    else setExpectedOutputInstruction(localValue);
+    onClose();
   };
 
-  const title =
-    instructionType === 'ai'
-      ? 'Edit AI Instruction'
-      : 'Edit Expected Output Format';
-
-  // Determine language extensions for CodeMirror dynamically
-  const languageExtensions = useMemo(() => {
-    if (instructionType === 'ai') {
-      return getCodeMirrorLanguage('instruction.yaml'); // Default to markdown for AI instructions
-    } else {
-      // instructionType === 'expected'
-      switch (llmOutputFormat) {
-        case LlmOutputFormat.JSON:
-          return getCodeMirrorLanguage('output.json');
-        case LlmOutputFormat.YAML:
-          return getCodeMirrorLanguage('output.yaml');
-        case LlmOutputFormat.MARKDOWN:
-          return getCodeMirrorLanguage('output.md');
-        case LlmOutputFormat.TEXT:
-          return []; // No specific language for plain text
-        default:
-          return getCodeMirrorLanguage('output.json'); // Fallback to JSON
-      }
-    }
-  }, [instructionType, llmOutputFormat]);
-
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: muiTheme.palette.background.paper,
-          color: muiTheme.palette.text.primary,
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{
-          borderBottom: `1px solid ${muiTheme.palette.divider}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          pr: 1,
-        }}
-      >
-        <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
-          {title}
-        </Typography>
-        <IconButton
-          onClick={onClose}
-          size="small"
-          sx={{ color: muiTheme.palette.text.secondary }}
-        >
-          <CloseIcon />
-        </IconButton>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        {type === 'ai'
+          ? 'Edit AI Instructions'
+          : 'Edit Expected Output Instructions'}
       </DialogTitle>
-      <DialogContent
-        sx={{ p: 2, display: 'flex', flexDirection: 'column', flexGrow: 1 }}
-      >
-        <Box sx={{ flexGrow: 1, minHeight: 0 }}>
-          <CodeMirror
-            value={content}
-            onChange={setContent}
-            extensions={[
-              ...languageExtensions,
-              createCodeMirrorTheme(muiTheme),
-            ]}
-            theme={mode}
-            minHeight="400px" // Sufficient height for instructions
-            maxHeight="70vh" // Max height to prevent overflow on smaller screens
-            style={{
-              borderRadius: muiTheme.shape.borderRadius + 'px',
-              border: `1px solid ${muiTheme.palette.divider}`,
-              overflow: 'hidden',
-            }}
-          />
-        </Box>
+      <DialogContent>
+        <TextField
+          multiline
+          rows={6}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          fullWidth
+          size="small"
+          autoFocus
+        />
       </DialogContent>
-      <DialogActions
-        sx={{
-          borderTop: `1px solid ${muiTheme.palette.divider}`,
-          p: 2,
-          justifyContent: 'flex-end',
-        }}
-      >
-        <Button
-          onClick={onClose}
-          sx={{ color: muiTheme.palette.text.secondary }}
-        >
-          Cancel
-        </Button>
-        <Button onClick={handleSave} variant="contained" color="primary">
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSave} variant="contained">
           Save
         </Button>
       </DialogActions>

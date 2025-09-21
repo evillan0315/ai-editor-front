@@ -111,30 +111,34 @@ const VideoList: React.FC<VideoListProps> = ({
     return ['all', ...Array.from(new Set(allGenres))];
   }, [videos]);
 
-  const filteredAndSortedVideos = useMemo(() => {
-    return videos
-      .filter((video) => {
-        const matchesSearch =
-          video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          video.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (video.cast &&
-            video.cast.some((actor) =>
-              actor.toLowerCase().includes(searchQuery.toLowerCase()),
-            ));
+  const filteredAndSortedVideos = useMemo(
+    () =>
+      videos
+        .filter((video) => {
+          const matchesSearch =
+            video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            video.description
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            (video.cast &&
+              video.cast.some((actor) =>
+                actor.toLowerCase().includes(searchQuery.toLowerCase()),
+              ));
 
-        const matchesGenre =
-          selectedGenre === 'all' || video.genre.includes(selectedGenre);
+          const matchesGenre =
+            selectedGenre === 'all' || video.genre.includes(selectedGenre);
 
-        return matchesSearch && matchesGenre;
-      })
-      .sort((a, b) => {
-        const modifier = sortOrder === 'asc' ? 1 : -1;
+          return matchesSearch && matchesGenre;
+        })
+        .sort((a, b) => {
+          const modifier = sortOrder === 'asc' ? 1 : -1;
 
-        if (a[sortField] < b[sortField]) return -1 * modifier;
-        if (a[sortField] > b[sortField]) return 1 * modifier;
-        return 0;
-      });
-  }, [videos, searchQuery, selectedGenre, sortField, sortOrder]);
+          if (a[sortField] < b[sortField]) return -1 * modifier;
+          if (a[sortField] > b[sortField]) return 1 * modifier;
+          return 0;
+        }),
+    [videos, searchQuery, selectedGenre, sortField, sortOrder],
+  );
 
   // Handlers
   const handleSortChange = (field: SortField) => {

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { authStore, loginSuccess, setError } from '@/stores/authStore';
+import { loginSuccess } from '@/stores/authStore';
 import Loading from '@/components/Loading';
 
 import type { UserProfile } from '@/types/auth';

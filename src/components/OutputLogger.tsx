@@ -4,9 +4,7 @@ import { logStore, LogEntry, clearLogs } from '@/stores/logStore';
 import {
   Box,
   Typography,
-  CircularProgress,
   Alert,
-  Paper,
   Accordion,
   AccordionSummary,
   AccordionDetails,

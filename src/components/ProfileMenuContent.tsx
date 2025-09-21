@@ -5,12 +5,10 @@ import {
   Typography,
   Grid,
   Card,
-  CardContent,
   useTheme,
   CardActionArea,
   Tooltip,
   Avatar,
-  Divider,
 } from '@mui/material';
 import type { ProfileMenuItem, UserProfile } from '@/types'; // Fixed import
 

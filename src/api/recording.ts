@@ -1,6 +1,5 @@
 import { getToken } from '@/stores/authStore';
 import {
-  BaseReponseDto,
   RecordingStartResponse,
   RecordingStopResponse,
   PaginationRecordingQueryDto,
@@ -8,7 +7,7 @@ import {
   TranscodeToGifDto,
   RecordingResultDto,
   UpdateRecordingDto,
-  TranscodeToGifResult
+  TranscodeToGifResult,
 } from '@/types';
 
 const API_BASE_URL = `/api`;

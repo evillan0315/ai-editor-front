@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, useTheme, Typography } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import SpotifyHomePage from './SpotifyHomePage';
 import SpotifySearchPage from './SpotifySearchPage';
 import SpotifyLibraryPage from './SpotifyLibraryPage';

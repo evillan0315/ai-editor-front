@@ -53,7 +53,7 @@ export const addLog = (
         ? alwaysExpanded
         : severity === 'error' || severity === 'warning',
   };
-  //logStore.set([...logStore.get(), newLog]);
+  logStore.set([...logStore.get(), newLog]);
   // console.log(`[${newLog.timestamp}][${newLog.source} - ${newLog.severity.toUpperCase()}] ${newLog.message}`);
 };
 

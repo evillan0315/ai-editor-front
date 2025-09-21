@@ -9,7 +9,6 @@ import {
   Typography,
   IconButton,
   useTheme,
-  Box,
   CircularProgress,
   Alert,
   InputAdornment, // Added InputAdornment import
@@ -17,9 +16,6 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined';
-import CheckIcon from '@mui/icons-material/Check';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 import * as path from 'path-browserify';
 
 import DirectoryPickerDialog from './DirectoryPickerDialog'; // Reuse existing picker

@@ -1,7 +1,7 @@
 // src/components/TranscriptionPlayer/TranscriptionHighlight.tsx
 import React from 'react';
 import { Box, Typography, Chip, Paper } from '@mui/material';
-import { TranscriptionResult, SyncTranscriptionResponse } from '@/types';
+import { SyncTranscriptionResponse } from '@/types';
 
 interface TranscriptionHighlightProps {
   syncData: SyncTranscriptionResponse;

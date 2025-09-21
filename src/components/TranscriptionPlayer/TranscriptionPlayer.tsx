@@ -15,8 +15,6 @@ import {
 import {
   PlayArrow,
   Pause,
-  SkipPrevious,
-  SkipNext,
   VolumeUp,
   Transcribe, // Fixed: Changed from Transcript to Transcribe
 } from '@mui/icons-material';

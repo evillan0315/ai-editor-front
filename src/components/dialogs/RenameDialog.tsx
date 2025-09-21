@@ -9,13 +9,11 @@ import {
   Typography,
   IconButton,
   useTheme,
-  Box,
   CircularProgress,
   Alert,
   InputAdornment, // Added InputAdornment import
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import EditIcon from '@mui/icons-material/Edit';
 import FolderIcon from '@mui/icons-material/FolderOutlined';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import * as path from 'path-browserify';

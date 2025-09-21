@@ -1,25 +1,5 @@
 // src/types/conversation.ts
-
-/**
- * Enum representing different types of AI requests.
- * Replicated from backend's @prisma/client for frontend type safety.
- */
-export enum RequestType {
-  TEXT_ONLY = 'TEXT_ONLY',
-  TEXT_WITH_IMAGE = 'TEXT_WITH_IMAGE',
-  TEXT_WITH_FILE = 'TEXT_WITH_FILE',
-  LLM_GENERATION = 'LLM_GENERATION',
-  LIVE_API = 'LIVE_API',
-  RESUME_GENERATION = 'RESUME_GENERATION',
-  RESUME_OPTIMIZATION = 'RESUME_OPTIMIZATION',
-  RESUME_ENHANCEMENT = 'RESUME_ENHANCEMENT',
-  VIDEO_GENERATION = 'VIDEO_GENERATION',
-  IMAGE_GENERATION = 'IMAGE_GENERATION',
-  CODE_GENERATION = 'CODE_GENERATION',
-  CODE_MODIFICATION = 'CODE_MODIFICATION',
-  CODE_REPAIR = 'CODE_REPAIR',
-  CODE_ANALYSIS = 'CODE_ANALYSIS',
-}
+import { RequestType } from './llm';
 
 /**
  * Defines parameters for pagination.

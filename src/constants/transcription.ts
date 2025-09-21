@@ -1,11 +1,10 @@
-import AppsIcon from '@mui/icons-material/Apps';
 import CodeIcon from '@mui/icons-material/Code';
 import TranslateIcon from '@mui/icons-material/Translate';
 import MicIcon from '@mui/icons-material/Mic'; // New icon for Gemini Live Audio
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite'; // Icon for Spotify-like app
 import PreviewIcon from '@mui/icons-material/Preview'; // Icon for Preview Built App
 import CorporateFareIcon from '@mui/icons-material/CorporateFare'; // Icon for Organizations
-import FolderSharedIcon from '@mui/icons-material/FolderShared'; // Icon for Projects
+// Icon for Projects
 import TranscribeIcon from '@mui/icons-material/Transcribe'; // NEW: Icon for Transcription
 
 import { AppDefinition } from '@/types'; // Ensure this import is correct

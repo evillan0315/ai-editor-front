@@ -15,7 +15,6 @@ import {
   EducationDto,
   ExperienceDto,
   PersonalInfoDto,
-  ResumeTemplateDto,
   Template,
 } from '@/types';
 

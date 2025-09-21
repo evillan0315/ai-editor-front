@@ -66,6 +66,18 @@ const AppCard: React.FC<AppCardProps> = ({ app }) => {
 const AppsPage: React.FC = () => {
   const theme = useTheme();
 
+  // Group apps by category
+  const categorizedApps = appDefinitions.reduce(
+    (acc: { [key: string]: AppDefinition[] }, app) => {
+      if (!acc[app.category]) {
+        acc[app.category] = [];
+      }
+      acc[app.category].push(app);
+      return acc;
+    },
+    {},
+  );
+
   return (
     <Container maxWidth="lg" sx={{ py: 4, flexGrow: 1 }}>
       <Paper
@@ -90,13 +102,20 @@ const AppsPage: React.FC = () => {
           your development workflow.
         </Typography>
         <Box sx={{ mt: 3, width: '100%' }}>
-          <Grid container spacing={3} justifyContent="center">
-            {appDefinitions.map((app) => (
-              <Grid item xs={12} sm={6} md={4} key={app.id} component="div">
-                <AppCard app={app} />
+          {Object.entries(categorizedApps).map(([category, apps]) => (
+            <Box key={category} sx={{ mb: 4 }}>
+              <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
+                {category}
+              </Typography>
+              <Grid container spacing={3} justifyContent="center">
+                {apps.map((app) => (
+                  <Grid item xs={12} sm={6} md={4} key={app.id} component="div">
+                    <AppCard app={app} />
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
+            </Box>
+          ))}
         </Box>
       </Paper>
     </Container>

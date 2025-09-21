@@ -1,9 +1,9 @@
 # 🚀 Project Board Frontend
 
-[![License](https://img.shields.io/github/license/evillan0315/project-board-front)](LICENSE)
-[![Issues](https://img.shields.io/github/issues/evillan0315/project-board-front)](https://github.com/evillan0315/project-board-front/issues)
-[![Pull Requests](https://img.shields.io/github/issues-pr/evillan0315/project-board-front)](https://github.com/evillan0315/project-board-front/pulls)
-[![Last Commit](https://img.shields.io/github/last-commit/evillan0315/project-board-front)](https://github.com/evillan0315/project-board-front/commits)
+[![License](https://img.shields.io/github/license/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/LICENSE)
+[![Issues](https://img.shields.io/github/issues/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/pulls)
+[![Last Commit](https://img.shields.io/github/last-commit/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/commits)
 
 > A React frontend for the Project Board server backend, built with **Vite**, React, Nanostores, Tailwind CSS, and Material UI, focusing on intelligent code assistance and a broader range of AI-powered applications.
 > Note: This application was developed using AI with no coding.
@@ -67,9 +67,9 @@
 
 ![Project Board Demo 2](recorded3.gif)
 
-![Project Board Editor](full-editor.png)
+![Project Board Editor](project-board-editor.png)
 ![Project Board Music App](project-board-music-app.png)
-![Project Board Homepage](porject-board-homepage.png)
+![Project Board Homepage](project-board-homepage.png)
 ![Project Board Apps](project-board-apps.png)
 
 
@@ -154,8 +154,8 @@ graph LR
     linkStyle 17 stroke:#f60,stroke-width:2px;
     linkStyle 18 stroke:#f60,stroke-width:2px;
     linkStyle 19 stroke:#f60,stroke-width:2px;
-
 ```
+
 ---
 
 ## 📂 Project Structure
@@ -167,11 +167,11 @@ project-board-front/
 │   ├── api/            # API client functions for interacting with the backend (e.g., `auth.ts`, `file.ts`, `llm.ts`, `organization.ts`, `project.ts`, `terminal.ts`, `translation.ts`, `geminiLive.ts` for operations like authentication, file management, LLM requests, project management, terminal commands, AI translation, and Gemini Live WebSocket communication)
 │   ├── assets/         # Static assets like images/icons (e.g., react.svg)
 │   ├── components/     # Reusable React components
-│   │   ├── dialogs/    # Modal dialog components (e.g., `CreateFileOrFolderDialog.tsx`, `DirectoryPickerDialog.tsx`, `FileUploaderDialog.tsx`, `InstructionEditorDialog.tsx`, `OperationPathDialog.tsx`, `RenameDialog.tsx`, `TerminalSettingsDialog.tsx`, `index.ts` for exports)
+│   │   ├── dialogs/    # Modal dialog components (e.g., `CreateFileOrFolderDialog.tsx`, `DirectoryPickerDialog.tsx`, `FileUploaderDialog.tsx`, `InstructionEditorDialog.tsx`, `OperationPathDialog.tsx`, `RenameDialog.tsx`, `ScanPathsDialog.tsx`, `TerminalSettingsDialog.tsx`, `index.ts` for exports)
 │   │   ├── file-tree/  # Components for rendering and interacting with the project's file tree (`FileTree.tsx`, `FileTreeItem.tsx`, `FileTreeContextMenuRenderer.tsx`, `index.ts` for exports)
 │   │   ├── resume/     # Components for the Resume Builder feature (`EducationTab.tsx`, `ExperienceTab.tsx`, `Header.tsx`, `PersonalInfoTab.tsx`, `ResumeDisplay.tsx`, `ResumeParserContainer.tsx`, `ResumePreview.tsx`, `ResumeUploadDialog.tsx`, `Sidebar.tsx`, `SkillsTab.tsx`, `TemplatesTab.tsx`, `index.ts` for exports)
 │   │   ├── ui/         # Wrapper components for Material-UI elements (e.g., `Button.tsx`, `TextField.tsx`, `CircularProgress.tsx`)
-│   │   └── ...         # Other general UI components (e.g., `AiResponseDisplay.tsx`, `AiSidebarContent.tsx`, `AppsMenuContent.tsx`, `Button.tsx`, `ConversationList.tsx`, `FilePickerDialog.tsx`, `FileTabs.tsx`, `Html5VideoPlayer.tsx`, `InitialEditorViewer.tsx`, `Layout.tsx`, `LlmGenerationContent.tsx`, `Loading.tsx`, `Navbar.tsx`, `OpenedFileViewer.tsx`, `OutputLogger.tsx`, `ProfileMenuContent.tsx`, `PromptGenerator.tsx`, `ProposedChangeCard.tsx`, `resume/`, `RunScriptMenuItem.tsx`, `Snackbar.tsx`, `Terminal/`, `ThemeToggle.tsx`, `TranscriptionPlayer/`, `VideoModal.tsx`, `WelcomeMessage.tsx`, `CodeMirror/`)
+│   │   └── ...         # Other general UI components (e.g., `AiResponseDisplay.tsx`, `AiSidebarContent.tsx`, `AppsMenuContent.tsx`, `Button.tsx`, `ConversationList.tsx`, `FilePickerDialog.tsx`, `FileTabs.tsx`, `Html5VideoPlayer.tsx`, `InitialEditorViewer.tsx`, `Layout.tsx`, `LlmGenerationContent.tsx`, `Loading.tsx`, `Navbar.tsx`, `OpenedFileViewer.tsx`, `OutputLogger.tsx`, `ProfileMenuContent.tsx`, `PromptGenerator.tsx`, `ProposedChangeCard.tsx`, `RunScriptMenuItem.tsx`, `Snackbar.tsx`, `Terminal/`, `ThemeToggle.tsx`, `TranscriptionPlayer/`, `VideoModal.tsx`, `WelcomeMessage.tsx`, `CodeMirror/`)
 │   ├── constants/      # Global constants, default AI instruction templates, and configuration values (e.g., `fileIcons.tsx`, `requestTypeIcons.ts`, `scriptIcons.ts`, `appDefinitions.ts`, `markdown-instruction.ts`, `text-instruction.ts`, `yaml-instruction.ts`, `transcription.ts`, `index.ts` for exports)
 │   ├── hooks/          # Custom React hooks for reusable logic
 │   ├── pages/          # Top-level page components, defining the main views of the application
@@ -179,7 +179,7 @@ project-board-front/
 │   │   └── ...         # Other pages (e.g., `AiEditorPage.tsx`, `AppsPage.tsx`, `AuthCallback.tsx`, `DashboardPage.tsx`, `GeminiLiveAudioPage.tsx`, `HomePage.tsx`, `LlmGenerationPage.tsx`, `LoginPage.tsx`, `OrganizationPage.tsx`, `PreviewAppPage.tsx`, `ProjectsPage.tsx`, `RegisterPage.tsx`, `ResumeBuilderPage.tsx`, `SpotifyAppPage.tsx`, `TerminalPage.tsx`, `TranscriptionPage.tsx`, `TranslatorAppPage.tsx`, `UserProfilePage.tsx`, `UserSettingsPage.tsx`)
 │   ├── routes/         # Application routing setup (currently defined in `index.tsx` using React Router DOM)
 │   ├── services/       # Business logic for API calls, authentication state management, and other non-UI related operations (e.g., `authService.ts`, `socketService.ts`)
-│   ├── stores/         # Nanostores for centralized, reactive global state management (e.g., `aiEditorStore.ts`, `authStore.ts`, `contextMenuStore.ts`, `conversationStore.ts`, `fileTreeStore.ts`, `geminiLiveStore.ts`, `logStore.ts`, `organizationStore.ts`, `projectStore.ts`, `spotifyStore.ts`, `terminalStore.ts`, `themeStore.ts`, `translatorStore.ts`)
+│   ├── stores/         # Nanostores for centralized, reactive global state management (e.g., `aiEditorStore.ts`, `authStore.ts`, `contextMenuStore.ts`, `conversationStore.ts`, `fileTreeStore.ts`, `geminiLiveStore.ts`, `logStore.ts`, `organizationStore.ts`, `projectStore.ts`, `spotifyStore.ts`, `terminalStore.ts`, `themeStore.ts`, `translatorStore.ts`, `uiStore.ts`)
 │   ├── theme/          # Custom Material UI theme configurations
 │   ├── types/          # TypeScript type definitions for API responses, application state, and domain models (e.g., `auth.ts`, `conversation.ts`, `index.ts`, `project.ts`, `resume.ts`, `terminal.ts`, `refactored/`)
 │   └── utils/          # General utility functions (e.g., `codemirrorTheme.ts`, `diffLanguage.ts`, `fileUtils.ts`, `index.ts`, `mediaUtils.ts`, `persistentAtom.ts`)
@@ -195,8 +195,9 @@ project-board-front/
 ├── tsconfig.json       # TypeScript configuration for the project
 ├── tsconfig.node.json  # TypeScript configuration for Node.js related files
 └── vite.config.ts      # Vite build configuration, including proxy setup for API calls
-
 ```
+
+
 ---
 
 ## 📋 Requirements
@@ -214,8 +215,8 @@ cd project-board-front
 
 # Install dependencies
 pnpm install # or npm install / yarn install
-
 ```
+
 ---
 
 ## ⚙️ Usage
@@ -252,6 +253,8 @@ This frontend interacts with the Project Board backend. Key endpoints and WebSoc
 - **`/api/translation/translate`**: To translate text or files using AI.
 - **`/api/organization`**: CRUD operations for organizations.
 - **`/api/project`**: CRUD operations for projects, linked to organizations.
+- **`/media`**: To download extracted audio/video files
+- **`/recording`**: To access recording and screen shot captures
 - **`/gemini` (WebSocket)**: For real-time Gemini Live Audio interactions (starting sessions, sending audio, receiving AI responses).
 
 Please refer to the backend documentation for detailed API schemas and additional endpoints for authentication, AI generation, and file/terminal operations.
@@ -280,8 +283,8 @@ npm test
 
 # With coverage
 npm run test:coverage
-
 ```
+
 ---
 
 ## 📦 Deployment
@@ -307,8 +310,9 @@ We recommend a feature-branch workflow. All new features, bug fixes, or improvem
     ```
 
 2.  **Create a new feature branch:**
+
     ```bash
-git checkout -b feature/your-feature-name
+    git checkout -b feature/your-feature-name
     # or for bug fixes:
     git checkout -b bugfix/issue-description
     ```
@@ -334,16 +338,17 @@ As you make changes, frequently stage and commit your work with clear, concise m
 3.  **Commit your staged changes:**
 
     ```bash
-    git commit -m "feat: Add new user authentication component"
+    git commit -m 'feat: Add new user authentication component'
     # or for a bug fix:
-    git commit -m "fix: Resolve navigation issue in Navbar"
+    git commit -m 'fix: Resolve navigation issue in Navbar'
     # Use imperative mood, start with type (feat, fix, docs, chore, style, refactor, test, build, ci, perf)
     ```
 
 4.  **Push your branch to the remote repository:**
+
     ```bash
-git push origin feature/your-feature-name
-    
+    git push origin feature/your-feature-name
+    ```
 
 ### 🚀 Submitting a Pull Request (PR)
 
@@ -403,7 +408,7 @@ The Screen Recording feature enables you to capture your screen, record videos, 
 
 ---
 
-## 📊 Roadmap
+## 🛣️ Roadmap
 
 - [ ] **Real-time File Content Editing & Saving**: Implement full real-time editing and saving for _any_ selected file from the file tree, synchronizing changes via the backend.
 - [ ] **WebSocket Integration**: Implement real-time updates from the backend, such as file system changes, AI generation progress, and new notifications. (Partially done with Gemini Live Audio, expand for general purpose)

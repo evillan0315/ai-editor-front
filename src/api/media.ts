@@ -8,10 +8,7 @@ import {
   PaginationMediaResultDto,
   MediaScanRequestDto,
   MediaScanResponseDto,
-  // Add transcription types
-  TranscriptionSegment,
   TranscriptionResult,
-  SyncTranscriptionRequest,
   SyncTranscriptionResponse,
 } from '@/types';
 

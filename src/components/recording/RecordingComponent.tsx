@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { editRecordingStore } from '@/stores/recordingStore';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Snackbar,
   IconButton,
@@ -23,17 +22,13 @@ import {
   useTheme,
 } from '@mui/material';
 
-import Loading from '@/components/Loading';
-import VideoModal from '@/components/VideoModal'; // Assuming this is how it imports the player
+// Assuming this is how it imports the player
 import {
-  Close,
   CameraOutlined,
-  Mic,
   PlayArrow,
   Stop,
   Videocam,
   PhotoCamera,
-  MoreVert,
   Download,
   Delete,
   Gif,
@@ -41,19 +36,19 @@ import {
   Edit,
 } from '@mui/icons-material';
 import { useStore } from '@nanostores/react';
-import { authStore } from '@/stores/authStore';
 import { recordingApi } from '@/api/recording';
 import {
-  PaginationRecordingQueryDto,
   RecordingResultDto,
-  TranscodeToGifDto, // Import TranscodeToGifDto
-  TranscodeToGifResult,
+  TranscodeToGifDto,
   UpdateRecordingDto,
 } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import path from 'path-browserify';
-import { deleteMediaFile, getFileStreamUrl } from '@/api/media'; // Import media functions
-import { currentRecordingIdStore, isCurrentRecording } from '@/stores/recordingStore';
+import { getFileStreamUrl } from '@/api/media'; // Import media functions
+import {
+  currentRecordingIdStore,
+  isCurrentRecording,
+} from '@/stores/recordingStore';
 
 interface RecordingComponentProps {
   initialPage?: number;
@@ -71,9 +66,8 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
   // const [isRecording, setIsRecording] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<SnackbarSeverity>(
-    'success',
-  );
+  const [snackbarSeverity, setSnackbarSeverity] =
+    useState<SnackbarSeverity>('success');
   const navigate = useNavigate();
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [selectedVideoSrc, setSelectedVideoSrc] = useState<string | null>(null);
@@ -98,10 +92,12 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
   const $currentRecordingId = useStore(currentRecordingIdStore);
   const $isCurrentRecording = useStore(isCurrentRecording);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedRecording, setSelectedRecording] = useState<RecordingResultDto | null>(null);
-  const [editedRecordingData, setEditedRecordingData] = useState<UpdateRecordingDto>({
-    data: {},
-  });
+  const [selectedRecording, setSelectedRecording] =
+    useState<RecordingResultDto | null>(null);
+  const [editedRecordingData, setEditedRecordingData] =
+    useState<UpdateRecordingDto>({
+      data: {},
+    });
 
   const showSnackbar = (
     message: string,
@@ -185,8 +181,7 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
     setIsLoadingStatus(true);
     try {
       if (recording && recording.id) {
-        const recordingData =
-          await recordingApi.stopRecording(recording.id);
+        const recordingData = await recordingApi.stopRecording(recording.id);
         if (recordingData) {
           showSnackbar('Recording stopped successfully!', 'success');
           if ($currentRecordingId) currentRecordingIdStore.set(null);
@@ -369,7 +364,10 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
     setIsLoadingStatus(true);
     try {
       if (selectedRecording) {
-        await recordingApi.updateRecording(selectedRecording.id, editedRecordingData);
+        await recordingApi.updateRecording(
+          selectedRecording.id,
+          editedRecordingData,
+        );
         showSnackbar('Recording updated successfully!', 'success');
         loadRecordings();
       }
@@ -396,16 +394,22 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
   return (
     <>
       {isLoadingStatus && (
-        <LinearProgress
-          sx={{ width: '100%', flexShrink: 0, zIndex: 1200 }}
-        />
+        <LinearProgress sx={{ width: '100%', flexShrink: 0, zIndex: 1200 }} />
       )}
 
-      <Box className="p-4" sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+      <Box
+        className="p-4"
+        sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}
+      >
         <Typography
           variant="h5"
           component="h1"
-          sx={{ fontSize: '2rem', fontWeight: 'bold', mb: 6, color: theme.palette.text.primary }}
+          sx={{
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            mb: 6,
+            color: theme.palette.text.primary,
+          }}
         >
           Screen Recording & Capture
         </Typography>
@@ -414,15 +418,28 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
           {/* Recording Controls */}
           <Paper
             elevation={3}
-            sx={{ p: 4, borderRadius: '0.5rem', boxShadow: theme.shadows[3], border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper }}
+            sx={{
+              p: 4,
+              borderRadius: '0.5rem',
+              boxShadow: theme.shadows[3],
+              border: `1px solid ${theme.palette.divider}`,
+              bgcolor: theme.palette.background.paper,
+            }}
           >
-            <Typography variant="h6" sx={{ fontSize: '1.25rem', fontWeight: 'semibold', mb: 4, color: theme.palette.text.primary }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontSize: '1.25rem',
+                fontWeight: 'semibold',
+                mb: 4,
+                color: theme.palette.text.primary,
+              }}
+            >
               Controls
             </Typography>
             <Box className="flex items-center gap-4">
               <Box>
                 <IconButton
-              
                   aria-label="start recording"
                   disabled={$isCurrentRecording}
                   onClick={handleStartRecording}
@@ -430,7 +447,6 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                   <Videocam />
                 </IconButton>
                 <IconButton
-             
                   aria-label="stop recording"
                   disabled={!$isCurrentRecording}
                   onClick={handleStopRecording}
@@ -438,7 +454,6 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                   <Stop />
                 </IconButton>
                 <IconButton
-   
                   aria-label="capture screenshot"
                   disabled={isCapturing}
                   onClick={handleCaptureScreenshot}
@@ -456,16 +471,33 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
           {/* Current Status */}
           <Paper
             elevation={3}
-            sx={{ p: 4, borderRadius: '0.5rem', boxShadow: theme.shadows[3], border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper }}
+            sx={{
+              p: 4,
+              borderRadius: '0.5rem',
+              boxShadow: theme.shadows[3],
+              border: `1px solid ${theme.palette.divider}`,
+              bgcolor: theme.palette.background.paper,
+            }}
           >
-            <Typography variant="h6" sx={{ fontSize: '1.25rem', fontWeight: 'semibold', mb: 4, color: theme.palette.text.primary }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontSize: '1.25rem',
+                fontWeight: 'semibold',
+                mb: 4,
+                color: theme.palette.text.primary,
+              }}
+            >
               Current Status
             </Typography>
             {isLoadingStatus ? (
               <CircularProgress />
             ) : (
               <div>
-                <Typography variant="body1" sx={{ fontSize: '1rem', color: theme.palette.text.primary }}>
+                <Typography
+                  variant="body1"
+                  sx={{ fontSize: '1rem', color: theme.palette.text.primary }}
+                >
                   Status:{' '}
                   <span
                     className={`font-semibold ${
@@ -476,7 +508,14 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                   </span>
                 </Typography>
                 {currentRecordingPath && (
-                  <Typography variant="body2" sx={{ fontSize: '0.875rem', mt: 2, color: theme.palette.text.secondary }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: '0.875rem',
+                      mt: 2,
+                      color: theme.palette.text.secondary,
+                    }}
+                  >
                     File:{' '}
                     <span className="font-mono text-gray-300 break-all">
                       {currentRecordingPath.split('/').pop()}
@@ -484,7 +523,13 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                   </Typography>
                 )}
                 {currentRecordingStartedAt && (
-                  <Typography variant="body2" sx={{ fontSize: '0.875rem', color: theme.palette.text.secondary }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: '0.875rem',
+                      color: theme.palette.text.secondary,
+                    }}
+                  >
                     Started At:{' '}
                     {new Date(currentRecordingStartedAt).toLocaleString()}
                   </Typography>
@@ -492,7 +537,12 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                 {!$isCurrentRecording && (
                   <Typography
                     variant="body2"
-                    sx={{ fontSize: '0.875rem', fontStyle: 'italic', color: theme.palette.text.disabled, mt: 2 }}
+                    sx={{
+                      fontSize: '0.875rem',
+                      fontStyle: 'italic',
+                      color: theme.palette.text.disabled,
+                      mt: 2,
+                    }}
                   >
                     No active recording. Click 'Start Recording' to begin.
                   </Typography>
@@ -503,16 +553,30 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
         </Box>
 
         {/* Recordings List */}
-        <Typography variant="h6" sx={{ fontSize: '1rem', my: 3, color: theme.palette.text.primary }}>
+        <Typography
+          variant="h6"
+          sx={{ fontSize: '1rem', my: 3, color: theme.palette.text.primary }}
+        >
           Saved Recordings & Screenshots
         </Typography>
-        <Paper elevation={3} sx={{ borderRadius: '0.5rem', boxShadow: theme.shadows[3], border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper }}>
+        <Paper
+          elevation={3}
+          sx={{
+            borderRadius: '0.5rem',
+            boxShadow: theme.shadows[3],
+            border: `1px solid ${theme.palette.divider}`,
+            bgcolor: theme.palette.background.paper,
+          }}
+        >
           {isLoadingRecordings ? (
             <LinearProgress
               sx={{ width: '100%', flexShrink: 0, zIndex: 1200 }}
             />
           ) : recordings.length === 0 ? (
-            <Typography variant="body1" sx={{ color: theme.palette.text.disabled }}>
+            <Typography
+              variant="body1"
+              sx={{ color: theme.palette.text.disabled }}
+            >
               No recordings or screenshots saved yet.
             </Typography>
           ) : (
@@ -521,16 +585,60 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                 <Table className="min-w-full divide-y divide-neutral-300 dark:divide-neutral-800">
                   <TableHead sx={{ bgcolor: theme.palette.background.paper }}>
                     <TableRow>
-                      <TableCell sx={{ px: 2, py: 3, textAlign: 'left', fontSize: '0.75rem', fontWeight: 'medium', color: theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: 1 }}>
+                      <TableCell
+                        sx={{
+                          px: 2,
+                          py: 3,
+                          textAlign: 'left',
+                          fontSize: '0.75rem',
+                          fontWeight: 'medium',
+                          color: theme.palette.text.disabled,
+                          textTransform: 'uppercase',
+                          letterSpacing: 1,
+                        }}
+                      >
                         Name
                       </TableCell>
-                      <TableCell sx={{ px: 2, py: 3, textAlign: 'left', fontSize: '0.75rem', fontWeight: 'medium', color: theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: 1 }}>
+                      <TableCell
+                        sx={{
+                          px: 2,
+                          py: 3,
+                          textAlign: 'left',
+                          fontSize: '0.75rem',
+                          fontWeight: 'medium',
+                          color: theme.palette.text.disabled,
+                          textTransform: 'uppercase',
+                          letterSpacing: 1,
+                        }}
+                      >
                         Status
                       </TableCell>
-                      <TableCell sx={{ px: 2, py: 3, textAlign: 'left', fontSize: '0.75rem', fontWeight: 'medium', color: theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: 1 }}>
+                      <TableCell
+                        sx={{
+                          px: 2,
+                          py: 3,
+                          textAlign: 'left',
+                          fontSize: '0.75rem',
+                          fontWeight: 'medium',
+                          color: theme.palette.text.disabled,
+                          textTransform: 'uppercase',
+                          letterSpacing: 1,
+                        }}
+                      >
                         Size
                       </TableCell>
-                      <TableCell sx={{ px: 2, py: 3, textAlign: 'left', fontSize: '0.75rem', fontWeight: 'medium', color: theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: 1 }}>
+                      <TableCell
+                        sx={{
+                          px: 2,
+                          py: 3,
+                          textAlign: 'left',
+                          fontSize: '0.75rem',
+                          fontWeight: 'medium',
+                          color: theme.palette.text.disabled,
+                          textTransform: 'uppercase',
+                          letterSpacing: 1,
+                        }}
+                      >
                         Created At
                       </TableCell>
                       <TableCell className="relative px-6 py-3">
@@ -541,7 +649,20 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                   <TableBody className="divide-y divide-neutral-800">
                     {recordings.map((rec) => (
                       <TableRow key={rec.id} className="hover:bg-neutral-800">
-                        <TableCell sx={{ px: 2, py: 3, whiteSpace: 'nowrap', fontSize: '0.875rem', fontWeight: 'medium', color: theme.palette.text.primary, wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <TableCell
+                          sx={{
+                            px: 2,
+                            py: 3,
+                            whiteSpace: 'nowrap',
+                            fontSize: '0.875rem',
+                            fontWeight: 'medium',
+                            color: theme.palette.text.primary,
+                            wordBreak: 'break-all',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                          }}
+                        >
                           {rec.type === 'screenRecord' &&
                             (rec.status === 'finished' ||
                               rec.status === 'ready') && (
@@ -557,25 +678,21 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                             )}
                           {rec.type === 'screenRecord' &&
                             rec.status === 'recording' && (
-                            <IconButton
-                              onClick={() => handleStopRecording(rec)}
-            
-                              color="primary"
-
-                              title="Stop Recording"
-                              className="flex-shrink-0"
-                            >
-                              <Stop />
-                            </IconButton>
+                              <IconButton
+                                onClick={() => handleStopRecording(rec)}
+                                color="primary"
+                                title="Stop Recording"
+                                className="flex-shrink-0"
+                              >
+                                <Stop />
+                              </IconButton>
                             )}
                           {rec.type === 'screenShot' &&
                             (rec.status === 'finished' ||
                               rec.status === 'ready') && (
                               <IconButton
                                 onClick={() => handleOpenMedia(rec)}
-                 
                                 color="primary"
-
                                 title="View Screenshot"
                                 className="flex-shrink-0"
                               >
@@ -588,17 +705,41 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                             {rec.path.split('/').pop()}
                           </span>
                         </TableCell>
-                        <TableCell sx={{ px: 2, py: 3, whiteSpace: 'nowrap', fontSize: '0.875rem', color: theme.palette.text.primary }}>
+                        <TableCell
+                          sx={{
+                            px: 2,
+                            py: 3,
+                            whiteSpace: 'nowrap',
+                            fontSize: '0.875rem',
+                            color: theme.palette.text.primary,
+                          }}
+                        >
                           {/* Status Indicator (replace with a visual cue if desired) */}
                           {rec.status}
                         </TableCell>
-                        <TableCell sx={{ px: 2, py: 3, whiteSpace: 'nowrap', fontSize: '0.875rem', color: theme.palette.text.secondary }}>
+                        <TableCell
+                          sx={{
+                            px: 2,
+                            py: 3,
+                            whiteSpace: 'nowrap',
+                            fontSize: '0.875rem',
+                            color: theme.palette.text.secondary,
+                          }}
+                        >
                           {rec.data?.fileSize &&
                           typeof rec.data.fileSize === 'number'
                             ? formatBytes(rec.data.fileSize)
                             : 'N/A'}
                         </TableCell>
-                        <TableCell sx={{ px: 2, py: 3, whiteSpace: 'nowrap', fontSize: '0.875rem', color: theme.palette.text.secondary }}>
+                        <TableCell
+                          sx={{
+                            px: 2,
+                            py: 3,
+                            whiteSpace: 'nowrap',
+                            fontSize: '0.875rem',
+                            color: theme.palette.text.secondary,
+                          }}
+                        >
                           {new Date(rec.createdAt).toLocaleString()}
                         </TableCell>
                         <TableCell className="px-2 py-3 whitespace-nowrap text-right text-sm font-medium">
@@ -607,9 +748,7 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                               !rec.data?.animatedGif && (
                                 <IconButton
                                   onClick={() => handleConvertToGif(rec)}
-                    
                                   color="secondary"
-                          
                                   title="Convert to GIF"
                                 >
                                   <Gif />
@@ -624,9 +763,7 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                                     type: 'animatedGif',
                                   })
                                 }
-                      
                                 color="secondary"
-                       
                                 title="View Animated GIF"
                               >
                                 <Gif />
@@ -639,18 +776,14 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                                   rec.path.split('/').pop()!,
                                 )
                               }
-                   
                               color="secondary"
-                       
                               title="Download"
                             >
                               <Download />
                             </IconButton>
-                             <IconButton
+                            <IconButton
                               onClick={() => handleEditRecording(rec)}
-                   
                               color="secondary"
-                 
                               title="Edit"
                             >
                               <Edit />
@@ -690,7 +823,10 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                   <Box className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-center">
                     <Typography
                       variant="body2"
-                      sx={{ fontSize: '0.875rem', color: theme.palette.text.secondary }}
+                      sx={{
+                        fontSize: '0.875rem',
+                        color: theme.palette.text.secondary,
+                      }}
                     >
                       Page <span className="font-medium">{currentPage}</span> of{' '}
                       <span className="font-medium">{totalPages}</span>
@@ -722,12 +858,25 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
           onClose={handleCloseMediaModal}
           fullWidth
           maxWidth="md"
-          PaperProps={{ style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary } }}
+          PaperProps={{
+            style: {
+              backgroundColor: theme.palette.background.paper,
+              color: theme.palette.text.primary,
+            },
+          }}
         >
-          <DialogTitle sx={{ color: theme.palette.text.primary }}>{selectedMedia?.path.split('/').pop()}</DialogTitle>
+          <DialogTitle sx={{ color: theme.palette.text.primary }}>
+            {selectedMedia?.path.split('/').pop()}
+          </DialogTitle>
           <DialogContent>
             {selectedMedia && (
-              <Box className="flex items-center justify-center flex-grow" sx={{ bgcolor: theme.palette.background.paper, borderRadius: '0.5rem' }}>
+              <Box
+                className="flex items-center justify-center flex-grow"
+                sx={{
+                  bgcolor: theme.palette.background.paper,
+                  borderRadius: '0.5rem',
+                }}
+              >
                 {selectedMedia.type === 'screenRecord' ? (
                   <video
                     src={getMediaUrl(selectedMedia.path)}
@@ -750,7 +899,10 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
                     style={{ maxWidth: '100%', maxHeight: '100%' }}
                   />
                 ) : (
-                  <Typography variant="body1" sx={{ color: theme.palette.text.disabled }}>
+                  <Typography
+                    variant="body1"
+                    sx={{ color: theme.palette.text.disabled }}
+                  >
                     Unsupported media type.
                   </Typography>
                 )}
@@ -759,10 +911,21 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
           </DialogContent>
         </Dialog>
         {/* Edit Recording Dialog */}
-        <Dialog open={editDialogOpen} onClose={handleCloseEditDialog} fullWidth maxWidth="sm"
-         PaperProps={{ style: { backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary } }}
+        <Dialog
+          open={editDialogOpen}
+          onClose={handleCloseEditDialog}
+          fullWidth
+          maxWidth="sm"
+          PaperProps={{
+            style: {
+              backgroundColor: theme.palette.background.paper,
+              color: theme.palette.text.primary,
+            },
+          }}
         >
-          <DialogTitle sx={{ color: theme.palette.text.primary }}>Edit Recording Data</DialogTitle>
+          <DialogTitle sx={{ color: theme.palette.text.primary }}>
+            Edit Recording Data
+          </DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -775,7 +938,9 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
               value={editedRecordingData.data?.duration || ''}
               onChange={handleDataChange}
               InputProps={{ style: { color: theme.palette.text.primary } }}
-              InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+              InputLabelProps={{
+                style: { color: theme.palette.text.secondary },
+              }}
             />
             <TextField
               margin="dense"
@@ -786,13 +951,28 @@ const RecordingComponent: React.FC<RecordingComponentProps> = ({
               fullWidth
               value={editedRecordingData.data?.fileSize || ''}
               onChange={handleDataChange}
-               InputProps={{ style: { color: theme.palette.text.primary } }}
-              InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+              InputProps={{ style: { color: theme.palette.text.primary } }}
+              InputLabelProps={{
+                style: { color: theme.palette.text.secondary },
+              }}
             />
           </DialogContent>
           <Box className="flex justify-end p-4">
-            <Button onClick={handleCloseEditDialog} variant="outlined" color="secondary" className="mr-2">Cancel</Button>
-            <Button onClick={handleUpdateRecording} variant="contained" color="primary">Update</Button>
+            <Button
+              onClick={handleCloseEditDialog}
+              variant="outlined"
+              color="secondary"
+              className="mr-2"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateRecording}
+              variant="contained"
+              color="primary"
+            >
+              Update
+            </Button>
           </Box>
         </Dialog>
       </Box>

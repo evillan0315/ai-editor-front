@@ -2,38 +2,19 @@ import React, { useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import {
   aiEditorStore,
-  selectAllChanges,
   deselectAllChanges,
   setApplyingChanges,
   setLastLlmResponse,
   setError, // Still used for immediate, transient UI error
   clearDiff,
-  setOpenedFile,
   performPostApplyActions, // Unified action, handles logging internally now
 } from '@/stores/aiEditorStore';
 import { addLog } from '@/stores/logStore'; // NEW: Import addLog for logging
-import {
-  Button,
-  Box,
-  Typography,
-  CircularProgress,
-  Alert,
-  Paper,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  useTheme,
-  Tooltip,
-  IconButton,
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import { useTheme } from '@mui/material';
 import { applyProposedChanges } from '@/api/llm';
 import { runTerminalCommand } from '@/api/terminal';
-import ProposedChangeCard from './ProposedChangeCard';
+import { CodeGeneratorMain } from '@/components/code-generator/CodeGeneratorMain';
 // import OutputLogger from './OutputLogger'; // Removed, it's now a central log viewer in AiSidebarContent
-import { ModelResponse, FileChange, RequestType } from '@/types';
 
 interface AiResponseDisplayProps {
   // No specific props needed, all state comes from aiEditorStore
@@ -223,195 +204,7 @@ const AiResponseDisplay: React.FC<AiResponseDisplayProps> = () => {
 
   if (!lastLlmResponse) return null;
 
-  return (
-    <Paper
-      elevation={1}
-      sx={{
-        p: 3,
-        bgcolor: theme.palette.background.paper,
-        flexGrow: 1,
-        height: '100%',
-        display: 'flex', // Changed to flex container
-        flexDirection: 'column', // Changed to column direction
-        overflow: 'hidden', // Hide parent scroll to manage internal scroll
-      }}
-    >
-      <Typography
-        variant="body1"
-        color="text.secondary"
-        sx={{ flexShrink: 0 }}
-        gutterBottom
-      >
-        {' '}
-        {/* Added flexShrink */}
-        {lastLlmResponse.summary}
-      </Typography>
-      {/*lastLlmResponse.thoughtProcess && (
-        <Accordion sx={{ mb: 2, flexShrink: 0 }}> 
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography
-              variant="subtitle1"
-              className="!font-semibold"
-              sx={{ color: theme.palette.text.primary }}
-            >
-              AI Thought Process
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Typography
-              sx={{
-                whiteSpace: 'pre-wrap',
-                fontFamily: 'monospace',
-                bgcolor: theme.palette.background.default,
-                p: 2,
-                borderRadius: 1,
-                overflowX: 'auto',
-                color: theme.palette.text.primary,
-              }}
-            >
-             
-            </Typography>
-          </AccordionDetails>
-        </Accordion>
-      )*/}
-
-      <Box sx={{ display: 'flex', gap: 1, mb: 2, flexShrink: 0 }}>
-        <Button
-          variant="outlined"
-          onClick={selectAllChanges} // This action also logs
-          disabled={isAnyProcessRunning}
-        >
-          Select All
-        </Button>
-        <Button
-          variant="outlined"
-          onClick={deselectAllChanges} // This action also logs
-          disabled={isAnyProcessRunning}
-        >
-          Deselect All
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleApplySelectedChanges}
-          disabled={
-            isAnyProcessRunning || Object.keys(selectedChanges).length === 0
-          }
-          startIcon={
-            isAnyProcessRunning ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : null
-          }
-        >
-          {applyingChanges ? 'Applying...' : 'Apply Selected Changes'}
-        </Button>
-      </Box>
-
-      {applyingChanges && (
-        <Alert severity="info" sx={{ mt: 3, flexShrink: 0 }}>
-          {' '}
-          {/* Added flexShrink */}
-          Applying selected changes...
-          <CircularProgress size={16} color="inherit" sx={{ ml: 1 }} />
-        </Alert>
-      )}
-
-      {/* `appliedMessages`, `buildOutput` are now displayed via the central `OutputLogger` in `AiSidebarContent` */}
-
-      {/*gitInstructions && gitInstructions.length > 0 && (
-        <Accordion sx={{ mt: 3, flexShrink: 0 }}>
-          {' '}
-        
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography
-              variant="subtitle1"
-              className="!font-semibold"
-              sx={{ color: theme.palette.text.primary }}
-            >
-              Manual Git Instructions (Run below to log to Output)
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box
-              sx={{
-                whiteSpace: 'pre-wrap',
-                fontFamily: 'monospace',
-                bgcolor: theme.palette.background.default,
-                p: 2,
-                borderRadius: 1,
-                overflowX: 'auto',
-                color: theme.palette.text.primary,
-                position: 'relative',
-              }}
-            >
-              {gitInstructions.map((command, index) => (
-                <Box
-                  key={index}
-                  sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
-                >
-                  <Typography
-                    component="span"
-                    sx={{
-                      flexGrow: 1,
-                      mr: 1,
-                      color: theme.palette.text.primary,
-                    }}
-                  >
-                    {command}
-                  </Typography>
-                  <Tooltip title="Copy command">
-                    <IconButton
-                      size="small"
-                      onClick={() => navigator.clipboard.writeText(command)}
-                      sx={{ color: theme.palette.text.secondary, mr: 0.5 }}
-                    >
-                      <ContentCopyIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Run command in NestJS terminal">
-                    <span>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleRunGitCommand(command)} // Removed index
-                        disabled={isAnyProcessRunning} // Disabled if any process is running
-                        sx={{ color: theme.palette.success.main }}
-                      >
-                    
-                        <PlayArrowIcon fontSize="small" />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </Box>
-              ))}
-            </Box>
-        
-          </AccordionDetails>
-        </Accordion>
-      )}*/}
-
-      <Typography
-        variant="h6"
-        className="!font-semibold"
-        sx={{ mt: 3, mb: 2, color: theme.palette.text.primary, flexShrink: 0 }} // Added flexShrink
-      >
-        Detailed Changes:
-      </Typography>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          flexGrow: 1,
-          overflowY: 'auto', // Added overflowY: 'auto' here
-        }}
-      >
-        {lastLlmResponse.changes &&
-          lastLlmResponse.changes.map((change: FileChange, index: number) => (
-            <ProposedChangeCard key={index} change={change} index={index} />
-          ))}
-      </Box>
-    </Paper>
-  );
+  return <CodeGeneratorMain data={lastLlmResponse} />;
 };
 
 export default AiResponseDisplay;

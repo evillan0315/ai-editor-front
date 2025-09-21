@@ -5,12 +5,10 @@ interface CustomButtonProps extends ButtonProps {
   // You can add custom props here if needed
 }
 
-const Button: React.FC<CustomButtonProps> = ({ children, ...props }) => {
-  return (
-    <MuiButton {...props} className={`!normal-case ${props.className || ''}`}>
-      {children}
-    </MuiButton>
-  );
-};
+const Button: React.FC<CustomButtonProps> = ({ children, ...props }) => (
+  <MuiButton {...props} className={`!normal-case ${props.className || ''}`}>
+    {children}
+  </MuiButton>
+);
 
 export default Button;

@@ -20,7 +20,6 @@ import {
   Select,
   TextField,
   Typography,
-  SelectChangeEvent,
   Chip,
   Divider,
 } from '@mui/material';
@@ -98,42 +97,44 @@ const SongList: React.FC<SongListProps> = ({
     return ['all', ...Array.from(new Set(allGenres))];
   }, [songs]);
 
-  const filteredAndSortedSongs = useMemo(() => {
-    return songs
-      .filter((song) => {
-        const matchesSearch =
-          song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          song.album.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredAndSortedSongs = useMemo(
+    () =>
+      songs
+        .filter((song) => {
+          const matchesSearch =
+            song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            song.album.toLowerCase().includes(searchQuery.toLowerCase());
 
-        const matchesGenre =
-          selectedGenre === 'all' || song.genre.includes(selectedGenre);
+          const matchesGenre =
+            selectedGenre === 'all' || song.genre.includes(selectedGenre);
 
-        return matchesSearch && matchesGenre;
-      })
-      .sort((a, b) => {
-        const modifier = sortOrder === 'asc' ? 1 : -1;
+          return matchesSearch && matchesGenre;
+        })
+        .sort((a, b) => {
+          const modifier = sortOrder === 'asc' ? 1 : -1;
 
-        if (sortField === 'duration') {
-          return (a.duration - b.duration) * modifier;
-        }
+          if (sortField === 'duration') {
+            return (a.duration - b.duration) * modifier;
+          }
 
-        // Handle optional year field
-        if (sortField === 'year') {
-          const aYear = a.year ?? 0;
-          const bYear = b.year ?? 0;
-          return (aYear - bYear) * modifier;
-        }
+          // Handle optional year field
+          if (sortField === 'year') {
+            const aYear = a.year ?? 0;
+            const bYear = b.year ?? 0;
+            return (aYear - bYear) * modifier;
+          }
 
-        // For string fields (title, artist, album)
-        const aValue = a[sortField] ?? '';
-        const bValue = b[sortField] ?? '';
+          // For string fields (title, artist, album)
+          const aValue = a[sortField] ?? '';
+          const bValue = b[sortField] ?? '';
 
-        if (aValue < bValue) return -1 * modifier;
-        if (aValue > bValue) return 1 * modifier;
-        return 0;
-      });
-  }, [songs, searchQuery, selectedGenre, sortField, sortOrder]);
+          if (aValue < bValue) return -1 * modifier;
+          if (aValue > bValue) return 1 * modifier;
+          return 0;
+        }),
+    [songs, searchQuery, selectedGenre, sortField, sortOrder],
+  );
 
   // Handlers
   const handleSortChange = (field: SortField) => {

@@ -8,7 +8,6 @@ import {
   Avatar,
   Button,
 } from '@mui/material';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useStore } from '@nanostores/react';
 import { authStore } from '@/stores/authStore';

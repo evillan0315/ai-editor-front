@@ -51,7 +51,6 @@ import {
   progressAtom,
   durationAtom,
   isVideoModalOpenAtom,
-  setIsVideoModalOpen,
   bufferedAtom,
 } from '@/stores/spotifyStore';
 import { useStore } from '@nanostores/react';
@@ -1156,8 +1155,8 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
     allAvailableMediaFiles.filter((media) => media.fileType === FileType.VIDEO);
 
   // Create a simplified 'All Tracks' playlist from the fetched audio media files
-  const allAudioTracksPlaylist: Playlist = React.useMemo(() => {
-    return {
+  const allAudioTracksPlaylist: Playlist = React.useMemo(
+    () => ({
       id: 'all_audio_tracks',
       name: 'All Audio Tracks',
       description: 'All available audio files',
@@ -1165,12 +1164,13 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       cover: '/default-playlist.png',
       tracks: allAudioTracksForPlaylistTab.map(mapMediaFileToTrack),
       trackCount: allAudioTracksForPlaylistTab.length,
-    };
-  }, [allAudioTracksForPlaylistTab]);
+    }),
+    [allAudioTracksForPlaylistTab],
+  );
 
   // Create a simplified 'All Videos' playlist from the fetched video media files
-  const allVideoTracksPlaylist: Playlist = React.useMemo(() => {
-    return {
+  const allVideoTracksPlaylist: Playlist = React.useMemo(
+    () => ({
       id: 'all_video_tracks',
       name: 'All Video Tracks',
       description: 'All available video files',
@@ -1178,8 +1178,9 @@ const SpotifyLibraryPage: React.FC<SpotifyLibraryPageProps> = () => {
       cover: '/default-video-cover.png', // A different default cover for videos
       tracks: allVideoTracksForPlaylistTab.map(mapMediaFileToTrack),
       trackCount: allVideoTracksForPlaylistTab.length,
-    };
-  }, [allVideoTracksForPlaylistTab]);
+    }),
+    [allVideoTracksForPlaylistTab],
+  );
 
   // Deduplicate artists based on uploader name from metadata (only for audio for now)
   const uniqueArtists = React.useMemo(() => {

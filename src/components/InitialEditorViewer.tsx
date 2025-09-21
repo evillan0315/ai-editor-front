@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, Button, Typography, useTheme } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import WorkIcon from '@mui/icons-material/Work';
 import { useState } from 'react';
 import { ProjectFormDialog } from '@/pages/ProjectsPage';
 

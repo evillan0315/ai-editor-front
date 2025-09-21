@@ -2,10 +2,7 @@ import { getToken } from '@/stores/authStore';
 import {
   ModelResponse,
   FileChange,
-  RequestType,
-  LlmOutputFormat,
   LlmGeneratePayload,
-  TerminalCommandResponse,
   LlmReportErrorApiPayload,
 } from '@/types'; // Import new LLM types and FileChange, RequestType, LlmOutputFormat, LlmGeneratePayload, LlmReportErrorApiPayload
 
@@ -62,7 +59,17 @@ export const convertYamlToJson = async (data: string): Promise<any> => {
     throw error;
   }
 };
+function parseJSONSafe(jsonString: string) {
+  try {
+    const parsed = JSON.parse(jsonString);
+    return parsed;
+  } catch (err) {
+    console.error('JSON parse error:', err);
 
+    // Optionally, return the raw content for debugging
+    return { rawContent: jsonString, error: JSON.stringify(err) };
+  }
+}
 export const generateCode = async (
   data: LlmGeneratePayload,
 ): Promise<ModelResponse> => {
@@ -82,12 +89,12 @@ export const generateCode = async (
       const json = await convertYamlToJson(text);
       return json.json;
     }
-
+    return parseJSONSafe(text) as ModelResponse;
     // otherwise treat as JSON response
-    return JSON.parse(text) as ModelResponse;
+    //return JSON.parse(text) as ModelResponse;
   } catch (error) {
     console.error('Error generating code:', error);
-    throw error;
+    return error;
   }
 };
 

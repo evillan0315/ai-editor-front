@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Box, Paper, useTheme } from '@mui/material';
 import { useStore } from '@nanostores/react';
 import { TerminalToolbar } from './TerminalToolbar';
@@ -14,6 +15,7 @@ import {
   appendOutput,
 } from '@/stores/terminalStore';
 import { socketService } from '@/services/socketService';
+import { handleLogout } from '@/services/authService';
 import { themeStore } from '@/stores/themeStore';
 
 interface XTerminalProps {
@@ -27,7 +29,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
 }) => {
   const { output, currentPath, isConnected, commandHistory, historyIndex } =
     useStore(terminalStore);
-
+  const navigate = useNavigate();
   const { mode } = useStore(themeStore);
   const theme = useTheme();
 
@@ -41,7 +43,11 @@ export const XTerminal: React.FC<XTerminalProps> = ({
     try {
       await connectTerminal();
     } catch (error) {
-      console.error('Connection failed:', error);
+      if (error === 'No authentication token.') {
+        console.error('Connection failed:', error);
+        await handleLogout();
+        navigate('/login');
+      }
     }
   };
 
@@ -205,7 +211,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
           padding: '8px',
           backgroundColor:
             mode === 'dark'
-              ? theme.palette.background.default
+              ? theme.palette.background.paper
               : theme.palette.background.paper,
           position: 'sticky', // Stick to the bottom
           bottom: 0,

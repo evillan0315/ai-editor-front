@@ -1,8 +1,5 @@
 import { map } from 'nanostores';
-import {
-  writeFileContent,
-  readFileContent,
-} from '@/api/file';
+import { writeFileContent, readFileContent } from '@/api/file';
 import { addLog } from './logStore';
 
 export interface FileStoreState {

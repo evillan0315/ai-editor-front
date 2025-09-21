@@ -1,3 +1,32 @@
+// =========================================================================
+// Terminal & Build Related Types
+// =========================================================================
+
+export interface TerminalCommandResponse {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+}
+
+export type PackageManager = 'npm' | 'yarn' | 'pnpm' | null;
+
+export interface PackageScript {
+  name: string;
+  script: string; // The raw script command from package.json, e.g., "vite --port 3001"
+}
+
+export interface ProjectScriptsResponse {
+  scripts: PackageScript[];
+  packageManager: PackageManager;
+}
+
+export enum ScriptStatus {
+  IDLE = 'IDLE',
+  RUNNING = 'RUNNING',
+  SUCCESS = 'SUCCESS',
+  ERROR = 'ERROR',
+}
+
 export interface SystemInfo {
   os: string;
   arch: string;

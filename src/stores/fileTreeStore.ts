@@ -1,18 +1,19 @@
 import { map } from 'nanostores';
-import {
-  FileTreeState,
-  FileEntry,
-  FileTreeNode,
-  ApiFileScanResult,
-} from '@/types/refactored/fileTree'; // Updated import
+import { FileTreeState, FileEntry } from '@/types/refactored/fileTree'; // Updated import
 import { fetchDirectoryContents, fetchScannedFilesForAI } from '@/api/file';
-import {
-  aiEditorStore,
-  setOpenedFile,
-  setIsOpenedFileDirty,
-} from './aiEditorStore';
-import { getRelativePath } from '@/utils';
+import { setOpenedFile, setIsOpenedFileDirty } from './fileStore';
+import { aiEditorStore } from './aiEditorStore';
+import { getRelativePath, persistentAtom } from '@/utils';
 
+
+
+export const projectRootDirectoryStore = persistentAtom<string>(
+  'projectRootDirectory',
+  '/',
+);
+export const setCurrentProjectPath = (path: string) => {
+  projectRootDirectoryStore.set(path);
+}
 export const fileTreeStore = map<FileTreeState>({
   files: [], // Hierarchical file tree
   flatFileList: [], // Flat list from API (for AI context)
@@ -81,8 +82,8 @@ const updateFileEntryInTree = (
   nodes: FileEntry[],
   targetPath: string,
   updateFn: (node: FileEntry) => FileEntry,
-): FileEntry[] => {
-  return nodes.map((node) => {
+): FileEntry[] =>
+  nodes.map((node) => {
     if (node.path === targetPath) {
       return updateFn(node);
     }
@@ -95,7 +96,6 @@ const updateFileEntryInTree = (
     }
     return node;
   });
-};
 
 /**
  * Recursively finds a FileEntry in the tree.

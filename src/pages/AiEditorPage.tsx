@@ -13,7 +13,7 @@ import {
   setError, // For global errors to be displayed at the top level
 } from '@/stores/aiEditorStore';
 import { addLog } from '@/stores/logStore'; // NEW: Import addLog for logging page events
-import { resizeTerminal } from '@/stores/terminalStore';
+import { isTerminalVisible, setShowTerminal } from '@/stores/terminalStore';
 
 import {
   Box,
@@ -26,11 +26,11 @@ import { FileTree } from '@/components/file-tree';
 import OpenedFileViewer from '@/components/OpenedFileViewer';
 import { RequestType, LlmOutputFormat } from '@/types';
 import FileTabs from '@/components/FileTabs';
-import { useRightSidebar } from '@/components/Layout'; // Import the useRightSidebar hook
-import AiSidebarContent from '@/components/AiSidebarContent'; // NEW: Import the consolidated AI sidebar content
+import { rightSidebarContent } from '@/stores/uiStore';
+// NEW: Import the consolidated AI sidebar content
 import { XTerminal } from '@/components/Terminal/Terminal'; // NEW: Import XTerminal component
 import { handleLogout } from '@/services/authService';
-
+import LlmGenerationContent from '@/components/LlmGenerationContent';
 // Constants for layout.
 const FILE_TREE_WIDTH = 300; // Fixed width for the file tree when visible
 const FILE_TABS_HEIGHT = 48; // Approximate height of the new file tabs component (can be theme-driven later)
@@ -42,6 +42,7 @@ const RESIZE_HANDLE_HEIGHT = 4; // Height of the draggable divider
  * and URL parameter parsing for AI request types and output formats.
  */
 const AiEditorPage: React.FC = () => {
+  const $rightSidebarContent = useStore(rightSidebarContent);
   const {
     error: globalError, // Renamed to avoid conflict, used for immediate page-level alerts
     currentProjectPath,
@@ -53,7 +54,7 @@ const AiEditorPage: React.FC = () => {
   const theme = useTheme();
   const [searchParams] = useSearchParams();
   const [showFileTree, setShowFileTree] = useState(true); // State for toggling file tree visibility
-  const { setRightSidebar } = useRightSidebar(); // Use the custom hook
+
   const navigate = useNavigate(); // For redirecting after terminal logout
 
   // State for resizable terminal
@@ -62,9 +63,9 @@ const AiEditorPage: React.FC = () => {
   const [initialMouseY, setInitialMouseY] = useState(0);
   const [initialTerminalHeight, setInitialTerminalHeight] = useState(0);
   const contentAreaRef = useRef<HTMLDivElement>(null); // Ref for the resizable content area
-  const [showTerminal, setShowTerminal] = useState(false);
+  const showTerminal = useStore(isTerminalVisible);
   // New derived state for the loader
-  const isAIGeneratingOrModifying = loading || applyingChanges || isBuilding;
+  const isAIGeneratingOrModifying = loading || isBuilding;
 
   useEffect(() => {
     // Clear diff when project or response changes
@@ -207,8 +208,7 @@ const AiEditorPage: React.FC = () => {
   const handleTerminalResize = useCallback(() => {
     const cols = Math.floor(window.innerWidth / 10); // Adjust divisor as needed
     const rows = Math.floor(terminalHeight / 20); // Adjust divisor as needed
-    console.log(`Resizing terminal to ${cols} cols and ${rows} rows`);
-    console.log(`Terminal Height: ${terminalHeight}`);
+
   }, [terminalHeight]);
   useEffect(() => {
     // Add event listener for window resize
@@ -226,7 +226,9 @@ const AiEditorPage: React.FC = () => {
   const toggleTerminalVisibility = () => {
     setShowTerminal((prevShowTerminal) => !prevShowTerminal);
   };
-
+  useEffect(() => {
+    rightSidebarContent.set(<LlmGenerationContent />);
+  }, []);
   return (
     <Box
       sx={{
@@ -307,12 +309,7 @@ const AiEditorPage: React.FC = () => {
           }}
         >
           {/* File Tabs */}
-          <FileTabs
-            sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }}
-            setShowTerminal={setShowTerminal}
-            showTerminal={showTerminal}
-            toggleTerminalVisibility={toggleTerminalVisibility}
-          />
+          <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
 
           {/* Opened File Viewer, Resizer, and Terminal container */}
           <Box

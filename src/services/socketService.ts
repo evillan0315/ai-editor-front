@@ -1,13 +1,7 @@
 // src/services/socketService.ts
 import { io, Socket } from 'socket.io-client';
-import {
-  ExecDto,
-  SSHConnectPayload,
-  ResizePayload,
-  SystemInfo,
-  PromptData,
-} from '@/types';
-//import { getToken } from '@/stores/authStore';
+import { ExecDto, SSHConnectPayload, ResizePayload } from '@/types';
+import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -19,9 +13,11 @@ class SocketService {
     namespace?: string,
   ): Promise<void> {
     const terminalNS = '/terminal';
+
     return new Promise((resolve, reject) => {
       try {
-        const initialCwdFromEnv = import.meta.env.VITE_BASE_DIR;
+        const initialCwdFromEnv =
+          projectRootDirectoryStore.get() || import.meta.env.VITE_BASE_DIR;
 
         this.socket = io(`${namespace ? namespace : terminalNS}`, {
           auth: {

@@ -1,5 +1,3 @@
-import { MediaFileResponseDto } from '@/types';
-
 /**
  * Adds a media file to a specific playlist.
  * @param playlistId The ID of the playlist to add the media file to.

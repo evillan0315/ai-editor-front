@@ -26,9 +26,7 @@ playlistApi.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
 /**
@@ -71,7 +69,9 @@ export const fetchPlaylists = async (
 ): Promise<PaginationPlaylistResultDto> => {
   const response = await playlistApi.get<PaginationPlaylistResultDto>(
     '/paginated',
-    { params: query },
+    {
+      params: query,
+    },
   );
   return response.data;
 };

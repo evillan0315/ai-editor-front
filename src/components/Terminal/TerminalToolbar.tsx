@@ -1,18 +1,19 @@
 import React from 'react';
+import { useStore } from '@nanostores/react';
 import {
   Box,
   IconButton,
   Typography,
   Tooltip,
-  Button,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import {
-  PlayArrow as ConnectIcon,
-  Stop as DisconnectIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material';
+  isTerminalVisible,
+  setShowTerminal,
+  disconnectTerminal,   // ✅ import the disconnect function
+} from '@/stores/terminalStore';
 
 interface TerminalToolbarProps {
   isConnected: boolean;
@@ -35,6 +36,15 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const showTerminal = useStore(isTerminalVisible);
+
+  /** ✅ Disconnect socket session first, then hide terminal */
+  const handleCloseTerminal = () => {
+    if (isConnected) {
+      disconnectTerminal();
+    }
+    setShowTerminal(!showTerminal);
+  };
 
   return (
     <Box
@@ -43,9 +53,10 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '8px 16px',
-        backgroundColor: '#2d2d30',
-        color: '#ffffff',
-        borderBottom: '1px solid #3e3e42',
+        backgroundColor: theme.palette.background.paper,
+        color: theme.palette.text.primary,
+        borderBottom: theme.palette.background.dark,
+        ...sx,
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -67,43 +78,19 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
             {isConnected ? 'Connected' : 'Disconnected'}
           </Typography>
         </Box>
-
-        {/* {currentPath && (
-          <Typography variant="caption" sx={{ marginLeft: '16px' }}>
-            Path: {currentPath}
-          </Typography>
-        )} */}
       </Box>
 
       <Box>
-        <Tooltip title={isConnected ? 'Disconnect' : 'Connect'}>
-          <IconButton
-            onClick={isConnected ? onDisconnect : onConnect}
-            size="small"
-            sx={{ color: '#ffffff' }}
-          >
-            {isConnected ? <DisconnectIcon /> : <ConnectIcon />}
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Settings">
-          <IconButton
-            onClick={onSettings}
-            size="small"
-            sx={{ color: '#ffffff', marginLeft: '8px' }}
-          >
-            <SettingsIcon />
-          </IconButton>
-        </Tooltip>
-
         {!isSmallScreen && (
-          <Button
-            onClick={onLogout}
-            size="small"
-            sx={{ color: '#ffffff', marginLeft: '16px' }}
-          >
-            Logout
-          </Button>
+          <Tooltip title="Close Terminal">
+            <IconButton
+              onClick={handleCloseTerminal}
+              size="small"
+              sx={{ color: '#ffffff', marginLeft: '8px' }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Tooltip>
         )}
       </Box>
     </Box>

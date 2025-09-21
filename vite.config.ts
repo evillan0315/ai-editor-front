@@ -17,9 +17,9 @@ export default defineConfig(({ mode }) => {
     build: {
       chunkSizeWarningLimit: 1000,
     },
-  preview: {
-    port: 4173, // Default preview server port
-  },
+    preview: {
+      port: 4173, // Default preview server port
+    },
     server: {
       port: 3001,
       proxy: {
@@ -45,8 +45,12 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),
-      'import.meta.env.GITHUB_CALLBACK_URL': JSON.stringify(env.GITHUB_CALLBACK_URL),
-      'import.meta.env.GOOGLE_CALLBACK_URL': JSON.stringify(env.GOOGLE_CALLBACK_URL),
+      'import.meta.env.GITHUB_CALLBACK_URL': JSON.stringify(
+        env.GITHUB_CALLBACK_URL,
+      ),
+      'import.meta.env.GOOGLE_CALLBACK_URL': JSON.stringify(
+        env.GOOGLE_CALLBACK_URL,
+      ),
       'import.meta.env.FRONTEND_URL': JSON.stringify(env.VITE_FRONTEND_URL), // Add frontend URL for backend redirects
     },
   };

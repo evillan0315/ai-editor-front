@@ -12,31 +12,43 @@ export interface FileTreeNode {
   size?: number;
   createdAt?: Date;
   updatedAt?: Date;
-  children: FileTreeNode[]; // Will be empty when recursive=false is used.
+  /**
+   * Children are only populated if the backend call is recursive.
+   * When non-recursive, this may be undefined.
+   */
+  children?: FileTreeNode[];
 }
+
 /**
  * Represents a file or folder entry in the frontend's interactive file tree.
  * Extends FileTreeNode from the backend to include UI-specific state.
  */
 export interface FileEntry extends FileTreeNode {
-  collapsed: boolean; // Frontend-specific: true if folder is collapsed, false if expanded
-  depth: number; // Frontend-specific: depth in the tree hierarchy for indentation
-  relativePath: string; // Frontend-specific: path relative to the project root for display/selection
-  children: FileEntry[]; // Crucial change: Children are also FileEntry, for recursive definition
-  isChildrenLoaded: boolean; // New: Tracks if children for this folder have been explicitly fetched
-  isChildrenLoading: boolean; // New: Tracks if children for this specific folder are currently being fetched
+  /** Frontend-specific: true if folder is collapsed, false if expanded */
+  collapsed: boolean;
+  /** Frontend-specific: depth in the tree hierarchy for indentation */
+  depth: number;
+  /** Children entries after conversion to FileEntry format */
+  children?: FileEntry[];
+  /** Optional relative path from project root if needed by frontend utilities */
+  relativePath?: string;
+  /** Tracks if children for this folder have been explicitly fetched */
+  isChildrenLoaded: boolean;
+  /** Tracks if children for this specific folder are currently being fetched */
+  isChildrenLoading: boolean;
 }
 
 export interface FileTreeState {
-  files: FileEntry[]; // Top-level directories/files (after initial load, then updated hierarchically)
-  flatFileList: ApiFileScanResult[]; // Flat list of *all* files from API for AI context
-  expandedDirs: Set<string>; // Set of absolute filePaths of expanded directories
-  selectedFile: string | null; // Absolute filePath of the currently selected file
+  files: FileEntry[];
+  flatFileList: ApiFileScanResult[];
+  expandedDirs: Set<string>;
+  selectedFile: string | null;
   isFetchingTree: boolean;
   fetchTreeError: string | null;
-  lastFetchedProjectRoot?: string | null; // Tracks the project root for the last successful initial fetch
-  lastFetchedScanPaths?: string[]; // Tracks the scan paths for the last successful AI context fetch
-  loadingChildren: Set<string>; // New: Set of paths for folders currently loading their children
+  lastFetchedProjectRoot?: string | null;
+  lastFetchedScanPaths?: string[];
+  loadingChildren: Set<string>;
+  projectRootDirectory: string;
 }
 
 /**
@@ -44,7 +56,8 @@ export interface FileTreeState {
  * This is used for providing AI context and is a flat structure.
  */
 export interface ApiFileScanResult {
-  filePath: string; // Absolute path to the file
-  relativePath: string; // Path relative to the project root (e.g., "src/components/MyComponent.tsx")
-  content: string;
+  filePath: string;
+  type: 'file' | 'folder';
+  size?: number;
+  lastModified?: number;
 }

@@ -6,7 +6,6 @@ import {
   DialogActions,
   Button,
   Checkbox,
-  FormControlLabel,
   List,
   ListItem,
   ListItemIcon,
@@ -26,17 +25,20 @@ import SearchIcon from '@mui/icons-material/Search';
 import { useStore } from '@nanostores/react';
 import { fileTreeStore, loadInitialTree } from '@/stores/fileTreeStore';
 import { aiEditorStore } from '@/stores/aiEditorStore';
-import { FileEntry } from '@/types'; // Corrected import path for FileEntry
+import { FileEntry } from '@/types';
 import { getFileTypeIcon } from '@/constants/fileIcons';
+import path from 'path';
 
 interface FilePickerDialogProps {
   open: boolean;
   onClose: () => void;
-  onSelect: (selectedRelativePaths: string[]) => void;
+  onSelect: (selectedPaths: string[]) => void;
   currentScanPaths: string[];
+  allowExternalPaths?: boolean;
+  initialRootPath?: string;
 }
 
-// Helper to flatten the hierarchical FileEntry array
+// Flatten hierarchical file tree
 const flattenTree = (nodes: FileEntry[]): FileEntry[] => {
   let flat: FileEntry[] = [];
   nodes.forEach((node) => {
@@ -53,6 +55,8 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
   onClose,
   onSelect,
   currentScanPaths,
+  allowExternalPaths,
+  initialRootPath,
 }) => {
   const {
     files: treeFiles,
@@ -60,78 +64,89 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
     fetchTreeError,
     lastFetchedProjectRoot,
   } = useStore(fileTreeStore);
+
   const { currentProjectPath } = useStore(aiEditorStore);
   const theme = useTheme();
+
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentDir, setCurrentDir] = useState(
+    initialRootPath || currentProjectPath || '/',
+  );
+
+  // Load file tree if open
+  useEffect(() => {
+    if (open && currentDir && !lastFetchedProjectRoot) {
+      loadInitialTree(currentDir);
+    }
+  }, [open, currentDir, lastFetchedProjectRoot]);
 
   useEffect(() => {
-    if (open && currentProjectPath && !lastFetchedProjectRoot) {
-      loadInitialTree(currentProjectPath);
-    }
-  }, [open, currentProjectPath, lastFetchedProjectRoot]);
-
-  useEffect(() => {
-    if (open) {
-      setSelectedPaths(new Set(currentScanPaths));
-    }
-    if (!open) {
+    if (open) setSelectedPaths(new Set(currentScanPaths));
+    else {
       setSelectedPaths(new Set());
       setSearchTerm('');
     }
   }, [open, currentScanPaths]);
 
-  const handleTogglePath = useCallback((relativePath: string) => {
+  const handleTogglePath = useCallback((filePath: string) => {
     setSelectedPaths((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(relativePath)) {
-        newSet.delete(relativePath);
-      } else {
-        newSet.add(relativePath);
-      }
+      newSet.has(filePath) ? newSet.delete(filePath) : newSet.add(filePath);
       return newSet;
     });
   }, []);
 
-  const allFilesAndFolders = useMemo(() => {
-    return flattenTree(treeFiles);
-  }, [treeFiles]);
+  const allFilesAndFolders = useMemo(() => flattenTree(treeFiles), [treeFiles]);
 
   const filteredFiles = useMemo(() => {
     if (!searchTerm) return allFilesAndFolders;
-    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    const term = searchTerm.toLowerCase();
     return allFilesAndFolders.filter(
       (file) =>
-        file.path.toLowerCase().includes(lowerCaseSearchTerm) ||
-        file.name.toLowerCase().includes(lowerCaseSearchTerm),
+        file.path.toLowerCase().includes(term) ||
+        file.name.toLowerCase().includes(term),
     );
   }, [allFilesAndFolders, searchTerm]);
 
-  const sortedFiles = useMemo(() => {
-    return [...filteredFiles].sort((a, b) => {
-      if (a.type === 'folder' && b.type !== 'folder') return -1;
-      if (a.type !== 'folder' && b.type === 'folder') return 1;
-      return a.path.localeCompare(b.path);
-    });
-  }, [filteredFiles]);
+  const sortedFiles = useMemo(
+    () =>
+      [...filteredFiles].sort((a, b) => {
+        if (a.type === 'folder' && b.type !== 'folder') return -1;
+        if (a.type !== 'folder' && b.type === 'folder') return 1;
+        return a.path.localeCompare(b.path);
+      }),
+    [filteredFiles],
+  );
 
   const handleSelectAll = useCallback(() => {
-    const allFilteredPaths = sortedFiles.map((file) => file.path);
-    setSelectedPaths(new Set(allFilteredPaths));
+    setSelectedPaths(new Set(sortedFiles.map((f) => f.path)));
   }, [sortedFiles]);
 
-  const handleDeselectAll = useCallback(() => {
-    setSelectedPaths(new Set());
-  }, []);
+  const handleDeselectAll = useCallback(() => setSelectedPaths(new Set()), []);
 
   const handleConfirm = useCallback(() => {
     onSelect(Array.from(selectedPaths));
     onClose();
   }, [onSelect, onClose, selectedPaths]);
 
-  const currentProjectRootLabel = currentProjectPath
-    ? `Relative to: ${currentProjectPath}`
-    : 'No project root loaded';
+  // Navigate up directory tree
+  const handleNavigateUp = useCallback(() => {
+    const parent = path.dirname(currentDir);
+    if (
+      allowExternalPaths ||
+      parent.startsWith(initialRootPath || currentProjectPath || '/')
+    ) {
+      setCurrentDir(parent);
+      loadInitialTree(parent);
+    }
+  }, [currentDir, allowExternalPaths, initialRootPath, currentProjectPath]);
+
+  const currentRootLabel = allowExternalPaths
+    ? `Browsing: ${currentDir}`
+    : currentProjectPath
+      ? `Relative to: ${currentProjectPath}`
+      : 'No project root loaded';
 
   return (
     <Dialog
@@ -166,10 +181,24 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
+
       <DialogContent sx={{ p: 2 }}>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {currentProjectRootLabel}
+          {currentRootLabel}
         </Typography>
+
+        {allowExternalPaths && (
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<AddIcon />}
+            sx={{ mb: 2 }}
+            onClick={handleNavigateUp}
+          >
+            Up One Directory
+          </Button>
+        )}
+
         <MuiTextField
           fullWidth
           variant="outlined"
@@ -195,6 +224,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           sx={{ mb: 2 }}
           size="small"
         />
+
         <Box
           sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}
         >
@@ -234,7 +264,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           <Alert severity="info" sx={{ mt: 2 }}>
             {searchTerm
               ? 'No matching files found.'
-              : 'No files available in the project root.'}
+              : 'No files available in this directory.'}
           </Alert>
         ) : (
           <List
@@ -247,32 +277,24 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
               bgcolor: theme.palette.background.default,
             }}
           >
-            {sortedFiles.map((fileEntry) => (
+            {sortedFiles.map((file) => (
               <ListItem
-                key={fileEntry.path}
+                key={file.path}
                 secondaryAction={
                   <Checkbox
                     edge="end"
-                    checked={selectedPaths.has(fileEntry.path)}
-                    onChange={() => handleTogglePath(fileEntry.path)}
-                    inputProps={{
-                      'aria-labelledby': `checkbox-list-label-${fileEntry.path}`,
-                    }}
+                    checked={selectedPaths.has(file.path)}
+                    onChange={() => handleTogglePath(file.path)}
                     sx={{ color: theme.palette.primary.main }}
                   />
                 }
-                sx={{
-                  '&:hover': {
-                    bgcolor: theme.palette.action.hover,
-                  },
-                }}
+                sx={{ '&:hover': { bgcolor: theme.palette.action.hover } }}
               >
                 <ListItemIcon>
-                  {getFileTypeIcon(fileEntry.name, fileEntry.type)}
+                  {getFileTypeIcon(file.name, file.type)}
                 </ListItemIcon>
                 <ListItemText
-                  id={`checkbox-list-label-${fileEntry.path}`}
-                  primary={fileEntry.path}
+                  primary={file.path}
                   primaryTypographyProps={{
                     style: { color: theme.palette.text.primary },
                   }}
@@ -282,6 +304,7 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
           </List>
         )}
       </DialogContent>
+
       <DialogActions
         sx={{
           borderTop: `1px solid ${theme.palette.divider}`,

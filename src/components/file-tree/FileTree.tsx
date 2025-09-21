@@ -7,8 +7,7 @@ import {
   Alert,
   Paper,
   IconButton,
-  useTheme,
-  Chip, // New: Import Chip for dirty file indicator
+  useTheme, // New: Import Chip for dirty file indicator
 } from '@mui/material';
 import FileTreeItem from './FileTreeItem';
 import {
@@ -17,14 +16,12 @@ import {
   clearFileTree,
   loadChildrenForDirectory, // New: Import for refreshing a directory
   setSelectedFile,
+  projectRootDirectoryStore,
 } from '@/stores/fileTreeStore';
 import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
 
 import { ContextMenuItem, FileEntry } from '@/types';
-import {
-  showFileTreeContextMenu,
-  hideFileTreeContextMenu,
-} from '@/stores/contextMenuStore';
+import { showFileTreeContextMenu } from '@/stores/contextMenuStore';
 import {
   ContentCopy as ContentCopyIcon,
   Edit as EditIcon,
@@ -46,18 +43,24 @@ import {
 } from '@/components/dialogs'; // New: Import dialogs
 import { deleteFile as apiDeleteFile } from '@/api/file'; // New: Import deleteFile API
 import * as path from 'path-browserify'; // Import path-browserify
+import {
+  isTerminalVisible,
+  setShowTerminal,
+  connectTerminal,
+} from '@/stores/terminalStore';
 
 interface FileTreeProps {
-  projectRoot: string;
+  //projectRoot?: string;
 }
-
-const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
+const FileTree: React.FC<FileTreeProps> = () => {
   const {
     files: treeFiles,
     isFetchingTree,
     fetchTreeError,
   } = useStore(fileTreeStore);
   const { scanPathsInput } = useStore(aiEditorStore);
+  const projectRoot = useStore(projectRootDirectoryStore);
+  const showTerminal = useStore(isTerminalVisible);
   const theme = useTheme();
 
   // State for create file/folder dialog
@@ -76,6 +79,7 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
     null,
   );
   const [operationMode, setOperationMode] = useState<'copy' | 'move'>('copy');
+  const [terminalDialogOpen, setTerminalDialogOpen] = useState(false);
 
   useEffect(() => {
     if (projectRoot) {
@@ -130,7 +134,7 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
     async (node: FileEntry) => {
       if (
         window.confirm(
-          `Are you sure you want to delete ${node.name}? This action cannot be undone.`,
+          `Are you sure you want to delete ${node.name}? This action cannot be undone.`, // Corrected template string
         )
       ) {
         try {
@@ -266,12 +270,14 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
           // Open Terminal Here (for folders only)
           label: 'Open Terminal Here',
           icon: <TerminalIcon fontSize="small" />,
-          action: (file) =>
-            showGlobalSnackbar(
-              `Open Terminal in ${file.path} feature coming soon.`,
-              'info',
-            ), // Use global snackbar
-          disabled: true,
+          action: (file) => {
+            if (file.type === 'folder') {
+              projectRootDirectoryStore.set(file.path);
+              setShowTerminal(true);
+              connectTerminal();
+            }
+          },
+          disabled: isFile,
         },
         { type: 'divider' },
         {
@@ -407,6 +413,13 @@ const FileTree: React.FC<FileTreeProps> = ({ projectRoot }) => {
         snackbar={{ show: showGlobalSnackbar }} // Pass global snackbar
         projectRoot={projectRoot}
       />
+
+      {/*<TerminalDialog
+        open={terminalDialogOpen}
+        onClose={() => setTerminalDialogOpen(false)}
+        token={localStorage.getItem('token') || ''}
+        initialCwd={terminalStore.get().currentPath}
+      />*/}
     </Paper>
   );
 };

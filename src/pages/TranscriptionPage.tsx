@@ -19,7 +19,7 @@ import { $spotifyStore, fetchMediaForPurpose } from '@/stores/spotifyStore';
 import { getFileStreamUrl } from '@/api/media';
 
 import { TranscriptionPlayer } from '@/components/TranscriptionPlayer/TranscriptionPlayer'; // Correct import path
-import { FileType, MediaFileResponseDto } from '@/types'; // Import MediaFileResponseDto and FileType
+import { FileType } from '@/types'; // Import MediaFileResponseDto and FileType
 
 interface TranscriptionPageProps {}
 
@@ -44,19 +44,20 @@ const TranscriptionPage: React.FC<TranscriptionPageProps> = () => {
     }
   }, [allAvailableMediaFiles.length, isFetchingMedia, fetchMediaError]);
 
-  const audioFiles = useMemo(() => {
-    return allAvailableMediaFiles.filter(
-      (file) => file.fileType === FileType.AUDIO,
-    );
-  }, [allAvailableMediaFiles]);
+  const audioFiles = useMemo(
+    () =>
+      allAvailableMediaFiles.filter((file) => file.fileType === FileType.AUDIO),
+    [allAvailableMediaFiles],
+  );
 
   const handleFileChange = (event: SelectChangeEvent<string>) => {
     setSelectedFileId(event.target.value);
   };
 
-  const selectedAudioFile = useMemo(() => {
-    return audioFiles.find((file) => file.id === selectedFileId);
-  }, [audioFiles, selectedFileId]);
+  const selectedAudioFile = useMemo(
+    () => audioFiles.find((file) => file.id === selectedFileId),
+    [audioFiles, selectedFileId],
+  );
 
   return (
     <Container maxWidth="lg" sx={{ py: 4, flexGrow: 1 }}>

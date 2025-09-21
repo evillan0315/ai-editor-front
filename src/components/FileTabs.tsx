@@ -1,15 +1,6 @@
-import React, { SyntheticEvent, useEffect } from 'react';
+import React, { SyntheticEvent } from 'react';
 import { useStore } from '@nanostores/react';
-import {
-  aiEditorStore,
-  setOpenedFile,
-  removeOpenedTab,
-  saveActiveFile, // Import new action
-  discardActiveFileChanges, // Import new action
-  showGlobalSnackbar, // Import global snackbar action
-  hideGlobalSnackbar, // Import global snackbar action
-  //removeAllOpenedTabs, // Import action to remove all tabs
-} from '@/stores/aiEditorStore';
+
 import {
   Box,
   Tabs,
@@ -20,39 +11,39 @@ import {
   Typography,
   CircularProgress,
   BoxProps,
-  Button,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
 import UndoIcon from '@mui/icons-material/Undo';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import VisibilityIcon from '@mui/icons-material/Terminal';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseMultipleIcon from '@mui/icons-material/Close';
 import { getFileTypeIcon } from '@/constants/fileIcons';
+
+import { isTerminalVisible, setShowTerminal } from '@/stores/terminalStore';
+import {
+  fileStore,
+  setOpenedFile,
+  saveActiveFile,
+  removeOpenedTab,
+} from '@/stores/fileStore';
 import * as path from 'path-browserify';
 
-interface FileTabsProps extends BoxProps {
-  setShowTerminal: React.Dispatch<React.SetStateAction<boolean>>;
-  showTerminal: boolean;
-  toggleTerminalVisibility: () => void;
-}
+interface FileTabsProps extends BoxProps {}
 
-const FileTabs: React.FC<FileTabsProps> = ({
-  sx,
-  setShowTerminal,
-  showTerminal,
-  toggleTerminalVisibility,
-  ...otherProps
-}) => {
+const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
   const {
     openedTabs,
     openedFile,
+    discardActiveFileChanges,
+    openedFileContent,
+    isFetchingFileContent,
     isOpenedFileDirty,
     isSavingFileContent,
     snackbar, // Get global snackbar state
-  } = useStore(aiEditorStore);
+  } = useStore(fileStore);
   const theme = useTheme();
-
+  const showTerminal = useStore(isTerminalVisible);
   const activeTabIndex = openedTabs.indexOf(openedFile || '');
 
   const handleTabChange = (_event: SyntheticEvent, newValue: string) => {
@@ -241,7 +232,7 @@ const FileTabs: React.FC<FileTabsProps> = ({
           </Tooltip>
           <Tooltip title={showTerminal ? 'Hide Terminal' : 'Show Terminal'}>
             <IconButton
-              onClick={toggleTerminalVisibility}
+              onClick={() => setShowTerminal(!showTerminal)}
               size="small"
               sx={{
                 color: theme.palette.text.secondary,

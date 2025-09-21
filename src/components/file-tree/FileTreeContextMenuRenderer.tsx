@@ -7,7 +7,6 @@ import {
 } from '@/stores/contextMenuStore';
 import {
   Box,
-  Paper,
   Typography,
   MenuItem,
   ListItemIcon,
@@ -16,8 +15,8 @@ import {
   useTheme,
   List,
 } from '@mui/material';
-import FileIcon from '@mui/icons-material/DescriptionOutlined'; // Generic file icon
-import FolderIcon from '@mui/icons-material/FolderOutlined'; // Generic folder icon
+// Generic file icon
+// Generic folder icon
 
 import { getFileTypeIcon } from '@/constants/fileIcons'; // For specific file icons
 

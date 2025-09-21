@@ -1,20 +1,17 @@
 // /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/src/stores/spotifyStore.ts
 
-import { atom, map } from 'nanostores';
+import { map } from 'nanostores';
 import { showGlobalSnackbar } from './aiEditorStore';
 import { persistentAtom, mapMediaFileToTrack } from '@/utils';
 import {
   Track,
   Playlist,
   PaginationPlaylistQueryDto,
-  CreatePlaylistApiDto,
   UpdatePlaylistDto,
   AddRemoveMediaToPlaylistDto,
-  MediaScanRequestDto,
   MediaFileResponseDto,
   RepeatMode,
   PlaylistCreationRequest,
-  PlaylistTrackResponseDto,
   PaginationMediaQueryDto,
   FileType,
   BufferedRange, // New: Import BufferedRange

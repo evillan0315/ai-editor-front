@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useStore } from '@nanostores/react';
+
 import {
   Dialog,
   DialogTitle,
@@ -15,7 +17,7 @@ import {
   IconButton,
   Typography,
   TextField as MuiTextField,
-  InputAdornment, // Added InputAdornment import
+  InputAdornment,
   useTheme,
   Tooltip,
 } from '@mui/material';
@@ -24,9 +26,8 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined';
 import FolderIcon from '@mui/icons-material/FolderOutlined';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import CheckIcon from '@mui/icons-material/Check';
-import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import * as path from 'path-browserify';
-
+import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
 import { fetchDirectoryContents } from '@/api/file';
 import { FileTreeNode } from '@/types';
 
@@ -35,13 +36,15 @@ interface DirectoryPickerDialogProps {
   onClose: () => void;
   onSelect: (selectedPath: string) => void;
   initialPath?: string;
+  allowExternalPaths?: boolean;
 }
 
 const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
   open,
   onClose,
   onSelect,
-  initialPath = '/', // Default to root if no initial path provided
+  initialPath = '/',
+  allowExternalPaths = false,
 }) => {
   const theme = useTheme();
   const [currentBrowsingPath, setCurrentBrowsingPath] =
@@ -52,22 +55,23 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const $projectRootDirectory = useStore(projectRootDirectoryStore);
+
+  const projectRoot = $projectRootDirectory || '/';
 
   useEffect(() => {
     if (open) {
-      const resolvedPath = initialPath || '/';
+      const resolvedPath = initialPath || projectRoot;
       setCurrentBrowsingPath(resolvedPath);
       setTempPathInput(resolvedPath);
       fetchContents(resolvedPath);
     } else {
-      // Reset state when dialog closes
       setDirectoryContents([]);
       setIsLoading(false);
       setError(null);
     }
-  }, [open, initialPath]);
+  }, [open, initialPath, projectRoot]);
 
-  // Sync tempPathInput with currentBrowsingPath when it changes internally
   useEffect(() => {
     setTempPathInput(currentBrowsingPath);
   }, [currentBrowsingPath]);
@@ -76,11 +80,9 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
     setIsLoading(true);
     setError(null);
     setDirectoryContents([]);
-
     try {
       const contents = await fetchDirectoryContents(dirPath);
       const foldersOnly = contents.filter((item) => item.type === 'folder');
-      // Sort folders alphabetically
       foldersOnly.sort((a, b) => a.name.localeCompare(b.name));
       setDirectoryContents(foldersOnly);
     } catch (err) {
@@ -95,16 +97,18 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
 
   const handleGoUp = useCallback(() => {
     const parentPath = path.dirname(currentBrowsingPath);
-    // Ensure we don't go above the root '/' or Windows drive root like 'C:/'
-    if (parentPath && parentPath !== currentBrowsingPath) {
+    const canGoAboveRoot =
+      allowExternalPaths || parentPath.startsWith(projectRoot);
+    if (parentPath && parentPath !== currentBrowsingPath && canGoAboveRoot) {
       setCurrentBrowsingPath(parentPath);
       fetchContents(parentPath);
     }
-  }, [currentBrowsingPath, fetchContents]);
+  }, [currentBrowsingPath, fetchContents, allowExternalPaths, projectRoot]);
 
   const handleOpenDirectory = useCallback(
     (dirPath: string) => {
       setCurrentBrowsingPath(dirPath);
+      projectRootDirectoryStore.set(dirPath);
       fetchContents(dirPath);
     },
     [fetchContents],
@@ -129,16 +133,18 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
     }
   }, [tempPathInput, fetchContents]);
 
-  // Check if we are at the root or a drive root to disable 'Go Up'
   const canGoUp = useMemo(() => {
     const normalizedPath = currentBrowsingPath.replace(/\\/g, '/');
-    const rootPatterns = ['/', /^[a-zA-Z]:\/$/]; // Unix root and Windows drive roots
-    return !rootPatterns.some((pattern) =>
-      typeof pattern === 'string'
-        ? normalizedPath === pattern
-        : pattern.test(normalizedPath),
+    const rootPatterns = ['/', /^[a-zA-Z]:\/$/];
+    if (allowExternalPaths) return true;
+    return (
+      !rootPatterns.some((pattern) =>
+        typeof pattern === 'string'
+          ? normalizedPath === pattern
+          : pattern.test(normalizedPath),
+      ) && normalizedPath.startsWith(projectRoot)
     );
-  }, [currentBrowsingPath]);
+  }, [currentBrowsingPath, allowExternalPaths, projectRoot]);
 
   return (
     <Dialog
@@ -173,6 +179,7 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
+
       <DialogContent sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <MuiTextField
@@ -197,7 +204,6 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
                 },
               },
             }}
-            sx={{ flexGrow: 1 }}
             size="small"
             onKeyPress={(e) => {
               if (e.key === 'Enter') handleGoToPath();
@@ -269,9 +275,7 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
                 key={folder.path}
                 onClick={() => handleOpenDirectory(folder.path)}
                 sx={{
-                  '&:hover': {
-                    bgcolor: theme.palette.action.hover,
-                  },
+                  '&:hover': { bgcolor: theme.palette.action.hover },
                   cursor: 'pointer',
                 }}
               >
@@ -292,6 +296,7 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
           </List>
         )}
       </DialogContent>
+
       <DialogActions
         sx={{
           borderTop: `1px solid ${theme.palette.divider}`,

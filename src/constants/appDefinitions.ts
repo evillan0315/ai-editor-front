@@ -2,7 +2,6 @@ import { AppDefinition } from '@/types';
 import AppsIcon from '@mui/icons-material/Apps';
 import TerminalIcon from '@mui/icons-material/Terminal';
 import TranslateIcon from '@mui/icons-material/Translate';
-import MicIcon from '@mui/icons-material/Mic';
 import BuildIcon from '@mui/icons-material/Build';
 import CodeIcon from '@mui/icons-material/Code';
 import LibraryMusicIcon from '@mui/icons-material/LibraryMusic';
@@ -21,6 +20,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/editor',
     linkText: 'Open AI Editor',
     icon: CodeIcon,
+    category: 'AI Tools',
   },
   {
     id: 'dashboard',
@@ -29,6 +29,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/dashboard',
     linkText: 'Open Dashboard',
     icon: DashboardIcon,
+    category: 'Management',
   },
   {
     id: 'resume-builder',
@@ -37,6 +38,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/resume-builder',
     linkText: 'Open Resume Builder',
     icon: DescriptionIcon,
+    category: 'AI Tools',
   },
   {
     id: 'media-player',
@@ -45,6 +47,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/spotify',
     linkText: 'Open Music Player',
     icon: LibraryMusicIcon,
+    category: 'Entertainment',
   },
   {
     id: 'translator',
@@ -54,6 +57,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/translator',
     linkText: 'Open Translator',
     icon: TranslateIcon,
+    category: 'AI Tools',
   },
   {
     id: 'terminal',
@@ -62,6 +66,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/terminal',
     linkText: 'Open Terminal',
     icon: TerminalIcon,
+    category: 'Development',
   },
   {
     id: 'preview',
@@ -71,6 +76,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/preview',
     linkText: 'Open Preview',
     icon: BuildIcon,
+    category: 'Development',
   },
   {
     id: 'llm-generation',
@@ -79,6 +85,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/llm-generation',
     linkText: 'Open Code Generator',
     icon: AppsIcon,
+    category: 'AI Tools',
   },
   {
     id: 'transcription',
@@ -87,6 +94,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/transcription',
     linkText: 'Open Transcription',
     icon: AppsIcon,
+    category: 'Utilities',
   },
   {
     id: 'organizations',
@@ -95,6 +103,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/organizations',
     linkText: 'Open Organizations',
     icon: AppsIcon,
+    category: 'Management',
   },
   {
     id: 'profile',
@@ -103,6 +112,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/profile',
     linkText: 'Open Profile',
     icon: AccountCircleIcon,
+    category: 'User',
   },
   {
     id: 'settings',
@@ -111,6 +121,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/settings',
     linkText: 'Open Settings',
     icon: SettingsIcon,
+    category: 'User',
   },
   {
     id: 'recording',
@@ -119,6 +130,7 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/recording',
     linkText: 'Open Recording',
     icon: VideocamIcon,
+    category: 'Utilities',
   },
   {
     id: 'kanban-board',
@@ -127,5 +139,6 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/kanban-board',
     linkText: 'Open Kanban Board',
     icon: AssignmentIcon,
+    category: 'Management',
   },
 ];

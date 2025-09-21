@@ -16,18 +16,10 @@ import {
   ListItemAvatar,
   IconButton,
   Avatar,
-  Menu,
-  MenuItem,
-  ListItemIcon,
 } from '@mui/material';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import EditIcon from '@mui/icons-material/Edit';
-import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
-import DeleteIcon from '@mui/icons-material/Delete';
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useStore } from '@nanostores/react';
 import {
   $spotifyStore,

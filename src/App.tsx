@@ -1,37 +1,49 @@
 import React, { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import Loading from './components/Loading'; // Import the Loading component
-import CustomSnackbar from '@/components/Snackbar'; // Import global snackbar
+import Loading from './components/Loading';
+import CustomSnackbar from '@/components/Snackbar';
 import { useStore } from '@nanostores/react';
-import { aiEditorStore, hideGlobalSnackbar } from '@/stores/aiEditorStore'; // Import aiEditorStore for snackbar
+import { snackbarState, hideGlobalSnackbar } from '@/stores/snackbarStore';
+import { authStore } from '@/stores/authStore'; // ✅ import auth state
+
+import '@xterm/xterm/css/xterm.css';
+
+// ✅ Route guard component
+function RequireAuth({ children }: { children: JSX.Element }) {
+  const { isLoggedIn, loading } = useStore(authStore);
+
+  // Show nothing or a loading spinner while checking auth state
+  if (loading) return <Loading message="Checking authentication..." />;
+
+  return isLoggedIn ? children : <Navigate to="/login" replace />;
+}
 
 // Dynamically import page components
-const HomePage = lazy(() => import('./pages/HomePage')); // New
-const DashboardPage = lazy(() => import('./pages/DashboardPage')); // New
-const AppsPage = lazy(() => import('./pages/AppsPage')); // New
+const HomePage = lazy(() => import('./pages/HomePage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const AppsPage = lazy(() => import('./pages/AppsPage'));
 const AiEditorPage = lazy(() => import('./pages/AiEditorPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
-const SpotifyAppPage = lazy(() => import('./pages/SpotifyAppPage')); // New: Spotify-like app page
-const TranslatorAppPage = lazy(() => import('./pages/TranslatorAppPage')); // New: Translator app page
-const GeminiLiveAudioPage = lazy(() => import('./pages/GeminiLiveAudioPage')); // New: Gemini Live Audio Page
-const PreviewAppPage = lazy(() => import('./pages/PreviewAppPage')); // New: Preview Built App Page
-const OrganizationPage = lazy(() => import('./pages/OrganizationPage')); // New: Organization Management Page
-const ProjectsPage = lazy(() => import('./pages/ProjectsPage')); // New: Project Management Page
-const UserProfilePage = lazy(() => import('./pages/UserProfilePage')); // New: User Profile Page
-const UserSettingsPage = lazy(() => import('./pages/UserSettingsPage')); // New: User Settings Page
-const TranscriptionPage = lazy(() => import('./pages/TranscriptionPage')); // NEW: Transcription Page
-const TerminalPage = lazy(() => import('./pages/TerminalPage')); // NEW: Transcription Page
-const LlmGenerationPage = lazy(() => import('./pages/LlmGenerationPage')); // NEW: LLM Generation Page
-const ResumeBuilderPage = lazy(() => import('./pages/ResumeBuilderPage')); // NEW: Resume Builder Page
-const RecordingPage = lazy(() => import('./pages/RecordingPage')); // NEW: Recording Page
-const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage')); // NEW: Kanban Board Page
+const SpotifyAppPage = lazy(() => import('./pages/SpotifyAppPage'));
+const TranslatorAppPage = lazy(() => import('./pages/TranslatorAppPage'));
+const GeminiLiveAudioPage = lazy(() => import('./pages/GeminiLiveAudioPage'));
+const PreviewAppPage = lazy(() => import('./pages/PreviewAppPage'));
+const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
+const UserSettingsPage = lazy(() => import('./pages/UserSettingsPage'));
+const TranscriptionPage = lazy(() => import('./pages/TranscriptionPage'));
+const TerminalPage = lazy(() => import('./pages/TerminalPage'));
+const LlmGenerationPage = lazy(() => import('./pages/LlmGenerationPage'));
+const ResumeBuilderPage = lazy(() => import('./pages/ResumeBuilderPage'));
+const RecordingPage = lazy(() => import('./pages/RecordingPage'));
+const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage'));
 
-import '@xterm/xterm/css/xterm.css';
 function App() {
-  const { snackbar } = useStore(aiEditorStore);
+  const snackbar = useStore(snackbarState);
 
   const handleSnackbarClose = () => {
     hideGlobalSnackbar();
@@ -40,24 +52,24 @@ function App() {
   return (
     <>
       <Routes>
-        {/* Layout component now handles rendering of Navbar and potential right sidebar */}
+        {/* Routes that require authentication */}
         <Route path="/editor" element={<Layout />}>
           <Route
             path="/editor"
             element={
-              <Suspense
-                fallback={
-                  <Loading type="gradient" message="Loading playground" />
-                }
-              >
-              
-                <AiEditorPage />
-             
-              </Suspense>
+              <RequireAuth>
+                <Suspense
+                  fallback={<Loading type="gradient" message="Loading playground" />}
+                >
+                  <AiEditorPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
         </Route>
+
         <Route path="/" element={<Layout />}>
+          {/* Public route */}
           <Route
             index
             element={
@@ -66,149 +78,173 @@ function App() {
               </Suspense>
             }
           />
-          
+
+          {/* ✅ Protected Routes */}
           <Route
             path="/dashboard"
             element={
-              <Suspense fallback={<Loading />}>
-                <DashboardPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <DashboardPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
+
           <Route
             path="/apps"
             element={
-              <Suspense fallback={<Loading />}>
-                <AppsPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <AppsPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
-          {/* New route for the Spotify-like app */}
           <Route
             path="/apps/spotify"
             element={
-              <Suspense fallback={<Loading />}>
-                <SpotifyAppPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <SpotifyAppPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
-          {/* New route for the Translator app */}
           <Route
             path="/apps/translator"
             element={
-              <Suspense fallback={<Loading />}>
-                <TranslatorAppPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <TranslatorAppPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
-          {/* New route for Gemini Live Audio */}
           <Route
             path="/apps/gemini-live-audio"
             element={
-              <Suspense fallback={<Loading />}>
-                <GeminiLiveAudioPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <GeminiLiveAudioPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
-          {/* New route for Preview Built App */}
           <Route
             path="/apps/preview"
             element={
-              <Suspense fallback={<Loading />}>
-                <PreviewAppPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <PreviewAppPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
-          {/* NEW: Route for Audio Transcription */}
           <Route
             path="/apps/transcription"
             element={
-              <Suspense fallback={<Loading />}>
-                <TranscriptionPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <TranscriptionPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
-          {/* NEW: Route for Terminal  */}
           <Route
             path="/apps/terminal"
             element={
-              <Suspense fallback={<Loading />}>
-                <TerminalPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <TerminalPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
-          {/* NEW: Route for LLM Generation */}
           <Route
             path="/apps/llm-generation"
             element={
-              <Suspense fallback={<Loading />}>
-                <LlmGenerationPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <LlmGenerationPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
-          {/* NEW: Route for Resume Builder */}
           <Route
             path="/apps/resume-builder"
             element={
-              <Suspense fallback={<Loading />}>
-                <ResumeBuilderPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <ResumeBuilderPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
-          {/* NEW: Route for Recording Page */}
           <Route
             path="/apps/recording"
             element={
-              <Suspense fallback={<Loading />}>
-                <RecordingPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <RecordingPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
-          {/* NEW: Route for Kanban Board Page */}
           <Route
             path="/apps/kanban-board"
             element={
-              <Suspense fallback={<Loading />}>
-                <KanbanBoardPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <KanbanBoardPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
-          {/* New routes for Project Management */}
+
           <Route
             path="/organizations"
             element={
-              <Suspense fallback={<Loading />}>
-                <OrganizationPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <OrganizationPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
           <Route
             path="/organizations/:organizationId/projects"
             element={
-              <Suspense fallback={<Loading />}>
-                <ProjectsPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <ProjectsPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
 
-          {/* New routes for User Profile and Settings */}
           <Route
             path="/profile"
             element={
-              <Suspense fallback={<Loading />}>
-                <UserProfilePage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <UserProfilePage />
+                </Suspense>
+              </RequireAuth>
             }
           />
           <Route
             path="/settings"
             element={
-              <Suspense fallback={<Loading />}>
-                <UserSettingsPage />
-              </Suspense>
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <UserSettingsPage />
+                </Suspense>
+              </RequireAuth>
             }
           />
 
+          {/* Public routes */}
           <Route
             path="/login"
             element={
@@ -235,6 +271,7 @@ function App() {
           />
         </Route>
       </Routes>
+
       <CustomSnackbar
         open={snackbar.open}
         message={snackbar.message}
@@ -247,3 +284,4 @@ function App() {
 }
 
 export default App;
+

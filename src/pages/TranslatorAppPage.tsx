@@ -38,7 +38,7 @@ import { authStore } from '@/stores/authStore';
 import CodeMirror from '@uiw/react-codemirror';
 import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils';
 import { themeStore } from '@/stores/themeStore';
-import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore'; // Import global snackbar
+import { showGlobalSnackbar } from '@/stores/aiEditorStore'; // Import global snackbar
 
 const supportedLanguages = [
   { code: 'en', name: 'English' },
@@ -83,12 +83,14 @@ const TranslatorAppPage: React.FC = () => {
 
   const [isFileUploaderOpen, setIsFileUploaderOpen] = useState(false);
 
-  useEffect(() => {
-    // Clear state on component unmount or if not logged in (optional based on app flow)
-    return () => {
-      clearTranslatorState();
-    };
-  }, []);
+  useEffect(
+    () =>
+      // Clear state on component unmount or if not logged in (optional based on app flow)
+      () => {
+        clearTranslatorState();
+      },
+    [],
+  );
 
   const handleTranslate = useCallback(async () => {
     if (!isLoggedIn) {

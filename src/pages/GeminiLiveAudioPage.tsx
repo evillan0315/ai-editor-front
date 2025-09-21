@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { useStore } from '@nanostores/react';
 import {
   Box,
@@ -9,27 +9,18 @@ import {
   Paper,
   useTheme,
   TextField as MuiTextField,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import WifiIcon from '@mui/icons-material/Wifi';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
-import CloseSessionIcon from '@mui/icons-material/PowerSettingsNew';
 import SendIcon from '@mui/icons-material/Send';
 
 import {
   geminiLiveStore,
-  setSessionId,
-  setIsSessionActive,
   setIsRecording,
   setMicrophonePermissionGranted,
-  appendUserTranscript,
   appendAiResponseText,
-  enqueueAiResponseAudio,
   dequeueAiResponseAudio,
   clearAiResponseAudioQueue, // New: Import new action
   setLoading,
@@ -124,16 +115,18 @@ const GeminiLiveAudioPage: React.FC<GeminiLiveAudioPageProps> = () => {
   }, [aiResponseAudioQueue]);
 
   // --- Session & Recording Effects ---
-  useEffect(() => {
-    // Cleanup on component unmount or logout
-    return () => {
-      stopRecording(); // Ensure recording is stopped
-      if (isSessionActive) {
-        disconnectGeminiLive(); // Disconnect WS if active
-      }
-      clearGeminiLiveState();
-    };
-  }, [isSessionActive]); // Only depends on isSessionActive for cleanup
+  useEffect(
+    () =>
+      // Cleanup on component unmount or logout
+      () => {
+        stopRecording(); // Ensure recording is stopped
+        if (isSessionActive) {
+          disconnectGeminiLive(); // Disconnect WS if active
+        }
+        clearGeminiLiveState();
+      },
+    [isSessionActive],
+  ); // Only depends on isSessionActive for cleanup
 
   useEffect(() => {
     if (!isLoggedIn) {

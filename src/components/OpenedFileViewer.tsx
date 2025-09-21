@@ -1,14 +1,15 @@
 import React, { useEffect } from 'react';
 import { useStore } from '@nanostores/react';
+
 import {
-  aiEditorStore,
+  fileStore,
   setOpenedFileContent,
   setIsFetchingFileContent,
   setFetchFileContentError,
-  setIsOpenedFileDirty, // Existing, but now set based on store's snapshot
-  setInitialFileContentSnapshot, // New: To set initial content in store
-  saveActiveFile, // Import the new save action
-} from '@/stores/aiEditorStore';
+  setIsOpenedFileDirty,
+  setInitialFileContentSnapshot,
+  saveActiveFile,
+} from '@/stores/fileStore';
 import { readFileContent } from '@/api/file';
 import CodeMirror from '@uiw/react-codemirror';
 import {
@@ -20,36 +21,33 @@ import {
   useTheme,
 } from '@mui/material';
 import { themeStore } from '@/stores/themeStore';
-import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index'; // Import createCodeMirrorTheme
-import { keymap } from '@codemirror/view'; // Import keymap
+import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
+import { keymap, EditorView } from '@codemirror/view';
 import InitialEditorViewer from './InitialEditorViewer';
+import MarkdownEditor from '@/components/MarkdownEditor'; // ✅ NEW
 
-interface OpenedFileViewerProps {
-  // No specific props needed, all state comes from aiEditorStore
-}
+interface OpenedFileViewerProps {}
 
 const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   const {
     openedFile,
     openedFileContent,
-    initialFileContentSnapshot, // New: Get from store
+    initialFileContentSnapshot,
     isFetchingFileContent,
     fetchFileContentError,
-    isOpenedFileDirty, // Get from store
-    isSavingFileContent, // New: Get saving status from store
-  } = useStore(aiEditorStore);
-  const muiTheme = useTheme(); // Get MUI theme
+    isOpenedFileDirty,
+    isSavingFileContent,
+  } = useStore(fileStore);
+  const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
 
-  // Effect to fetch file content when `openedFile` changes
   useEffect(() => {
     const fetchContent = async () => {
       if (!openedFile) {
-        // Reset all relevant states when file is closed
         setOpenedFileContent(null);
-        setInitialFileContentSnapshot(null); // Clear snapshot in store
+        setInitialFileContentSnapshot(null);
         setFetchFileContentError(null);
-        setIsOpenedFileDirty(false); // No longer dirty
+        setIsOpenedFileDirty(false);
         return;
       }
 
@@ -59,12 +57,12 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
       try {
         const content = await readFileContent(openedFile);
         setOpenedFileContent(content);
-        setInitialFileContentSnapshot(content); // Store original content in store
-        setIsOpenedFileDirty(false); // Reset dirty flag after initial load
+        setInitialFileContentSnapshot(content);
+        setIsOpenedFileDirty(false);
       } catch (err) {
         console.error(`Error reading file ${openedFile}:`, err);
         setFetchFileContentError(
-          `Failed to read file: ${err instanceof Error ? err.message : String(err)}`,
+          `Failed to read file: ${err instanceof Error ? err.message : String(err)}`
         );
         setOpenedFileContent(null);
         setInitialFileContentSnapshot(null);
@@ -76,9 +74,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
     fetchContent();
   }, [openedFile]);
 
-  // Effect to update `isOpenedFileDirty` based on `openedFileContent` vs `initialFileContentSnapshot`
   useEffect(() => {
-    // Only compare if a file is actually opened and not in the process of fetching
     if (
       openedFile &&
       !isFetchingFileContent &&
@@ -89,7 +85,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
         setIsOpenedFileDirty(isDirty);
       }
     } else if (!openedFile) {
-      setIsOpenedFileDirty(false); // Not dirty if no file is opened
+      setIsOpenedFileDirty(false);
     }
   }, [
     openedFile,
@@ -100,13 +96,16 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   ]);
 
   const handleContentChange = (value: string) => {
-    setOpenedFileContent(value); // This action handles setting `isOpenedFileDirty` implicitly or through the effect above
+    setOpenedFileContent(value);
   };
 
-  if (!openedFile) return <InitialEditorViewer />; // Show welcome message when no file is opened
+  if (!openedFile) return <InitialEditorViewer />;
 
   const isLoadingContent = isFetchingFileContent;
-  const isDisabled = isLoadingContent || isSavingFileContent; // Disable editing if saving or fetching
+  const isDisabled = isLoadingContent || isSavingFileContent;
+
+  // ✅ Detect markdown files by extension
+  const isMarkdownFile = openedFile?.toLowerCase().endsWith('.md');
 
   return (
     <Paper
@@ -116,10 +115,10 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
         display: 'flex',
         flexDirection: 'column',
         bgcolor: muiTheme.palette.background.paper,
-        height: '100%', // Explicitly set height to ensure it fills the parent
-        maxHeight: '100%', // Ensure it doesn't overflow parent
-        overflowY: 'hidden', // Hide vertical scroll of paper itself, CodeMirror scrolls
-        position: 'relative', // For absolute positioning of snackbar
+        height: '100%',
+        maxHeight: '100%',
+        overflowY: 'hidden',
+        position: 'relative',
       }}
     >
       {fetchFileContentError && (
@@ -140,27 +139,39 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
         </Box>
       ) : (
         <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-          <CodeMirror
-            value={openedFileContent || ''}
-            onChange={handleContentChange}
-            extensions={[
-              getCodeMirrorLanguage(openedFile),
-              createCodeMirrorTheme(muiTheme), // Add custom theme here
-              keymap.of([
-                {
-                  key: 'Mod-s',
-                  run: () => {
-                    saveActiveFile(); // Trigger save action
-                    return true; // Mark event as handled
+          {isMarkdownFile ? (
+            // ✅ Use MarkdownEditor for .md files
+            <MarkdownEditor
+              value={openedFileContent || ''}
+              onChange={handleContentChange}
+              disabled={isDisabled}
+              onSave={() => saveActiveFile()}
+            />
+          ) : (
+            // ✅ Default: CodeMirror editor for other files
+            <CodeMirror
+              value={openedFileContent || ''}
+              onChange={handleContentChange}
+              extensions={[
+                getCodeMirrorLanguage(openedFile),
+                createCodeMirrorTheme(muiTheme),
+                keymap.of([
+                  {
+                    key: 'Mod-s',
+                    run: () => {
+                      saveActiveFile();
+                      return true;
+                    },
                   },
-                },
-              ]),
-            ]}
-            theme={mode}
-            editable={!isDisabled} // Allow editing unless loading or saving
-            minHeight="100%" // Take all available height in this container
-            maxHeight="100%"
-          />
+                ]),
+                EditorView.lineWrapping,
+              ]}
+              theme={mode}
+              editable={!isDisabled}
+              minHeight="100%"
+              maxHeight="100%"
+            />
+          )}
         </Box>
       )}
     </Paper>

@@ -12,7 +12,38 @@ export function joinPaths(...paths: string[]): string {
     .join('/')
     .replace(/\/\/+/g, '/');
 }
+export const truncateFilePath = (filePath: string, maxLength = 30): string => {
+  if (filePath.length <= maxLength) {
+    return filePath;
+  }
 
+  const parts = filePath.split('/');
+  if (parts.length <= 2) {
+    return `...${filePath.slice(-maxLength + 3)}`;
+  }
+
+  const firstPart = parts[0];
+  const lastPart = parts[parts.length - 1];
+
+  let middle = '';
+  let currentLength = firstPart.length + lastPart.length + 4; // 2 for '...', 2 for '/'
+
+  for (let i = 1; i < parts.length - 1; i++) {
+    if (currentLength + parts[i].length + 1 < maxLength) {
+      middle += `/${parts[i]}`;
+      currentLength += parts[i].length + 1;
+    } else {
+      break;
+    }
+  }
+
+  if (middle.length > 0) {
+    return `${firstPart}/...${middle}/${lastPart}`;
+  }
+
+  // Fallback if middle parts are too long too, just show beginning and end
+  return `${firstPart}/.../${lastPart}`;
+};
 export function getRelativePath(
   absolutePath: string,
   basePath: string,

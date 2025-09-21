@@ -1,10 +1,5 @@
 import { getToken } from '@/stores/authStore';
-import {
-  TerminalCommandResponse,
-  PackageScript,
-  PackageManager,
-  ProjectScriptsResponse,
-} from '@/types';
+import { TerminalCommandResponse, ProjectScriptsResponse } from '@/types';
 
 const API_BASE_URL = `/api`;
 

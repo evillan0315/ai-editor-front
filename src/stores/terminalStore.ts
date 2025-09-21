@@ -1,8 +1,10 @@
 import { map } from 'nanostores';
 import { socketService } from '@/services/socketService';
+import { persistentAtom } from '@/utils/persistentAtom';
 import { SystemInfo, PromptData } from '@/types/terminal';
 import stripAnsi from 'strip-ansi';
-
+import { projectRootDirectoryStore } from './fileTreeStore';
+import { getToken } from './authStore';
 export interface TerminalState {
   currentPath: string;
   systemInfo: string | null;
@@ -11,7 +13,10 @@ export interface TerminalState {
   historyIndex: number;
   output: string[]; // Stores terminal output
 }
-
+export const isTerminalVisible = persistentAtom<boolean>('showTerminal', false);
+export const setShowTerminal = (show: boolean) => {
+  isTerminalVisible.set(show);
+};
 // Initialize with default values
 export const terminalStore = map<TerminalState>({
   currentPath: '~',
@@ -24,7 +29,7 @@ export const terminalStore = map<TerminalState>({
 
 // Actions
 export const setCurrentPath = (path: string) => {
-  terminalStore.setKey('currentPath', path);
+  projectRootDirectoryStore.set(path);
 };
 
 export const setSystemInfo = (info: string) => {
@@ -82,11 +87,16 @@ export const clearOutput = () => {
 
 // Socket connection management
 export const connectTerminal = async () => {
-  const token = localStorage.getItem('token');
-  if (!token) throw new Error('No authentication token found');
+  const token = getToken();
+  if (!token) {
+    throw 'No authentication token.';
+  }
+
+  // Retrieve project root directory from store
+  const projectRoot = projectRootDirectoryStore.get();
 
   try {
-    await socketService.connect(token);
+    await socketService.connect(token, projectRoot);
     setConnected(true);
     clearOutput();
 

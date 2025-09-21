@@ -1,10 +1,4 @@
-import React, {
-  useRef,
-  useEffect,
-  useState,
-  useCallback,
-  SyntheticEvent,
-} from 'react';
+import React, { useEffect, useState, useCallback, SyntheticEvent } from 'react';
 import { useStore } from '@nanostores/react';
 import {
   Box,
@@ -49,7 +43,7 @@ import {
   setIsVideoModalOpen,
   bufferedAtom, // New: Import bufferedAtom
 } from '@/stores/spotifyStore';
-import { RepeatMode, FileType, BufferedRange } from '@/types'; // New: Import BufferedRange
+import { FileType } from '@/types'; // New: Import BufferedRange
 
 interface SpotifyPlayerBarProps {
   mediaRef: React.RefObject<HTMLMediaElement | null>; // Now receives the active media element ref, allowing null
