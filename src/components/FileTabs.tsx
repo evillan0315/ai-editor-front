@@ -11,6 +11,7 @@ import {
   Typography,
   CircularProgress,
   BoxProps,
+  Paper,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
@@ -67,7 +68,8 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
   const isDisabled = isSavingFileContent;
 
   return (
-    <Box
+    <Paper
+      elevation={1}
       sx={{
         borderBottom: 1,
         borderColor: theme.palette.divider,
@@ -81,7 +83,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
         },
         display: 'flex', // Enable flexbox for positioning buttons
         alignItems: 'center', // Align items vertically in the center
-        height: '48px', // Explicitly set height for consistency
+        p:0.8,
         ...sx, // Merge the passed sx prop
       }}
       {...otherProps} // Pass any other props to the Box
@@ -90,7 +92,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
       <Box           
         sx={{
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'start',
             gap: 0,
             mr: 'auto',
             pl: 1,
@@ -272,7 +274,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
 
         </Box>
       )}
-    </Box>
+    </Paper>
   );
 };
 

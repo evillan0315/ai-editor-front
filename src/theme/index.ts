@@ -44,6 +44,9 @@ export const getAppTheme = (mode: PaletteMode) => {
       background: {
         default: mode === 'dark' ? '#121212' : '#ffffff',
         paper: mode === 'dark' ? '#1d1d1d' : '#f4f4f4',
+        aiResponse: mode === 'dark' ? '#2e2e2e' : '#f9f9f9', 
+        codeSnippet: mode === 'dark' ? '#333333' : '#fafafa',
+        hover: mode === 'dark' ? '#3a3a3a' : '#e0e0e0', 
       },
       text: {
         primary: mode === 'dark' ? '#ffffff' : '#212121',

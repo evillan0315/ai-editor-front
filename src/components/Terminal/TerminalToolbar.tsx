@@ -7,6 +7,7 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
+  Paper
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import {
@@ -47,12 +48,12 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
   };
 
   return (
-    <Box
+    <Paper
       sx={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '8px 16px',
+        padding: 0.8,
         backgroundColor: theme.palette.background.paper,
         color: theme.palette.text.primary,
         borderBottom: theme.palette.background.dark,
@@ -93,6 +94,6 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
           </Tooltip>
         )}
       </Box>
-    </Box>
+    </Paper>
   );
 };

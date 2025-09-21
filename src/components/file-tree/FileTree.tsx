@@ -311,31 +311,33 @@ const FileTree: React.FC<FileTreeProps> = () => {
   };
 
   return (
-    <Paper
-      elevation={3}
+    <Box
+
       sx={{
         height: '100%',
         overflowY: 'auto',
-        bgcolor: theme.palette.background.paper,
+  
         display: 'flex',
         flexDirection: 'column',
-        borderRight: '1px solid',
-        borderColor: theme.palette.divider,
+
       }}
     >
       {/* Sticky Header */}
-      <Box
+      <Paper
+        elevation={2}
         sx={{
           position: 'sticky',
           top: 0,
           left: 0,
+          backgroundColor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+          borderBottom: `1px solid ${theme.palette.divider}`,
           zIndex: 1, // Ensure it stays on top of the file list
-          bgcolor: theme.palette.background.paper, // Match background color
+
           p: 0.7,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Box className="flex items-center gap-0">
@@ -367,7 +369,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
             <RefreshIcon fontSize="small" />
           </IconButton>
         </Box>
-      </Box>
+      </Paper>
 
       {/* File List */}
       {isFetchingTree ? (
@@ -435,7 +437,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
         token={localStorage.getItem('token') || ''}
         initialCwd={terminalStore.get().currentPath}
       />*/}
-    </Paper>
+    </Box>
   );
 };
 

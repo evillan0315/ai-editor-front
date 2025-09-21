@@ -169,8 +169,9 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
                 width: SIDEBAR_RESIZER_WIDTH,
                 backgroundColor: theme.palette.divider,
                 transition: 'background-color 0.2s ease',
+        
                 '&:hover': {
-                  backgroundColor: theme.palette.action.hover,
+                  backgroundColor: theme.palette.primary.main,
                 },
               }}
               title="Resize sidebar"
@@ -198,7 +199,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
                 backgroundColor: theme.palette.divider,
                 transition: 'background-color 0.2s ease',
                 '&:hover': {
-                  backgroundColor: theme.palette.action.hover,
+                  backgroundColor: theme.palette.primary.main,
                 },
               }}
               title="Resize sidebar"

@@ -254,12 +254,13 @@ const Navbar: React.FC = () => {
   return (
     <>
       <AppBar
+        elevation={0}
         position="sticky"
         sx={{
           top: 0,
           zIndex: 1100,
           bgcolor: theme.palette.background.paper,
-          borderBottom: `1px solid ${theme.palette.divider}`,
+
         }}
       >
         {isAnyScriptRunning && (

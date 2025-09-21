@@ -36,14 +36,15 @@ const LlmGenerationContent: React.FC = () => {
   return (
     <Box className="flex flex-col h-full  w-full">
       {/* Sticky Header */}
-      <Box
+      <Paper
+        elevation={1}
         sx={{
           position: 'sticky',
           top: 0,
           left: 0,
           zIndex: 1, // Ensure it stays on top of the file list
           bgcolor: theme.palette.background.paper, // Match background color
-          p: 0.7,
+          p: 0.8,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -69,7 +70,7 @@ const LlmGenerationContent: React.FC = () => {
             <RefreshIcon fontSize="small" />
           </IconButton>
         </Box>
-      </Box>
+      </Paper>
       <Box className="p-4 flex flex-col h-full  w-full">
       <Box className="flex flex-col flex-1 w-full ">
         <Paper
@@ -77,7 +78,7 @@ const LlmGenerationContent: React.FC = () => {
           className="w-full "
           sx={{
             p: 2,
-            bgcolor: theme.palette.background.paper,
+            bgcolor: theme.palette.background.default,
             borderBottom: `1px solid ${theme.palette.divider}`,
             borderRadius: 5,
           }}
@@ -96,7 +97,7 @@ const LlmGenerationContent: React.FC = () => {
           right: 0,
           zIndex: 1000,
           p: 2,
-          bgcolor: theme.palette.background.paper,
+          bgcolor: theme.palette.background.default,
           borderTop: `1px solid ${theme.palette.divider}`,
           borderRadius: 5,
         }}

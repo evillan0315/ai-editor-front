@@ -151,7 +151,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
 
   return (
     <Paper
-      elevation={3}
+      elevation={1}
       sx={{
         display: 'flex',
         flexDirection: 'column',
