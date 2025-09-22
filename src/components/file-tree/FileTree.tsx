@@ -329,12 +329,13 @@ const FileTree: React.FC<FileTreeProps> = () => {
           position: 'sticky',
           top: 0,
           left: 0,
+          borderRadius: 0,
           backgroundColor: theme.palette.background.paper,
           color: theme.palette.text.primary,
           borderBottom: `1px solid ${theme.palette.divider}`,
           zIndex: 1, // Ensure it stays on top of the file list
 
-          p: 0.7,
+          p: 0.6,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -356,7 +357,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
           placeholder="Search files..."
           value={searchTerm}
           onChange={handleSearchChange}
-          sx={{ width: '100%', maxWidth: 300, mr: 0.5 }} // Adjust width as needed
+          sx={{ width: '100%', maxWidth: '70%', mr: 0.5, border: `1px solid ${theme.palette.background.paper}`, backgroundColor: theme.palette.background.paper, }} // Adjust width as needed
         />
 
         <Box className="flex items-center gap-0">

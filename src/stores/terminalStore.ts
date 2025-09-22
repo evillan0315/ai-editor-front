@@ -115,7 +115,7 @@ export const connectTerminal = async () => {
     });
     socketService.on('prompt', (data: PromptData) => {
       setCurrentPath(data.cwd);
-      appendOutput(`\x1b[32m${data.cwd}\x1b[0m $ `);
+      //appendOutput(`\x1b[32m${data.cwd}\x1b[0m $ `);
     });
 
     appendOutput('Connected to terminal server.\n');
@@ -136,7 +136,7 @@ export const executeCommand = (command: string) => {
 
   addCommandToHistory(command);
   socketService.execCommand(command);
-  appendOutput(`$ ${command}\n`);
+  //appendOutput(`$ ${command}\n`);
 };
 
 export const resizeTerminal = (cols: number, rows: number) => {

@@ -10,10 +10,12 @@ import {
   Paper
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
+import Brightness1Icon from '@mui/icons-material/Brightness1';
+import TerminalIcon from '@mui/icons-material/Terminal';
 import {
   isTerminalVisible,
   setShowTerminal,
-  disconnectTerminal, // ✅ import the disconnect function
+  disconnectTerminal, 
 } from '@/stores/terminalStore';
 
 interface TerminalToolbarProps {
@@ -38,7 +40,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const showTerminal = useStore(isTerminalVisible);
-
+  
   /** ✅ Disconnect socket session first, then hide terminal */
   const handleCloseTerminal = () => {
     if (isConnected) {
@@ -49,36 +51,34 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
 
   return (
     <Paper
+      elevation={2}
       sx={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 0.8,
-        backgroundColor: theme.palette.background.paper,
+        backgroundColor: theme.palette.background.default,
         color: theme.palette.text.primary,
         borderBottom: theme.palette.background.dark,
+        borderTop: theme.palette.background.dark,
+        borderRadius: 0,
         ...sx,
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
+         <Tooltip title="Close Terminal">
+            <IconButton
+              onClick={handleCloseTerminal}
+              size="small"
+            >
+              <TerminalIcon />
+            </IconButton>
+          </Tooltip>
         <Typography variant="subtitle1" sx={{ marginRight: '16px' }}>
           Terminal
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box
-            sx={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              backgroundColor: isConnected ? '#4caf50' : '#f44336',
-              marginRight: '8px',
-            }}
-          />
-          <Typography variant="caption">
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </Typography>
-        </Box>
+        
       </Box>
 
       <Box>
@@ -87,13 +87,14 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
             <IconButton
               onClick={handleCloseTerminal}
               size="small"
-              sx={{ color: '#ffffff', marginLeft: '8px' }}
+              sx={{ color: isConnected ? '#4caf50' : '#f44336', marginLeft: '8px',  }}
             >
-              <CloseIcon />
+              <Brightness1Icon />
             </IconButton>
           </Tooltip>
         )}
       </Box>
+    
     </Paper>
   );
 };

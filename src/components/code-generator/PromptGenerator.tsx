@@ -7,6 +7,7 @@ import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
 import { llmStore, setInstruction, setAiInstruction, setExpectedOutputInstruction, setLastLlmGeneratePayload, setScanPathsInput, setLastLlmResponse, setCurrentDiff, setIsBuilding, setLoading } from '@/stores/llmStore';
 import { authStore } from '@/stores/authStore';
 import { fileTreeStore, loadInitialTree, projectRootDirectoryStore, setCurrentProjectPath } from '@/stores/fileTreeStore';
+import { fileStore, setOpenedFileContent } from '@/stores/fileStore';
 import { addLog } from '@/stores/logStore';
 import { INSTRUCTION, ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT } from '@/constants/instruction';
 import { generateCode, applyProposedChanges } from '@/api/llm';
@@ -18,6 +19,9 @@ import { ImportJsonDialog } from './ImportJsonDialog';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import { LlmOutputFormat, LlmGeneratePayload, ModelResponse } from '@/types';
 import { CodeGeneratorData } from './CodeGeneratorMain';
+import CustomDrawer from '@/components/Drawer/CustomDrawer';
+import ImportData from './ImportData';
+
 
 interface PromptGeneratorProps {
 }
@@ -388,14 +392,23 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         open={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
       />
-      <ImportJsonDialog
+      {/*       <ImportJsonDialog
         open={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
         onImport={(data) => {
           setImportedData(data);
           setIsImportDialogOpen(false);
         }}
-      />
+      /> */}
+              <CustomDrawer
+        open={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        position='left'
+        size='normal'
+        title='Import JSON Data'
+      >
+         <ImportData onDataLoaded={setOpenedFileContent} onClose={() => setIsImportDialogOpen(false)} />
+      </CustomDrawer>
     </Box>
   );
 };

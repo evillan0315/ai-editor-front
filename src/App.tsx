@@ -53,7 +53,7 @@ function App() {
     <>
       <Routes>
         {/* Routes that require authentication */}
-        <Route path="/editor" element={<Layout />}>
+        <Route path="/editor" element={<Layout footer={`Developed by Eddie Villanueva`}/>}>
           <Route
             path="/editor"
             element={

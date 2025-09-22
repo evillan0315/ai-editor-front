@@ -6,10 +6,9 @@ import { setError } from '@/stores/errorStore';
 import { addLog } from '@/stores/logStore';
 import { isTerminalVisible, setShowTerminal } from '@/stores/terminalStore';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
-import { fileStore, setUploadedFile } from '@/stores/fileStore';
+import { setUploadedFile } from '@/stores/fileStore';
 
 import { Box, Typography, Alert, useTheme, LinearProgress } from '@mui/material';
-
 import OpenedFileViewer from '@/components/OpenedFileViewer';
 import FileTabs from '@/components/FileTabs';
 import { RequestType, LlmOutputFormat } from '@/types/llm';
@@ -18,16 +17,12 @@ import { XTerminal } from '@/components/Terminal/Terminal';
 import { handleLogout } from '@/services/authService';
 import LlmGenerationContent from '@/components/LlmGenerationContent';
 
-const FILE_TREE_WIDTH = 300;
 const FILE_TABS_HEIGHT = 48;
 const RESIZE_HANDLE_HEIGHT = 4;
 
-const AiEditorPage: React.FC = () => {
+const AiEditorNoTreePage: React.FC = () => {
   const $rightSidebarContent = useStore(rightSidebarContent);
   const currentProjectPath = useStore(projectRootDirectoryStore);
-  const {
-    openedTabs
-  } = useStore(fileStore);
   const {
     error: globalError,
     lastLlmResponse,
@@ -40,7 +35,6 @@ const AiEditorPage: React.FC = () => {
 
   const theme = useTheme();
   const [searchParams] = useSearchParams();
-  const [showFileTree, setShowFileTree] = useState(true);
   const [terminalHeight, setTerminalHeight] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
   const [initialMouseY, setInitialMouseY] = useState(0);
@@ -160,8 +154,6 @@ const AiEditorPage: React.FC = () => {
     };
   }, [handleTerminalResize]);
 
-  const toggleTerminalVisibility = () => setShowTerminal(!showTerminal);
-
   useEffect(() => {
     rightSidebarContent.set(<LlmGenerationContent />);
   }, []);
@@ -178,13 +170,9 @@ const AiEditorPage: React.FC = () => {
 
       <Box sx={{ display: 'flex', flexDirection: 'row', flexGrow: 1, width: '100%', minHeight: 0, position: 'relative' }}>
 
-
         {/* Main Editor */}
         <Box sx={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', bgcolor: theme.palette.background.default }}>
-          {openedTabs && openedTabs.length > 0 && (
-             <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
-          )}
-          
+          <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
 
           <Box ref={contentAreaRef} sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, overflow: 'hidden' }}>
             <Box sx={{ flexGrow: 1, minHeight: '150px', overflow: 'auto' }}>
@@ -206,4 +194,4 @@ const AiEditorPage: React.FC = () => {
   );
 };
 
-export default AiEditorPage;
+export default AiEditorNoTreePage;

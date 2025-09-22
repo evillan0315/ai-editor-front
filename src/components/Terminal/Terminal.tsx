@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Paper, useTheme } from '@mui/material';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { useStore } from '@nanostores/react';
 import { TerminalToolbar } from './TerminalToolbar';
 import TerminalSettingsDialog from './TerminalSettingsDialog';
@@ -151,7 +152,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
 
   return (
     <Paper
-      elevation={1}
+     
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -219,7 +220,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
           right: 0,
         }}
       >
-        {/*<Box
+        <Box
           sx={{
             color: '#4ec9b0',
             marginRight: '8px',
@@ -233,31 +234,8 @@ export const XTerminal: React.FC<XTerminalProps> = ({
             },
           }}
         >
-          <span className="full-path" style={{ display: 'inline' }}>
-            <Box
-              sx={{
-                display: 'inline',
-                '@media (max-width: 500px)': {
-                  display: 'none',
-                },
-              }}
-            >
-              {currentPath}$
-            </Box>
-          </span>
-          <span className="truncated-path" style={{ display: 'none' }}>
-            <Box
-              sx={{
-                display: 'none',
-                '@media (max-width: 500px)': {
-                  display: 'inline',
-                },
-              }}
-            >
-              {getTruncatedPath(currentPath)}$
-            </Box>
-          </span>
-        </Box> */}
+         <AttachMoneyIcon />
+        </Box> 
         <input
           ref={inputRef}
           type="text"

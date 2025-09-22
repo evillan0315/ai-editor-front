@@ -17,3 +17,4 @@ export { FileTreeContextMenuRenderer } from './file-tree'; // Export the context
 export { default as FileTabs } from './FileTabs'; // New: Export FileTabs component
 export { default as AppsMenuContent } from './AppsMenuContent'; // New: Export AppsMenuContent
 export { default as ProfileMenuContent } from './ProfileMenuContent'; // New: Export ProfileMenuContent
+export { default as CustomDrawer } from './Drawer/CustomDrawer';

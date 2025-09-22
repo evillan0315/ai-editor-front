@@ -2,26 +2,26 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import LinearProgress from '@mui/material/LinearProgress';
 import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
 import { useTheme } from '@mui/material/styles';
 
 import { checkAuthStatus } from '@/services/authService';
 import { useStore } from '@nanostores/react';
 import { authStore } from '@/stores/authStore';
 import { llmStore } from '@/stores/llmStore';
-import { isRightSidebarVisible, isLeftSidebarVisible } from '@/stores/uiStore';
+import { isRightSidebarVisible, isLeftSidebarVisible, rightSidebarWidth, leftSidebarWidth } from '@/stores/uiStore';
 import Navbar from './Navbar';
-import {
-  RightSidebarContent,
-  LeftSidebarContent,
-} from '@/components/SidebarContent';
+import { fileStore } from '@/stores/fileStore';
+import  FileTree  from '@/components/file-tree/FileTree';
+
+import OpenedFileViewer from './OpenedFileViewer';
+import AiEditorNoTreePage from '@/components/file-manager/AiEditorNoTreePage';
+import LlmGenerationContent from './LlmGenerationContent';
+
 
 const NAVBAR_HEIGHT = 64;
 const FOOTER_HEIGHT = 30;
 
-const RIGHT_SIDEBAR_STORAGE_KEY = 'rightSidebarWidth';
-const LEFT_SIDEBAR_STORAGE_KEY = 'leftSidebarWidth';
-
-const DEFAULT_SIDEBAR_WIDTH = 300;
 const MIN_SIDEBAR_WIDTH = 300;
 const MAX_SIDEBAR_WIDTH = 1000;
 const SIDEBAR_RESIZER_WIDTH = 4;
@@ -33,25 +33,17 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const { loading: authLoading } = useStore(authStore);
   const { loading: llmLoading, isBuilding } = useStore(llmStore);
+  const { openedFile } = useStore(fileStore);
   
   const theme = useTheme();
   const layoutLoader = authLoading || llmLoading || isBuilding;
   const $isRightSidebarVisible = useStore(isRightSidebarVisible);
   const $isLeftSidebarVisible = useStore(isLeftSidebarVisible);
-
-  // Sidebar widths (persisted)
-  const [rightSidebarWidth, setRightSidebarWidth] = useState<number>(() => {
-    const stored = localStorage.getItem(RIGHT_SIDEBAR_STORAGE_KEY);
-    return stored ? parseInt(stored, 10) : DEFAULT_SIDEBAR_WIDTH;
-  });
-
-  const [leftSidebarWidth, setLeftSidebarWidth] = useState<number>(() => {
-    const stored = localStorage.getItem(LEFT_SIDEBAR_STORAGE_KEY);
-    return stored ? parseInt(stored, 10) : DEFAULT_SIDEBAR_WIDTH;
-  });
+  const $rightSidebarWidth = useStore(rightSidebarWidth);
+  const $leftSidebarWidth = useStore(leftSidebarWidth);
 
   // Resizing state
-  const [isResizing, setIsResizing] = useState<null | 'left' | 'right'>(null);
+  const [isResizing, setIsResizing, ] = useState<null | 'left' | 'right'>(null);
   const initialMouseX = useRef(0);
   const initialSidebarWidth = useRef(0);
 
@@ -60,38 +52,25 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
   }, []);
 
   /** Start resizing a sidebar */
-  const startResizing = useCallback(
+  const startResizing =
     (side: 'left' | 'right') => (e: React.MouseEvent) => {
       setIsResizing(side);
       initialMouseX.current = e.clientX;
       initialSidebarWidth.current =
-        side === 'left' ? leftSidebarWidth : rightSidebarWidth;
+        side === 'left' ? $leftSidebarWidth : $rightSidebarWidth;
       document.body.style.cursor = 'ew-resize';
       document.body.style.userSelect = 'none';
       document.body.style.pointerEvents = 'none';
-    },
-    [leftSidebarWidth, rightSidebarWidth],
-  );
+    };
 
   const stopResizing = useCallback(() => {
     if (isResizing) {
       document.body.style.cursor = 'default';
       document.body.style.userSelect = 'auto';
       document.body.style.pointerEvents = 'auto';
-      if (isResizing === 'left') {
-        localStorage.setItem(
-          LEFT_SIDEBAR_STORAGE_KEY,
-          leftSidebarWidth.toString(),
-        );
-      } else {
-        localStorage.setItem(
-          RIGHT_SIDEBAR_STORAGE_KEY,
-          rightSidebarWidth.toString(),
-        );
-      }
       setIsResizing(null);
     }
-  }, [isResizing, leftSidebarWidth, rightSidebarWidth]);
+  }, [isResizing]);
 
   const resize = useCallback(
     (e: MouseEvent) => {
@@ -103,14 +82,14 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
           MIN_SIDEBAR_WIDTH,
           Math.min(MAX_SIDEBAR_WIDTH, newWidth),
         );
-        setLeftSidebarWidth(newWidth);
+        leftSidebarWidth.set(newWidth);
       } else {
         let newWidth = initialSidebarWidth.current - deltaX;
         newWidth = Math.max(
           MIN_SIDEBAR_WIDTH,
           Math.min(MAX_SIDEBAR_WIDTH, newWidth),
         );
-        setRightSidebarWidth(newWidth);
+        rightSidebarWidth.set(newWidth);
       }
     },
     [isResizing],
@@ -131,9 +110,10 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
   }, [isResizing, resize, stopResizing]);
 
   return (
-    <Box
+    <Paper
+      elevation={3}
       className="h-screen flex flex-col overflow-hidden"
-      sx={{ backgroundColor: theme.palette.background.default }}
+      sx={{ backgroundColor: theme.palette.background.paper }}
     >
       <Navbar />
 
@@ -146,7 +126,9 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
       {/* Main content + optional sidebars */}
       <Box
         className="flex-grow w-full flex flex-row overflow-hidden"
-        sx={{ height: `calc(100vh - ${NAVBAR_HEIGHT}px - ${FOOTER_HEIGHT}px)` }}
+        sx={{
+          height: `calc(100vh - ${NAVBAR_HEIGHT}px - ${FOOTER_HEIGHT}px)`, 
+        }}
       >
         {/* Left sidebar */}
         {$isLeftSidebarVisible && (
@@ -154,12 +136,12 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
             <Box
               className="flex-shrink-0 overflow-auto flex flex-col border-r"
               sx={{
-                width: leftSidebarWidth,
+                width: $leftSidebarWidth,
                 backgroundColor: theme.palette.background.paper,
                 borderColor: theme.palette.divider,
               }}
             >
-              <LeftSidebarContent />
+              <FileTree />
             </Box>
             {/* Draggable resizer */}
             <Box
@@ -169,7 +151,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
                 width: SIDEBAR_RESIZER_WIDTH,
                 backgroundColor: theme.palette.divider,
                 transition: 'background-color 0.2s ease',
-        
+                bgcolor: theme.palette.background.dark,
                 '&:hover': {
                   backgroundColor: theme.palette.primary.main,
                 },
@@ -181,10 +163,14 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
 
         {/* Main Outlet content */}
         <Box
-          className="flex-grow flex flex-col overflow-auto min-w-0"
+          className="flex-grow flex flex-col overflow-auto min-w-0 pb-[0px]"
           sx={{ backgroundColor: theme.palette.background.default }}
         >
-          <Outlet />
+          {openedFile ? (
+            <AiEditorNoTreePage />
+          ) : (
+            <Outlet />
+          )}
         </Box>
 
         {/* Right sidebar */}
@@ -197,6 +183,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
               sx={{
                 width: SIDEBAR_RESIZER_WIDTH,
                 backgroundColor: theme.palette.divider,
+                bgcolor: theme.palette.background.dark,
                 transition: 'background-color 0.2s ease',
                 '&:hover': {
                   backgroundColor: theme.palette.primary.main,
@@ -205,14 +192,14 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
               title="Resize sidebar"
             />
             <Box
-              className="flex-shrink-0 overflow-auto flex flex-col border-l pb-8"
+              className="flex-shrink-0 overflow-auto flex flex-col border-l pb-6"
               sx={{
-                width: rightSidebarWidth,
+                width: $rightSidebarWidth,
                 backgroundColor: theme.palette.background.paper,
                 borderColor: theme.palette.divider,
               }}
             >
-              <RightSidebarContent />
+              <LlmGenerationContent />
             </Box>
           </>
         )}
@@ -220,8 +207,9 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
 
       {/* Sticky footer */}
       {footer && (
-        <Box
-          className="fixed bottom-0 z-[1300] w-full flex justify-center items-center border-t"
+        <Paper
+          elevation={1}
+          className="sticky bottom-0 z-[1300] w-full flex justify-center items-center border-t radius-0"
           sx={{
             height: FOOTER_HEIGHT,
             backgroundColor: theme.palette.background.paper,
@@ -229,9 +217,9 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
           }}
         >
           {footer}
-        </Box>
+        </Paper>
       )}
-    </Box>
+    </Paper>
   );
 };
 

@@ -28,8 +28,8 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
   projectRoot,
   onContextMenu,
 }) => {
-  const { expandedDirs, selectedFile, loadingChildren } =
-    useStore(fileTreeStore);
+  const { expandedDirs, selectedFile, loadingChildren }
+ = useStore(fileTreeStore);
   const theme = useTheme();
   const isExpanded = expandedDirs.has(fileEntry.path);
   const isSelected = selectedFile === fileEntry.path;

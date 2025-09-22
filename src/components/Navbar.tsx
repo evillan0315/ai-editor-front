@@ -28,6 +28,9 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import CircularProgress from '@mui/material/CircularProgress';
+import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
+import VerticalSplitOutlinedIcon from '@mui/icons-material/VerticalSplitOutlined';
+import WebAssetOutlinedIcon from '@mui/icons-material/WebAssetOutlined';
 import { useTheme } from '@mui/material/styles';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -37,6 +40,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import AppsIcon from '@mui/icons-material/Apps';
 import IconButton from '@mui/material/IconButton';
 import ViewSidebar from '@mui/icons-material/ViewSidebar';
+
 import ViewSidebarOff from '@mui/icons-material/ViewSidebar';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
@@ -260,7 +264,7 @@ const Navbar: React.FC = () => {
           top: 0,
           zIndex: 1100,
           bgcolor: theme.palette.background.paper,
-
+          borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
         {isAnyScriptRunning && (
@@ -286,7 +290,7 @@ const Navbar: React.FC = () => {
               aria-label="toggle left sidebar"
               sx={{ color: theme.palette.text.primary }}
             >
-              {$isLeftSidebarVisible ? <ViewSidebar /> : <ViewSidebarOff />}
+              {$isLeftSidebarVisible ? <VerticalSplitOutlinedIcon /> : <WebAssetOutlinedIcon />}
             </IconButton>
             <Typography
               variant="h6"
@@ -461,14 +465,7 @@ const Navbar: React.FC = () => {
 
             <ThemeToggle />
 
-            <IconButton
-              color="inherit"
-              onClick={() => isRightSidebarVisible.set(!$isRightSidebarVisible)}
-              aria-label="toggle sidebar"
-              sx={{ color: theme.palette.text.primary }}
-            >
-              {$isRightSidebarVisible ? <ViewSidebar /> : <ViewSidebarOff />}
-            </IconButton>
+            
 
             {authLoading ? (
               <CircularProgress
@@ -508,6 +505,15 @@ const Navbar: React.FC = () => {
                     user={user}
                   />
                 </Menu>
+                <IconButton
+              color="inherit"
+              onClick={() => isRightSidebarVisible.set(!$isRightSidebarVisible)}
+              aria-label="toggle sidebar"
+              sx={{ color: theme.palette.text.primary }}
+              
+            >
+              {$isRightSidebarVisible ? <ViewSidebar /> : <WebAssetOutlinedIcon   />}
+            </IconButton>
               </>
             ) : (
               <>

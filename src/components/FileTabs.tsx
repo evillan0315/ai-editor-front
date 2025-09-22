@@ -19,6 +19,9 @@ import UndoIcon from '@mui/icons-material/Undo';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseMultipleIcon from '@mui/icons-material/Close';
+import SubtitlesOutlinedIcon from '@mui/icons-material/SubtitlesOutlined';
+import TerminalOutlinedIcon from '@mui/icons-material/TerminalOutlined';
+import CancelPresentationIcon from '@mui/icons-material/CancelPresentation';
 import { getFileTypeIcon } from '@/constants/fileIcons';
 
 import { isTerminalVisible, setShowTerminal } from '@/stores/terminalStore';
@@ -69,11 +72,12 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
 
   return (
     <Paper
-      elevation={1}
+      elevation={2}
       sx={{
-        borderBottom: 1,
-        borderColor: theme.palette.divider,
-        bgcolor: theme.palette.background.paper,
+        color: theme.palette.text.primary,
+        borderBottom: `1px solid ${theme.palette.divider}`,
+        backgroundColor: theme.palette.background.paper,
+        borderRadius: 0,
         flexShrink: 0, // Prevent shrinking
         overflowX: 'auto', // Allow horizontal scrolling for many tabs
         whiteSpace: 'nowrap', // Keep tabs on a single line
@@ -83,7 +87,8 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
         },
         display: 'flex', // Enable flexbox for positioning buttons
         alignItems: 'center', // Align items vertically in the center
-        p:0.8,
+        justifyContent: 'center',
+        height: '60px',
         ...sx, // Merge the passed sx prop
       }}
       {...otherProps} // Pass any other props to the Box
@@ -108,7 +113,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
                 },
               }}
             >
-              <CloseMultipleIcon />
+              <CancelPresentationIcon />
             </IconButton>
           </Tooltip>
       </Box>
@@ -268,7 +273,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
                 },
               }}
             >
-              {showTerminal ? <VisibilityOffIcon /> : <VisibilityIcon />}
+              {showTerminal ? <TerminalOutlinedIcon /> : <SubtitlesOutlinedIcon />}
             </IconButton>
           </Tooltip>
 

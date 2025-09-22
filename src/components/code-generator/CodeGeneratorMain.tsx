@@ -1,4 +1,7 @@
 import React from 'react';
+import { AppDefinition } from '@/types';
+import { appDefinitions } from '@/constants/appDefinitions';
+import { AppsIcon } from '@mui/icons-material';
 import {
   Card,
   CardContent,
@@ -8,6 +11,8 @@ import {
   AccordionSummary,
   AccordionDetails,
   Box,
+  Grid,
+  CardActionArea,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -16,6 +21,7 @@ import PsychologyIcon from '@mui/icons-material/Psychology';
 import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import DescriptionIcon from '@mui/icons-material/Description';
+import { useNavigate } from 'react-router-dom';
 
 import { ThoughtProcess } from './ThoughtProcess';
 import { ChangesList } from './ChangesList';
@@ -37,6 +43,38 @@ interface Props {
   data: CodeGeneratorData | null;
 }
 
+const AIToolsView: React.FC = () => {
+  const aiTools = appDefinitions.filter((app) => app.category === 'AI Tools');
+  const navigate = useNavigate();
+
+  return (
+    <Grid container spacing={3} justifyContent="center">
+      {aiTools.map((tool: AppDefinition) => (
+        <Grid item key={tool.id} xs={12} sm={6} md={6} lg={6}>
+          <CardActionArea onClick={() => navigate(tool.link)}>
+            <Card
+              variant="outlined"
+              sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            >
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <tool.icon color="primary" />
+                  <Typography variant="h6" component="div">
+                    {tool.title}
+                  </Typography>
+                </Box>
+                <Typography color="text.secondary">
+                  {tool.description}
+                </Typography>
+              </CardContent>
+            </Card>
+          </CardActionArea>
+        </Grid>
+      ))}
+    </Grid>
+  );
+};
+
 /**
  * Main container component for the code-generator view.
  * Renders the summary, thought process, proposed changes,
@@ -45,9 +83,12 @@ interface Props {
 export const CodeGeneratorMain: React.FC<Props> = ({ data }) => {
   if (!data) {
     return (
-      <Typography variant="h6" gutterBottom>
-        What's on your mind?
-      </Typography>
+      <Box className="flex flex-col items-center justify-center h-full">
+        <Typography variant="h5" gutterBottom>
+          Explore Our AI Tools
+        </Typography>
+        <AIToolsView />
+      </Box>
     );
   }
   return (
