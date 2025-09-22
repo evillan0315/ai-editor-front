@@ -1,14 +1,27 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useStore } from '@nanostores/react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { llmStore, clearDiff, setLastLlmResponse, setRequestType, setLlmOutputFormat, setInstruction } from '@/stores/llmStore';
+import {
+  llmStore,
+  clearDiff,
+  setLastLlmResponse,
+  setRequestType,
+  setLlmOutputFormat,
+  setInstruction,
+} from '@/stores/llmStore';
 import { setError } from '@/stores/errorStore';
 import { addLog } from '@/stores/logStore';
 import { isTerminalVisible, setShowTerminal } from '@/stores/terminalStore';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
 import { fileStore, setUploadedFile } from '@/stores/fileStore';
 
-import { Box, Typography, Alert, useTheme, LinearProgress } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Alert,
+  useTheme,
+  LinearProgress,
+} from '@mui/material';
 
 import OpenedFileViewer from '@/components/OpenedFileViewer';
 import FileTabs from '@/components/FileTabs';
@@ -20,14 +33,12 @@ import LlmGenerationContent from '@/components/LlmGenerationContent';
 
 const FILE_TREE_WIDTH = 300;
 const FILE_TABS_HEIGHT = 48;
-const RESIZE_HANDLE_HEIGHT = 4;
+const RESIZE_HANDLE_HEIGHT = 2;
 
 const AiEditorPage: React.FC = () => {
   const $rightSidebarContent = useStore(rightSidebarContent);
   const currentProjectPath = useStore(projectRootDirectoryStore);
-  const {
-    openedTabs
-  } = useStore(fileStore);
+  const { openedTabs } = useStore(fileStore);
   const {
     error: globalError,
     lastLlmResponse,
@@ -62,25 +73,45 @@ const AiEditorPage: React.FC = () => {
     const requestTypeParam = searchParams.get('requestType');
     const outputFormatParam = searchParams.get('output');
 
-    if (requestTypeParam && RequestType[requestTypeParam as keyof typeof RequestType]) {
-      const newRequestType = RequestType[requestTypeParam as keyof typeof RequestType];
+    if (
+      requestTypeParam &&
+      RequestType[requestTypeParam as keyof typeof RequestType]
+    ) {
+      const newRequestType =
+        RequestType[requestTypeParam as keyof typeof RequestType];
       if (requestType !== newRequestType) {
         setRequestType(newRequestType);
         setInstruction('');
         setUploadedFile(null, null, null);
         setLastLlmResponse(null);
-        addLog('AI Editor Page', `Request type set from URL: ${newRequestType}`, 'info');
+        addLog(
+          'AI Editor Page',
+          `Request type set from URL: ${newRequestType}`,
+          'info',
+        );
       }
     } else if (requestType !== RequestType.LLM_GENERATION) {
       setRequestType(RequestType.LLM_GENERATION);
-      addLog('AI Editor Page', `Defaulting request type to LLM_GENERATION`, 'info');
+      addLog(
+        'AI Editor Page',
+        `Defaulting request type to LLM_GENERATION`,
+        'info',
+      );
     }
 
-    if (outputFormatParam && LlmOutputFormat[outputFormatParam as keyof typeof LlmOutputFormat]) {
-      const newLlmOutputFormat = LlmOutputFormat[outputFormatParam as keyof typeof LlmOutputFormat];
+    if (
+      outputFormatParam &&
+      LlmOutputFormat[outputFormatParam as keyof typeof LlmOutputFormat]
+    ) {
+      const newLlmOutputFormat =
+        LlmOutputFormat[outputFormatParam as keyof typeof LlmOutputFormat];
       if (llmOutputFormat !== newLlmOutputFormat) {
         setLlmOutputFormat(newLlmOutputFormat);
-        addLog('AI Editor Page', `Output format set from URL: ${newLlmOutputFormat}`, 'info');
+        addLog(
+          'AI Editor Page',
+          `Output format set from URL: ${newLlmOutputFormat}`,
+          'info',
+        );
       }
     } else if (llmOutputFormat !== LlmOutputFormat.YAML) {
       setLlmOutputFormat(LlmOutputFormat.YAML);
@@ -108,9 +139,15 @@ const AiEditorPage: React.FC = () => {
       const MIN_TERMINAL_HEIGHT = 30;
       const MIN_VIEWER_HEIGHT = 150;
       const totalResizableHeight = contentAreaRef.current?.clientHeight || 0;
-      const maxPossibleTerminalHeight = Math.max(0, totalResizableHeight - MIN_VIEWER_HEIGHT - RESIZE_HANDLE_HEIGHT);
+      const maxPossibleTerminalHeight = Math.max(
+        0,
+        totalResizableHeight - MIN_VIEWER_HEIGHT - RESIZE_HANDLE_HEIGHT,
+      );
 
-      newHeight = Math.max(MIN_TERMINAL_HEIGHT, Math.min(newHeight, maxPossibleTerminalHeight));
+      newHeight = Math.max(
+        MIN_TERMINAL_HEIGHT,
+        Math.min(newHeight, maxPossibleTerminalHeight),
+      );
       setTerminalHeight(newHeight);
     },
     [isResizing, initialMouseY, initialTerminalHeight],
@@ -167,35 +204,97 @@ const AiEditorPage: React.FC = () => {
   }, []);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', color: theme.palette.text.primary, overflow: 'hidden' }}>
-      {isAIGeneratingOrModifying && <LinearProgress sx={{ width: '100%', flexShrink: 0, zIndex: 1200 }} />}
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        width: '100%',
+        color: theme.palette.text.primary,
+        overflow: 'hidden',
+      }}
+    >
+
 
       {globalError && (
-        <Alert severity="error" sx={{ position: 'sticky', top: 0, zIndex: 1100, borderRadius: 0, flexShrink: 0 }}>
+        <Alert
+          severity="error"
+          sx={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 1100,
+            borderRadius: 0,
+            flexShrink: 0,
+          }}
+        >
           <Typography variant="body2">{String(globalError)}</Typography>
         </Alert>
       )}
 
-      <Box sx={{ display: 'flex', flexDirection: 'row', flexGrow: 1, width: '100%', minHeight: 0, position: 'relative' }}>
-
-
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          flexGrow: 1,
+          width: '100%',
+          minHeight: 0,
+          position: 'relative',
+        }}
+      >
         {/* Main Editor */}
-        <Box sx={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', bgcolor: theme.palette.background.default }}>
+        <Box
+          sx={{
+            flexGrow: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+            bgcolor: theme.palette.background.paper,
+          }}
+        >
           {openedTabs && openedTabs.length > 0 && (
-             <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
+            <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
           )}
-          
 
-          <Box ref={contentAreaRef} sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, overflow: 'hidden' }}>
+          <Box
+            ref={contentAreaRef}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              flexGrow: 1,
+              minHeight: 0,
+              overflow: 'hidden',
+            }}
+          >
             <Box sx={{ flexGrow: 1, minHeight: '150px', overflow: 'auto' }}>
               <OpenedFileViewer />
             </Box>
 
             {showTerminal && (
               <>
-                <Box onMouseDown={startResize} sx={{ height: RESIZE_HANDLE_HEIGHT, bgcolor: theme.palette.divider, cursor: 'ns-resize', flexShrink: 0, '&:hover': { bgcolor: theme.palette.primary.main } }} />
-                <Box sx={{ height: terminalHeight, minHeight: '50px', flexShrink: 0, overflow: 'hidden' }}>
-                  <XTerminal onLogout={handleTerminalLogout} terminalHeight={terminalHeight} />
+                <Box
+                  onMouseDown={startResize}
+                  sx={{
+                    height: RESIZE_HANDLE_HEIGHT,
+                    bgcolor: theme.palette.background.default,
+                    borderTop: `1px solid ${theme.palette.divider}`,
+                    cursor: 'ns-resize',
+                    flexShrink: 0,
+                    '&:hover': { bgcolor: theme.palette.primary.main },
+                  }}
+                />
+                <Box
+                  sx={{
+                    height: terminalHeight,
+                    minHeight: '50px',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <XTerminal
+                    onLogout={handleTerminalLogout}
+                    terminalHeight={terminalHeight}
+                  />
                 </Box>
               </>
             )}

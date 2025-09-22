@@ -56,9 +56,11 @@ interface FileTreeProps {
 }
 
 const FileTree: React.FC<FileTreeProps> = () => {
-  const { files: treeFiles, isFetchingTree, fetchTreeError } = useStore(
-    fileTreeStore,
-  );
+  const {
+    files: treeFiles,
+    isFetchingTree,
+    fetchTreeError,
+  } = useStore(fileTreeStore);
   const { scanPathsInput } = useStore(llmStore);
   const projectRoot = useStore(projectRootDirectoryStore);
   const showTerminal = useStore(isTerminalVisible);
@@ -71,9 +73,8 @@ const FileTree: React.FC<FileTreeProps> = () => {
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [itemToRename, setItemToRename] = useState<FileEntry | null>(null);
 
-  const [isOperationPathDialogOpen, setIsOperationPathDialogOpen] = useState(
-    false,
-  );
+  const [isOperationPathDialogOpen, setIsOperationPathDialogOpen] =
+    useState(false);
   const [itemForOperation, setItemForOperation] = useState<FileEntry | null>(
     null,
   );
@@ -312,19 +313,16 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
   return (
     <Box
-
       sx={{
         height: '100%',
         overflowY: 'auto',
-  
+
         display: 'flex',
         flexDirection: 'column',
-
       }}
     >
       {/* Sticky Header */}
       <Paper
-        elevation={2}
         sx={{
           position: 'sticky',
           top: 0,
@@ -334,11 +332,11 @@ const FileTree: React.FC<FileTreeProps> = () => {
           color: theme.palette.text.primary,
           borderBottom: `1px solid ${theme.palette.divider}`,
           zIndex: 1, // Ensure it stays on top of the file list
-
-          p: 0.6,
+          p: 0.5,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          boxShadow: 0
         }}
       >
         <Box className="flex items-center gap-0">
@@ -350,14 +348,19 @@ const FileTree: React.FC<FileTreeProps> = () => {
           >
             <ArrowUpwardIcon fontSize="small" />
           </IconButton>
-
         </Box>
         <TextField
           size="small"
           placeholder="Search files..."
           value={searchTerm}
           onChange={handleSearchChange}
-          sx={{ width: '100%', maxWidth: '70%', mr: 0.5, border: `1px solid ${theme.palette.background.paper}`, backgroundColor: theme.palette.background.paper, }} // Adjust width as needed
+          sx={{
+            width: '100%',
+            maxWidth: '70%',
+            mr: 0.5,
+            border: `1px solid ${theme.palette.divider}`,
+            backgroundColor: theme.palette.background.paper,
+          }} // Adjust width as needed
         />
 
         <Box className="flex items-center gap-0">

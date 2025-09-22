@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => {
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
       },
-      allowedHosts: ['localhost'],
+      allowedHosts: ['app.local','localhost'],
     },
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),

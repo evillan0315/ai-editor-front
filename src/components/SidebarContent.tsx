@@ -18,7 +18,6 @@ export const RightSidebarContent: React.FC = () => {
         height: '100%', // ensure it stretches fully inside sidebar
       }}
     >
-      
       {content}
     </Box>
   );

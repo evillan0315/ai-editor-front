@@ -153,16 +153,13 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: theme.palette.background.paper,
-          color: theme.palette.text.primary,
-        },
-      }}
+
+
     >
       <DialogTitle
         sx={{
           borderBottom: `1px solid ${theme.palette.divider}`,
+          backgroundColor: theme.palette.background.paper,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -181,8 +178,8 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+      <DialogContent sx={{ p: 2,backgroundColor: theme.palette.background.paper,  }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, mt:2, }}>
           <MuiTextField
             fullWidth
             variant="outlined"
@@ -196,6 +193,7 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
                 </InputAdornment>
               ),
               sx: {
+                
                 color: theme.palette.text.primary,
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: theme.palette.divider,
@@ -298,23 +296,17 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
         )}
       </DialogContent>
 
-      <DialogActions
-        sx={{
-          borderTop: `1px solid ${theme.palette.divider}`,
-          p: 2,
-          justifyContent: 'space-between',
-        }}
-      >
-        <Typography
-          variant="body2"
+      <DialogActions className='flex items-center justify-between gap-2' sx={{ backgroundColor: theme.palette.background.paper, borderTop: `1px solid ${theme.palette.divider}`, }}>
+        <Box
+          className='truncate'
           sx={{ color: theme.palette.text.secondary }}
         >
-          Selected:{' '}
-          <Typography component="span" fontWeight="bold">
+        
+          <Typography fontWeight='bold' >
             {currentBrowsingPath}
           </Typography>
-        </Typography>
-        <Box>
+        </Box>
+        <Box className='flex items-center gap-2'>
           <Button
             onClick={onClose}
             sx={{ mr: 1, color: theme.palette.text.secondary }}
@@ -328,7 +320,7 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
             startIcon={<CheckIcon />}
             disabled={isLoading || error !== null}
           >
-            Select This Folder
+            Select
           </Button>
         </Box>
       </DialogActions>

@@ -8,8 +8,13 @@ interface FloatingSettingsProps {
   onClose: () => void;
 }
 
-const FloatingSettings: React.FC<FloatingSettingsProps> = ({ initialPosition, onClose }) => {
-  const [position, setPosition] = useState(initialPosition || { x: 0, y: window.innerHeight - 100 });
+const FloatingSettings: React.FC<FloatingSettingsProps> = ({
+  initialPosition,
+  onClose,
+}) => {
+  const [position, setPosition] = useState(
+    initialPosition || { x: 0, y: window.innerHeight - 100 },
+  );
   const [size, setSize] = useState({ width: 300, height: 200 });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -27,7 +32,10 @@ const FloatingSettings: React.FC<FloatingSettingsProps> = ({ initialPosition, on
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
-    dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+    dragStart.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    };
   };
 
   const handleMouseUp = () => {
@@ -92,7 +100,6 @@ const FloatingSettings: React.FC<FloatingSettingsProps> = ({ initialPosition, on
     };
   }, [isDragging, isResizing]);
 
-
   const wrapperStyle = {
     position: 'fixed' as 'fixed',
     left: position.x,
@@ -110,25 +117,30 @@ const FloatingSettings: React.FC<FloatingSettingsProps> = ({ initialPosition, on
   };
 
   return (
-    <div ref={wrapperRef} style={wrapperStyle} className='select-none'
-    >
-      <Paper elevation={4} className='flex flex-col h-full rounded-md overflow-hidden'
-      onMouseDown={handleStopPropagation} onMouseUp={handleStopPropagation}
+    <div ref={wrapperRef} style={wrapperStyle} className="select-none">
+      <Paper
+        elevation={4}
+        className="flex flex-col h-full rounded-md overflow-hidden"
+        onMouseDown={handleStopPropagation}
+        onMouseUp={handleStopPropagation}
       >
-        <div className='flex items-center justify-between bg-gray-100 p-2 cursor-move'
-         onMouseDown={handleMouseDown}
-         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        <div
+          className="flex items-center justify-between bg-gray-100 p-2 cursor-move"
+          onMouseDown={handleMouseDown}
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
-          <Typography variant='subtitle2' className='font-semibold'>Settings</Typography>
-          <IconButton onClick={onClose} size='small'>
+          <Typography variant="subtitle2" className="font-semibold">
+            Settings
+          </Typography>
+          <IconButton onClick={onClose} size="small">
             <CloseIcon />
           </IconButton>
         </div>
-        <div className='flex-grow overflow-auto p-4'>
-        	<Typography>Config Settings</Typography>
+        <div className="flex-grow overflow-auto p-4">
+          <Typography>Config Settings</Typography>
         </div>
         <div
-          className='absolute bottom-0 right-0 cursor-nw-resize h-6 w-6 bg-blue-300 rounded-tl-sm hover:bg-blue-400'
+          className="absolute bottom-0 right-0 cursor-nw-resize h-6 w-6 bg-blue-300 rounded-tl-sm hover:bg-blue-400"
           onMouseDown={handleResizeMouseDown}
           style={{ cursor: isResizing ? 'nw-resize' : 'nw-resize' }}
         />

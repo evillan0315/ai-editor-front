@@ -1,11 +1,18 @@
 import React, { useState, useCallback } from 'react';
-import { Box, Button, TextField, Typography, useTheme, IconButton, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  useTheme,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
 import { CloudUpload, Link as LinkIcon, FolderOpen } from '@mui/icons-material';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { convertYamlToJson } from '@/api/llm';
 import { readFileContent } from '@/api/file';
 //import { readFileSync } from 'fs';
-
 
 interface ImportDataProps {
   onDataLoaded: (data: string) => void;
@@ -69,12 +76,8 @@ const ImportData: React.FC<ImportDataProps> = ({ onDataLoaded, onClose }) => {
     setLoading(true);
     setError(null);
     try {
-
-
-
       const filePath = path.toString();
       const fileContent = await readFileContent(filePath);
-
 
       setCodeMirrorValue(fileContent);
       onDataLoaded(fileContent);
@@ -190,11 +193,18 @@ const ImportData: React.FC<ImportDataProps> = ({ onDataLoaded, onClose }) => {
         </Typography>
       )}
 
-     {codeMirrorValue && (
+      {codeMirrorValue && (
         <Box sx={{ mt: 2 }}>
-          <CodeMirrorEditor value={codeMirrorValue} onChange={(value) => {setCodeMirrorValue(value); onDataLoaded(value)}} language="json" />
+          <CodeMirrorEditor
+            value={codeMirrorValue}
+            onChange={(value) => {
+              setCodeMirrorValue(value);
+              onDataLoaded(value);
+            }}
+            language="json"
+          />
         </Box>
-      )} 
+      )}
     </Box>
   );
 };

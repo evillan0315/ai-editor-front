@@ -83,19 +83,21 @@ const ScanPathsDialog: React.FC<ScanPathsDialogProps> = ({
 
   return (
     <Dialog
+      elevation={0}
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="md"
       fullWidth
       PaperProps={{
         sx: {
           bgcolor: theme.palette.background.paper,
           color: theme.palette.text.primary,
+          borderRadius: 5,
         },
       }}
       aria-labelledby="scan-paths-dialog-title"
     >
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between' }}>
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', bgcolor: theme.palette.background.paper, }}>
         <Typography>Manage Scan Paths</Typography>
         <IconButton onClick={onClose} size="small">
           <CloseIcon />
@@ -103,7 +105,7 @@ const ScanPathsDialog: React.FC<ScanPathsDialogProps> = ({
       </DialogTitle>
 
       <DialogContent
-        sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2 }}
+        sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2, bgcolor: theme.palette.background.paper, }}
       >
         {/* Search paths */}
         <TextField
@@ -183,7 +185,7 @@ const ScanPathsDialog: React.FC<ScanPathsDialogProps> = ({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ justifyContent: 'space-between', p: 2 }}>
+      <DialogActions sx={{ justifyContent: 'space-between', p: 2, bgcolor: theme.palette.background.paper, }}>
         <Button onClick={onClose} color="secondary">
           Cancel
         </Button>

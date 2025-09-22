@@ -30,9 +30,7 @@ import * as path from 'path-browserify';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
 import { fetchDirectoryContents } from '@/api/file';
 import { FileTreeNode } from '@/types';
-import {
-  llmStore,
-} from '@/stores/llmStore';
+import { llmStore } from '@/stores/llmStore';
 
 interface DirectoryPickerDialogProps {
   open: boolean;
@@ -50,9 +48,12 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
   allowExternalPaths = false,
 }) => {
   const theme = useTheme();
-  const [currentBrowsingPath, setCurrentBrowsingPath] = useState<string>(initialPath);
+  const [currentBrowsingPath, setCurrentBrowsingPath] =
+    useState<string>(initialPath);
   const [tempPathInput, setTempPathInput] = useState<string>(initialPath);
-  const [directoryContents, setDirectoryContents] = useState<FileTreeNode[]>([]);
+  const [directoryContents, setDirectoryContents] = useState<FileTreeNode[]>(
+    [],
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -237,10 +238,11 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
         </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Current: {
-          <Typography component="span" fontWeight="bold">
-            {currentBrowsingPath}
-          </Typography>
+          Current:{' '}
+          {
+            <Typography component="span" fontWeight="bold">
+              {currentBrowsingPath}
+            </Typography>
           }
         </Typography>
 
@@ -311,10 +313,11 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
           variant="body2"
           sx={{ color: theme.palette.text.secondary }}
         >
-          Selected: {
-          <Typography component="span" fontWeight="bold">
-            {currentBrowsingPath}
-          </Typography>
+          Selected:{' '}
+          {
+            <Typography component="span" fontWeight="bold">
+              {currentBrowsingPath}
+            </Typography>
           }
         </Typography>
         <Box>

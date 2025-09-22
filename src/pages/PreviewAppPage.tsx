@@ -1,28 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Box,
+import { Box,
   Typography,
   Container,
   Paper,
   useTheme,
   Alert,
-  CircularProgress,
-} from '@mui/material';
+  CircularProgress } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { APP_NAME } from '@/constants';
+import BrowserAppToolbar from '@/components/preview/BrowserAppToolbar';
 
 interface PreviewAppPageProps {
   // No specific props needed, URL is from environment variables
+  proxyServer?: string;
 }
 
-const PreviewAppPage: React.FC<PreviewAppPageProps> = () => {
+const PreviewAppPage: React.FC<PreviewAppPageProps> = ({proxyServer = `${import.meta.env.VITE_API_BASE_URL}`}) => {
   const theme = useTheme();
   const [loadingIframe, setLoadingIframe] = useState(true);
   const [iframeError, setIframeError] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  const previewAppUrl = import.meta.env.VITE_PREVIEW_APP_URL;
-
+  const [previewAppUrl, setPreviewAppUrl] = useState<string>(import.meta.env.VITE_PREVIEW_APP_URL || ``);
+  const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [isDevelopment, setIsDevelopment] = useState(true);
+  
   useEffect(() => {
     if (previewAppUrl) {
       setLoadingIframe(true);
@@ -50,8 +51,7 @@ const PreviewAppPage: React.FC<PreviewAppPageProps> = () => {
     } catch (e: any) {
       console.error('Error accessing iframe content (likely CORS issue):', e);
       setIframeError(
-        `Failed to access iframe content: ${e.message || 'Possible Cross-Origin Restriction (CORS).'}`,
-      );
+        `Failed to access iframe content: ${e.message || 'Possible Cross-Origin Restriction (CORS).'}`,      );
     }
   };
 
@@ -62,41 +62,59 @@ const PreviewAppPage: React.FC<PreviewAppPageProps> = () => {
     );
   };
 
+  const handleUrlChange = (newUrl: string) => {
+    setPreviewAppUrl(newUrl);
+  };
+
+  const handleScreenSizeChange = (size: string) => {
+    setScreenSize(size as 'mobile' | 'tablet' | 'desktop');
+  };
+
+  const getWrapperWidth = () => {
+    switch (screenSize) {
+      case 'mobile':
+        return '375px';
+      case 'tablet':
+        return '768px';
+      case 'desktop':
+        return '100%';
+      default:
+        return '100%';
+    }
+  };
+
   return (
     <Container
       maxWidth={false}
-      sx={{ py: 4, flexGrow: 1, display: 'flex', flexDirection: 'column' }}
+      sx={{ py: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}
     >
+      <Box className="flex flex-col items-center justify-center">
+        <BrowserAppToolbar
+          onUrlChange={handleUrlChange}
+          onScreenSizeChange={handleScreenSizeChange}
+          onRefresh={() => {
+            iframeRef.current?.contentWindow?.location.reload();
+          }}
+        />
+      </Box>
+ 
       <Paper
-        elevation={3}
+        id="app-preview-wrapper"
+        elevation={1}
         sx={{
-          p: 4,
-          borderRadius: 2,
-          bgcolor: theme.palette.background.paper,
+          p: 0,
+          bgcolor: theme.palette.background.default,
           color: theme.palette.text.primary,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 3,
+          gap: 2,
           flexGrow: 1,
-          // minHeight: 'calc(100vh - 120px)', // Adjust based on Navbar/Footer height
+          minHeight: 'calc(100vh - 220px)', 
+          borderRadius:'0 0 6px 6px'
         }}
       >
-        <VisibilityIcon
-          sx={{ fontSize: 60, color: theme.palette.primary.main }}
-        />
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-          Preview Built Application
-        </Typography>
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          align="center"
-          sx={{ mb: 2 }}
-        >
-          This component embeds a built frontend application from a configured
-          URL (<code>VITE_PREVIEW_APP_URL</code>).
-        </Typography>
+
 
         {!previewAppUrl ? (
           <Alert severity="error" sx={{ width: '100%', maxWidth: 600 }}>
@@ -108,7 +126,8 @@ const PreviewAppPage: React.FC<PreviewAppPageProps> = () => {
         ) : (
           <Box
             sx={{
-              width: '100%',
+              width: getWrapperWidth(),
+              height: '100%',
               flexGrow: 1,
               border: `1px solid ${theme.palette.divider}`,
               borderRadius: 1,
@@ -160,7 +179,7 @@ const PreviewAppPage: React.FC<PreviewAppPageProps> = () => {
             )}
             <iframe
               ref={iframeRef}
-              src={previewAppUrl}
+              src={proxyServer ? `${import.meta.env.VITE_API_BASE_URL}/proxy?url=${previewAppUrl}` : import.meta.env.VITE_PREVIEW_APP_URL}
               title={`${APP_NAME} Preview`}
               onLoad={handleIframeLoad}
               onError={handleIframeError}

@@ -72,7 +72,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
 
   return (
     <Paper
-      elevation={2}
+
       sx={{
         color: theme.palette.text.primary,
         borderBottom: `1px solid ${theme.palette.divider}`,
@@ -94,15 +94,17 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
       {...otherProps} // Pass any other props to the Box
     >
       {openedTabs.length > 0 && (
-      <Box           
-        sx={{
+        <Box
+          sx={{
             display: 'flex',
             alignItems: 'start',
             gap: 0,
             mr: 'auto',
             pl: 1,
-          }}>
-        <Tooltip title="Close All Tabs">
+           
+          }}
+        >
+          <Tooltip title="Close All Tabs">
             <IconButton
               onClick={handleCloseAllTabs}
               size="small"
@@ -116,7 +118,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
               <CancelPresentationIcon />
             </IconButton>
           </Tooltip>
-      </Box>
+        </Box>
       )}
       <Tabs
         value={openedFile || false} // Use openedFile as the value for the active tab
@@ -140,7 +142,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
             '&.Mui-selected': {
               color: theme.palette.text.primary,
               fontWeight: 'bold',
-              backgroundColor: theme.palette.background.default, // Differentiate active tab background
+              backgroundColor: theme.palette.background.paper, // Differentiate active tab background
             },
             '&:hover': {
               backgroundColor: theme.palette.action.hover,
@@ -273,10 +275,13 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
                 },
               }}
             >
-              {showTerminal ? <TerminalOutlinedIcon /> : <SubtitlesOutlinedIcon />}
+              {showTerminal ? (
+                <TerminalOutlinedIcon />
+              ) : (
+                <SubtitlesOutlinedIcon />
+              )}
             </IconButton>
           </Tooltip>
-
         </Box>
       )}
     </Paper>

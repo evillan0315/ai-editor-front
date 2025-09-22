@@ -25,7 +25,6 @@ const LlmGenerationContent: React.FC = () => {
     <Box className="flex flex-col h-full  w-full">
       {/* Sticky Header */}
       <Paper
-        elevation={2}
         sx={{
           position: 'sticky',
           top: 0,
@@ -37,61 +36,57 @@ const LlmGenerationContent: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: `1px solid ${theme.palette.divider}`,
+          boxShadow: 0
         }}
       >
         <Box className="flex items-center gap-0">
-          <IconButton
-
-            sx={{ color: theme.palette.text.secondary, mr: 1 }}
-          >
-            <MenuOutlinedIcon  />
+          <IconButton sx={{ color: theme.palette.text.secondary, mr: 1 }}>
+            <MenuOutlinedIcon />
           </IconButton>
-
         </Box>
         <Box>LLM Code Generator</Box>
 
         <Box className="flex items-center gap-0">
-          <IconButton
-            size="small"
-            sx={{ color: theme.palette.text.secondary }}
-          >
-            <DragIndicatorOutlinedIcon  />
+          <IconButton size="small" sx={{ color: theme.palette.text.secondary }}>
+            <DragIndicatorOutlinedIcon />
           </IconButton>
         </Box>
       </Paper>
       <Box className="p-6 flex flex-col h-full  w-full">
-      <Box className="flex flex-col flex-1 w-full">
+        <Box className="flex flex-col flex-1 w-full">
+          <Paper
+            elevation={3}
+            className="w-full max-w-7xl m-auto"
+            sx={{
+              p: 2,
+              bgcolor: theme.palette.background.default,
+                     borderTop: `1px solid ${theme.palette.divider}`,
+              borderRadius: 6,
+              boxShadow:1
+            }}
+          >
+            <CodeGeneratorMain data={lastLlmResponse} />
+          </Paper>
+        </Box>
+
+        {/* PromptGenerator fixed at bottom of parent */}
         <Paper
           elevation={3}
-          className="w-full max-w-7xl m-auto"
           sx={{
+            position: 'sticky',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1000,
             p: 2,
             bgcolor: theme.palette.background.default,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            borderRadius: 5,
+            borderTop: `1px solid ${theme.palette.divider}`,
+            borderRadius: 6,
+            boxShadow:1
           }}
         >
-          <CodeGeneratorMain data={lastLlmResponse} />
+          <PromptGenerator />
         </Paper>
-      </Box>
-
-      {/* PromptGenerator fixed at bottom of parent */}
-      <Paper
-        elevation={3}
-        sx={{
-          position: 'sticky',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          p: 2,
-          bgcolor: theme.palette.background.default,
-          borderTop: `1px solid ${theme.palette.divider}`,
-          borderRadius: 5,
-        }}
-      >
-        <PromptGenerator />
-      </Paper>
       </Box>
     </Box>
   );

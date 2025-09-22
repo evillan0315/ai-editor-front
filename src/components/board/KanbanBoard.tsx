@@ -1,5 +1,25 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Grid, Card, CardContent, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel, Chip, Avatar, IconButton } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Paper,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Chip,
+  Avatar,
+  IconButton,
+} from '@mui/material';
 import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
 
 interface Task {
@@ -115,9 +135,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ initialTasks = [] }) => {
                 {column.title}
               </Typography>
               <Chip
-                label={
-                  tasks.filter((task) => task.status === column.id).length
-                }
+                label={tasks.filter((task) => task.status === column.id).length}
                 size="small"
                 color="primary"
               />
@@ -239,11 +257,10 @@ const TaskModal: React.FC<TaskModalProps> = ({
       title,
       description,
       status,
-      labels:
-        labels
-          .split(',')
-          .map((l) => l.trim())
-          .filter((l) => l),
+      labels: labels
+        .split(',')
+        .map((l) => l.trim())
+        .filter((l) => l),
       dueDate,
       assignee: assignees.find((a) => a.id === assignee) || assignees[0],
     });

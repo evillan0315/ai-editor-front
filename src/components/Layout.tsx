@@ -9,22 +9,26 @@ import { checkAuthStatus } from '@/services/authService';
 import { useStore } from '@nanostores/react';
 import { authStore } from '@/stores/authStore';
 import { llmStore } from '@/stores/llmStore';
-import { isRightSidebarVisible, isLeftSidebarVisible, rightSidebarWidth, leftSidebarWidth } from '@/stores/uiStore';
+import {
+  isRightSidebarVisible,
+  isLeftSidebarVisible,
+  rightSidebarWidth,
+  leftSidebarWidth,
+} from '@/stores/uiStore';
 import Navbar from './Navbar';
 import { fileStore } from '@/stores/fileStore';
-import  FileTree  from '@/components/file-tree/FileTree';
+import FileTree from '@/components/file-tree/FileTree';
 
 import OpenedFileViewer from './OpenedFileViewer';
 import AiEditorNoTreePage from '@/components/file-manager/AiEditorNoTreePage';
 import LlmGenerationContent from './LlmGenerationContent';
-
 
 const NAVBAR_HEIGHT = 64;
 const FOOTER_HEIGHT = 30;
 
 const MIN_SIDEBAR_WIDTH = 300;
 const MAX_SIDEBAR_WIDTH = 1000;
-const SIDEBAR_RESIZER_WIDTH = 4;
+const SIDEBAR_RESIZER_WIDTH = 2;
 
 interface LayoutProps {
   footer?: React.ReactNode | null;
@@ -34,7 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const { loading: authLoading } = useStore(authStore);
   const { loading: llmLoading, isBuilding } = useStore(llmStore);
   const { openedFile } = useStore(fileStore);
-  
+
   const theme = useTheme();
   const layoutLoader = authLoading || llmLoading || isBuilding;
   const $isRightSidebarVisible = useStore(isRightSidebarVisible);
@@ -43,7 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const $leftSidebarWidth = useStore(leftSidebarWidth);
 
   // Resizing state
-  const [isResizing, setIsResizing, ] = useState<null | 'left' | 'right'>(null);
+  const [isResizing, setIsResizing] = useState<null | 'left' | 'right'>(null);
   const initialMouseX = useRef(0);
   const initialSidebarWidth = useRef(0);
 
@@ -52,16 +56,15 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
   }, []);
 
   /** Start resizing a sidebar */
-  const startResizing =
-    (side: 'left' | 'right') => (e: React.MouseEvent) => {
-      setIsResizing(side);
-      initialMouseX.current = e.clientX;
-      initialSidebarWidth.current =
-        side === 'left' ? $leftSidebarWidth : $rightSidebarWidth;
-      document.body.style.cursor = 'ew-resize';
-      document.body.style.userSelect = 'none';
-      document.body.style.pointerEvents = 'none';
-    };
+  const startResizing = (side: 'left' | 'right') => (e: React.MouseEvent) => {
+    setIsResizing(side);
+    initialMouseX.current = e.clientX;
+    initialSidebarWidth.current =
+      side === 'left' ? $leftSidebarWidth : $rightSidebarWidth;
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+    document.body.style.pointerEvents = 'none';
+  };
 
   const stopResizing = useCallback(() => {
     if (isResizing) {
@@ -111,9 +114,9 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
 
   return (
     <Paper
-      elevation={3}
+ 
       className="h-screen flex flex-col overflow-hidden"
-      sx={{ backgroundColor: theme.palette.background.paper }}
+      sx={{ backgroundColor: theme.palette.background.default }}
     >
       <Navbar />
 
@@ -127,7 +130,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
       <Box
         className="flex-grow w-full flex flex-row overflow-hidden"
         sx={{
-          height: `calc(100vh - ${NAVBAR_HEIGHT}px - ${FOOTER_HEIGHT}px)`, 
+          height: `calc(100vh - ${NAVBAR_HEIGHT}px - ${FOOTER_HEIGHT}px)`,
         }}
       >
         {/* Left sidebar */}
@@ -164,13 +167,9 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
         {/* Main Outlet content */}
         <Box
           className="flex-grow flex flex-col overflow-auto min-w-0 pb-[0px]"
-          sx={{ backgroundColor: theme.palette.background.default }}
+          sx={{ backgroundColor: theme.palette.background.paper }}
         >
-          {openedFile ? (
-            <AiEditorNoTreePage />
-          ) : (
-            <Outlet />
-          )}
+          {openedFile ? <AiEditorNoTreePage /> : <Outlet />}
         </Box>
 
         {/* Right sidebar */}

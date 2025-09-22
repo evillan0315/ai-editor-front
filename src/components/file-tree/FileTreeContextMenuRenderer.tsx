@@ -115,6 +115,7 @@ export const FileTreeContextMenuRenderer: React.FC<
               p: 2,
               borderBottom: `1px solid ${theme.palette.divider}`,
               bgcolor: theme.palette.action.hover,
+              maxWidth: '300px'
             }}
           >
             <Typography
@@ -123,7 +124,7 @@ export const FileTreeContextMenuRenderer: React.FC<
             >
               {state.targetFile.type === 'folder' ? 'Folder' : 'File'}:
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1,  }}>
               <Box sx={{ color: theme.palette.text.primary }}>
                 {getFileTypeIcon(
                   state.targetFile.name,

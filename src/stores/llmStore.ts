@@ -24,7 +24,7 @@ export interface LlmStoreState {
   llmOutputFormat: LlmOutputFormat;
   response: string | null;
   loading: boolean;
-  error: string | null;
+  error: ErrorStoreState | null;
   scanPathsInput: string;
   lastLlmResponse: ModelResponse | null;
   lastLlmGeneratePayload: LlmGeneratePayload | null;
@@ -47,7 +47,7 @@ export const llmStore = map<LlmStoreState>({
   response: null,
   loading: false,
   error: null,
-  scanPathsInput: 'src,package.json,README.md',
+  scanPathsInput: 'eslint.config.ts, vite.config.ts, package.json,README.md',
   lastLlmResponse: null,
   lastLlmGeneratePayload: null,
   lastLlmGeneratePayloadString: null,

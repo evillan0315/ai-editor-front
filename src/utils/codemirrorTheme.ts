@@ -14,7 +14,7 @@ export const createCodeMirrorTheme = (
   muiTheme: Theme,
   isDiffView: boolean = false,
 ) => {
-  const backgroundColor = muiTheme.palette.background.paper;
+  const backgroundColor = muiTheme.palette.background.default;
   const textColor = muiTheme.palette.text.primary;
   const gutterBackground = muiTheme.palette.background.paper;
   const gutterColor = muiTheme.palette.text.secondary;
@@ -39,6 +39,7 @@ export const createCodeMirrorTheme = (
       '.cm-scroller': {
         backgroundColor: backgroundColor,
       },
+
       '.cm-editor': {
         border: 'none',
         outline: 'none',
@@ -62,6 +63,9 @@ export const createCodeMirrorTheme = (
         backgroundColor: gutterBackground,
         color: gutterColor,
         borderRight: `1px solid ${muiTheme.palette.divider}`,
+      },
+      '.cm-gutters': {
+        backgroundColor: gutterBackground + ' !important',
       },
       '.cm-lineNumbers .cm-gutterElement': {
         color: lineNumberColor,

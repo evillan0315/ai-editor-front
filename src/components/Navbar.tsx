@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@nanostores/react';
 import { authStore } from '@/stores/authStore';
-import { aiEditorStore } from '@/stores/aiEditorStore'; // Only the store, no globalSnackbar
+import { projectRootDirectoryStore } from '@/stores/fileTreeStore'; // Only the store, no globalSnackbar
 import { isRightSidebarVisible, isLeftSidebarVisible } from '@/stores/uiStore';
 import { snackbarState, setSnackbarState } from '@/stores/snackbarStore';
 import { handleLogout } from '@/services/authService';
@@ -63,7 +63,7 @@ interface ScriptExecutionState {
 
 const Navbar: React.FC = () => {
   const { isLoggedIn, user, loading: authLoading } = useStore(authStore);
-  const { currentProjectPath } = useStore(aiEditorStore);
+  const currentProjectPath = useStore(projectRootDirectoryStore);
   const $snackbarState = useStore(snackbarState);
   const navigate = useNavigate();
   const theme = useTheme();
@@ -290,7 +290,11 @@ const Navbar: React.FC = () => {
               aria-label="toggle left sidebar"
               sx={{ color: theme.palette.text.primary }}
             >
-              {$isLeftSidebarVisible ? <VerticalSplitOutlinedIcon /> : <WebAssetOutlinedIcon />}
+              {$isLeftSidebarVisible ? (
+                <VerticalSplitOutlinedIcon />
+              ) : (
+                <WebAssetOutlinedIcon />
+              )}
             </IconButton>
             <Typography
               variant="h6"
@@ -465,8 +469,6 @@ const Navbar: React.FC = () => {
 
             <ThemeToggle />
 
-            
-
             {authLoading ? (
               <CircularProgress
                 size={24}
@@ -506,14 +508,19 @@ const Navbar: React.FC = () => {
                   />
                 </Menu>
                 <IconButton
-              color="inherit"
-              onClick={() => isRightSidebarVisible.set(!$isRightSidebarVisible)}
-              aria-label="toggle sidebar"
-              sx={{ color: theme.palette.text.primary }}
-              
-            >
-              {$isRightSidebarVisible ? <ViewSidebar /> : <WebAssetOutlinedIcon   />}
-            </IconButton>
+                  color="inherit"
+                  onClick={() =>
+                    isRightSidebarVisible.set(!$isRightSidebarVisible)
+                  }
+                  aria-label="toggle sidebar"
+                  sx={{ color: theme.palette.text.primary }}
+                >
+                  {$isRightSidebarVisible ? (
+                    <ViewSidebar />
+                  ) : (
+                    <WebAssetOutlinedIcon />
+                  )}
+                </IconButton>
               </>
             ) : (
               <>

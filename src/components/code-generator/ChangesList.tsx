@@ -123,19 +123,20 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
     setError(null);
     addLog(
       'AI Response Display',
-      'Starting application process for selected changes...',      'info',
+      'Starting application process for selected changes...',
+      'info',
     );
 
     try {
       const changesToApply = Object.values(selectedChanges);
 
       // Call your API or store action to apply changes
-      const applyResult = await performPostApplyActions(
+      const applyResult = (await performPostApplyActions(
         currentProjectPath,
         changesToApply,
         lastLlmGeneratePayload,
         lastLlmResponse || {},
-      ) as ApplyResult; // Cast the result to ApplyResult
+      )) as ApplyResult; // Cast the result to ApplyResult
 
       // ApplyResult could have messages & success status
       if (applyResult) {

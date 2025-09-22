@@ -10,14 +10,7 @@
 .transition-opacity {
   transition-property: opacity;
 }
-.markdown-wrapper code {
-  color: var(--color-primary-text);
-}
 
-.markdown-code-wrapper {
-  margin-top: 2.4em;
-  margin-bottom: 2.4em;
-}
 .markdown-code-wrapper .cm-scroller {
 
   @apply overflow-auto max-h-[400px];
@@ -28,13 +21,12 @@
   @apply space-y-0;
 }
 
-.markdown-body pre {
-}
 .cm-editor .cm-gutters.cm-gutters-before {
   background-color: var(--color-bg);
 }
 
-.markdown-body pre > code {
+.markdown-body pre > div {
+  background-color: #000000;
 }
 .language-btn {
   @apply bg-sky-500;

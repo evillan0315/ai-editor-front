@@ -94,7 +94,6 @@ export const GitDiffViewer: React.FC<GitDiffViewerProps> = ({
             theme={mode}
             editable={true}
           />
-     
         </Box>
       </AccordionDetails>
     </Accordion>

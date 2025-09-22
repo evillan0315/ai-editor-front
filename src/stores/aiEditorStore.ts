@@ -14,7 +14,10 @@ export const aiEditorStore = atom<AiEditorState>({
   error: null,
 });
 
-export const showGlobalSnackbar = (message: string, severity: AiEditorState['globalSnackbarSeverity'] = 'info') => {
+export const showGlobalSnackbar = (
+  message: string,
+  severity: AiEditorState['globalSnackbarSeverity'] = 'info',
+) => {
   aiEditorStore.set({
     ...aiEditorStore.get(),
     globalSnackbarMessage: message,
@@ -37,4 +40,3 @@ export const setError = (errorMessage: string | null) => {
     error: errorMessage,
   });
 };
-

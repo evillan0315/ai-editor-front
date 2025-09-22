@@ -1,3 +1,4 @@
+// src/theme/getAppTheme.ts
 import { createTheme, ThemeOptions } from '@mui/material/styles';
 import { PaletteMode } from '@mui/material';
 
@@ -42,8 +43,8 @@ export const getAppTheme = (mode: PaletteMode) => {
         contrastText: mode === 'dark' ? '#000000' : '#ffffff',
       },
       background: {
-        default: mode === 'dark' ? '#121212' : '#ffffff',
-        paper: mode === 'dark' ? '#1d1d1d' : '#f4f4f4',
+        default: mode === 'dark' ? '#121212' : '#f9f9f9',
+        paper: mode === 'dark' ? '#1d1d1d' : '#f5f5f5',
       },
       text: {
         primary: mode === 'dark' ? '#ffffff' : '#212121',
@@ -66,14 +67,10 @@ export const getAppTheme = (mode: PaletteMode) => {
       button: { textTransform: 'none' },
     },
     components: {
-      /** ✅ Add global style override for the GitHub markdown body */
       MuiCssBaseline: {
         styleOverrides: {
           '.markdown-body': {
-            backgroundColor:
-              mode === 'dark'
-                ? '#42a5f5' // GitHub dark background
-                : '#ffffff', // GitHub light background
+            backgroundColor: mode === 'dark' ? '#1d1d1d' : '#f5f5f5',
           },
         },
       },
@@ -144,8 +141,25 @@ export const getAppTheme = (mode: PaletteMode) => {
           },
         },
       },
+      MuiTextField: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            //border: `1px solid ${theme.palette.divider}`,
+            //backgroundColor: theme.palette.background.paper,
+          }),
+        },
+      },
+      MuiDialog: {
+        styleOverrides: {
+          paper: ({ theme }) => ({
+            backgroundColor: theme.palette.background.default,
+            borderRadius: 6
+          }),
+        },
+      },
     },
   };
 
   return createTheme(themeOptions);
 };
+

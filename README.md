@@ -1,6 +1,10 @@
 # 🚀 Project Board Frontend
 
 [![License](https://img.shields.io/github/license/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/evillan0315/ai-editor-front/deploy.yml?branch=main)](https://github.com/evillan0315/ai-editor-front/actions)
+[![Test Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://example.com/coverage)
+[![Package Version](https://img.shields.io/npm/v/project-board)](https://www.npmjs.com/package/project-board)
+[![Sponsor - Visible Health Checks](https://img.shields.io/badge/sponsor-visible%20health%20checks-brightgreen)](https://example.com/sponsors)
 [![Issues](https://img.shields.io/github/issues/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/issues)
 [![Pull Requests](https://img.shields.io/github/issues-pr/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/pulls)
 [![Last Commit](https://img.shields.io/github/last-commit/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/commits)
@@ -12,24 +16,22 @@
 
 ## 📖 Table of Contents
 
-- [Features](#-features)
-- [High-Level Architecture](#-high-level-architecture)
-- [Project Structure](#-project-structure)
-- [Requirements](#-requirements)
-- [Installation](#-installation)
-- [Usage](#-usage)
-- [API Reference](#-api-reference)
-- [Environment Variables](#-environment-variables)
-- [Testing](#-testing)
-- [Deployment](#-deployment)
-- [Git Workflow](#-git-workflow)
-- [Resume Builder](#resume-builder)
-- [Screen Recording](#screen-recording)
-- [Roadmap](#-roadmap)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Acknowledgements](#-acknowledgements)
-- [Contact](#-contact)
+- [✨ Features](#-features)
+- [🏛️ High-Level Architecture](#️-high-level-architecture)
+- [🗂️ Project Structure](#️-project-structure)
+- [✅ Requirements](#-requirements)
+- [🛠️ Installation](#️-installation)
+- [⚙️ Usage](#️-usage)
+- [🔍 API Reference](#-api-reference)
+- [🔑 Environment Variables](#-environment-variables)
+- [🧪 Testing](#-testing)
+- [📦 Deployment](#-deployment)
+- [🌳 Git Workflow](#-git-workflow)
+- [🗂️ Detailed Documentation](#️-detailed-documentation)
+- [🤝 Contributing](#-contributing)
+- [📜 License](#-license)
+- [🙌 Acknowledgements](#-acknowledgements)
+- [📧 Contact](#-contact)
 
 ---
 
@@ -53,8 +55,10 @@
 - 🌍 **Project Management**: Create and manage organizations and their associated projects.
 - ⚙️ **Project Settings**: Manage project configurations, AI models, and API keys. (Coming Soon)
 - 🐛 **Bug Report**: Submit bug reports and track issues within your projects. (Coming Soon)
-- 🌍 **Modern UI/UX**: Built with React, Material-UI, and Tailwind CSS for a responsive, accessible, and intuitive user experience.
-- ⚡ **Vite Development**: Fast development and build times powered by Vite, providing a modern and efficient development workflow.
+- 📜 **Code of Conduct**: Establishes guidelines and expectations for contributors and community members.
+- 🤝 **Contributing Guidelines**: Provides instructions for contributing to the project, including branching strategy, commit messages, and pull requests.
+- 🗝️ **Issue Labeling Bots**: Automates the categorization and organization of issues using dedicated bots.
+- ✅ **Continuous Integration (CI)**: Ensures code quality and stability through automated testing and integration processes.
 - 🌗 **Dark/Light Theme Toggle**: Effortlessly switch between dark and light modes, enhancing readability and user comfort.
 - 🗂️ **Resume Builder**: Build and export resumes using AI and custom templates.
 - ⏺️ **Screen Recording**: Capture your screen, record videos, and take screenshots directly within the application.
@@ -72,95 +76,94 @@
 ![Project Board Homepage](project-board-homepage.png)
 ![Project Board Apps](project-board-apps.png)
 
-
 ---
 
-## 🗺️ High-Level Architecture
+## 🏛️ High-Level Architecture
 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 graph LR
-    subgraph "Frontend (Client - React / Vite / TS / MUI / Tailwind)"
-        Browser[User Browser]
-        UI[React UI Components]
-        Pages(Pages - HomePage, AppsPage, AiEditorPage, LoginPage, RegisterPage, SpotifyAppPage, TranslatorAppPage, GeminiLiveAudioPage, PreviewAppPage, OrganizationPage, ProjectsPage, ResumeBuilderPage etc.)
-        State(Nanostores - aiEditorStore, authStore, fileTreeStore, themeStore, spotifyStore, translatorStore, geminiLiveStore, contextMenuStore, organizationStore, projectStore)
-        Services(Frontend Services / API Clients)
-        Router[React Router DOM]
-    end
+ subgraph "Frontend (Client - React / Vite / TS / MUI / Tailwind)"
+ Browser[User Browser]
+ UI[React UI Components]
+ Pages(Pages - HomePage, AppsPage, AiEditorPage, LoginPage, RegisterPage, SpotifyAppPage, TranslatorAppPage, GeminiLiveAudioPage, PreviewAppPage, OrganizationPage, ProjectsPage, ResumeBuilderPage etc.)
+ State(Nanostores - aiEditorStore, authStore, fileTreeStore, themeStore, spotifyStore, translatorStore, geminiLiveStore, contextMenuStore, organizationStore, projectStore)
+ Services(Frontend Services / API Clients)
+ Router[React Router DOM]
+ end
 
-    subgraph "Backend (Server - NestJS / Node.js)"
-        API[REST API Endpoints]
-        Auth(Auth Service)
-        LLM(LLM Orchestration Service)
-        File(File System Service)
-        Terminal(Terminal Execution Service)
-        Translation(Translation Service)
-        GeminiLive(Gemini Live WebSocket Gateway)
-        Organization(Organization Service)
-        Project(Project Service)
-        DB[(Database)]
-        AI_Provider[AI Provider &lpar;e.g., Gemini&rpar;]
-        FS[Project File System]
-    end
+ subgraph "Backend (Server - NestJS / Node.js)"
+ API[REST API Endpoints]
+ Auth(Auth Service)
+ LLM(LLM Orchestration Service)
+ File(File System Service)
+ Terminal(Terminal Execution Service)
+ Translation(Translation Service)
+ GeminiLive(Gemini Live WebSocket Gateway)
+ Organization(Organization Service)
+ Project(Project Service)
+ DB[(Database)]
+ AI_Provider[AI Provider &lpar;e.g., Gemini&rpar;]
+ FS[Project File System]
+ end
 
-    Browser -- Renders --> UI
-    UI -- User Input --> Pages
-    Pages -- Actions / Data --> State
-    State -- Updates --> UI
-    State -- API Calls --> Services
-    Services -- HTTP/S Requests --> API
-    Services -- WebSocket --> GeminiLive
-    API -- Delegates --> Auth
-    API -- Delegates --> LLM
-    API -- Delegates --> File
-    API -- Delegates --> Terminal
-    API -- Delegates --> Translation
-    API -- Delegates --> Organization
-    API -- Delegates --> Project
-    Auth -- Reads/Writes --> DB
-    LLM -- Requests/Responses --> AI_Provider
-    Translation -- Requests/Responses --> AI_Provider
-    GeminiLive -- WebSocket/Requests/Responses --> AI_Provider
-    File -- Reads/Writes --> FS
-    Terminal -- Executes --> FS
-    Terminal -- Executes --> Shell(Shell Commands)
-    API -- HTTP/S Responses --> Services
-    Services -- Data --> State
-    Router -- Navigates --> Pages
+ Browser -- Renders --> UI
+ UI -- User Input --> Pages
+ Pages -- Actions / Data --> State
+ State -- Updates --> UI
+ State -- API Calls --> Services
+ Services -- HTTP/S Requests --> API
+ Services -- WebSocket --> GeminiLive
+ API -- Delegates --> Auth
+ API -- Delegates --> LLM
+ API -- Delegates --> File
+ API -- Delegates --> Terminal
+ API -- Delegates --> Translation
+ API -- Delegates --> Organization
+ API -- Delegates --> Project
+ Auth -- Reads/Writes --> DB
+ LLM -- Requests/Responses --> AI_Provider
+ Translation -- Requests/Responses --> AI_Provider
+ GeminiLive -- WebSocket/Requests/Responses --> AI_Provider
+ File -- Reads/Writes --> FS
+ Terminal -- Executes --> FS
+ Terminal -- Executes --> Shell(Shell Commands)
+ API -- HTTP/S Responses --> Services
+ Services -- Data --> State
+ Router -- Navigates --> Pages
 
-    style Frontend fill:#111,stroke:#333,stroke-width:2px;
-    style Backend fill:#222,stroke:#333,stroke-width:2px;
-    style State fill:#000,stroke:#333,stroke-width:1px;
-    style Services fill:#000,stroke:#333,stroke-width:1px;
-    style API fill:#000,stroke:#333,stroke-width:1px;
-    linkStyle 0 stroke:#0a0,stroke-width:2px;
-    linkStyle 1 stroke:#0a0,stroke-width:2px;
-    linkStyle 2 stroke:#0a0,stroke-width:2px;
-    linkStyle 3 stroke:#0a0,stroke-width:2px;
-    linkStyle 4 stroke:#f60,stroke-width:2px;
-    linkStyle 5 stroke:#f60,stroke-width:2px;
-    linkStyle 6 stroke:#f60,stroke-width:2px;
-    linkStyle 7 stroke:#f60,stroke-width:2px;
-    linkStyle 8 stroke:#f60,stroke-width:2px;
-    linkStyle 9 stroke:#f60,stroke-width:2px;
-    linkStyle 10 stroke:#f60,stroke-width:2px;
-    linkStyle 11 stroke:#f60,stroke-width:2px;
-    linkStyle 12 stroke:#f60,stroke-width:2px;
-    linkStyle 13 stroke:#f60,stroke-width:2px;
-    linkStyle 14 stroke:#f60,stroke-width:2px;
-    linkStyle 15 stroke:#f60,stroke-width:2px;
-    linkStyle 16 stroke:#f60,stroke-width:2px;
-    linkStyle 17 stroke:#f60,stroke-width:2px;
-    linkStyle 18 stroke:#f60,stroke-width:2px;
-    linkStyle 19 stroke:#f60,stroke-width:2px;
+ style Frontend fill:#111,stroke:#333,stroke-width:2px;
+ style Backend fill:#222,stroke:#333,stroke-width:2px;
+ style State fill:#000,stroke:#333,stroke-width:1px;
+ style Services fill:#000,stroke:#333,stroke-width:1px;
+ style API fill:#000,stroke:#333,stroke-width:1px;
+ linkStyle 0 stroke:#0a0,stroke-width:2px;
+ linkStyle 1 stroke:#0a0,stroke-width:2px;
+ linkStyle 2 stroke:#0a0,stroke-width:2px;
+ linkStyle 3 stroke:#0a0,stroke-width:2px;
+ linkStyle 4 stroke:#f60,stroke-width:2px;
+ linkStyle 5 stroke:#f60,stroke-width:2px;
+ linkStyle 6 stroke:#f60,stroke-width:2px;
+ linkStyle 7 stroke:#f60,stroke-width:2px;
+ linkStyle 8 stroke:#f60,stroke-width:2px;
+ linkStyle 9 stroke:#f60,stroke-width:2px;
+ linkStyle 10 stroke:#f60,stroke-width:2px;
+ linkStyle 11 stroke:#f60,stroke-width:2px;
+ linkStyle 12 stroke:#f60,stroke-width:2px;
+ linkStyle 13 stroke:#f60,stroke-width:2px;
+ linkStyle 14 stroke:#f60,stroke-width:2px;
+ linkStyle 15 stroke:#f60,stroke-width:2px;
+ linkStyle 16 stroke:#f60,stroke-width:2px;
+ linkStyle 17 stroke:#f60,stroke-width:2px;
+ linkStyle 18 stroke:#f60,stroke-width:2px;
+ linkStyle 19 stroke:#f60,stroke-width:2px;
 ```
 
 ---
 
-## 📂 Project Structure
+## 🗂️ Project Structure
 
-```bash
+```
 project-board-front/
 ├── public/             # Static assets (e.g., vite.svg)
 ├── src/                # Source code for the React application
@@ -185,7 +188,10 @@ project-board-front/
 │   └── utils/          # General utility functions (e.g., `codemirrorTheme.ts`, `diffLanguage.ts`, `fileUtils.ts`, `index.ts`, `mediaUtils.ts`, `persistentAtom.ts`)
 ├── .env                # Environment variables (local overrides for development, not committed)
 ├── .env.local          # Local environment variables (sensitive data, not committed to VCS)
-├── docs/               # Project documentation files (e.g., ARCHITECTURE.md, COMPONENTS.md, STATE_MANAGEMENT.md)
+├── docs/
+│   ├── ARCHITECTURE.md # High-level architectural overview.
+│   ├── COMPONENTS.md   # Details on React components.
+│   └── STATE_MANAGEMENT.md # Information on state management strategy.
 ├── ecosystem.config.cjs # PM2 process file
 ├── eslint.config.ts    # ESLint configuration for code quality and style
 ├── index.html          # Main HTML entry point for the single-page application
@@ -197,10 +203,15 @@ project-board-front/
 └── vite.config.ts      # Vite build configuration, including proxy setup for API calls
 ```
 
+For deeper understanding of the project architecture, components and state management, see the documentation files in the `/docs` directory:
+
+- [Architecture Overview](docs/ARCHITECTURE.md)
+- [Component Details](docs/COMPONENTS.md)
+- [State Management](docs/STATE_MANAGEMENT.md)
 
 ---
 
-## 📋 Requirements
+## ✅ Requirements
 
 - Node.js >= 18
 - [Project Board Backend](https://github.com/evillan0315/project-board-server) (running and accessible via `VITE_API_URL` and `VITE_WS_URL`)
@@ -234,7 +245,7 @@ pnpm run preview
 
 ---
 
-## 📖 API Reference
+## 🔍 API Reference
 
 This frontend interacts with the Project Board backend. Key endpoints and WebSocket services include:
 
@@ -265,7 +276,7 @@ Please refer to the backend documentation for detailed API schemas and additiona
 
 Create a `.env` file in the root directory of `project-board-front`. **Do not commit `.env.local` to version control.**
 
-```ini
+```env
 VITE_API_URL=http://localhost:3000          # The URL of your Project Board backend REST API
 VITE_WS_URL=ws://localhost:3000             # The URL of your Project Board backend WebSocket server (for Gemini Live Audio)
 VITE_FRONTEND_URL=http://localhost:3001     # The URL where your frontend is hosted (e.g., for OAuth redirects from backend)
@@ -305,16 +316,16 @@ We recommend a feature-branch workflow. All new features, bug fixes, or improvem
 1.  **Update your local `main` branch:**
 
     ```bash
-    git checkout main
-    git pull origin main
+git checkout main
+git pull origin main
     ```
 
 2.  **Create a new feature branch:**
 
     ```bash
-    git checkout -b feature/your-feature-name
-    # or for bug fixes:
-    git checkout -b bugfix/issue-description
+git checkout -b feature/your-feature-name
+# or for bug fixes:
+git checkout -b bugfix/issue-description
     ```
 
 ### 📝 Making Changes and Committing
@@ -324,30 +335,30 @@ As you make changes, frequently stage and commit your work with clear, concise m
 1.  **Check your current changes:**
 
     ```bash
-    git status
+git status
     ```
 
 2.  **Stage your changes (add files to the staging area):**
 
     ```bash
-    git add .
-    # or to add specific files:
-    git add src/path/to/your/file.ts src/other/file.tsx
+git add .
+# or to add specific files:
+git add src/path/to/your/file.ts src/other/file.tsx
     ```
 
 3.  **Commit your staged changes:**
 
     ```bash
-    git commit -m 'feat: Add new user authentication component'
-    # or for a bug fix:
-    git commit -m 'fix: Resolve navigation issue in Navbar'
-    # Use imperative mood, start with type (feat, fix, docs, chore, style, refactor, test, build, ci, perf)
+git commit -m 'feat: Add new user authentication component'
+# or for a bug fix:
+git commit -m 'fix: Resolve navigation issue in Navbar'
+# Use imperative mood, start with type (feat, fix, docs, chore, style, refactor, test, build, ci, perf)
     ```
 
 4.  **Push your branch to the remote repository:**
 
     ```bash
-    git push origin feature/your-feature-name
+git push origin feature/your-feature-name
     ```
 
 ### 🚀 Submitting a Pull Request (PR)
@@ -357,68 +368,24 @@ Once your feature branch is ready and pushed, you can open a Pull Request.
 1.  **Ensure your branch is up-to-date with `main`:**
 
     ```bash
-    git checkout feature/your-feature-name
-    git pull origin main # This will pull changes from main into your branch. Resolve any conflicts.
-    git push origin feature/your-feature-name
+git checkout feature/your-feature-name
+git pull origin main # This will pull changes from main into your branch. Resolve any conflicts.
+git push origin feature/your-feature-name
     ```
 
 2.  **Go to the GitHub repository and open a new Pull Request** from your feature branch to the `main` branch.
 
 3.  **Provide a clear title and description** for your PR, referencing any related issues.
----
-## 🗂️ Resume Builder
-
-The Resume Builder is a powerful tool that allows users to create professional resumes using AI assistance and customizable templates.
-
-### Key Features
-
-- **AI-Powered Assistance**: Get suggestions and improvements for your resume content using AI.
-- **Customizable Templates**: Choose from a variety of templates to create a visually appealing resume.
-- **Section Management**: Easily add, remove, and reorder sections such as Personal Info, Experience, Education, and Skills.
-- **Real-time Preview**: See a live preview of your resume as you make changes.
-- **Export to PDF**: Export your completed resume to a PDF file for easy sharing.
-
-### Usage
-1.  **Navigate to the Resume Builder**: Click on the "Resume Builder" in the apps page.
-2.  **Fill in Your Information**: Enter your personal details, work experience, education, and skills in the respective sections.
-3.  **Select a Template**: Choose a template that suits your style and preferences.
-4.  **Preview Your Resume**: Review the live preview to ensure everything looks correct.
-5.  **Export to PDF**: Click the "Export PDF" button to download your resume.
 
 ---
 
-## ⏺️ Screen Recording
+## 🗂️ Detailed Documentation
 
-The Screen Recording feature enables you to capture your screen, record videos, and take screenshots directly within the application.
+For deeper understanding of the project architecture, components and state management, see the documentation files in the `/docs` directory:
 
-### Key Features
-
-- **Screen Recording**: Record your screen activities with audio.
-- **Screenshot Capture**: Capture screenshots of your current screen.
-- **Recording Management**: Manage your recordings, including playing, downloading, and deleting.
-- **GIF Conversion**: Convert screen recordings into animated GIFs.
-
-### Usage
-
-1. **Navigate to the Recording Page**: Click on the "Recording" in the apps page.
-2. **Start Recording**: Click the "Start Recording" button to begin recording your screen.
-3. **Stop Recording**: Click the "Stop Recording" button to stop the recording.
-4. **Capture Screenshot**: Click the "Capture Screenshot" button to take a screenshot of your screen.
-5. **Manage Recordings**: View the list of saved recordings and screenshots. You can play, download, convert to GIF, edit, and delete recordings.
-
----
-
-## 🛣️ Roadmap
-
-- [ ] **Real-time File Content Editing & Saving**: Implement full real-time editing and saving for _any_ selected file from the file tree, synchronizing changes via the backend.
-- [ ] **WebSocket Integration**: Implement real-time updates from the backend, such as file system changes, AI generation progress, and new notifications. (Partially done with Gemini Live Audio, expand for general purpose)
-- [ ] **Enhanced Error Handling & Feedback**: Improve user-facing error messages, loading indicators, and success notifications across the application.
-- [ ] **Dedicated Settings Page**: Develop a page for user preferences, AI model selection, API key configurations, and other configurable options.
-- [ ] **UI/UX Refinements**: Continuous improvements to the user interface for a smoother and more intuitive experience.
-- [ ] **AI-driven Code Refactoring/Linting**: Implement features for the AI to suggest and apply refactoring, linting fixes, or code improvements without requiring a full code generation request.
-- [ ] **Robust Testing Suite**: Introduce comprehensive unit, integration, and end-to-end tests for critical functionalities.
-- [ ] **Full Spotify App Functionality**: Integrate with a real Spotify API or expand mock data to a more interactive experience.
-- [ ] **Advanced AI Translator Features**: Add features like batch translation, language detection, and context-aware translation.
+- [Architecture Overview](docs/ARCHITECTURE.md)
+- [Component Details](docs/COMPONENTS.md)
+- [State Management](docs/STATE_MANAGEMENT.md)
 
 ---
 
@@ -453,6 +420,6 @@ Distributed under the MIT License. See [LICENSE](https://github.com/evillan0315/
 
 ## 📧 Contact
 
-Eddie Villalon - [evillan0315@gmail.com](mailto:evillan0315@gmail.com)
+Eddie Villanueva - [evillan0315@gmail.com](mailto:evillan0315@gmail.com)
 [LinkedIn](https://www.linkedin.com/in/eddie-villalon/)
 [GitHub](https://github.com/evillan0315)

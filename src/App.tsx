@@ -52,26 +52,10 @@ function App() {
   return (
     <>
       <Routes>
-        {/* Routes that require authentication */}
-        <Route path="/editor" element={<Layout footer={`Developed by Eddie Villanueva`}/>}>
-          <Route
-            path="/editor"
-            element={
-              <RequireAuth>
-                <Suspense
-                  fallback={
-                    <Loading type="gradient" message="Loading playground" />
-                  }
-                >
-                  <AiEditorPage />
-                </Suspense>
-              </RequireAuth>
-            }
-          />
-        </Route>
+       
 
-        <Route path="/" element={<Layout />}>
-          {/* Public route */}
+        <Route path="/" element={<Layout footer={`Developed by Eddie Villanueva`}/>}>
+
           <Route
             index
             element={
@@ -80,7 +64,7 @@ function App() {
               </Suspense>
             }
           />
-
+          
           {/* ✅ Protected Routes */}
           <Route
             path="/dashboard"
@@ -92,7 +76,16 @@ function App() {
               </RequireAuth>
             }
           />
-
+          <Route
+            path="/editor"
+            element={
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <AiEditorPage />
+                </Suspense>
+              </RequireAuth>
+            }
+          />
           <Route
             path="/apps"
             element={

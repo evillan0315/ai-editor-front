@@ -1,5 +1,17 @@
 import React, { useState, ReactNode } from 'react';
-import { Drawer, Box, IconButton, Typography, useTheme, Slide, Zoom, Dialog, DialogContent, AppBar, Toolbar } from '@mui/material';
+import {
+  Drawer,
+  Box,
+  IconButton,
+  Typography,
+  useTheme,
+  Slide,
+  Zoom,
+  Dialog,
+  DialogContent,
+  AppBar,
+  Toolbar,
+} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useStore } from '@nanostores/react';
 import { themeStore } from '@/stores/themeStore';
@@ -15,7 +27,7 @@ interface CustomDrawerProps {
   stickyHeader?: ReactNode;
   stickyFooter?: ReactNode;
   children: ReactNode;
-  title?:string
+  title?: string;
 }
 
 const drawerWidthPercentage: Record<CustomDrawerProps['size'], number> = {
@@ -26,7 +38,18 @@ const drawerWidthPercentage: Record<CustomDrawerProps['size'], number> = {
 };
 
 // Drawer component
-const CustomDrawer: React.FC<CustomDrawerProps> = ({ open, onClose, position, size, hasBackdrop = true, closeOnEscape = true, stickyHeader, stickyFooter, children,title }) => {
+const CustomDrawer: React.FC<CustomDrawerProps> = ({
+  open,
+  onClose,
+  position,
+  size,
+  hasBackdrop = true,
+  closeOnEscape = true,
+  stickyHeader,
+  stickyFooter,
+  children,
+  title,
+}) => {
   const theme = useTheme();
   const { mode } = useStore(themeStore);
   const drawerWidth = `${drawerWidthPercentage[size] * 100}%`;
@@ -55,65 +78,66 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ open, onClose, position, si
       ModalProps={{ backdrop: backdrop, disableEscapeKeyDown: closeOnKey }}
       PaperProps={{ sx: drawerPaperStyle }}
     >
-      {isFullScreen ? <DialogContent>  
+      {isFullScreen ? (
+        <DialogContent>
           <AppBar sx={{ position: 'relative' }}>
-          <Toolbar>
-            <IconButton
-              edge="start"
-              color="inherit"
-              onClick={onClose}
-              aria-label="close"
-            >
-              <CloseIcon />
-            </IconButton>
-            <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-              {title}
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <Box sx={{p:2}}>
-        {children}
-        </Box>
-        </DialogContent> :  <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-        }}
-      >
-        {stickyHeader && (
-          <Box
-            sx={{
-              p: 2,
-              bgcolor: theme.palette.background.default,
-              borderBottom: `1px solid ${theme.palette.divider}`,
-            }}
-          >
-            {stickyHeader}
-          </Box>
-        )}
+            <Toolbar>
+              <IconButton
+                edge="start"
+                color="inherit"
+                onClick={onClose}
+                aria-label="close"
+              >
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+                {title}
+              </Typography>
+            </Toolbar>
+          </AppBar>
+          <Box sx={{ p: 2 }}>{children}</Box>
+        </DialogContent>
+      ) : (
         <Box
           sx={{
-            flexGrow: 1,
-            overflowY: 'auto',
-            p: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
           }}
         >
-          {children}
-        </Box>
-        {stickyFooter && (
+          {stickyHeader && (
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: theme.palette.background.default,
+                borderBottom: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              {stickyHeader}
+            </Box>
+          )}
           <Box
             sx={{
+              flexGrow: 1,
+              overflowY: 'auto',
               p: 2,
-              bgcolor: theme.palette.background.default,
-              borderTop: `1px solid ${theme.palette.divider}`,
             }}
           >
-            {stickyFooter}
+            {children}
           </Box>
-        )}
-      </Box>}
-     
+          {stickyFooter && (
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: theme.palette.background.default,
+                borderTop: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              {stickyFooter}
+            </Box>
+          )}
+        </Box>
+      )}
     </Drawer>
   );
 };

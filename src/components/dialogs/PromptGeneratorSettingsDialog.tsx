@@ -73,7 +73,7 @@ ${localInstructionExample}
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle
         sx={{
-          backgroundColor: theme.palette.background.paper,
+          backgroundColor: theme.palette.background.default,
           color: theme.palette.text.primary,
         }}
       >
@@ -82,7 +82,7 @@ ${localInstructionExample}
 
       <DialogContent
         sx={{
-          backgroundColor: theme.palette.background.paper,
+          backgroundColor: theme.palette.background.default,
           color: theme.palette.text.primary,
         }}
       >

@@ -152,19 +152,17 @@ export const XTerminal: React.FC<XTerminalProps> = ({
 
   return (
     <Paper
-     
+	variant='outlined'
       sx={{
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
+        border: 0,
         backgroundColor:
           mode === 'dark'
-            ? theme.palette.background.default
-            : theme.palette.background.paper,
-        color:
-          mode === 'dark'
-            ? theme.palette.text.primary
-            : theme.palette.text.secondary,
+            ? theme.palette.background.paper
+            : theme.palette.background.default,
+    
         overflow: 'hidden',
         position: 'relative', // Make Paper a positioning context
       }}
@@ -190,10 +188,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
           flexGrow: 1,
           padding: '8px',
           overflow: 'auto',
-          color:
-            mode === 'dark'
-              ? theme.palette.text.primary
-              : theme.palette.text.secondary,
+
           fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
           fontSize: '12px',
           whiteSpace: 'pre-wrap',
@@ -234,8 +229,8 @@ export const XTerminal: React.FC<XTerminalProps> = ({
             },
           }}
         >
-         <AttachMoneyIcon />
-        </Box> 
+          <AttachMoneyIcon />
+        </Box>
         <input
           ref={inputRef}
           type="text"

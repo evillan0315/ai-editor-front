@@ -53,6 +53,7 @@ const AIToolsView: React.FC = () => {
         <Grid item key={tool.id} xs={12} sm={6} md={6} lg={6}>
           <CardActionArea onClick={() => navigate(tool.link)}>
             <Card
+            
               variant="outlined"
               sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
             >

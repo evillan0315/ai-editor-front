@@ -12,6 +12,7 @@ import { APP_NAME } from '@/constants'; // Import APP_NAME
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -133,14 +134,15 @@ const LoginPage: React.FC = () => {
 
   return (
     <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Box
+      <Paper
+        elevation={3}
         sx={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           p: 4,
-          borderRadius: 2,
-          boxShadow: 3,
+          borderRadius: 6,
+          boxShadow: 1,
           bgcolor: theme.palette.background.paper,
         }}
       >
@@ -165,6 +167,7 @@ const LoginPage: React.FC = () => {
         >
           <TextField
             margin="normal"
+	    color='primary'
             required
             fullWidth
             id="email"
@@ -259,7 +262,7 @@ const LoginPage: React.FC = () => {
         >
           Sign in with GitHub
         </Button>
-      </Box>
+      </Paper>
     </Container>
   );
 };

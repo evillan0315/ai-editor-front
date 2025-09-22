@@ -5,10 +5,10 @@ import {
   setCurrentDiff,
   updateProposedChangeContent,
   updateProposedChangePath,
-  LlmStoreState
+  LlmStoreState,
 } from '@/stores/llmStore';
 import { addLog } from '@/stores/logStore'; // NEW: Import addLog
-import { setError } from '@/stores/errorStore'; 
+import { setError } from '@/stores/errorStore';
 import { getGitDiff } from '@/api/llm';
 import { FileChange, FileAction } from '@/types';
 import { truncateFilePath } from '@/utils/fileUtils';
@@ -31,7 +31,7 @@ import {
   TextField,
   InputAdornment,
   ListItem,
-  ListItemText
+  ListItemText,
 } from '@mui/material';
 import { type SvgIconProps } from '@mui/material/SvgIcon';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -98,7 +98,8 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
   );
   const [isCodeExpanded, setIsCodeExpanded] = useState(false);
 
-  const { loading, currentDiff, diffFilePath, applyingChanges } = useStore(llmStore);
+  const { loading, currentDiff, diffFilePath, applyingChanges } =
+    useStore(llmStore);
 
   const currentProjectPath = useStore(projectRootDirectoryStore);
 

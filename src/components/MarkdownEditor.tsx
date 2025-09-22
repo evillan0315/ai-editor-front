@@ -24,17 +24,13 @@ import TaskIcon from '@mui/icons-material/CheckBox';
 import { keymap } from '@codemirror/view';
 import CodeMirror from '@uiw/react-codemirror';
 import { markdown } from '@codemirror/lang-markdown';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
-import rehypeHighlight from 'rehype-highlight';
 import { themeStore } from '@/stores/themeStore';
 import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
 // ✅ GitHub markdown light & dark styles
 import 'github-markdown-css/github-markdown.css';
 import 'github-markdown-css/github-markdown-dark.css';
-import '@/styles/markdown.css';
+//import '@/styles/markdown.css';
+import ReactMarkdownWithCodeCopy from '@/components/markdown/ReactMarkdownWithCodeCopy';
 
 interface MarkdownEditorProps {
   value?: string;
@@ -206,12 +202,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             sx={{ p: 2, overflowY: 'auto', flex: 1 }}
             className={markdownClass}
           >
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeHighlight]}
-            >
-              {internalValue}
-            </ReactMarkdown>
+            <ReactMarkdownWithCodeCopy>{internalValue}</ReactMarkdownWithCodeCopy>
           </Box>
         )}
       </Box>
