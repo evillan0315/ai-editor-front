@@ -1,1 +1,3 @@
-// Simple Git for storing persistent and non persistent state or data
+import { atom } from 'nanostores';
+
+export const gitStore = atom({});
