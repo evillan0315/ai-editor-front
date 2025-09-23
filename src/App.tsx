@@ -8,6 +8,8 @@ import { snackbarState, hideGlobalSnackbar } from '@/stores/snackbarStore';
 import { authStore } from '@/stores/authStore'; // ✅ import auth state
 
 import '@xterm/xterm/css/xterm.css';
+import ErrorBoundary from './components/ErrorBoundary';
+import ErrorPage from './components/ErrorPage';
 
 // ✅ Route guard component
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -45,10 +47,12 @@ const SimpleGitPage = lazy(() => import('./pages/SimpleGitPage'));
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" element={<Layout footer={`Developed by Eddie Villanueva`}/>}>
+    <Route path="/" element={<Layout footer={`Developed by Eddie Villanueva`}/>} errorElement={<ErrorPage/>}>
       <Route index element={
         <Suspense fallback={<Loading />}>
-          <HomePage />
+          <ErrorBoundary>
+            <HomePage />
+          </ErrorBoundary>
         </Suspense>
       } />
 
@@ -58,7 +62,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <DashboardPage />
+              <ErrorBoundary>
+                <DashboardPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -68,7 +74,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <AiEditorPage />
+              <ErrorBoundary>
+                <AiEditorPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -78,7 +86,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <AppsPage />
+              <ErrorBoundary>
+                <AppsPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -88,7 +98,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <SpotifyAppPage />
+              <ErrorBoundary>
+                <SpotifyAppPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -98,7 +110,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <TranslatorAppPage />
+              <ErrorBoundary>
+                <TranslatorAppPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -108,7 +122,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <GeminiLiveAudioPage />
+              <ErrorBoundary>
+                <GeminiLiveAudioPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -118,7 +134,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <PreviewAppPage />
+              <ErrorBoundary>
+                <PreviewAppPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -128,7 +146,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <TranscriptionPage />
+              <ErrorBoundary>
+                <TranscriptionPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -138,7 +158,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <TerminalPage />
+              <ErrorBoundary>
+                <TerminalPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -148,7 +170,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <LlmGenerationPage />
+              <ErrorBoundary>
+                <LlmGenerationPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -158,7 +182,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <ResumeBuilderPage />
+              <ErrorBoundary>
+                <ResumeBuilderPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -168,7 +194,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <RecordingPage />
+              <ErrorBoundary>
+                <RecordingPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -178,7 +206,9 @@ const router = createBrowserRouter(
             element={
               <RequireAuth>
                 <Suspense fallback={<Loading />}>
-                  <KanbanBoardPage />
+                  <ErrorBoundary>
+                    <KanbanBoardPage />
+                  </ErrorBoundary>
                 </Suspense>
               </RequireAuth>
             }
@@ -188,7 +218,9 @@ const router = createBrowserRouter(
             element={
               <RequireAuth>
                 <Suspense fallback={<Loading />}>
-                 <SimpleGitPage/>
+                 <ErrorBoundary>
+                   <SimpleGitPage/>
+                 </ErrorBoundary>
                 </Suspense>
               </RequireAuth>
             }
@@ -200,7 +232,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <OrganizationPage />
+              <ErrorBoundary>
+                <OrganizationPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -210,7 +244,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <ProjectsPage />
+              <ErrorBoundary>
+                <ProjectsPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -221,7 +257,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <UserProfilePage />
+              <ErrorBoundary>
+                <UserProfilePage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
@@ -231,7 +269,9 @@ const router = createBrowserRouter(
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
-              <UserSettingsPage />
+              <ErrorBoundary>
+                <UserSettingsPage />
+              </ErrorBoundary>
             </Suspense>
           </RequireAuth>
         }
