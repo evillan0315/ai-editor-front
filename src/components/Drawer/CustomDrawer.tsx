@@ -42,7 +42,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
   open,
   onClose,
   position,
-  size,
+  size = 'normal',
   hasBackdrop = true,
   closeOnEscape = true,
   stickyHeader,

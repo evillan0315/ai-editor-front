@@ -354,7 +354,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
           <IconButton
             color="primary"
             onClick={toggleCodeRepair}
-            disabled={commonDisabled}
+            disabled={commonDisabled || !!error}
           >
             <BugReportIcon />
           </IconButton>
@@ -391,7 +391,8 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         title="Code Repair"
         hasBackdrop={false}
       >
-        {error && <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='400px' />}
+        {/*error && <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='400px' />*/}
+        <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='400px' />
       </CustomDrawer>
     </Box>
   );
