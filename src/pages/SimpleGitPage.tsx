@@ -4,7 +4,7 @@ import { gitStore } from '@/stores/gitStore';
 import { GitCommit, GitBranch } from '@/types/git';
 import { Box, Button, TextField, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
 import RunScriptMenuItem from '@/components/RunScriptMenuItem';
-import simpleGit from 'simple-git';
+// import simpleGit from 'simple-git';
 
 interface GitStatus {
   branch: string;
@@ -12,7 +12,7 @@ interface GitStatus {
   stagedFiles: string[];
 }
 
-const git = simpleGit();
+// const git = simpleGit();
 
 const SimpleGitPage = () => {
   const $git = useStore(gitStore);
@@ -25,12 +25,17 @@ const SimpleGitPage = () => {
   const [branches, setBranches] = useState<GitBranch[]>([]);
   const [newBranchName, setNewBranchName] = useState('');
   const [selectedFileToUndo, setSelectedFileToUndo] = useState<string | null>(null);
+  const [git, setGit] = useState<any>(null);
 
   useEffect(() => {
+    let gitInstance: any = null;
     const getGitStatus = async () => {
       try {
-        const statusResult = await git.status();
-        const branchResult = await git.branchLocal();
+        const simpleGit = (await import('simple-git')).default;
+        gitInstance = simpleGit();
+
+        const statusResult = await gitInstance.status();
+        const branchResult = await gitInstance.branchLocal();
         const currentBranch = branchResult.current;
         const modifiedFiles = statusResult.modified;
         const stagedFiles = statusResult.staged;
@@ -41,7 +46,7 @@ const SimpleGitPage = () => {
           stagedFiles: stagedFiles,
         });
 
-        const branchList = await git.branchLocal();
+        const branchList = await gitInstance.branchLocal();
         const branches: GitBranch[] = Object.keys(branchList.branches).map(
           (branchName) => ({
             name: branchName,
@@ -49,15 +54,20 @@ const SimpleGitPage = () => {
           }),
         );
         setBranches(branches);
+        setGit(gitInstance);
       } catch (error) {
         console.error('Failed to get git status:', error);
       }
     };
 
     getGitStatus();
+    return () => {
+      gitInstance = null;
+    };
   }, []);
 
   const handleStage = async (file: string) => {
+    if (!git) return;
     try {
       await git.add(file);
       console.log(`Staged ${file}`);
@@ -74,6 +84,7 @@ const SimpleGitPage = () => {
   };
 
   const handleUnstage = async (file: string) => {
+    if (!git) return;
     try {
       await git.reset(['--', file]);
       console.log(`Unstaged ${file}`);
@@ -90,6 +101,7 @@ const SimpleGitPage = () => {
   };
 
   const handleCommit = async () => {
+    if (!git) return;
     try {
       await git.commit(commitMessage);
       console.log(`Committed with message: ${commitMessage}`);
@@ -108,6 +120,7 @@ const SimpleGitPage = () => {
   };
 
   const handleCreateBranch = async () => {
+    if (!git) return;
     try {
       await git.checkoutLocalBranch(newBranchName);
       console.log(`Created branch: ${newBranchName}`);
@@ -127,6 +140,7 @@ const SimpleGitPage = () => {
   };
 
   const handleCheckoutBranch = async (branchName: string) => {
+    if (!git) return;
     try {
       await git.checkout(branchName);
       console.log(`Checked out branch: ${branchName}`);
@@ -153,6 +167,7 @@ const SimpleGitPage = () => {
   };
 
   const handleRevertCommit = async () => {
+    if (!git) return;
     try {
       // Get the latest commit hash
       const log = await git.log({ maxCount: 1 });
@@ -178,6 +193,7 @@ const SimpleGitPage = () => {
   };
 
   const handleUndoFileChanges = async (file: string) => {
+    if (!git) return;
     try {
       await git.checkout(['--', file]);
       console.log(`Changes undone for ${file}`);
@@ -194,6 +210,7 @@ const SimpleGitPage = () => {
   };
 
   const handleResetStagedChanges = async () => {
+    if (!git) return;
     try {
       await git.reset();
       console.log('Staged changes have been reset.');
