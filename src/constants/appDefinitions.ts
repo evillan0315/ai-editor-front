@@ -1,3 +1,4 @@
+// src/appDefinitions.ts
 import { AppDefinition } from '@/types';
 import AppsIcon from '@mui/icons-material/Apps';
 import TerminalIcon from '@mui/icons-material/Terminal';
@@ -11,13 +12,14 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import DescriptionIcon from '@mui/icons-material/Description';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import GitHubIcon from '@mui/icons-material/GitHub'; // for Simple Git
 
 export const appDefinitions: AppDefinition[] = [
   {
     id: 'ai-editor',
     title: 'AI Editor',
     description: 'Generate code, fix bugs, and refactor your codebase with AI.',
-    link: '/editor',
+    link: '/ai-editor', // corrected path
     linkText: 'Open AI Editor',
     icon: CodeIcon,
     category: 'AI Tools',
@@ -141,4 +143,14 @@ export const appDefinitions: AppDefinition[] = [
     icon: AssignmentIcon,
     category: 'Management',
   },
+  {
+    id: 'simple-git',
+    title: 'Simple Git',
+    description: 'Lightweight Git interface for basic operations.',
+    link: '/apps/simple-git',
+    linkText: 'Open Simple Git',
+    icon: GitHubIcon,
+    category: 'Development',
+  },
 ];
+
