@@ -16,7 +16,7 @@ interface GitStatus {
 
 const SimpleGitPage = () => {
   const $git = useStore(gitStore);
-  const [status, setStatus] = useState<GitStatus>({
+  const [status, setStatus] = useState<GitStatus>({ 
     branch: 'main',
     modifiedFiles: [],
     stagedFiles: [],

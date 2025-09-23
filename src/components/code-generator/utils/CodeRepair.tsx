@@ -11,6 +11,17 @@ interface CodeRepairProps {
   width?: string;
 }
 
+interface ErrorLocation {
+  line: number;
+  column: number;
+}
+
+interface FixRequest {
+  code: string;
+  error: any;
+  errorLocation?: ErrorLocation;
+}
+
 export const CodeRepair: React.FC<CodeRepairProps> = ({
   value,
   onChange,
@@ -21,6 +32,43 @@ export const CodeRepair: React.FC<CodeRepairProps> = ({
   const handleFix = () => {
     console.log('Fixing code...');
     // Implement your fix logic here
+    try {
+      // Simulate JSON parsing to detect errors and their location
+      const parsedData = JSON.parse(value);
+      console.log('JSON is valid:', parsedData);
+      // If JSON is valid, proceed with other fix logic
+    } catch (e: any) {
+      // Capture error details and location
+      const error = e.message;
+      const errorLocation = {
+        line: e.lineNumber,
+        column: e.columnNumber,
+      };
+
+      const fixRequest: FixRequest = {
+        code: value,
+        error: error,
+        errorLocation: errorLocation,
+      };
+
+      // Send the data to the backend (replace with actual API call)
+      fetch('/api/fix-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(fixRequest),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log('Fix response:', data);
+          // Handle the response from the backend, e.g., update the code
+          onChange(data.fixedCode);
+        })
+        .catch((error) => {
+          console.error('Error sending fix request:', error);
+        });
+    }
   };
 
   const handleUndo = () => {
@@ -63,18 +111,18 @@ export const CodeRepair: React.FC<CodeRepairProps> = ({
           gap: (theme) => theme.spacing(1),
         }}
       >
-        <Tooltip title="Fix">
-          <IconButton color="primary" onClick={handleFix}>
+        <Tooltip title='Fix'>
+          <IconButton color='primary' onClick={handleFix}>
             <AutoFixIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Undo">
-          <IconButton color="primary" onClick={handleUndo}>
+        <Tooltip title='Undo'>
+          <IconButton color='primary' onClick={handleUndo}>
             <UndoIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Redo">
-          <IconButton color="primary" onClick={handleRedo}>
+        <Tooltip title='Redo'>
+          <IconButton color='primary' onClick={handleRedo}>
             <RedoIcon />
           </IconButton>
         </Tooltip>
