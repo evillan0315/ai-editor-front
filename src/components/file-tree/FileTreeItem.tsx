@@ -9,6 +9,7 @@ import {
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { FileEntry } from '@/types'; // Fixed import
+import type { IconifyIconPrefix } from '@iconify/types';
 import {
   toggleDirExpansion,
   setSelectedFile,
@@ -16,7 +17,8 @@ import {
 } from '@/stores/fileTreeStore';
 import { useStore } from '@nanostores/react';
 import { getFileTypeIcon } from '@/constants/fileIcons'; // Import the new utility
-
+import { NamePrefixSvgIcon } from '@/components/NamePrefixSvgIcon';
+import { getCodeMirrorLanguage } from '@/utils/index';
 interface FileTreeItemProps {
   fileEntry: FileEntry; // This is now correctly typed as FileEntry
   projectRoot: string;

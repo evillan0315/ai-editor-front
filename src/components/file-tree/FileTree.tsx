@@ -32,12 +32,20 @@ import {
   Terminal as TerminalIcon,
   OpenInNew as OpenInNewIcon,
   Refresh as RefreshIcon,
-  FolderOpenOutlined as FolderOpenIcon,
   DriveFileMove as DriveFileMoveIcon,
   FileCopy as FileCopyIcon,
   ArrowUpward as ArrowUpwardIcon, // Icon for going up a directory
 } from '@mui/icons-material';
+import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined';
+import { MaterialIconThemeFolderUtils } from '@/components/icons/MaterialIconThemeFolderUtils';
+import { MaterialIconThemeFolderPrompts } from '@/components/icons/MaterialIconThemeFolderPrompts';
+import { MaterialIconThemeFolderResource } from '@/components/icons/MaterialIconThemeFolderResource';
+import { MdiRenameBox } from '@/components/icons/MdiRenameBox';
+import { MdiTerminalNetworkOutline } from '@/components/icons/MdiTerminalNetworkOutline';
+import { LineMdFileDocumentPlusFilled } from '@/components/icons/LineMdFileDocumentPlusFilled';
+
 import { FileTreeContextMenuRenderer } from './FileTreeContextMenuRenderer';
+
 import {
   CreateFileOrFolderDialog,
   RenameDialog,
@@ -197,7 +205,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
         { type: 'divider' },
         {
           label: 'New File...',
-          icon: <NoteAddIcon fontSize="small" />,
+          icon: <LineMdFileDocumentPlusFilled fontSize="1.4em" />,
           action: (file) => {
             const targetPath = file.type === 'folder' ? file.path : parentPath;
             setPathForNewItem(targetPath);
@@ -207,7 +215,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
         },
         {
           label: 'New Folder...',
-          icon: <CreateNewFolderIcon fontSize="small" />,
+          icon: <MaterialIconThemeFolderUtils fontSize="1.2em" />,
           action: (file) => {
             const targetPath = file.type === 'folder' ? file.path : parentPath;
             setPathForNewItem(targetPath);
@@ -218,7 +226,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
         { type: 'divider' },
         {
           label: 'Rename...',
-          icon: <EditIcon fontSize="small" />,
+          icon: <MdiRenameBox fontSize="1.2em" />,
           action: (file) => {
             setItemToRename(file);
             setIsRenameDialogOpen(true);
@@ -245,7 +253,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
         { type: 'divider' },
         {
           label: 'Copy Path',
-          icon: <ContentCopyIcon fontSize="small" />,
+          icon: <MaterialIconThemeFolderResource fontSize="1.2em" />,
           action: (file) => {
             navigator.clipboard.writeText(file.path);
             showGlobalSnackbar('Path copied to clipboard!', 'success');
@@ -253,7 +261,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
         },
         {
           label: 'Open Terminal Here',
-          icon: <TerminalIcon fontSize="small" />,
+          icon: <MdiTerminalNetworkOutline fontSize="1.4em" />,
           action: (file) => {
             if (file.type === 'folder') {
               projectRootDirectoryStore.set(file.path);
@@ -262,6 +270,28 @@ const FileTree: React.FC<FileTreeProps> = () => {
             }
           },
           disabled: isFile,
+        },
+        {
+          label: 'Send to AI Scan Path',
+          icon: <MaterialIconThemeFolderPrompts fontSize="1.2em" />,
+          action: (file) => {
+            const currentScanPaths = scanPathsInput || '';
+            if (!currentScanPaths.includes(file.path)) {
+              const newScanPaths = currentScanPaths
+                ? `${currentScanPaths},${file.path}`
+                : file.path;
+              llmStore.setKey('scanPathsInput', newScanPaths);
+              showGlobalSnackbar(
+                `Added ${file.name} to AI scan paths.`,
+                'success',
+              );
+            } else {
+              showGlobalSnackbar(
+                `${file.name} is already in AI scan paths.`,
+                'info',
+              );
+            }
+          },
         },
         { type: 'divider' },
         {
@@ -274,7 +304,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
       return items;
     },
-    [handleDeleteItem],
+    [handleDeleteItem, scanPathsInput],
   );
 
   const handleNodeContextMenu = useCallback(
@@ -336,7 +366,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          boxShadow: 0
+          boxShadow: 0,
         }}
       >
         <Box className="flex items-center gap-0">

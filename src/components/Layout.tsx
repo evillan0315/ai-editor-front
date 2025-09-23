@@ -1,3 +1,4 @@
+// Source: src/components/Layout.tsx
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -22,6 +23,10 @@ import FileTree from '@/components/file-tree/FileTree';
 import OpenedFileViewer from './OpenedFileViewer';
 import AiEditorNoTreePage from '@/components/file-manager/AiEditorNoTreePage';
 import LlmGenerationContent from './LlmGenerationContent';
+import Footer from './Footer';
+
+// ✅ NEW: import global loading store
+import { loadingStore } from '@/stores/loadingStore';
 
 const NAVBAR_HEIGHT = 64;
 const FOOTER_HEIGHT = 30;
@@ -39,8 +44,17 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const { loading: llmLoading, isBuilding } = useStore(llmStore);
   const { openedFile } = useStore(fileStore);
 
+  // ✅ subscribe to global loading store
+  const globalLoadingState = useStore(loadingStore);
+
   const theme = useTheme();
-  const layoutLoader = authLoading || llmLoading || isBuilding;
+
+  // ✅ consider both existing loaders and global request loaders
+  const isAnyGlobalRequestLoading =
+    Object.values(globalLoadingState).some(Boolean);
+  const layoutLoader =
+    authLoading || llmLoading || isBuilding || isAnyGlobalRequestLoading;
+
   const $isRightSidebarVisible = useStore(isRightSidebarVisible);
   const $isLeftSidebarVisible = useStore(isLeftSidebarVisible);
   const $rightSidebarWidth = useStore(rightSidebarWidth);
@@ -114,12 +128,12 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
 
   return (
     <Paper
- 
       className="h-screen flex flex-col overflow-hidden"
       sx={{ backgroundColor: theme.palette.background.default }}
     >
       <Navbar />
 
+      {/* ✅ now also shows when global loadingStore has any active request */}
       {layoutLoader && (
         <Box className="w-full sticky top-0 z-[1100] flex-shrink-0">
           <LinearProgress />
@@ -191,7 +205,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
               title="Resize sidebar"
             />
             <Box
-              className="flex-shrink-0 overflow-auto flex flex-col border-l pb-6"
+              className="flex-shrink-0 overflow-auto flex flex-col border-l pb-0"
               sx={{
                 width: $rightSidebarWidth,
                 backgroundColor: theme.palette.background.paper,
@@ -205,19 +219,17 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
       </Box>
 
       {/* Sticky footer */}
-      {footer && (
-        <Paper
-          elevation={1}
-          className="sticky bottom-0 z-[1300] w-full flex justify-center items-center border-t radius-0"
-          sx={{
-            height: FOOTER_HEIGHT,
-            backgroundColor: theme.palette.background.paper,
-            borderColor: theme.palette.divider,
-          }}
-        >
-          {footer}
-        </Paper>
-      )}
+      <Paper
+        elevation={1}
+        className="sticky bottom-0 z-[1300] w-full flex justify-center items-center border-t radius-0"
+        sx={{
+          height: FOOTER_HEIGHT,
+          backgroundColor: theme.palette.background.paper,
+          borderColor: theme.palette.divider,
+        }}
+      >
+        <Footer />
+      </Paper>
     </Paper>
   );
 };

@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 // Generic file icon
 // Generic folder icon
-
+import { truncateFilePath } from '@/utils/fileUtils';
 import { getFileTypeIcon } from '@/constants/fileIcons'; // For specific file icons
 
 export interface FileTreeContextMenuRendererProps {
@@ -115,7 +115,7 @@ export const FileTreeContextMenuRenderer: React.FC<
               p: 2,
               borderBottom: `1px solid ${theme.palette.divider}`,
               bgcolor: theme.palette.action.hover,
-              maxWidth: '300px'
+              maxWidth: '300px',
             }}
           >
             <Typography
@@ -124,8 +124,11 @@ export const FileTreeContextMenuRenderer: React.FC<
             >
               {state.targetFile.type === 'folder' ? 'Folder' : 'File'}:
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1,  }}>
-              <Box sx={{ color: theme.palette.text.primary }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                className="text-lg"
+                sx={{ color: theme.palette.text.primary }}
+              >
                 {getFileTypeIcon(
                   state.targetFile.name,
                   state.targetFile.type,
@@ -147,13 +150,14 @@ export const FileTreeContextMenuRenderer: React.FC<
             <Typography
               variant="caption"
               color="text.disabled"
+              className="truncate"
               sx={{
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 display: 'block',
               }}
             >
-              {state.targetFile.path}
+              {truncateFilePath(state.targetFile.path, 50)}
             </Typography>
           </Box>
 

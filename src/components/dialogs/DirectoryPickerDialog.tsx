@@ -148,14 +148,7 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
   }, [currentBrowsingPath, allowExternalPaths, projectRoot]);
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="md"
-      fullWidth
-
-
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle
         sx={{
           borderBottom: `1px solid ${theme.palette.divider}`,
@@ -178,8 +171,12 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 2,backgroundColor: theme.palette.background.paper,  }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, mt:2, }}>
+      <DialogContent
+        sx={{ p: 2, backgroundColor: theme.palette.background.paper }}
+      >
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, mt: 2 }}
+        >
           <MuiTextField
             fullWidth
             variant="outlined"
@@ -193,7 +190,6 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
                 </InputAdornment>
               ),
               sx: {
-                
                 color: theme.palette.text.primary,
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: theme.palette.divider,
@@ -296,17 +292,17 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
         )}
       </DialogContent>
 
-      <DialogActions className='flex items-center justify-between gap-2' sx={{ backgroundColor: theme.palette.background.paper, borderTop: `1px solid ${theme.palette.divider}`, }}>
-        <Box
-          className='truncate'
-          sx={{ color: theme.palette.text.secondary }}
-        >
-        
-          <Typography fontWeight='bold' >
-            {currentBrowsingPath}
-          </Typography>
+      <DialogActions
+        className="flex items-center justify-between gap-2"
+        sx={{
+          backgroundColor: theme.palette.background.paper,
+          borderTop: `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Box className="truncate" sx={{ color: theme.palette.text.secondary }}>
+          <Typography fontWeight="bold">{currentBrowsingPath}</Typography>
         </Box>
-        <Box className='flex items-center gap-2'>
+        <Box className="flex items-center gap-2">
           <Button
             onClick={onClose}
             sx={{ mr: 1, color: theme.palette.text.secondary }}

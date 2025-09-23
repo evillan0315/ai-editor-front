@@ -257,7 +257,7 @@ This frontend interacts with the Project Board backend. Key endpoints and WebSoc
 - **`/api/file/list`**: To fetch directory contents for the interactive file tree.
 - **`/api/file/open`**: To read the content of a specific file.
 - **`/api/file/apply-changes`**: To apply selected AI-proposed file modifications to the file system.
-- **`/api/file/git-diff`**: To retrieve git diffs for proposed changes against the current working tree.
+- **`/api/file/git-diff`**: To retrieve git diffs for proposed modifications and deletions directly within the editor before applying changes, ensuring transparency and control.
 - **`/api/terminal/run`**: To execute arbitrary shell commands on the backend (e.g., for `git` operations or project scripts).
 - **`/api/terminal/package-scripts`**: To fetch package.json scripts and detect package manager.
 - **`/api/utils/json-yaml/to-json`**: To convert YAML content to JSON.

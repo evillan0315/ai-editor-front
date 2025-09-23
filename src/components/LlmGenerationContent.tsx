@@ -36,7 +36,7 @@ const LlmGenerationContent: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: `1px solid ${theme.palette.divider}`,
-          boxShadow: 0
+          boxShadow: 0,
         }}
       >
         <Box className="flex items-center gap-0">
@@ -60,9 +60,9 @@ const LlmGenerationContent: React.FC = () => {
             sx={{
               p: 2,
               bgcolor: theme.palette.background.default,
-                     borderTop: `1px solid ${theme.palette.divider}`,
+              borderTop: `1px solid ${theme.palette.divider}`,
               borderRadius: 6,
-              boxShadow:1
+              boxShadow: 1,
             }}
           >
             <CodeGeneratorMain data={lastLlmResponse} />
@@ -82,7 +82,7 @@ const LlmGenerationContent: React.FC = () => {
             bgcolor: theme.palette.background.default,
             borderTop: `1px solid ${theme.palette.divider}`,
             borderRadius: 6,
-            boxShadow:1
+            boxShadow: 1,
           }}
         >
           <PromptGenerator />

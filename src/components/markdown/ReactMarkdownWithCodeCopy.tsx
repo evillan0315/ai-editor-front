@@ -11,7 +11,9 @@ interface ReactMarkdownWithCodeCopyProps {
   children: string;
 }
 
-const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({ children }) => {
+const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
+  children,
+}) => {
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
   };
@@ -25,14 +27,16 @@ const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({ c
           const text = String(children).replace(/\n$/, '');
           const language = className ? className.replace('language-', '') : '';
           return inline ? (
-           <Box component='code' >{children}</Box>
+            <Box component="code">{children}</Box>
           ) : (
-           <Box  className={language ? 'relative' : 'inline-block'} sx={{ position: 'relative' }}>
+            <Box
+              className={language ? 'relative' : 'inline-block'}
+              sx={{ position: 'relative' }}
+            >
               {language && (
-
                 <Typography
                   variant="caption"
-                  className='language-btn'
+                  className="language-btn"
                   sx={{
                     position: 'absolute',
                     top: -20,
@@ -40,28 +44,32 @@ const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({ c
                     px: 1,
                     borderRadius: '4px',
                     zIndex: 1,
-                    bgcolor: 'rgba(0,0,0,0.5)' 
+                    bgcolor: 'rgba(0,0,0,0.5)',
                   }}
                 >
                   {language}
                 </Typography>
-                  
               )}
-              <Box component='code'>{children}</Box>
+              <Box component="code">{children}</Box>
 
-             
               {className && (
                 <Tooltip title="Copy code to clipboard">
                   <IconButton
                     aria-label="copy"
                     onClick={() => handleCopy(text)}
-                    sx={{ position: 'absolute', top: 2, right: 2, color: 'white', bgcolor: 'rgba(0,0,0,0.5)' }}
+                    sx={{
+                      position: 'absolute',
+                      top: 2,
+                      right: 2,
+                      color: 'white',
+                      bgcolor: 'rgba(0,0,0,0.5)',
+                    }}
                   >
                     <FileCopyIcon />
                   </IconButton>
                 </Tooltip>
               )}
-           </Box>
+            </Box>
           );
         },
       }}

@@ -1,0 +1,1 @@
+// Simple Git for storing persistent and non persistent state or data

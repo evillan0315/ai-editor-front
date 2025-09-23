@@ -202,7 +202,9 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             sx={{ p: 2, overflowY: 'auto', flex: 1 }}
             className={markdownClass}
           >
-            <ReactMarkdownWithCodeCopy>{internalValue}</ReactMarkdownWithCodeCopy>
+            <ReactMarkdownWithCodeCopy>
+              {internalValue}
+            </ReactMarkdownWithCodeCopy>
           </Box>
         )}
       </Box>

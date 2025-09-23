@@ -1,0 +1,1 @@
+// Content for Simple Git page

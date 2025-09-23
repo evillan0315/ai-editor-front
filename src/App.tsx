@@ -52,10 +52,10 @@ function App() {
   return (
     <>
       <Routes>
-       
-
-        <Route path="/" element={<Layout footer={`Developed by Eddie Villanueva`}/>}>
-
+        <Route
+          path="/"
+          element={<Layout footer={`Developed by Eddie Villanueva`} />}
+        >
           <Route
             index
             element={
@@ -64,7 +64,7 @@ function App() {
               </Suspense>
             }
           />
-          
+
           {/* ✅ Protected Routes */}
           <Route
             path="/dashboard"

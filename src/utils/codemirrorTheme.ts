@@ -64,9 +64,6 @@ export const createCodeMirrorTheme = (
         color: gutterColor,
         borderRight: `1px solid ${muiTheme.palette.divider}`,
       },
-      '.cm-gutters': {
-        backgroundColor: gutterBackground + ' !important',
-      },
       '.cm-lineNumbers .cm-gutterElement': {
         color: lineNumberColor,
         padding: '0 8px',

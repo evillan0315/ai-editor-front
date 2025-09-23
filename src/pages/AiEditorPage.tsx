@@ -214,8 +214,6 @@ const AiEditorPage: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-
-
       {globalError && (
         <Alert
           severity="error"

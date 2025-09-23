@@ -208,8 +208,6 @@ const AiEditorNoTreePage: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-
-
       {globalError && (
         <Alert
           severity="error"
@@ -246,7 +244,6 @@ const AiEditorNoTreePage: React.FC = () => {
             bgcolor: theme.palette.background.default,
           }}
         >
-       
           <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
           <Box
             ref={contentAreaRef}
@@ -258,7 +255,14 @@ const AiEditorNoTreePage: React.FC = () => {
               overflow: 'hidden',
             }}
           >
-            <Box sx={{ flexGrow: 1, minHeight: '150px', height: '100%', overflow: 'auto' }}>
+            <Box
+              sx={{
+                flexGrow: 1,
+                minHeight: '150px',
+                height: '100%',
+                overflow: 'auto',
+              }}
+            >
               <OpenedFileViewer />
             </Box>
 

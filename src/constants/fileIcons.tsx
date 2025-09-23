@@ -12,26 +12,51 @@ import TerminalIcon from '@mui/icons-material/Terminal'; // For shell scripts, .
 // For web-related files
 import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined';
 import FolderIcon from '@mui/icons-material/FolderOutlined';
+import { MaterialIconThemeTypescriptDef } from '@/components/icons/MaterialIconThemeTypescriptDef';
+import { FileIconsTsx } from '@/components/icons/FileIconsTsx';
+import { TeenyiconsJavascriptOutline } from '@/components/icons/TeenyiconsJavascriptOutline';
+import { MaterialIconThemeTsconfig } from '@/components/icons/MaterialIconThemeTsconfig';
+import { MaterialIconThemeJsconfig } from '@/components/icons/MaterialIconThemeJsconfig';
+import { MaterialIconThemeHtml } from '@/components/icons/MaterialIconThemeHtml';
+import { MaterialSymbolsMarkdownRounded } from '@/components/icons/MaterialSymbolsMarkdownRounded';
+import { MaterialIconThemeJson } from '@/components/icons/MaterialIconThemeJson';
+import { MdiCodeJson } from '@/components/icons/MdiCodeJson';
+import { MaterialIconThemeCss } from '@/components/icons/MaterialIconThemeCss';
+import { MaterialIconThemeSvg } from '@/components/icons/MaterialIconThemeSvg';
+import { MaterialSymbolsLightFilePng } from '@/components/icons/MaterialSymbolsLightFilePng';
+import { MaterialSymbolsGifBox } from '@/components/icons/MaterialSymbolsGifBox';
+import { MaterialIconThemeTypescript } from '@/components/icons/MaterialIconThemeTypescript';
+import { VscodeIconsFileTypeTsconfig } from '@/components/icons/VscodeIconsFileTypeTsconfig';
+import { CatppuccinYarnLock } from '@/components/icons/CatppuccinYarnLock';
+import { GgReadme } from '@/components/icons/GgReadme';
+import { ClarityLicenseSolid } from '@/components/icons/ClarityLicenseSolid';
+import { EosIconsEnv } from '@/components/icons/EosIconsEnv';
+import { SimpleIconsGitignoredotio } from '@/components/icons/SimpleIconsGitignoredotio';
+import { FxemojiFolder } from '@/components/icons/FxemojiFolder';
+import { FxemojiOpenfolder } from '@/components/icons/FxemojiOpenfolder';
 
 type IconComponent =
   | React.ElementType
-  | React.FC<{ fontSize: 'small' | 'inherit'; sx?: object }>;
+  | React.FC<{
+      fontSize: 'small' | 'medium' | 'large' | 'inherit';
+      sx?: object;
+    }>;
 
 // Map of file extensions (or full filenames for dotfiles) to Material UI Icons or custom JSX.
 // Keys should be lowercase.
 const fileExtensionIcons: { [key: string]: IconComponent } = {
   // Code / Programming Languages
-  '.js': JavascriptIcon,
+  '.js': TeenyiconsJavascriptOutline,
   '.jsx': JavascriptIcon,
-  '.ts': JavascriptIcon,
-  '.tsx': JavascriptIcon,
+  '.ts': MaterialIconThemeTypescript,
+  '.tsx': MaterialIconThemeTypescriptDef,
   '.mjs': JavascriptIcon,
   '.cjs': JavascriptIcon,
-  '.json': JsonIcon,
-  '.css': CssIcon,
-  '.scss': CssIcon,
+  '.json': MdiCodeJson,
+  '.css': MaterialIconThemeCss,
+  '.scss': MaterialIconThemeCss,
   '.less': CssIcon,
-  '.html': HtmlIcon,
+  '.html': MaterialIconThemeHtml,
   '.htm': HtmlIcon,
   '.xml': CodeIcon,
   '.py': CodeIcon, // No specific Python icon in MUI by default, use generic code
@@ -46,32 +71,32 @@ const fileExtensionIcons: { [key: string]: IconComponent } = {
   '.bash': TerminalIcon,
   '.zsh': TerminalIcon,
   '.ps1': TerminalIcon,
-  '.md': MarkdownIcon,
-  '.markdown': MarkdownIcon,
+  '.md': MaterialSymbolsMarkdownRounded,
+  '.markdown': MaterialSymbolsMarkdownRounded,
   '.yml': DescriptionIcon, // YAML
   '.yaml': DescriptionIcon, // YAML
   '.toml': DescriptionIcon,
-  '.env': TerminalIcon,
+  '.env': EosIconsEnv,
 
   // Web / Config / Build
-  '.lock': DescriptionIcon, // package-lock.json, yarn.lock, pnpm-lock.yaml
-  'package.json': JsonIcon, // Specific file name
-  'tsconfig.json': JsonIcon,
-  'vite.config.ts': JavascriptIcon,
-  'eslint.config.ts': JavascriptIcon,
+  '.lock': CatppuccinYarnLock, // package-lock.json, yarn.lock, pnpm-lock.yaml
+  'package.json': MaterialIconThemeJson, // Specific file name
+  'tsconfig.json': MaterialIconThemeTsconfig,
+  'vite.config.ts': VscodeIconsFileTypeTsconfig,
+  'eslint.config.ts': MaterialIconThemeJsconfig,
   'tailwind.config.ts': JavascriptIcon,
   'next.config.js': JavascriptIcon,
-  'webpack.config.js': JavascriptIcon,
-  '.gitignore': TerminalIcon,
-  'readme.md': MarkdownIcon,
-  license: DescriptionIcon,
+  'ecosystem.config.cjs': MaterialIconThemeJsconfig,
+  '.gitignore': SimpleIconsGitignoredotio,
+  'readme.md': GgReadme,
+  license: ClarityLicenseSolid,
 
   // Media
-  '.png': ImageIcon,
+  '.png': MaterialSymbolsLightFilePng,
   '.jpg': ImageIcon,
   '.jpeg': ImageIcon,
-  '.gif': ImageIcon,
-  '.svg': ImageIcon,
+  '.gif': MaterialSymbolsGifBox,
+  '.svg': MaterialIconThemeSvg,
   '.webp': ImageIcon,
   '.ico': ImageIcon,
   '.pdf': PictureAsPdfIcon,
@@ -89,12 +114,13 @@ export const getFileTypeIcon = (
   fileName: string,
   fileType: 'file' | 'folder',
   isExpanded: boolean = false,
+  size?: 'small' | 'medium' | 'large' | 'inherit' = 'inherit',
 ): React.ReactElement => {
   if (fileType === 'folder') {
     return isExpanded ? (
-      <FolderOpenIcon fontSize="small" />
+      <FxemojiOpenfolder fontSize={size} />
     ) : (
-      <FolderIcon fontSize="small" />
+      <FxemojiFolder fontSize={size} />
     );
   }
 
@@ -102,7 +128,7 @@ export const getFileTypeIcon = (
   const exactMatchIcon = fileExtensionIcons[fileName.toLowerCase()];
   if (exactMatchIcon) {
     const Icon = exactMatchIcon as React.ElementType;
-    return <Icon fontSize="small" />;
+    return <Icon fontSize={size} />;
   }
 
   // Check for file extensions
@@ -112,9 +138,9 @@ export const getFileTypeIcon = (
   const extMatchIcon = fileExtensionIcons[ext];
   if (extMatchIcon) {
     const Icon = extMatchIcon as React.ElementType;
-    return <Icon fontSize="small" />;
+    return <Icon fontSize={size} />;
   }
 
   // Default to a generic file icon if no specific match
-  return <DescriptionIcon fontSize="small" />;
+  return <DescriptionIcon fontSize={size} />;
 };

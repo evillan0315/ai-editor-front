@@ -185,7 +185,10 @@ export const updateProposedChangeContent = (
   addLog('Proposed Change Card', `Content updated for: ${filePath}`, 'debug');
 };
 
-export const updateProposedChangePath = (oldPath: string, newPath: string) => {
+export const updateProposedChangePath = (
+  oldPath: string,
+  newPath: string,
+) => {
   const state = llmStore.get();
   if (!state.lastLlmResponse) {
     setError('Cannot update path: no LLM response.');
@@ -253,32 +256,11 @@ export const performPostApplyActions = async (
   llmGeneratePayload: LlmGeneratePayload,
   llmResponse: ModelResponse,
 ) => {
-  setIsBuilding(true);
+
   let buildPassed = false;
-  try {
-    addLog('Build Process', 'Running `pnpm run build`...', 'info');
-    const buildResult = await runTerminalCommand('pnpm run build', projectRoot);
 
-    if (buildResult.exitCode !== 0) {
-      addLog(
-        'Build Process',
-        `Build failed stdout error: ${buildResult.stdout}.`,
-        'error',
-      );
-      setError(`Build failed with exit code ${buildResult.stdout}.`);
-    } else {
-      addLog('Build Process', 'Project built successfully.', 'success');
-      buildPassed = true;
-    }
-  } catch (err) {
-    const errorMsg = `Failed to run build script: ${err instanceof Error ? err.message : String(err)}`;
-    addLog('Build Process', errorMsg, 'error');
-    setError(errorMsg);
-  } finally {
-    setIsBuilding(false);
-  }
 
-  if (buildPassed && llmResponse?.gitInstructions?.length) {
+  if (llmResponse?.gitInstructions?.length) {
     addLog(
       'Git Automation',
       'Executing AI-suggested git instructions...',

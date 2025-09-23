@@ -1,6 +1,6 @@
 import React from 'react';
-import RecordingComponent from '@/components/recording/RecordingComponent';
+import { Recording } from '@/components/recording/Recording';
 
-const RecordingPage: React.FC = () => <RecordingComponent />;
+const RecordingPage: React.FC = () => <Recording />;
 
 export default RecordingPage;

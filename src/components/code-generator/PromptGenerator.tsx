@@ -19,13 +19,7 @@ import {
   useTheme,
 } from '@mui/material';
 import {
-  DriveFolderUpload as DriveFolderUploadIcon,
-  FolderOpen as FolderOpenIcon,
-  AddRoad as AddRoadIcon,
-  CloudUpload as CloudUploadIcon,
   Send as SendIcon,
-  FormatClear as ClearIcon,
-  Settings as SettingsIcon,
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import { setError } from '@/stores/errorStore';
@@ -49,7 +43,7 @@ import {
   projectRootDirectoryStore,
   setCurrentProjectPath,
 } from '@/stores/fileTreeStore';
-import { fileStore, setOpenedFileContent } from '@/stores/fileStore';
+import { setOpenedFileContent } from '@/stores/fileStore';
 import { addLog } from '@/stores/logStore';
 import {
   INSTRUCTION,
@@ -66,14 +60,19 @@ import { LlmOutputFormat, LlmGeneratePayload, ModelResponse } from '@/types';
 import { CodeGeneratorData } from './CodeGeneratorMain';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import ImportData from './ImportData';
+import BottomToolbar from './BottomToolbar';
 
 interface PromptGeneratorProps {}
 
 const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
-  const ref = useRef<HTMLTextAreaElement | null>(null);
   const theme = useTheme();
 
   const currentProjectPath = useStore(projectRootDirectoryStore);
+  const { loading, isBuilding, lastLlmResponse } = useStore(llmStore);
+  const { isLoggedIn } = useStore(authStore);
+  const { flatFileList } = useStore(fileTreeStore);
+
+  const { uploadedFileData, uploadedFileMimeType } = useStore(llmStore);
   const {
     instruction,
     aiInstruction,
@@ -81,14 +80,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
     requestType,
     llmOutputFormat,
     scanPathsInput,
-    loading,
-    isBuilding,
-    lastLlmResponse,
   } = useStore(llmStore);
-  const { isLoggedIn } = useStore(authStore);
-  const { flatFileList } = useStore(fileTreeStore);
-
-  const { uploadedFileData, uploadedFileMimeType } = useStore(llmStore);
   // ---- local state ----
   const [projectInput, setProjectInput] = useState(
     currentProjectPath || import.meta.env.VITE_BASE_DIR || '',
@@ -334,10 +326,10 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
             InputProps={{ disableUnderline: true }}
             className="mb-2 border-0"
             sx={{
-		    '& .css-1asjr57-MuiFormControl-root-MuiTextField-root': {
-		    	backgroundColor: `${theme.palette.background.default}  !important`
-		    }
-            
+              p: 0,
+              '& .css-1asjr57-MuiFormControl-root-MuiTextField-root': {
+                backgroundColor: `${theme.palette.background.default}  !important`,
+              },
             }}
           />
         </Box>
@@ -362,63 +354,24 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
           <Typography variant="body2">Generating...</Typography>
         </Box>
       )}
-      {/* Bottom Toolbar */}
-      <Box className="flex flex-wrap gap-2 ">
-        <Tooltip title="Load the selected project">
-          <IconButton
-            color="primary"
-            disabled={commonDisabled}
-            onClick={handleLoadProject}
-          >
-            <DriveFolderUploadIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Pick project root directory">
-          <IconButton
-            color="primary"
-            onClick={() => setIsProjectRootPickerDialogOpen(true)}
-          >
-            <FolderOpenIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Manage scan paths for the AI search">
-          <IconButton
-            color="primary"
-            onClick={() => setIsScanPathsDialogOpen(true)}
-          >
-            <AddRoadIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Import prompt data from JSON file">
-          <IconButton
-            color="primary"
-            onClick={() => setIsImportDialogOpen(true)}
-          >
-            <CloudUploadIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Prompt generator settings">
-          <IconButton color="primary" onClick={() => setIsSettingsOpen(true)}>
-            <SettingsIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Clear editor and AI response">
-          <IconButton
-            color="error"
-            onClick={handleClear}
-            disabled={commonDisabled}
-          >
-            <ClearIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
-
-      {/* Dialogs */}
+      <BottomToolbar
+        scanPathAutocompleteOptions={scanPathAutocompleteOptions}
+        currentScanPathsArray={currentScanPathsArray}
+        projectInput={projectInput}
+        setProjectInput={setProjectInput}
+        handleLoadProject={handleLoadProject}
+        isImportDialogOpen={isImportDialogOpen}
+        setIsImportDialogOpen={setIsImportDialogOpen}
+        isSettingsOpen={isSettingsOpen}
+        setIsSettingsOpen={setIsSettingsOpen}
+        isProjectRootPickerDialogOpen={isProjectRootPickerDialogOpen}
+        setIsProjectRootPickerDialogOpen={setIsProjectRootPickerDialogOpen}
+        isScanPathsDialogOpen={isScanPathsDialogOpen}
+        setIsScanPathsDialogOpen={setIsScanPathsDialogOpen}
+        updateScanPaths={updateScanPaths}
+        handleClear={handleClear}
+      />
+      {/* Dialogs 
       <ScanPathsDialog
         open={isScanPathsDialogOpen}
         onClose={() => setIsScanPathsDialogOpen(false)}
@@ -449,14 +402,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         open={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
       />
-      {/*       <ImportJsonDialog
-        open={isImportDialogOpen}
-        onClose={() => setIsImportDialogOpen(false)}
-        onImport={(data) => {
-          setImportedData(data);
-          setIsImportDialogOpen(false);
-        }}
-      /> */}
+
       <CustomDrawer
         open={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
@@ -469,7 +415,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
           onDataLoaded={setOpenedFileContent}
           onClose={() => setIsImportDialogOpen(false)}
         />
-      </CustomDrawer>
+      </CustomDrawer>*/}
     </Box>
   );
 };

@@ -22,6 +22,10 @@ import CloseMultipleIcon from '@mui/icons-material/Close';
 import SubtitlesOutlinedIcon from '@mui/icons-material/SubtitlesOutlined';
 import TerminalOutlinedIcon from '@mui/icons-material/TerminalOutlined';
 import CancelPresentationIcon from '@mui/icons-material/CancelPresentation';
+import { CarbonRowDelete } from '@/components/icons/CarbonRowDelete';
+import { CarbonTerminal } from '@/components/icons/CarbonTerminal';
+import { CarbonTerminal3270 } from '@/components/icons/CarbonTerminal3270';
+
 import { getFileTypeIcon } from '@/constants/fileIcons';
 
 import { isTerminalVisible, setShowTerminal } from '@/stores/terminalStore';
@@ -72,7 +76,6 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
 
   return (
     <Paper
-
       sx={{
         color: theme.palette.text.primary,
         borderBottom: `1px solid ${theme.palette.divider}`,
@@ -101,7 +104,6 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
             gap: 0,
             mr: 'auto',
             pl: 1,
-           
           }}
         >
           <Tooltip title="Close All Tabs">
@@ -115,7 +117,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
                 },
               }}
             >
-              <CancelPresentationIcon />
+              <CarbonRowDelete fontSize={`1.1em`} />
             </IconButton>
           </Tooltip>
         </Box>
@@ -276,9 +278,9 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
               }}
             >
               {showTerminal ? (
-                <TerminalOutlinedIcon />
+                <CarbonTerminal3270 fontSize={`1.2em`} />
               ) : (
-                <SubtitlesOutlinedIcon />
+                <CarbonTerminal fontSize={`1.2em`} />
               )}
             </IconButton>
           </Tooltip>

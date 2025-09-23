@@ -167,7 +167,7 @@ const LoginPage: React.FC = () => {
         >
           <TextField
             margin="normal"
-	    color='primary'
+            color="primary"
             required
             fullWidth
             id="email"

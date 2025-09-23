@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box,
+import {
+  Box,
   Typography,
   Container,
   Paper,
   useTheme,
   Alert,
-  CircularProgress } from '@mui/material';
+  CircularProgress,
+} from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { APP_NAME } from '@/constants';
 import BrowserAppToolbar from '@/components/preview/BrowserAppToolbar';
@@ -15,15 +17,21 @@ interface PreviewAppPageProps {
   proxyServer?: string;
 }
 
-const PreviewAppPage: React.FC<PreviewAppPageProps> = ({proxyServer = `${import.meta.env.VITE_API_BASE_URL}`}) => {
+const PreviewAppPage: React.FC<PreviewAppPageProps> = ({
+  proxyServer = `${import.meta.env.VITE_API_BASE_URL}`,
+}) => {
   const theme = useTheme();
   const [loadingIframe, setLoadingIframe] = useState(true);
   const [iframeError, setIframeError] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [previewAppUrl, setPreviewAppUrl] = useState<string>(import.meta.env.VITE_PREVIEW_APP_URL || ``);
-  const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [previewAppUrl, setPreviewAppUrl] = useState<string>(
+    import.meta.env.VITE_PREVIEW_APP_URL || ``,
+  );
+  const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>(
+    'desktop',
+  );
   const [isDevelopment, setIsDevelopment] = useState(true);
-  
+
   useEffect(() => {
     if (previewAppUrl) {
       setLoadingIframe(true);
@@ -51,7 +59,8 @@ const PreviewAppPage: React.FC<PreviewAppPageProps> = ({proxyServer = `${import.
     } catch (e: any) {
       console.error('Error accessing iframe content (likely CORS issue):', e);
       setIframeError(
-        `Failed to access iframe content: ${e.message || 'Possible Cross-Origin Restriction (CORS).'}`,      );
+        `Failed to access iframe content: ${e.message || 'Possible Cross-Origin Restriction (CORS).'}`,
+      );
     }
   };
 
@@ -97,7 +106,7 @@ const PreviewAppPage: React.FC<PreviewAppPageProps> = ({proxyServer = `${import.
           }}
         />
       </Box>
- 
+
       <Paper
         id="app-preview-wrapper"
         elevation={1}
@@ -110,12 +119,10 @@ const PreviewAppPage: React.FC<PreviewAppPageProps> = ({proxyServer = `${import.
           alignItems: 'center',
           gap: 2,
           flexGrow: 1,
-          minHeight: 'calc(100vh - 220px)', 
-          borderRadius:'0 0 6px 6px'
+          minHeight: 'calc(100vh - 220px)',
+          borderRadius: '0 0 6px 6px',
         }}
       >
-
-
         {!previewAppUrl ? (
           <Alert severity="error" sx={{ width: '100%', maxWidth: 600 }}>
             <strong>Configuration Error:</strong>{' '}
@@ -179,7 +186,11 @@ const PreviewAppPage: React.FC<PreviewAppPageProps> = ({proxyServer = `${import.
             )}
             <iframe
               ref={iframeRef}
-              src={proxyServer ? `${import.meta.env.VITE_API_BASE_URL}/proxy?url=${previewAppUrl}` : import.meta.env.VITE_PREVIEW_APP_URL}
+              src={
+                proxyServer
+                  ? `${import.meta.env.VITE_API_BASE_URL}/proxy?url=${previewAppUrl}`
+                  : import.meta.env.VITE_PREVIEW_APP_URL
+              }
               title={`${APP_NAME} Preview`}
               onLoad={handleIframeLoad}
               onError={handleIframeError}

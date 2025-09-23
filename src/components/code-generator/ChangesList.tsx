@@ -14,7 +14,7 @@ import OutputLogger from '@/components/OutputLogger';
 import { addLog } from '@/stores/logStore';
 import {
   setError, // Still used for immediate, transient UI error
-} from '@/stores/aiEditorStore';
+} from '@/stores/errorStore';
 import {
   llmStore,
   deselectAllChanges,
@@ -164,7 +164,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
             'success',
           );
 
-          // Perform post-apply actions like build + git
+          // Perform post-apply actions like  git
           await performPostApplyActions(
             currentProjectPath,
             changesToApply,

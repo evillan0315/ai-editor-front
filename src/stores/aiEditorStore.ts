@@ -1,42 +1,45 @@
+import { persistentAtom } from '@/utils/persistentAtom';
+import { useStore } from '@nanostores/react';
 import { atom } from 'nanostores';
 
-export interface AiEditorState {
-  globalSnackbarMessage: string | null;
-  globalSnackbarSeverity: 'success' | 'info' | 'warning' | 'error' | null;
-  showGlobalSnackbar: boolean;
-  error: string | null; // Make error nullable
+export const $globalSnackbar = atom<{
+  message: string;
+  severity: 'success' | 'info' | 'warning' | 'error';
+} | null>(null);
+
+interface GlobalSnackbarProps {
+  message: string;
+  severity: 'success' | 'info' | 'warning' | 'error';
 }
 
-export const aiEditorStore = atom<AiEditorState>({
-  globalSnackbarMessage: null,
-  globalSnackbarSeverity: null,
-  showGlobalSnackbar: false,
-  error: null,
-});
-
-export const showGlobalSnackbar = (
+export function showGlobalSnackbar(
   message: string,
-  severity: AiEditorState['globalSnackbarSeverity'] = 'info',
-) => {
-  aiEditorStore.set({
-    ...aiEditorStore.get(),
-    globalSnackbarMessage: message,
-    globalSnackbarSeverity: severity,
-    showGlobalSnackbar: true,
-  });
-
-  // Reset the snackbar after a delay
+  severity: GlobalSnackbarProps['severity'],
+) {
+  $globalSnackbar.set({ message, severity });
   setTimeout(() => {
-    aiEditorStore.set({
-      ...aiEditorStore.get(),
-      showGlobalSnackbar: false,
-    });
+    $globalSnackbar.set(null);
   }, 3000);
+}
+
+export const autoApplyChanges = persistentAtom<boolean>(
+  'autoApplyChanges',
+  false,
+);
+export const setAutoApplyChanges = (value: boolean) => {
+  autoApplyChanges.set(value);
 };
 
-export const setError = (errorMessage: string | null) => {
-  aiEditorStore.set({
-    ...aiEditorStore.get(),
-    error: errorMessage,
-  });
-};
+export const aiEditorStore = persistentAtom(
+  'ai-editor-settings',
+  {},
+  {
+    encode: JSON.stringify,
+    decode: JSON.parse,
+  },
+);
+
+export const useAiEditorSettings = () => useStore(aiEditorStore);
+
+export const setAiEditorSettings = (settings: any) =>
+  aiEditorStore.set(settings);

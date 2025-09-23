@@ -152,7 +152,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
 
   return (
     <Paper
-	variant='outlined'
+      variant="outlined"
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -162,7 +162,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
           mode === 'dark'
             ? theme.palette.background.paper
             : theme.palette.background.default,
-    
+
         overflow: 'hidden',
         position: 'relative', // Make Paper a positioning context
       }}

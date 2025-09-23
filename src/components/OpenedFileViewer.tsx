@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import { themeStore } from '@/stores/themeStore';
-import { useTheme} from '@mui/material';
+import { useTheme } from '@mui/material';
 import {
   fileStore,
   setOpenedFileContent,
@@ -13,13 +13,7 @@ import {
 } from '@/stores/fileStore';
 import { readFileContent } from '@/api/file';
 import CodeMirror from '@uiw/react-codemirror';
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  Alert,
-  Paper,
-} from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Paper } from '@mui/material';
 
 import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
 import { keymap, EditorView } from '@codemirror/view';
@@ -109,7 +103,6 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
 
   return (
     <Paper
-
       sx={{
         flexGrow: 1,
         display: 'flex',
@@ -128,7 +121,10 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
       )}
 
       {isFetchingFileContent && !openedFileContent ? (
-        <Box className="flex justify-center items-center flex-grow" sx={{ bgcolor: muiTheme.palette.background.paper, }}>
+        <Box
+          className="flex justify-center items-center flex-grow"
+          sx={{ bgcolor: muiTheme.palette.background.paper }}
+        >
           <CircularProgress size={24} />
           <Typography
             variant="body2"
@@ -138,7 +134,13 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
           </Typography>
         </Box>
       ) : (
-        <Box sx={{ flexGrow: 1, overflowY: 'auto', bgcolor: muiTheme.palette.background.default, }}>
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflowY: 'auto',
+            bgcolor: muiTheme.palette.background.default,
+          }}
+        >
           {isMarkdownFile ? (
             // ✅ Use MarkdownEditor for .md files
             <MarkdownEditor

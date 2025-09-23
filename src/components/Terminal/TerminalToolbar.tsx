@@ -11,7 +11,8 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import Brightness1Icon from '@mui/icons-material/Brightness1';
-import TerminalIcon from '@mui/icons-material/Terminal';
+
+import { CarbonTerminal } from '@/components/icons/CarbonTerminal';
 import {
   isTerminalVisible,
   setShowTerminal,
@@ -51,7 +52,6 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
 
   return (
     <Paper
-
       sx={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -69,7 +69,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <Tooltip title="Close Terminal">
           <IconButton onClick={handleCloseTerminal} size="small">
-            <TerminalIcon />
+            <CarbonTerminal fontSize={`1.2em`} />
           </IconButton>
         </Tooltip>
         <Typography variant="subtitle1" sx={{ marginRight: '16px' }}>

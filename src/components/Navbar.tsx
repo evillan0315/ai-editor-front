@@ -45,15 +45,18 @@ import ViewSidebarOff from '@mui/icons-material/ViewSidebar';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 
-import { recordingApi } from '@/api/recording';
-import Videocam from '@mui/icons-material/Videocam';
-import Stop from '@mui/icons-material/Stop';
-import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import {
-  currentRecordingIdStore,
-  isCurrentRecording,
-  setIsRecording,
-} from '@/stores/recordingStore';
+  CodiconLayoutPanelLeft,
+  CodiconLayoutSidebarLeft,
+  CodiconLayoutSidebarLeftOff,
+} from '@/components/icons/CodiconLayoutPanelLeft';
+import {
+  CodiconLayoutPanelRight,
+  CodiconLayoutSidebarRight,
+} from '@/components/icons/CodiconLayoutPanelRight';
+import { CodiconLayoutSidebarRightOff } from '@/components/icons/CodiconLayoutPanelRight';
+
+import { isCurrentRecording } from '@/stores/recordingStore';
 
 interface ScriptExecutionState {
   status: ScriptStatus;
@@ -209,46 +212,6 @@ const Navbar: React.FC = () => {
     (state) => state.status === ScriptStatus.RUNNING,
   );
 
-  const handleStartRecording = async () => {
-    try {
-      const recordingData = await recordingApi.startRecording();
-      if (recordingData?.id) {
-        currentRecordingIdStore.set(recordingData.id);
-        setIsRecording(true);
-        notify('Recording started successfully!', 'success');
-      }
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      notify(`Error starting recording: ${error}`, 'error');
-    }
-  };
-
-  const handleStopRecording = async () => {
-    try {
-      if (currentRecordingIdStore.get()) {
-        await recordingApi.stopRecording(currentRecordingIdStore.get());
-        currentRecordingIdStore.set(null);
-        setIsRecording(false);
-        notify('Recording stopped successfully!', 'success');
-      } else {
-        notify('No recording in progress to stop.', 'warning');
-      }
-    } catch (error) {
-      console.error('Error stopping recording:', error);
-      notify(`Error stopping recording: ${error}`, 'error');
-    }
-  };
-
-  const handleCaptureScreenshot = async () => {
-    try {
-      await recordingApi.capture();
-      notify('Screenshot captured successfully!', 'success');
-    } catch (error) {
-      console.error('Error capturing screenshot:', error);
-      notify(`Error capturing screenshot: ${error}`, 'error');
-    }
-  };
-
   const navbarApps = appDefinitions.filter((app) =>
     ['ai-editor', 'llm-generation', 'media-player', 'recording'].includes(
       app.id,
@@ -291,9 +254,9 @@ const Navbar: React.FC = () => {
               sx={{ color: theme.palette.text.primary }}
             >
               {$isLeftSidebarVisible ? (
-                <VerticalSplitOutlinedIcon />
+                <CodiconLayoutSidebarLeft />
               ) : (
-                <WebAssetOutlinedIcon />
+                <CodiconLayoutSidebarLeftOff />
               )}
             </IconButton>
             <Typography
@@ -443,30 +406,6 @@ const Navbar: React.FC = () => {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <IconButton
-              color="inherit"
-              aria-label="start recording"
-              disabled={isRecording}
-              onClick={handleStartRecording}
-            >
-              <Videocam />
-            </IconButton>
-            <IconButton
-              color="inherit"
-              aria-label="stop recording"
-              disabled={!isRecording}
-              onClick={handleStopRecording}
-            >
-              <Stop />
-            </IconButton>
-            <IconButton
-              color="inherit"
-              aria-label="capture screenshot"
-              onClick={handleCaptureScreenshot}
-            >
-              <PhotoCamera />
-            </IconButton>
-
             <ThemeToggle />
 
             {authLoading ? (
@@ -516,9 +455,9 @@ const Navbar: React.FC = () => {
                   sx={{ color: theme.palette.text.primary }}
                 >
                   {$isRightSidebarVisible ? (
-                    <ViewSidebar />
+                    <CodiconLayoutSidebarRight />
                   ) : (
-                    <WebAssetOutlinedIcon />
+                    <CodiconLayoutSidebarRightOff />
                   )}
                 </IconButton>
               </>

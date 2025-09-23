@@ -153,7 +153,7 @@ export const getAppTheme = (mode: PaletteMode) => {
         styleOverrides: {
           paper: ({ theme }) => ({
             backgroundColor: theme.palette.background.default,
-            borderRadius: 6
+            borderRadius: 6,
           }),
         },
       },
@@ -162,4 +162,3 @@ export const getAppTheme = (mode: PaletteMode) => {
 
   return createTheme(themeOptions);
 };
-
