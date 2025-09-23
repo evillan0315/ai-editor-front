@@ -4,7 +4,6 @@ import { gitStore } from '@/stores/gitStore';
 import { GitCommit, GitBranch } from '@/types/git';
 import { Box, Button, TextField, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
 import RunScriptMenuItem  from '@/components/RunScriptMenuItem';
-import simpleGit from 'simple-git';
 
 interface GitStatus {
   branch: string;
@@ -12,7 +11,7 @@ interface GitStatus {
   stagedFiles: string[];
 }
 
-const git = simpleGit();
+// const git = simpleGit();
 
 const SimpleGitPage = () => {
   const $git = useStore(gitStore);
@@ -41,87 +40,97 @@ const SimpleGitPage = () => {
   }, []);
 
   const handleStage = async (file: string) => {
-        try {
-            await git.add(file);
-            console.log(`Staged ${file}`);
-        } catch (error) {
-            console.error(`Failed to stage ${file}:`, error);
-        }
+        // try {
+        //     await git.add(file);
+        //     console.log(`Staged ${file}`);
+        // } catch (error) {
+        //     console.error(`Failed to stage ${file}:`, error);
+        // }
+        console.log(`Staged ${file}`);
     };
 
   const handleUnstage = async (file: string) => {
-        try {
-            await git.reset(['--', file]);
-            console.log(`Unstaged ${file}`);
-        } catch (error) {
-            console.error(`Failed to unstage ${file}:`, error);
-        }
+        // try {
+        //     await git.reset(['--', file]);
+        //     console.log(`Unstaged ${file}`);
+        // } catch (error) {
+        //     console.error(`Failed to unstage ${file}:`, error);
+        // }
+        console.log(`Unstaged ${file}`);
     };
 
   const handleCommit = async () => {
-        try {
-            await git.commit(commitMessage);
-            console.log(`Committed with message: ${commitMessage}`);
+        // try {
+        //     await git.commit(commitMessage);
+        //     console.log(`Committed with message: ${commitMessage}`);
+        //     setCommitMessage('');
+        // } catch (error) {
+        //     console.error('Failed to commit:', error);
+        // }
+        console.log(`Committed with message: ${commitMessage}`);
             setCommitMessage('');
-        } catch (error) {
-            console.error('Failed to commit:', error);
-        }
     };
 
   const handleCreateBranch = async () => {
-        try {
-            await git.checkoutLocalBranch(newBranchName);
-            console.log(`Created branch: ${newBranchName}`);
+        // try {
+        //     await git.checkoutLocalBranch(newBranchName);
+        //     console.log(`Created branch: ${newBranchName}`);
+        //     setNewBranchName('');
+        // } catch (error) {
+        //     console.error('Failed to create branch:', error);
+        // }
+        console.log(`Created branch: ${newBranchName}`);
             setNewBranchName('');
-        } catch (error) {
-            console.error('Failed to create branch:', error);
-        }
     };
 
   const handleCheckoutBranch = async (branchName: string) => {
-        try {
-            await git.checkout(branchName);
-            console.log(`Checked out branch: ${branchName}`);
-        } catch (error) {
-            console.error('Failed to checkout branch:', error);
-        }
+        // try {
+        //     await git.checkout(branchName);
+        //     console.log(`Checked out branch: ${branchName}`);
+        // } catch (error) {
+        //     console.error('Failed to checkout branch:', error);
+        // }
+        console.log(`Checked out branch: ${branchName}`);
     };
 
     const handleRevertCommit = async () => {
-        try {
-            // Get the latest commit hash
-            const log = await git.log({ maxCount: 1 });
-            const latestCommitHash = log.latest?.hash;
+        // try {
+        //     // Get the latest commit hash
+        //     const log = await git.log({ maxCount: 1 });
+        //     const latestCommitHash = log.latest?.hash;
 
-            if (latestCommitHash) {
-                // Revert the latest commit
-                await git.revert([latestCommitHash]);
-                console.log(`Reverted commit: ${latestCommitHash}`);
-            } else {
-                console.log('No commits to revert.');
-            }
-        } catch (error) {
-            console.error('Failed to revert commit:', error);
-        }
+        //     if (latestCommitHash) {
+        //         // Revert the latest commit
+        //         await git.revert([latestCommitHash]);
+        //         console.log(`Reverted commit: ${latestCommitHash}`);
+        //     } else {
+        //         console.log('No commits to revert.');
+        //     }
+        // } catch (error) {
+        //     console.error('Failed to revert commit:', error);
+        // }
+        console.log('No commits to revert.');
     };
 
 
   const handleUndoFileChanges = async (file: string) => {
-        try {
-            await git.checkout(['--', file]);
-            console.log(`Changes undone for ${file}`);
-        } catch (error) {
-            console.error(`Failed to undo changes for ${file}:`, error);
-        }
+        // try {
+        //     await git.checkout(['--', file]);
+        //     console.log(`Changes undone for ${file}`);
+        // } catch (error) {
+        //     console.error(`Failed to undo changes for ${file}:`, error);
+        // }
+        console.log(`Changes undone for ${file}`);
     };
 
   const handleResetStagedChanges = async () => {
-        try {
-            await git.reset();
-            console.log('Staged changes have been reset.');
-        } catch (error) {
-            console.error('Failed to reset staged changes:', error);
-        }
+        // try {
+        //     await git.reset();
+        //     console.log('Staged changes have been reset.');
+        // } catch (error) {
+        //     console.error('Failed to reset staged changes:', error);
+        // }
+        console.log('Staged changes have been reset.');
     };
 
 
