@@ -4,12 +4,15 @@ import { gitStore } from '@/stores/gitStore';
 import { GitCommit, GitBranch } from '@/types/git';
 import { Box, Button, TextField, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
 import RunScriptMenuItem  from '@/components/RunScriptMenuItem';
+import simpleGit from 'simple-git';
 
 interface GitStatus {
   branch: string;
   modifiedFiles: string[];
   stagedFiles: string[];
 }
+
+const git = simpleGit();
 
 const SimpleGitPage = () => {
   const $git = useStore(gitStore);
@@ -21,6 +24,7 @@ const SimpleGitPage = () => {
   const [commitMessage, setCommitMessage] = useState('');
   const [branches, setBranches] = useState<GitBranch[]>([]);
   const [newBranchName, setNewBranchName] = useState('');
+  const [selectedFileToUndo, setSelectedFileToUndo] = useState<string | null>(null);
 
   useEffect(() => {
     // Mock data for demonstration
@@ -36,30 +40,91 @@ const SimpleGitPage = () => {
 
   }, []);
 
-  const handleStage = (file: string) => {
-    // Implement staging logic here
-    console.log(`Staging ${file}`);
-  };
+  const handleStage = async (file: string) => {
+        try {
+            await git.add(file);
+            console.log(`Staged ${file}`);
+        } catch (error) {
+            console.error(`Failed to stage ${file}:`, error);
+        }
+    };
 
-  const handleUnstage = (file: string) => {
-    // Implement unstaging logic here
-    console.log(`Unstaging ${file}`);
-  };
+  const handleUnstage = async (file: string) => {
+        try {
+            await git.reset(['--', file]);
+            console.log(`Unstaged ${file}`);
+        } catch (error) {
+            console.error(`Failed to unstage ${file}:`, error);
+        }
+    };
 
-  const handleCommit = () => {
-    // Implement commit logic here
-    console.log(`Committing with message: ${commitMessage}`);
-  };
+  const handleCommit = async () => {
+        try {
+            await git.commit(commitMessage);
+            console.log(`Committed with message: ${commitMessage}`);
+            setCommitMessage('');
+        } catch (error) {
+            console.error('Failed to commit:', error);
+        }
+    };
 
-  const handleCreateBranch = () => {
-    // Implement create branch logic here
-    console.log(`Creating branch: ${newBranchName}`);
-  };
+  const handleCreateBranch = async () => {
+        try {
+            await git.checkoutLocalBranch(newBranchName);
+            console.log(`Created branch: ${newBranchName}`);
+            setNewBranchName('');
+        } catch (error) {
+            console.error('Failed to create branch:', error);
+        }
+    };
 
-  const handleCheckoutBranch = (branchName: string) => {
-    // Implement checkout branch logic here
-    console.log(`Checking out branch: ${branchName}`);
-  };
+  const handleCheckoutBranch = async (branchName: string) => {
+        try {
+            await git.checkout(branchName);
+            console.log(`Checked out branch: ${branchName}`);
+        } catch (error) {
+            console.error('Failed to checkout branch:', error);
+        }
+    };
+
+    const handleRevertCommit = async () => {
+        try {
+            // Get the latest commit hash
+            const log = await git.log({ maxCount: 1 });
+            const latestCommitHash = log.latest?.hash;
+
+            if (latestCommitHash) {
+                // Revert the latest commit
+                await git.revert([latestCommitHash]);
+                console.log(`Reverted commit: ${latestCommitHash}`);
+            } else {
+                console.log('No commits to revert.');
+            }
+        } catch (error) {
+            console.error('Failed to revert commit:', error);
+        }
+    };
+
+
+  const handleUndoFileChanges = async (file: string) => {
+        try {
+            await git.checkout(['--', file]);
+            console.log(`Changes undone for ${file}`);
+        } catch (error) {
+            console.error(`Failed to undo changes for ${file}:`, error);
+        }
+    };
+
+  const handleResetStagedChanges = async () => {
+        try {
+            await git.reset();
+            console.log('Staged changes have been reset.');
+        } catch (error) {
+            console.error('Failed to reset staged changes:', error);
+        }
+    };
+
+
 
   return (
     <Box className="p-4">
@@ -76,6 +141,7 @@ const SimpleGitPage = () => {
               <ListItem key={file}>
                 <ListItemText primary={file} />
                 <Button onClick={() => handleStage(file)}>Stage</Button>
+                <Button onClick={() => handleUndoFileChanges(file)}>Undo</Button>
               </ListItem>
             ))}
           </List>
@@ -94,6 +160,13 @@ const SimpleGitPage = () => {
         </Box>
       </Box>
 
+            <Box className="mb-4">
+                <Typography variant="h6">Reset Staged Changes</Typography>
+                <Button variant="contained" color="secondary" onClick={handleResetStagedChanges}>
+                    Reset Staged
+                </Button>
+            </Box>
+
       <Box className="mb-4">
         <Typography variant="h6">Commit</Typography>
         <TextField
@@ -108,6 +181,13 @@ const SimpleGitPage = () => {
           Commit
         </Button>
       </Box>
+
+            <Box className="mb-4">
+                <Typography variant="h6">Revert Commit</Typography>
+                <Button variant="contained" color="secondary" onClick={handleRevertCommit}>
+                    Revert Last Commit
+                </Button>
+            </Box>
 
       <Box className="mb-4">
         <Typography variant="h6">Branches</Typography>
