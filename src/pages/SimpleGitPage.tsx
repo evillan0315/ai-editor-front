@@ -3,7 +3,7 @@ import { useStore } from '@nanostores/react';
 import { gitStore } from '@/stores/gitStore';
 import { GitCommit, GitBranch } from '@/types/git';
 import { Box, Button, TextField, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
-import { RunScriptMenuItem } from '@/components/RunScriptMenuItem';
+import RunScriptMenuItem  from '@/components/RunScriptMenuItem';
 
 interface GitStatus {
   branch: string;
