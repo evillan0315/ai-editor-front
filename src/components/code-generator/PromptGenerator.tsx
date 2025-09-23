@@ -21,6 +21,7 @@ import {
 import {
   Send as SendIcon,
   ExpandMore as ExpandMoreIcon,
+  BugReport as BugReportIcon,
 } from '@mui/icons-material';
 import { setError } from '@/stores/errorStore';
 import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
@@ -56,7 +57,11 @@ import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
 import PromptGeneratorSettingsDialog from '@/components/dialogs/PromptGeneratorSettingsDialog';
 import { ImportJsonDialog } from './ImportJsonDialog';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
-import { LlmOutputFormat, LlmGeneratePayload, ModelResponse } from '@/types';
+import {
+  LlmOutputFormat,
+  LlmGeneratePayload,
+  ModelResponse,
+} from '@/types';
 import { CodeGeneratorData } from './CodeGeneratorMain';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import ImportData from './ImportData';
@@ -68,33 +73,26 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const theme = useTheme();
 
   const currentProjectPath = useStore(projectRootDirectoryStore);
-  const { loading, isBuilding, lastLlmResponse } = useStore(llmStore);
+  const { loading, isBuilding, lastLlmResponse, error } = useStore(llmStore);
   const { isLoggedIn } = useStore(authStore);
   const { flatFileList } = useStore(fileTreeStore);
 
   const { uploadedFileData, uploadedFileMimeType } = useStore(llmStore);
-  const {
-    instruction,
-    aiInstruction,
-    expectedOutputInstruction,
-    requestType,
-    llmOutputFormat,
-    scanPathsInput,
-  } = useStore(llmStore);
+  const { instruction, aiInstruction, expectedOutputInstruction, requestType, llmOutputFormat, scanPathsInput } = useStore(llmStore);
   // ---- local state ----
   const [projectInput, setProjectInput] = useState(
     currentProjectPath || import.meta.env.VITE_BASE_DIR || '',
   );
   const [editorContent, setEditorContent] = useState('');
   const [isPickerDialogOpen, setIsPickerDialogOpen] = useState(false);
-  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] =
-    useState(false);
+  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] = useState(false);
   const [isScanPathsDialogOpen, setIsScanPathsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [importedData, setImportedData] = useState<CodeGeneratorData | null>(
     null,
   );
+  const [isCodeRepairOpen, setIsCodeRepairOpen] = useState(false);
 
   const commonDisabled = !isLoggedIn || loading || isBuilding;
 
@@ -258,6 +256,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         setError(errorMessage);
         addLog('Prompt Generator', errorMessage, 'error');
         showGlobalSnackbar(errorMessage, 'error');
+        setIsCodeRepairOpen(true);
       }
     } catch (err) {
       const msg = `Failed to generate code: ${err instanceof Error ? err.message : String(err)}`;
@@ -282,6 +281,10 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const handleClear = useCallback(() => {
     setEditorContent('');
     setLastLlmResponse(null);
+  }, []);
+
+  const toggleCodeRepair = useCallback(() => {
+    setIsCodeRepairOpen((open) => !open);
   }, []);
 
   // ---- render ----
@@ -347,6 +350,15 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
             {loading ? <CircularProgress size={16} /> : <SendIcon />}
           </IconButton>
         </Tooltip>
+        <Tooltip title="Toggle Code Repair Drawer">
+          <IconButton
+            color="primary"
+            onClick={toggleCodeRepair}
+            disabled={commonDisabled}
+          >
+            <BugReportIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
       {loading && (
         <Box className="mt-2 flex items-center">
@@ -371,51 +383,16 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         updateScanPaths={updateScanPaths}
         handleClear={handleClear}
       />
-      {/* Dialogs 
-      <ScanPathsDialog
-        open={isScanPathsDialogOpen}
-        onClose={() => setIsScanPathsDialogOpen(false)}
-        currentScanPaths={currentScanPathsArray}
-        availablePaths={scanPathAutocompleteOptions}
-        allowExternalPaths
-        onUpdatePaths={updateScanPaths}
-      />
-      <FilePickerDialog
-        open={isPickerDialogOpen}
-        onClose={() => setIsPickerDialogOpen(false)}
-        onSelect={(paths) =>
-          updateScanPaths([...currentScanPathsArray, ...paths])
-        }
-        currentScanPaths={currentScanPathsArray}
-      />
-      <DirectoryPickerDialog
-        open={isProjectRootPickerDialogOpen}
-        onClose={() => setIsProjectRootPickerDialogOpen(false)}
-        onSelect={(path) => {
-          setCurrentProjectPath(path);
-          handleLoadProject();
-        }}
-        initialPath={projectInput || currentProjectPath || '/'}
-        allowExternalPaths
-      />
-      <PromptGeneratorSettingsDialog
-        open={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
-
       <CustomDrawer
-        open={isImportDialogOpen}
-        onClose={() => setIsImportDialogOpen(false)}
+        open={isCodeRepairOpen}
+        onClose={() => setIsCodeRepairOpen(false)}
         position="left"
-        size="normal"
-        title="Import JSON Data"
+        size="small"
+        title="Code Repair"
         hasBackdrop={false}
       >
-        <ImportData
-          onDataLoaded={setOpenedFileContent}
-          onClose={() => setIsImportDialogOpen(false)}
-        />
-      </CustomDrawer>*/}
+        {error && <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='400px' />}
+      </CustomDrawer>
     </Box>
   );
 };
