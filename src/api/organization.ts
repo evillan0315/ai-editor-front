@@ -1,3 +1,4 @@
+import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
 import { getToken } from '@/stores/authStore';
 import {
   Organization,
@@ -7,31 +8,6 @@ import {
   PaginationOrganizationResultDto,
 } from '@/types';
 
-const API_BASE_URL = `/api/organization`; // Base URL for organization API
-
-interface ApiError extends Error {
-  statusCode?: number;
-  message: string;
-}
-
-const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    const errorData: ApiError = await response.json();
-    throw new Error(errorData.message || `API error: ${response.status}`);
-  }
-  return response.json();
-};
-
-const fetchWithAuth = async (url: string, options?: RequestInit) => {
-  const token = getToken();
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options?.headers,
-  };
-
-  return fetch(url, { ...options, headers });
-};
 
 /**
  * Creates a new organization.
@@ -40,7 +16,7 @@ export const createOrganization = async (
   dto: CreateOrganizationDto,
 ): Promise<Organization> => {
   try {
-    const response = await fetchWithAuth(API_BASE_URL, {
+    const response = await fetchWithAuth( `${API_BASE_URL}/organization`, {
       method: 'POST',
       body: JSON.stringify(dto),
     });
@@ -56,7 +32,8 @@ export const createOrganization = async (
  */
 export const getOrganizations = async (): Promise<Organization[]> => {
   try {
-    const response = await fetchWithAuth(API_BASE_URL, {
+
+    const response = await fetchWithAuth(`${API_BASE_URL}/organization`, {
       method: 'GET',
     });
     return handleResponse<Organization[]>(response);
@@ -77,7 +54,7 @@ export const getPaginatedOrganizations = async (
   ).toString();
   try {
     const response = await fetchWithAuth(
-      `${API_BASE_URL}/paginated?${queryString}`,
+      `${API_BASE_URL}/organization/paginated?${queryString}`,
       {
         method: 'GET',
       },
@@ -96,7 +73,7 @@ export const getOrganizationById = async (
   id: string,
 ): Promise<Organization> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/${id}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/organization/${id}`, {
       method: 'GET',
     });
     return handleResponse<Organization>(response);
@@ -114,7 +91,7 @@ export const updateOrganization = async (
   dto: UpdateOrganizationDto,
 ): Promise<Organization> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/${id}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/organization/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(dto),
     });
@@ -130,7 +107,7 @@ export const updateOrganization = async (
  */
 export const deleteOrganization = async (id: string): Promise<void> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/${id}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/organization/${id}`, {
       method: 'DELETE',
     });
     // For delete, usually no content, just status check

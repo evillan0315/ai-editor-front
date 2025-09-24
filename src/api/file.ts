@@ -1,4 +1,4 @@
-import { getToken } from '@/stores/authStore';
+import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
 import {
   ApiFileScanResult,
   FileTreeNode,
@@ -8,36 +8,6 @@ import {
   MoveResult, // Import new type
 } from '@/types'; // Import new FileTreeNode
 
-const API_BASE_URL = `/api`;
-
-interface ApiError extends Error {
-  statusCode?: number;
-  message: string;
-}
-
-const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    const errorData: ApiError = await response.json();
-    throw new Error(errorData.message || `API error: ${response.status}`);
-  }
-  return response.json();
-};
-
-const fetchWithAuth = async (url: string, options?: RequestInit) => {
-  const token = getToken();
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options?.headers,
-  };
-
-  return fetch(url, { ...options, headers });
-};
-
-/**
- * Fetches project files using the /api/file/scan endpoint, primarily for AI context building.
- * Returns a flat list of scanned files.
- */
 export const fetchScannedFilesForAI = async (
   projectRoot: string,
   scanPaths: string[],

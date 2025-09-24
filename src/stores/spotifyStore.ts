@@ -459,8 +459,12 @@ export const fetchMediaForPurpose = async (
   switch (purpose) {
     case 'general':
       $spotifyStore.setKey('isFetchingMedia', true);
-      $spotifyStore.setKey('fetchMediaError', null);
       currentFiles = state.allAvailableMediaFiles;
+      if(currentFiles.length >= 0 ){
+        $spotifyStore.setKey('fetchMediaError', 'No Media files found');
+        $spotifyStore.setKey('isFetchingMedia', false);
+      }
+
       break;
     case 'paginatedAudio':
       $spotifyStore.setKey('isFetchingPaginatedAudio', true);

@@ -1,4 +1,5 @@
-import { getToken } from '@/stores/authStore';
+import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
+
 import {
   Project,
   CreateProjectDto,
@@ -6,32 +7,6 @@ import {
   PaginationProjectQueryDto,
   PaginationProjectResultDto,
 } from '@/types';
-
-const API_BASE_URL = `/api/project`; // Base URL for project API
-
-interface ApiError extends Error {
-  statusCode?: number;
-  message: string;
-}
-
-const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    const errorData: ApiError = await response.json();
-    throw new Error(errorData.message || `API error: ${response.status}`);
-  }
-  return response.json();
-};
-
-const fetchWithAuth = async (url: string, options?: RequestInit) => {
-  const token = getToken();
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options?.headers,
-  };
-
-  return fetch(url, { ...options, headers });
-};
 
 /**
  * Creates a new project.

@@ -13,6 +13,7 @@ export interface UserProfile {
 export interface AuthState {
   isLoggedIn: boolean;
   user: UserProfile | null;
+  token: string;
   loading: boolean; // Indicates if auth status is being loaded (e.g., on app start)
   error: string | null;
 }

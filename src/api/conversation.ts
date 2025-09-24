@@ -1,12 +1,13 @@
 // src/api/conversation.ts
-
+import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
+const API_URL = `${API_BASE_URL}`;
 import {
   ConversationSummaryDto,
   PaginatedResponseDto,
   PaginationDto,
 } from '@/types/conversation';
 
-const API_URL = '/api';
+
 
 /**
  * Fetches a paginated list of conversation summaries from the backend.

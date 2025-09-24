@@ -87,6 +87,8 @@ export interface MediaFileResponseDto {
   updatedAt: string | null; // Assuming string serialization of Date from backend
   createdById: string;
   folderId?: string | null;
+  songId?: string | null;
+  videoId?: string | null;
   metadata?: MediaFileMetadata | null; // Added metadata field back for frontend use, assuming it's nested
 }
 

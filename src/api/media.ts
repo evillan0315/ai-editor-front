@@ -1,5 +1,5 @@
 // /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/src/api/media.ts
-
+import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
 import { getToken } from '@/stores/authStore';
 import {
   CreateMediaDto,
@@ -12,31 +12,6 @@ import {
   SyncTranscriptionResponse,
 } from '@/types';
 
-const API_BASE_URL = `/api`;
-
-interface ApiError extends Error {
-  statusCode?: number;
-  message: string;
-}
-
-const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    const errorData: ApiError = await response.json();
-    throw new Error(errorData.message || `API error: ${response.status}`);
-  }
-  return response.json();
-};
-
-const fetchWithAuth = async (url: string, options?: RequestInit) => {
-  const token = getToken();
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options?.headers,
-  };
-
-  return fetch(url, { ...options, headers });
-};
 
 /**
  * Constructs a URL for streaming a file from the backend.
@@ -87,9 +62,15 @@ export const fetchMediaFiles = async (
       query as Record<string, string>,
     ).toString();
     const response = await fetchWithAuth(
-      `${API_BASE_URL}/media?${queryString}`,
+      `${API_BASE_URL}/media?${queryString}`,{ method: 'GET' }
     );
-    return handleResponse<PaginationMediaResultDto>(response);
+
+    const media = await handleResponse<PaginationMediaResultDto>(response);
+    console.log(media, 'media');
+    if(media && media.items.length > 0){
+      return media;
+    }
+   
   } catch (error) {
     console.error('Error fetching media files:', error);
     throw error;

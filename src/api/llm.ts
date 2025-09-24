@@ -1,4 +1,5 @@
-import { getToken } from '@/stores/authStore';
+import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
+
 import {
   ModelResponse,
   FileChange,
@@ -6,31 +7,12 @@ import {
   LlmReportErrorApiPayload,
 } from '@/types'; // Import new LLM types and FileChange, RequestType, LlmOutputFormat, LlmGeneratePayload, LlmReportErrorApiPayload
 
-const API_BASE_URL = `/api`; // Changed to relative path for Vite proxy consistency
 
-interface ApiError extends Error {
-  statusCode?: number;
-  message: string;
+interface ConvertYamlResponse {
+  json: {};
+  filePath: string;
 }
 
-const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    const errorData: ApiError = await response.json();
-    throw new Error(errorData.message || `API error: ${response.status}`);
-  }
-  return response.json();
-};
-
-const fetchWithAuth = async (url: string, options?: RequestInit) => {
-  const token = getToken();
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options?.headers,
-  };
-
-  return fetch(url, { ...options, headers });
-};
 export function extractCodeFromMarkdown(text: string): string {
   // Match a fenced code block: ```lang\n ... \n```
   const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)\n```/;
@@ -63,7 +45,7 @@ export const convertYamlToJson = async (data: string): Promise<any> => {
 function parseJSONSafe(jsonString: string): ModelResponse {
   try {
     return JSON.parse(jsonString);
-  } catch (err: any) {
+  } catch (err: Error) {
     console.error('JSON parse error:', err);
     return {
       summary: null,
@@ -85,7 +67,7 @@ export const generateCode = async (
   let rawText: string | null = null;
 
   try {
-    const response = await fetchWithAuth(`/api/llm/generate-llm`, {
+    const response = await fetchWithAuth(`/llm/generate-llm`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
