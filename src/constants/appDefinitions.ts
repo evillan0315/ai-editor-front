@@ -13,6 +13,8 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import GitHubIcon from '@mui/icons-material/GitHub'; // for Simple Git
+import ForumIcon from '@mui/icons-material/Forum';
+
 
 export const appDefinitions: AppDefinition[] = [
   {
@@ -22,6 +24,15 @@ export const appDefinitions: AppDefinition[] = [
     link: '/ai-editor', // corrected path
     linkText: 'Open AI Editor',
     icon: CodeIcon,
+    category: 'AI Tools',
+  },
+  {
+    id: 'ai-chat',
+    title: 'AI Chat',
+    description: 'Engage in a conversation with AI.',
+    link: '/apps/ai-chat',
+    linkText: 'Open AI Chat',
+    icon: ForumIcon,
     category: 'AI Tools',
   },
   {
@@ -153,4 +164,3 @@ export const appDefinitions: AppDefinition[] = [
     category: 'Development',
   },
 ];
-

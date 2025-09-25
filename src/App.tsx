@@ -44,6 +44,7 @@ const ResumeBuilderPage = lazy(() => import('./pages/ResumeBuilderPage'));
 const RecordingPage = lazy(() => import('./pages/RecordingPage'));
 const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage'));
 const SimpleGitPage = lazy(() => import('./pages/SimpleGitPage'));
+const AIChatPage = lazy(() => import('./pages/AIChatPage'));
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -88,6 +89,18 @@ const router = createBrowserRouter(
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 <AppsPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+       <Route
+        path="/apps/ai-chat"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+               <AIChatPage/>
               </ErrorBoundary>
             </Suspense>
           </RequireAuth>
