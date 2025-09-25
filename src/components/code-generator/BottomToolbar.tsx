@@ -36,6 +36,7 @@ import PromptGeneratorSettingsDialog from '@/components/dialogs/PromptGeneratorS
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import ImportData from './ImportData';
 import { setOpenedFileContent } from '@/stores/fileStore';
+import { RequestType } from '@/types/llm';
 
 interface BottomToolbarProps {
   scanPathAutocompleteOptions: string[];
@@ -54,6 +55,7 @@ interface BottomToolbarProps {
   setIsScanPathsDialogOpen: (open: boolean) => void;
 
   updateScanPaths: (paths: string[]) => void;
+  requestType: RequestType;
 }
 
 const BottomToolbar: React.FC<BottomToolbarProps> = ({
@@ -73,6 +75,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   setIsScanPathsDialogOpen,
 
   updateScanPaths,
+  requestType,
 }) => {
   const theme = useTheme();
   const $autoApplyChanges = useStore(autoApplyChanges);
@@ -80,6 +83,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   const commonDisabled = false;
 
   return (
+  <Box className="flex items-center justify-between gap-2 ">
     <Box className="flex flex-wrap gap-2 ">
       <Tooltip title="Load the selected project">
         <IconButton
@@ -109,18 +113,23 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         </IconButton>
       </Tooltip>
 
-      <Tooltip title="Import prompt data from JSON file">
-        <IconButton color="primary" onClick={() => setIsImportDialogOpen(true)}>
-          <CloudUploadIcon />
-        </IconButton>
-      </Tooltip>
+      {requestType === RequestType.LLM_GENERATION && (
+        <Tooltip title="Import prompt data from JSON file">
+          <IconButton color="primary" onClick={() => setIsImportDialogOpen(true)}>
+            <CloudUploadIcon />
+          </IconButton>
+        </Tooltip>
+      )}
 
-      <Tooltip title="Prompt generator settings">
-        <IconButton color="primary" onClick={() => setIsSettingsOpen(true)}>
-          <SettingsIcon />
-        </IconButton>
-      </Tooltip>
-
+      {requestType === RequestType.LLM_GENERATION && (
+        <Tooltip title="Prompt generator settings">
+          <IconButton color="primary" onClick={() => setIsSettingsOpen(true)}>
+            <SettingsIcon />
+          </IconButton>
+        </Tooltip>
+      )}
+    </Box>
+      <Box className="flex flex-wrap gap-2 ">
       <Tooltip title="Clear editor and AI response">
         <IconButton color="error" disabled={commonDisabled}>
           <ClearIcon />
@@ -128,16 +137,16 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       </Tooltip>
 
       <FormControlLabel
-        control={
+        control=
           <Switch
             checked={$autoApplyChanges}
             onChange={(e) => setAutoApplyChanges(e.target.checked)}
             name="autoApply"
           />
-        }
+        
         label="Auto Apply"
       />
-
+      </Box>
       {/* Dialogs */}
       <ScanPathsDialog
         open={isScanPathsDialogOpen}
