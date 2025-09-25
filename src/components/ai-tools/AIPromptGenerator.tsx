@@ -1,9 +1,9 @@
-
 // FilePath: src/components/AIPromptGenerator.tsx
 // Title: Chat-style AI Prompt Generator with Embedded Code Repair
 // Reason: Integrates a chat-like instruction input area and optional code-repair drawer into the AI prompt generator UI.
 
 import { useState } from 'react';
+import { useTheme } from '@mui/material/styles';
 import {
   Accordion,
   AccordionDetails,
@@ -18,20 +18,13 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SendIcon from '@mui/icons-material/Send';
 import BugReportIcon from '@mui/icons-material/BugReport';
-import { useTheme } from '@mui/material/styles';
 
 // You need to provide these components or stub them out in your project
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import BottomToolbar from '@/components/code-generator/BottomToolbar';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 
-import { generateText } from '@/api/ai';
-import { GenerateTextDto } from '@/types/ai';
-
-interface Message {
-  role: 'user' | 'model' | 'system';
-  text: string;
-}
+import useHandleMessages from '@/hooks/useHandleMessages';
 
 const INSTRUCTION = `
 You are an AI assistant integrated into a web application that uses a ChatGPT-style interface.
@@ -55,9 +48,9 @@ const AIPromptGenerator: React.FC = () => {
   const theme = useTheme();
   const [instruction, setInstruction] = useState('');
   const [editorContent, setEditorContent] = useState('');
-  const [loading, setLoading] = useState(false);
   const [isCodeRepairOpen, setIsCodeRepairOpen] = useState(false);
-  const [error] = useState<string | null>(null);
+
+  const { messages, sendMessage, loading, error } = useHandleMessages();
 
   // stubs for toolbar handlers; replace with your own
   const scanPathAutocompleteOptions: string[] = [];
@@ -72,10 +65,11 @@ const AIPromptGenerator: React.FC = () => {
   const handleClear = () => {};
   const commonDisabled = false;
 
-  const handleSendMessage = () => {
-    setLoading(true);
-    // replace with actual generation logic
-    setTimeout(() => setLoading(false), 1500);
+  const handleSendMessage = async () => {
+    if (instruction.trim()) {
+      await sendMessage(instruction.trim());
+      setInstruction('');
+    }
   };
 
   const toggleCodeRepair = () => setIsCodeRepairOpen((prev) => !prev);
