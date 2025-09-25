@@ -3,13 +3,10 @@
 // Reason: Presents prompts and AI responses in a conversation layout similar to a ChatGPT chat.
 
 import { useState, useRef, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  Paper,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Paper, TextField, Typography } from '@mui/material';
+
+import { generateText } from '@/api/ai';
+import { GenerateTextDto } from '@/types/ai';
 
 interface Message {
   role: 'user' | 'system';
@@ -21,16 +18,30 @@ const AIPromptGenerator: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMsg: Message = { role: 'user', text: input.trim() };
-    const systemMsg: Message = {
-      role: 'system',
-      text: `System Prompt:\n\n${input.trim()}`,
-    };
+    setMessages((prev) => [...prev, userMsg]);
 
-    setMessages((prev) => [...prev, userMsg, systemMsg]);
+    try {
+      const data: GenerateTextDto = { prompt: input.trim() };
+      const response = await generateText(data);
+
+      const systemMsg: Message = {
+        role: 'system',
+        text: `AI Response:\n\n${response}`,
+      };
+      setMessages((prev) => [...prev, systemMsg]);
+    } catch (error: any) {
+      console.error('Error generating text:', error);
+      const errorMsg: Message = {
+        role: 'system',
+        text: `Error: ${error.message || 'Failed to generate text.'}`,
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    }
+
     setInput('');
   };
 
