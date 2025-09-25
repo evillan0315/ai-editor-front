@@ -16,6 +16,8 @@ import { Link } from 'react-router-dom';
 import { AppDefinition } from '@/types'; // Import AppDefinition
 import { appDefinitions } from '@/constants/appDefinitions'; // New: Import appDefinitions
 
+import NewAiTools from '@/components/ai-tools/NewAiTools';
+
 interface AppCardProps {
   app: AppDefinition;
 }
@@ -102,6 +104,7 @@ const AppsPage: React.FC = () => {
           your development workflow.
         </Typography>
         <Box sx={{ mt: 3, width: '100%' }}>
+           <NewAiTools />
           {Object.entries(categorizedApps).map(([category, apps]) => (
             <Box key={category} sx={{ mb: 4 }}>
               <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
