@@ -1,20 +1,25 @@
+import { GenerateTextDto, GenerateImageBase64Dto, GenerateVideoDto } from '@/types/ai';
 import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from './fetch';
 
-
 export const generateText = async (data: GenerateTextDto): Promise<string> => {
-  return fetchWithAuth<string>('/gemini/file/generate-text', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+  const response = await fetchWithAuth(`${API_BASE_URL}/gemini/file/generate-text`, { 
+      method: 'POST',
+      body: JSON.stringify(data), 
+    },
+  );
+  return handleResponse<string>(response);
 };
 
 export const generateTextWithBase64Image = async (
   data: GenerateImageBase64Dto,
 ): Promise<string> => {
-  return fetchWithAuth<string>('/gemini/file/generate-image-base64', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+
+  const response = await fetchWithAuth(`${API_BASE_URL}/gemini/file/generate-image-base64`, { 
+      method: 'POST',
+      body: JSON.stringify(data), 
+    },
+  );
+  return handleResponse<string>(response);
 };
 
 export const generateTextWithFile = async (
@@ -33,16 +38,24 @@ export const generateTextWithFile = async (
     formData.append('conversationId', conversationId);
   }
 
-  return fetchWithAuth<string>('/gemini/file/generate-file', {
-    method: 'POST',
-    body: formData,
-    headers: {},
-  });
+
+  const response = await fetchWithAuth(`${API_BASE_URL}/gemini/file/generate-file`, { 
+      method: 'POST',
+      body: JSON.stringify(formData), 
+    },
+  );
+  return handleResponse<string>(response);
 };
 
-export const generateVideo = async (data: GenerateVideoDto): Promise<any> => {
-  return fetchWithAuth<any>('/gemini/file/generate-video', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+interface GenerateVideoResponse {
+  videoUri: string;
+}
+
+export const generateVideo = async (data: GenerateVideoDto): Promise<GenerateVideoResponse> => {
+  const response = await fetchWithAuth(`${API_BASE_URL}/gemini/file/generate-video`, { 
+      method: 'POST',
+      body: JSON.stringify(data), 
+    },
+  );
+  return handleResponse<GenerateVideoResponse>(response);
 };

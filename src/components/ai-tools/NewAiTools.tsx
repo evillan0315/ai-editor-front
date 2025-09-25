@@ -1,19 +1,30 @@
 import React, { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import AiPromptManager from './AiPromptManager';
+import { generateText } from '@/api/ai';
+import { GenerateTextDto } from '@/types/ai';
+import { setError } from '@/stores/errorStore';
+import { showGlobalSnackbar } from '@/stores/aiEditorStore';
 
 interface NewAiToolsProps {}
 
 const NewAiTools: React.FC<NewAiToolsProps> = () => {
   const [loading, setLoading] = useState(false);
 
-  const handlePromptSubmit = (prompt: string) => {
+  const handlePromptSubmit = async (prompt: string) => {
     setLoading(true);
-    console.log('System Prompt submitted:', prompt);
-    // TODO: Integrate with actual API call to use the system prompt
-    setTimeout(() => {
+    try {
+      const data: GenerateTextDto = { prompt };
+      const response = await generateText(data);
+      console.log('AI Response:', response);
+      showGlobalSnackbar(response, 'success');
+    } catch (error: any) {
+      console.error('Error generating text:', error);
+      setError(error.message || 'Failed to generate text.');
+      showGlobalSnackbar(error.message || 'Failed to generate text.', 'error');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (

@@ -86,9 +86,6 @@ export const loginLocal = async (credentials: LoginRequest): Promise<LoginLocalR
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
-            headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(credentials),
     });
     const authData = await handleResponse<LoginLocalResponse>(response);
@@ -114,9 +111,6 @@ export const registerLocal = async (userData: RegisterRequest): Promise<Register
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
-            headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(credentials),
     });
     if(response && response.access_token){
