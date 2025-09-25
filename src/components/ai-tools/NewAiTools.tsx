@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography } from '@mui/material';
-import AiPromptManager from './AiPromptManager';
+import AIPromptGenerator from './AIPromptGenerator';
 import { generateText } from '@/api/ai';
 import { GenerateTextDto } from '@/types/ai';
 import { setError } from '@/stores/errorStore';
@@ -33,7 +33,7 @@ const NewAiTools: React.FC<NewAiToolsProps> = () => {
       <Typography variant='body1'>
         This section will house new AI tools, similar to the Gemini Live Studio chat.
       </Typography>
-      <AiPromptManager onPromptSubmit={handlePromptSubmit} loading={loading} />
+      <AIPromptGenerator  />
     </Box>
   );
 };
