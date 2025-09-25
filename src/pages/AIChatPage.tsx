@@ -1,14 +1,32 @@
 import React from 'react';
+import {
+  Box,
+  Typography,
+  Container,
+  Paper,
+  useTheme,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  CardActions,
+} from '@mui/material';
 import PageLayout from '@/components/layouts/PageLayout';
+import AiPromptGeneratorBody from '@/components/ai-tools/AiPromptGeneratorBody';
+import AiPromptGeneratorHeader from '@/components/ai-tools/AiPromptGeneratorHeader';
 import AIPromptGenerator from '@/components/ai-tools/AIPromptGenerator';
 
 const AIChatPage: React.FC = () => {
+  const theme = useTheme();
   return (
+
+
     <PageLayout
-      header={<div />} // Empty header
-      body={<div />}   // Empty body
+      header={<AiPromptGeneratorHeader />}
+      body={<AiPromptGeneratorBody />}  // Empty body
       footer={<AIPromptGenerator />}
     />
+
   );
 };
 
