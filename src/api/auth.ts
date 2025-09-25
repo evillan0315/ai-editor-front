@@ -41,6 +41,7 @@ export const handleLogout = async (): Promise<LogoutResponse> => {
     const response = await fetchWithAuth(`${API_BASE_URL}/auth/logout`, {
       method: 'POST'
     });
+    logout();
     return handleResponse<LogoutResponse>(response);
   } catch (error: ApiError) {
     setError(error.message || 'An unknown error occurred during logout.');

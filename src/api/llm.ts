@@ -67,14 +67,20 @@ export const generateCode = async (
   let rawText: string | null = null;
 
   try {
-    const response = await fetchWithAuth(`/llm/generate-llm`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/llm/generate-llm`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+        //headers: { 'Content-Type': 'application/json' },
+      },
+    );
 
+    console.log(response, 'response');
     rawText = await response.text();
+    console.log(rawText, 'rawText');
     const extractedText = extractCodeFromMarkdown(rawText);
-
+    console.log(extractedText, 'extractedText');
     try {
       // Attempt to parse JSON
       const parsed: ModelResponse = JSON.parse(extractedText);

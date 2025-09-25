@@ -387,12 +387,12 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         open={isCodeRepairOpen}
         onClose={() => setIsCodeRepairOpen(false)}
         position="left"
-        size="small"
+        size="normal"
         title="Code Repair"
         hasBackdrop={false}
       >
         {/*error && <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='400px' />*/}
-        <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='400px' />
+        <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='100%' />
       </CustomDrawer>
     </Box>
   );

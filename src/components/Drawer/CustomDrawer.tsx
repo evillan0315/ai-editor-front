@@ -11,6 +11,7 @@ import {
   DialogContent,
   AppBar,
   Toolbar,
+  Paper
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useStore } from '@nanostores/react';
@@ -116,7 +117,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
               {stickyHeader}
             </Box>
           )}
-          <Box
+          <Paper
             sx={{
               flexGrow: 1,
               overflowY: 'auto',
@@ -124,7 +125,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
             }}
           >
             {children}
-          </Box>
+          </Paper>
           {stickyFooter && (
             <Box
               sx={{

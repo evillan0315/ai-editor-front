@@ -15,7 +15,7 @@ export const token = persistentAtom<string | null>(
 export const getToken = () => {
 	if(token) return token.get();
 };
-export const setToken = (tokenString: string) => {
+export const setToken = (tokenString: string | null) => {
   if(tokenString) setLoading(false);
   token.set(tokenString);
   
@@ -33,6 +33,7 @@ export const loginSuccess = (user: UserProfile, token: string) => {
 
 export const logout = () => {
   setToken(null);
+  setLoading(false)
   authStore.set({
     isLoggedIn: false,
     user: null,
