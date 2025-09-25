@@ -177,22 +177,18 @@ const AIPromptGenerator: React.FC = () => {
         setIsScanPathsDialogOpen={setIsScanPathsDialogOpen}
         updateScanPaths={updateScanPaths}
         handleClear={handleClear}
+        requestType={`TEXT_ONLY`}
       />
 
       <CustomDrawer
         open={isCodeRepairOpen}
         onClose={() => setIsCodeRepairOpen(false)}
         position="left"
-        size="normal"
+        size="large"
         title="Code Repair"
         hasBackdrop={false}
       >
-        <CodeRepair
-          value={editorContent}
-          onChange={setEditorContent}
-          filePath="temp.json"
-          height="100%"
-        />
+       
       </CustomDrawer>
     </Box>
   );

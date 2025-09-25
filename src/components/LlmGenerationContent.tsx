@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { llmStore } from '@/stores/llmStore';
+import { RequestType } from '@/types/llm';
 import { Box, Paper, useTheme, IconButton } from '@mui/material';
 import PromptGenerator from '@/components/code-generator/PromptGenerator';
 import { CodeGeneratorMain } from '@/components/code-generator/CodeGeneratorMain';
@@ -85,7 +86,7 @@ const LlmGenerationContent: React.FC = () => {
             boxShadow: 1,
           }}
         >
-          <PromptGenerator requestType='LLM_GENERATION'/>
+          <PromptGenerator requestType={'LLM_GENERATION'}/>
         </Paper>
       </Box>
     </Box>

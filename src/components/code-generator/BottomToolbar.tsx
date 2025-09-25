@@ -129,24 +129,28 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         </Tooltip>
       )}
     </Box>
+    {requestType === RequestType.LLM_GENERATION && (
       <Box className="flex flex-wrap gap-2 ">
-      <Tooltip title="Clear editor and AI response">
+      
+        <Tooltip title="Clear editor and AI response">
         <IconButton color="error" disabled={commonDisabled}>
           <ClearIcon />
         </IconButton>
       </Tooltip>
 
       <FormControlLabel
-        control=
+        control={
           <Switch
             checked={$autoApplyChanges}
             onChange={(e) => setAutoApplyChanges(e.target.checked)}
             name="autoApply"
           />
-        
+        }
         label="Auto Apply"
       />
+        
       </Box>
+     )}
       {/* Dialogs */}
       <ScanPathsDialog
         open={isScanPathsDialogOpen}

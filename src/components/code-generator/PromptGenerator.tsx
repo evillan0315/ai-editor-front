@@ -382,6 +382,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         setIsScanPathsDialogOpen={setIsScanPathsDialogOpen}
         updateScanPaths={updateScanPaths}
         handleClear={handleClear}
+        requestType={requestType}
       />
       <CustomDrawer
         open={isCodeRepairOpen}
