@@ -72,7 +72,7 @@ const AIPromptGenerator: React.FC = () => {
   const handleClear = () => {};
   const commonDisabled = false;
 
-  const handleGenerateCode = () => {
+  const handleSendMessage = () => {
     setLoading(true);
     // replace with actual generation logic
     setTimeout(() => setLoading(false), 1500);
@@ -106,7 +106,7 @@ const AIPromptGenerator: React.FC = () => {
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
-            handleGenerateCode();
+            handleSendMessage();
           }
         }}
       >
@@ -114,7 +114,7 @@ const AIPromptGenerator: React.FC = () => {
           <TextField
             multiline
             fullWidth
-            placeholder="Type your instruction..."
+            placeholder="Ask me anything..."
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
             variant="standard"
@@ -137,7 +137,7 @@ const AIPromptGenerator: React.FC = () => {
         <Tooltip title="Generate/Modify Code">
           <IconButton
             color="success"
-            onClick={handleGenerateCode}
+            onClick={handleSendMessage}
             disabled={commonDisabled || loading || !instruction}
           >
             {loading ? <CircularProgress size={16} /> : <SendIcon />}
@@ -195,4 +195,3 @@ const AIPromptGenerator: React.FC = () => {
 };
 
 export default AIPromptGenerator;
-

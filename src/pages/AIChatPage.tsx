@@ -15,7 +15,6 @@ import PageLayout from '@/components/layouts/PageLayout';
 import AiPromptGeneratorBody from '@/components/ai-tools/AiPromptGeneratorBody';
 import AiPromptGeneratorHeader from '@/components/ai-tools/AiPromptGeneratorHeader';
 import AIPromptGenerator from '@/components/ai-tools/AIPromptGenerator';
-
 const AIChatPage: React.FC = () => {
   const theme = useTheme();
   return (
@@ -23,7 +22,7 @@ const AIChatPage: React.FC = () => {
 
     <PageLayout
       header={<AiPromptGeneratorHeader />}
-      body={<AiPromptGeneratorBody />}  // Empty body
+      body={<AiPromptGeneratorBody />}  // Implemented in body
       footer={<AIPromptGenerator />}
     />
 
