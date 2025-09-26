@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import { useStore } from '@nanostores/react';
 import { aiChatStore } from '@/stores/aiChatStore';
 import 'github-markdown-css/github-markdown.css';
@@ -12,27 +12,37 @@ interface AiPromptGeneratorBodyProps {
 
 const AiPromptGeneratorBody: React.FC<AiPromptGeneratorBodyProps> = () => {
   const $aiChat = useStore(aiChatStore);
+  const theme = useTheme();
+
   return (
-    <Box className="p-4 flex flex-col h-full">
+    <Box className="flex flex-col h-full">
       {/* Display messages from aiChatStore */}
       {/*error && <Box color="error.main">Error: {error}</Box>*/}
       {/* messages.length > 0 && */}
-      <Box mt={2} className="flex-grow overflow-auto">
+      <Box mt={2} className="flex-grow overflow-auto px-4 ">
         {$aiChat.messages.map((message, index) => (
           <Box
             id='ai-chat-message-wrapper'
             key={index}
             mt={1}
+            className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
           >
-            <strong>{message.role === 'user' ? 'You:' : 'AI:'}</strong>
-            {message.role === 'model' && (
-              <ReactMarkdownWithCodeCopy>
-                {message.text}
-              </ReactMarkdownWithCodeCopy>
-            )}
-            {message.role === 'user' && (
-              <Box ml={1}>{message.text}</Box>
-            )}
+            <Box
+              className={`rounded-lg p-2 ${message.role === 'user'
+                ? 'bg-blue-100 dark:bg-blue-900 text-right'
+                : 'bg-gray-100 dark:bg-gray-800 text-left'
+                }`}
+            >
+              <strong>{message.role === 'user' ? 'You:' : 'AI:'}</strong>
+              {message.role === 'model' && (
+                <ReactMarkdownWithCodeCopy>
+                  {message.text}
+                </ReactMarkdownWithCodeCopy>
+              )}
+              {message.role === 'user' && (
+                <Box ml={1}>{message.text}</Box>
+              )}
+            </Box>
           </Box>
         ))}
       </Box>
