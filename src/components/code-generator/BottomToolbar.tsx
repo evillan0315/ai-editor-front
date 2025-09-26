@@ -121,13 +121,13 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         </Tooltip>
       )}
 
-      {requestType === RequestType.LLM_GENERATION && (
+   
         <Tooltip title="Prompt generator settings">
           <IconButton color="primary" onClick={() => setIsSettingsOpen(true)}>
             <SettingsIcon />
           </IconButton>
         </Tooltip>
-      )}
+      
     </Box>
     {requestType === RequestType.LLM_GENERATION && (
       <Box className="flex flex-wrap gap-2 ">

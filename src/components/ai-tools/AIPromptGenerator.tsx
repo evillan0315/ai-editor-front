@@ -16,7 +16,6 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SendIcon from '@mui/icons-material/Send';
-import BugReportIcon from '@mui/icons-material/BugReport';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 // You need to provide these components or stub them out in your project
@@ -48,7 +47,7 @@ Provide a summary of the latest cloud-computing trends
 `;
 const AIPromptGenerator: React.FC = () => {
   const theme = useTheme();
-  const [instruction, setInstruction] = useState('');
+  const [instruction, setInstruction] = useState(INSTRUCTION);
   const [editorContent, setEditorContent] = useState('');
   const [isCodeRepairOpen, setIsCodeRepairOpen] = useState(false);
   const [isSystemInstructionOpen, setIsSystemInstructionOpen] = useState(false);
@@ -155,15 +154,7 @@ const AIPromptGenerator: React.FC = () => {
             {$aiChat.loading ? <CircularProgress size={16} /> : <SendIcon />}
           </IconButton>
         </Tooltip>
-        <Tooltip title="Toggle Code Repair Drawer">
-          <IconButton
-            color="primary"
-            onClick={toggleCodeRepair}
-            disabled={commonDisabled || !!$aiChat.error}
-          >
-            <BugReportIcon />
-          </IconButton>
-        </Tooltip>
+       
         <Tooltip title="System Instruction">
           <IconButton
             color="secondary"
@@ -214,8 +205,8 @@ const AIPromptGenerator: React.FC = () => {
        <CustomDrawer
         open={isSystemInstructionOpen}
         onClose={() => setIsSystemInstructionOpen(false)}
-        position="right"
-        size="medium"
+        position="left"
+        size="normal"
         title="System Instruction"
         hasBackdrop={false}
       >

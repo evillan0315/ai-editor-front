@@ -29,9 +29,12 @@ const AiPromptGeneratorBody: React.FC<AiPromptGeneratorBodyProps> = () => {
           >
             <Box
               className={`rounded-lg p-2 ${message.role === 'user'
-                ? 'bg-blue-100 dark:bg-blue-900 text-right'
-                : 'bg-gray-100 dark:bg-gray-800 text-left'
+                ? `text-right`
+                : 'text-left mb-2'
                 }`}
+              sx={{
+                backgroundColor: message.role === 'user' ? theme.palette.background.default : theme.palette.background.paper,
+              }}
             >
               <strong>{message.role === 'user' ? 'You:' : 'AI:'}</strong>
               {message.role === 'model' && (

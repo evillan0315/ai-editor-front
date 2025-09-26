@@ -62,6 +62,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
       ? { width: isFullScreen ? '100%' : drawerWidth }
       : { height: isFullScreen ? '100%' : drawerWidth }),
     bgcolor: theme.palette.background.paper,
+    border: theme.palette.divider,
     color: theme.palette.text.primary,
     overflow: 'auto',
     zIndex: 1000
@@ -116,6 +117,17 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
               }}
             >
               {stickyHeader}
+            </Box>
+          )}
+          {title && (
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: theme.palette.background.default,
+                borderBottom: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              {title}
             </Box>
           )}
           <Paper
