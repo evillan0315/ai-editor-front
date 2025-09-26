@@ -13,13 +13,17 @@ interface AiPromptGeneratorBodyProps {
 const AiPromptGeneratorBody: React.FC<AiPromptGeneratorBodyProps> = () => {
   const $aiChat = useStore(aiChatStore);
   return (
-    <Box className="p-4 flex flex-col">
+    <Box className="p-4 flex flex-col h-full">
       {/* Display messages from aiChatStore */}
       {/*error && <Box color="error.main">Error: {error}</Box>*/}
       {/* messages.length > 0 && */}
-      <Box mt={2}>
+      <Box mt={2} className="flex-grow overflow-auto">
         {$aiChat.messages.map((message, index) => (
-          <Box id='ai-chat-message-wrapper' key={index} mt={1}>
+          <Box
+            id='ai-chat-message-wrapper'
+            key={index}
+            mt={1}
+          >
             <strong>{message.role === 'user' ? 'You:' : 'AI:'}</strong>
             {message.role === 'model' && (
               <ReactMarkdownWithCodeCopy>
@@ -29,7 +33,6 @@ const AiPromptGeneratorBody: React.FC<AiPromptGeneratorBodyProps> = () => {
             {message.role === 'user' && (
               <Box ml={1}>{message.text}</Box>
             )}
-            
           </Box>
         ))}
       </Box>
