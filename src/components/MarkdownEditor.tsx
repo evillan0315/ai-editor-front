@@ -39,6 +39,8 @@ interface MarkdownEditorProps {
   onImageUpload?: (file: File) => Promise<string>;
   onSave?: () => void;
   disabled?: boolean;
+  expectedSchema?: string;
+  exampleOutput?: string;
 }
 
 const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
@@ -48,13 +50,15 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   onImageUpload,
   onSave,
   disabled = false,
+  expectedSchema,
+  exampleOutput,
 }) => {
   const { mode } = useStore(themeStore); // 'light' | 'dark'
   const theme = useTheme();
   const [internalValue, setInternalValue] = useState(
     value ?? localStorage.getItem('markdown-editor-content') ?? initialValue,
   );
-  const [tab, setTab] = useState(0); // 0 = Write, 1 = Preview
+  const [tab, setTab] = useState(0); // 0 = Write, 1 = Preview, 2 = Schema
 
   /** ---------- Sync with localStorage / controlled props ---------- */
   useEffect(() => {
@@ -166,6 +170,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           >
             <Tab label="Write" />
             <Tab label="Preview" />
+            <Tab label="Schema" />
           </Tabs>
         </Toolbar>
         <Divider />
@@ -205,6 +210,40 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             <ReactMarkdownWithCodeCopy>
               {internalValue}
             </ReactMarkdownWithCodeCopy>
+          </Box>
+        )}
+        {tab === 2 && (
+          <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
+            {expectedSchema && (
+              <>
+                <Typography variant="h6">Expected Schema:</Typography>
+                <CodeMirror
+                    value={expectedSchema}
+                    height="200px"
+                    extensions={[
+                      getCodeMirrorLanguage(`json`),
+                      createCodeMirrorTheme(theme),
+                    ]}
+                    theme={mode}
+                    editable={false}
+                />
+              </>
+            )}
+            {exampleOutput && (
+              <>
+                <Typography variant="h6">Example Output:</Typography>
+                <CodeMirror
+                    value={exampleOutput}
+                    height="200px"
+                    extensions={[
+                      getCodeMirrorLanguage(`json`),
+                      createCodeMirrorTheme(theme),
+                    ]}
+                    theme={mode}
+                    editable={false}
+                />
+              </>
+            )}
           </Box>
         )}
       </Box>

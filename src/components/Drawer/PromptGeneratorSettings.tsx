@@ -8,7 +8,9 @@ import {
   AccordionSummary,
   AccordionDetails,
   useTheme,
-  Paper
+  Paper,
+  Tabs,
+  Tab
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useStore } from '@nanostores/react';
@@ -34,6 +36,7 @@ const PromptGeneratorSettings: React.FC<
 > = ({ open, onClose }) => {
   const theme = useTheme();
   const { aiInstruction } = useStore(llmStore);
+  const [tab, setTab] = React.useState(0); // 0 = General Instruction, 1 = JSON Schema, 2 = Example Output
 
   /** Local editable states */
   const [localAiInstruction, setLocalAiInstruction] =
@@ -75,14 +78,23 @@ ${localInstructionExample}
           color: theme.palette.text.primary,
         }}
       >
+          <Tabs
+            value={tab}
+            onChange={(_, v) => setTab(v)}
+            textColor="primary"
+            indicatorColor="primary"
+            centered
+          >
+            <Tab label="General Instruction" />
+            <Tab label="Instruction Schema" />
+            <Tab label="Example Output" />
+          </Tabs>
+
         {/* ---------- General Instruction (Markdown Editor) ---------- */}
-        <Typography
-          variant="subtitle1"
-          gutterBottom
+        {tab === 0 && (
+        <Box
           sx={{ color: theme.palette.text.primary, mt: 1 }}
         >
-          General Instruction
-        </Typography>
         <Box
           sx={{
             border: `1px solid ${theme.palette.divider}`,
@@ -97,25 +109,16 @@ ${localInstructionExample}
             onChange={setLocalAiInstruction}
           />
         </Box>
+        </Box>
+        )}
 
         {/* ---------- Accordion: JSON Schema ---------- */}
-        <Accordion
-          sx={{
-            mt: 2,
-            backgroundColor: theme.palette.background.default,
-            border: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <AccordionSummary
-            expandIcon={
-              <ExpandMoreIcon sx={{ color: theme.palette.text.primary }} />
-            }
+        {tab === 1 && (
+        <Box>
+          <Box
+            sx={{ color: theme.palette.text.primary, mt: 1 }}
           >
-            <Typography sx={{ color: theme.palette.text.primary }}>
-              Instruction Schema Output (JSON Schema)
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: 0 }}>
+
             <Box
               sx={{
                 borderTop: `1px solid ${theme.palette.divider}`,
@@ -129,28 +132,18 @@ ${localInstructionExample}
                 filePath="schema.json"
               />
             </Box>
-          </AccordionDetails>
-        </Accordion>
+
+          </Box>
+        </Box>
+        )}
 
         {/* ---------- Accordion: Example Output ---------- */}
-        <Accordion
-          sx={{
-            mt: 2,
-            backgroundColor: theme.palette.background.default,
-            border: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <AccordionSummary
-            expandIcon={
-              <ExpandMoreIcon sx={{ color: theme.palette.text.primary }} />
-            }
+        {tab === 2 && (
+         <Box>
+          <Box
+            sx={{ color: theme.palette.text.primary, mt: 1 }}
           >
-            <Typography sx={{ color: theme.palette.text.primary }}>
-              Instruction Example Output (Valid JSON)
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: 0 }}>
-            <Box
+           <Box
               sx={{
                 borderTop: `1px solid ${theme.palette.divider}`,
                 overflow: 'hidden',
@@ -163,8 +156,11 @@ ${localInstructionExample}
                 filePath="example.json"
               />
             </Box>
-          </AccordionDetails>
-        </Accordion>
+
+
+          </Box>
+         </Box>
+        )}
       </Box>
 
       <Box sx={{ backgroundColor: theme.palette.background.paper }}>
