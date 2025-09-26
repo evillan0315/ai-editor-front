@@ -170,10 +170,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         initialPath={projectInput || '/'}
         allowExternalPaths
       />
-      <PromptGeneratorSettingsDialog
-        open={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
+      
 
       <CustomDrawer
         open={isImportDialogOpen}
@@ -187,6 +184,19 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           onDataLoaded={setOpenedFileContent}
           onClose={() => setIsImportDialogOpen(false)}
         />
+      </CustomDrawer>
+       <CustomDrawer
+        open={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        position="right"
+        size="medium"
+        title="Prompt Generator Settings"
+        hasBackdrop={false}
+      >
+          <PromptGeneratorSettingsDialog
+            open={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+          />
       </CustomDrawer>
     </Box>
   );
