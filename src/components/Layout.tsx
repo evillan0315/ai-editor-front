@@ -1,6 +1,6 @@
 // Source: src/components/Layout.tsx
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import LinearProgress from '@mui/material/LinearProgress';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -27,6 +27,7 @@ import Footer from './Footer';
 
 // ✅ NEW: import global loading store
 import { loadingStore } from '@/stores/loadingStore';
+import { currentURL } from '@/stores/page';
 
 const NAVBAR_HEIGHT = 64;
 const FOOTER_HEIGHT = 30;
@@ -65,9 +66,15 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const initialMouseX = useRef(0);
   const initialSidebarWidth = useRef(0);
 
+  const location = useLocation();
+
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  useEffect(() => {
+    currentURL.set(location.pathname);
+  }, [location.pathname]);
 
   /** Start resizing a sidebar */
   const startResizing = (side: 'left' | 'right') => (e: React.MouseEvent) => {
