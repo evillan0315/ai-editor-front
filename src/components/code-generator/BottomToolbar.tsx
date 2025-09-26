@@ -32,7 +32,7 @@ import { useStore } from '@nanostores/react';
 import FilePickerDialog from '@/components/dialogs/FilePickerDialog';
 import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
 import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
-import PromptGeneratorSettingsDialog from '@/components/dialogs/PromptGeneratorSettingsDialog';
+import PromptGeneratorSettings from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import ImportData from './ImportData';
 import { setOpenedFileContent } from '@/stores/fileStore';
@@ -193,7 +193,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         title="Prompt Generator Settings"
         hasBackdrop={false}
       >
-          <PromptGeneratorSettingsDialog
+          <PromptGeneratorSettings
             open={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
           />
