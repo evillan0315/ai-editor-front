@@ -2,6 +2,9 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { useStore } from '@nanostores/react';
 import { aiChatStore } from '@/stores/aiChatStore';
+import 'github-markdown-css/github-markdown.css';
+import 'github-markdown-css/github-markdown-dark.css';
+import ReactMarkdownWithCodeCopy from '@/components/markdown/ReactMarkdownWithCodeCopy';
 
 interface AiPromptGeneratorBodyProps {
   // Define any props here
@@ -18,7 +21,15 @@ const AiPromptGeneratorBody: React.FC<AiPromptGeneratorBodyProps> = () => {
         {$aiChat.messages.map((message, index) => (
           <Box key={index} mt={1}>
             <strong>{message.role === 'user' ? 'You:' : 'AI:'}</strong>
-            <Box ml={1}>{message.text}</Box>
+            {message.role === 'model' && (
+              <ReactMarkdownWithCodeCopy>
+                {message.text}
+              </ReactMarkdownWithCodeCopy>
+            )}
+            {message.role === 'user' && (
+              <Box ml={1}>{message.text}</Box>
+            )}
+            
           </Box>
         ))}
       </Box>

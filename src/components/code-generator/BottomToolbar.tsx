@@ -178,8 +178,8 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       <CustomDrawer
         open={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
-        position="left"
-        size="normal"
+        position="bottom"
+        size="medium"
         title="Import JSON Data"
         hasBackdrop={false}
       >

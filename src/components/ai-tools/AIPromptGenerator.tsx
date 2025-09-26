@@ -1,9 +1,8 @@
-// FilePath: src/components/AIPromptGenerator.tsx
-// Title: Chat-style AI Prompt Generator with Embedded Code Repair
-// Reason: Integrates a chat-like instruction input area and optional code-repair drawer into the AI prompt generator UI.
-
 import { useState } from 'react';
 import { useTheme } from '@mui/material/styles';
+import { useStore } from '@nanostores/react';
+import { aiChatStore, addMessage, setLoading, setError } from '@/stores/aiChatStore';
+import { ErrorMessage, SuccessMessage } from '@/types/ai';
 import {
   Accordion,
   AccordionDetails,
@@ -50,7 +49,9 @@ const AIPromptGenerator: React.FC = () => {
   const [editorContent, setEditorContent] = useState('');
   const [isCodeRepairOpen, setIsCodeRepairOpen] = useState(false);
 
-  const { messages, sendMessage, loading, error } = useHandleMessages();
+  const $aiChat = useStore(aiChatStore);
+
+  const { sendMessage } = useHandleMessages();
 
   // stubs for toolbar handlers; replace with your own
   const scanPathAutocompleteOptions: string[] = [];
@@ -67,8 +68,16 @@ const AIPromptGenerator: React.FC = () => {
 
   const handleSendMessage = async () => {
     if (instruction.trim()) {
-      await sendMessage(instruction.trim());
-      setInstruction('');
+      setLoading(true);
+      addMessage({ role: 'user', text: instruction.trim() });
+      try {
+        await sendMessage(instruction.trim());
+        setInstruction('');
+      } catch (error: any) {
+        setError(error.message || 'Failed to generate text.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -132,23 +141,23 @@ const AIPromptGenerator: React.FC = () => {
           <IconButton
             color="success"
             onClick={handleSendMessage}
-            disabled={commonDisabled || loading || !instruction}
+            disabled={commonDisabled || $aiChat.loading || !instruction}
           >
-            {loading ? <CircularProgress size={16} /> : <SendIcon />}
+            {$aiChat.loading ? <CircularProgress size={16} /> : <SendIcon />}
           </IconButton>
         </Tooltip>
         <Tooltip title="Toggle Code Repair Drawer">
           <IconButton
             color="primary"
             onClick={toggleCodeRepair}
-            disabled={commonDisabled || !!error}
+            disabled={commonDisabled || !!$aiChat.error}
           >
             <BugReportIcon />
           </IconButton>
         </Tooltip>
       </Box>
 
-      {loading && (
+      {$aiChat.loading && (
         <Box className="mt-2 flex items-center">
           <CircularProgress size={20} className="mr-1" />
           <Typography variant="body2">Generating...</Typography>
