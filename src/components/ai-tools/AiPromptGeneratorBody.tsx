@@ -19,7 +19,7 @@ const AiPromptGeneratorBody: React.FC<AiPromptGeneratorBodyProps> = () => {
       {/* messages.length > 0 && */}
       <Box mt={2}>
         {$aiChat.messages.map((message, index) => (
-          <Box key={index} mt={1}>
+          <Box id='ai-chat-message-wrapper' key={index} mt={1}>
             <strong>{message.role === 'user' ? 'You:' : 'AI:'}</strong>
             {message.role === 'model' && (
               <ReactMarkdownWithCodeCopy>
