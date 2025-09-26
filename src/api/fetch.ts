@@ -20,7 +20,13 @@ export const handleResponse = async <T>(response: Response): Promise<T> => {
 
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
-    return response.json();
+    try {
+      const data = await response.json();
+      return data as T;
+    } catch (error) {
+      console.error('Error parsing JSON:', error);
+      throw new Error('Failed to parse JSON response.');
+    }
   } else {
     return response.text() as Promise<T>;
   }

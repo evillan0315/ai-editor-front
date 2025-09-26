@@ -62,13 +62,11 @@ export const checkAuthStatus = async (): Promise<CheckAuthResponse> => {
     const response = await fetchWithAuth(`${API_BASE_URL}/auth/me`, {
       method: 'GET'
     });
-    console.log(response, 'response');
     const authData = await handleResponse<CheckAuthResponse>(response);
-    console.log(authData, 'authData');
     if(authData && getToken()){
       loginSuccess(authData.user, getToken());
     }
-    return handleResponse<CheckAuthResponse>(response);
+    return authData;
   } catch (error) {
     console.error('Failed to check authentication', error);
     setError(error.message || 'You are not logged in. Please login.');
@@ -124,4 +122,3 @@ export const registerLocal = async (userData: RegisterRequest): Promise<Register
     setLoading(false);
   }
 };
-
