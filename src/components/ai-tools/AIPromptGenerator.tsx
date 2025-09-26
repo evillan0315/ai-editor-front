@@ -17,6 +17,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SendIcon from '@mui/icons-material/Send';
 import BugReportIcon from '@mui/icons-material/BugReport';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 // You need to provide these components or stub them out in your project
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
@@ -50,6 +51,8 @@ const AIPromptGenerator: React.FC = () => {
   const [instruction, setInstruction] = useState('');
   const [editorContent, setEditorContent] = useState('');
   const [isCodeRepairOpen, setIsCodeRepairOpen] = useState(false);
+  const [isSystemInstructionOpen, setIsSystemInstructionOpen] = useState(false);
+  const [systemInstruction, setSystemInstruction] = useState('');
 
   const $aiChat = useStore(aiChatStore);
 
@@ -73,7 +76,7 @@ const AIPromptGenerator: React.FC = () => {
       setLoading(true);
       addMessage({ role: 'user', text: instruction.trim() });
       try {
-        const data: GenerateTextDto = { prompt: instruction.trim() };
+        const data: GenerateTextDto = { prompt: instruction.trim(), systemInstruction };
         const response = await generateText(data);
         addMessage({ role: 'model', text: response });
         // await sendMessage(instruction.trim());
@@ -87,6 +90,7 @@ const AIPromptGenerator: React.FC = () => {
   };
 
   const toggleCodeRepair = () => setIsCodeRepairOpen((prev) => !prev);
+  const toggleSystemInstruction = () => setIsSystemInstructionOpen((prev) => !prev);
 
   return (
     <Box className="flex flex-col gap-2 w-full relative">
@@ -160,6 +164,15 @@ const AIPromptGenerator: React.FC = () => {
             <BugReportIcon />
           </IconButton>
         </Tooltip>
+        <Tooltip title="System Instruction">
+          <IconButton
+            color="secondary"
+            onClick={toggleSystemInstruction}
+            disabled={commonDisabled}
+          >
+            <SettingsIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       {$aiChat.loading && (
@@ -197,6 +210,23 @@ const AIPromptGenerator: React.FC = () => {
         hasBackdrop={false}
       >
        
+      </CustomDrawer>
+       <CustomDrawer
+        open={isSystemInstructionOpen}
+        onClose={() => setIsSystemInstructionOpen(false)}
+        position="right"
+        size="medium"
+        title="System Instruction"
+        hasBackdrop={false}
+      >
+          <TextField
+            multiline
+            fullWidth
+            placeholder="Enter system instruction..."
+            value={systemInstruction}
+            onChange={(e) => setSystemInstruction(e.target.value)}
+            variant="outlined"
+          />
       </CustomDrawer>
     </Box>
   );
