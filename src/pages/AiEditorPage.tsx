@@ -250,9 +250,9 @@ const AiEditorPage: React.FC = () => {
             bgcolor: theme.palette.background.paper,
           }}
         >
-          {openedTabs && openedTabs.length > 0 && (
+          {/*openedTabs && openedTabs.length > 0 && (
             <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
-          )}
+          )*/}
 
           <Box
             ref={contentAreaRef}

@@ -64,6 +64,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
     bgcolor: theme.palette.background.paper,
     color: theme.palette.text.primary,
     overflow: 'auto',
+    zIndex: 1000
   };
 
   const backdrop = hasBackdrop ? 'static' : undefined;

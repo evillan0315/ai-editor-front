@@ -11,6 +11,7 @@ export const handleResponse = async <T>(response: Response): Promise<T> => {
     const errorData: ApiError = await response.json();
     throw new Error(errorData.message || `API error: ${response.status}`);
   }
+  console.log(response, 'response.');
   return response.json();
 };
 

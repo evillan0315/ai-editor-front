@@ -221,7 +221,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
       {/* Sticky footer */}
       <Paper
         elevation={1}
-        className="sticky bottom-0 z-[1300] w-full flex justify-center items-center border-t radius-0"
+        className="sticky bottom-0 z-[300] w-full flex justify-center items-center border-t radius-0"
         sx={{
           height: FOOTER_HEIGHT,
           backgroundColor: theme.palette.background.paper,

@@ -23,7 +23,9 @@ import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import BottomToolbar from '@/components/code-generator/BottomToolbar';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 
-import useHandleMessages from '@/hooks/useHandleMessages';
+// import useHandleMessages from '@/hooks/useHandleMessages';
+import { generateText } from '@/api/ai';
+import { GenerateTextDto } from '@/types/ai';
 
 const INSTRUCTION = `
 You are an AI assistant integrated into a web application that uses a ChatGPT-style interface.
@@ -51,7 +53,7 @@ const AIPromptGenerator: React.FC = () => {
 
   const $aiChat = useStore(aiChatStore);
 
-  const { sendMessage } = useHandleMessages();
+  // const { sendMessage } = useHandleMessages();
 
   // stubs for toolbar handlers; replace with your own
   const scanPathAutocompleteOptions: string[] = [];
@@ -71,7 +73,10 @@ const AIPromptGenerator: React.FC = () => {
       setLoading(true);
       addMessage({ role: 'user', text: instruction.trim() });
       try {
-        await sendMessage(instruction.trim());
+        const data: GenerateTextDto = { prompt: instruction.trim() };
+        const response = await generateText(data);
+        addMessage({ role: 'model', text: response });
+        // await sendMessage(instruction.trim());
         setInstruction('');
       } catch (error: any) {
         setError(error.message || 'Failed to generate text.');
