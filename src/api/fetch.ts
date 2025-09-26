@@ -8,11 +8,22 @@ export interface ApiError extends Error {
 
 export const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
-    const errorData: ApiError = await response.json();
-    throw new Error(errorData.message || `API error: ${response.status}`);
+    let errorData: any;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = await response.text();
+    }
+
+    throw new Error(typeof errorData === 'string' ? errorData : errorData.message || `API error: ${response.status}`);
   }
-  console.log(response, 'response.');
-  return response.json();
+
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return response.json();
+  } else {
+    return response.text() as Promise<T>;
+  }
 };
 
 export const fetchWithAuth = async (url: string, options?: RequestInit) => {
