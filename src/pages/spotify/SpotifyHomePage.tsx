@@ -95,6 +95,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   }, [allAvailableMediaFiles]);
 
   const handlePlayAudio = useCallback((song: MediaFileResponseDto) => {
+    console.log(song, 'song');
     const track = mapMediaFileToTrack(song);
     setCurrentTrack(track);
   }, []);
@@ -217,7 +218,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
         onFavorite={toggleFavoriteVideo}
         onAction={handleVideoAction}
       />
-      <MediaPlayer mediaType='AUDIO' />
+
     </Box>
   );
 };

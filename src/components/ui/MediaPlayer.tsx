@@ -16,6 +16,7 @@ import {
   toggleShuffle,
   resetPlaybackState,
   setTrackDuration,
+  currentTrackAtom
 } from '@/stores/mediaStore';
 import {
   Box,
@@ -64,7 +65,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
 
-  const { currentTrack } = useStore($mediaStore);
+  const  currentTrack  = useStore(currentTrackAtom);
 
   // Local state for UI
   const [isMuted, setIsMuted] = useState(false);
@@ -99,6 +100,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
       };
 
       const handlePlaying = () => {
+        
         setLoading(false);
       };
 
@@ -151,17 +153,17 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
       setCurrentSrc(null);
       return;
     }
-
-    let mediaUrl = `${API_BASE_URL}/file/stream?filePath=${currentTrack.path}&token=${authStore.get().token}`;
-
-    if (mediaRef.current) {
-      setCurrentSrc(mediaUrl);
+    console.log(currentTrack, 'currentTrack');
+    let mediaUrl = currentTrack.mediaSrc;
+    console.log(mediaUrl, 'mediaUrl');
+    if (mediaRef.current && currentSrc !== mediaUrl) {
+      setCurrentSrc(currentTrack.mediaSrc);
       mediaRef.current.load();
       if (isPlaying) {
         mediaRef.current.play();
       }
     }
-  }, [currentTrack, isPlaying]);
+  }, [currentTrack, isPlaying, currentSrc]);
 
 
   // Handler functions
