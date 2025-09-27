@@ -1,15 +1,11 @@
 import React from 'react';
 import {
-  Button,
   Typography,
   Box,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  useTheme,
   Paper,
   Tabs,
   Tab,
+  useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useStore } from '@nanostores/react';
@@ -24,15 +20,8 @@ import {
 } from '@/stores/llmStore';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import MarkdownEditor from '@/components/MarkdownEditor'; // ✅ New rich editor
-import {
-  SvgIconComponent
-} from '@mui/material'
-
-export interface GlobalAction {
-  label: string;
-  action: () => void;
-  icon?: SvgIconComponent;
-}
+import { GlobalAction } from '@/types';
+import GlobalActionButton from '@/components/ui/GlobalActionButton';
 
 interface PromptGeneratorSettingsProps {
   open: boolean;
@@ -40,9 +29,11 @@ interface PromptGeneratorSettingsProps {
   globalActions?: GlobalAction[];
 }
 
-const PromptGeneratorSettings: React.FC<
-  PromptGeneratorSettingsProps
-> = ({ open, onClose, globalActions }) => {
+const PromptGeneratorSettings: React.FC<PromptGeneratorSettingsProps> = ({
+  open,
+  onClose,
+  globalActions,
+}) => {
   const theme = useTheme();
   const { aiInstruction } = useStore(llmStore);
   const [tab, setTab] = React.useState(0); // 0 = General Instruction, 1 = JSON Schema, 2 = Example Output
@@ -83,111 +74,87 @@ ${localInstructionExample}
     <Paper>
       <Box
         sx={{
-
           color: theme.palette.text.primary,
         }}
       >
-          <Tabs
-            value={tab}
-            onChange={(_, v) => setTab(v)}
-            textColor="primary"
-            indicatorColor="primary"
-            centered
-          >
-            <Tab label="General Instruction" />
-            <Tab label="Instruction Schema" />
-            <Tab label="Example Output" />
-          </Tabs>
+        <Tabs
+          value={tab}
+          onChange={(_, v) => setTab(v)}
+          textColor="primary"
+          indicatorColor="primary"
+          centered
+        >
+          <Tab label="General Instruction" />
+          <Tab label="Instruction Schema" />
+          <Tab label="Example Output" />
+        </Tabs>
 
         {/* ---------- General Instruction (Markdown Editor) ---------- */}
         {tab === 0 && (
-        <Box
-          sx={{ color: theme.palette.text.primary, mt: 1 }}
-        >
-        <Box
-          sx={{
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: 1,
-            overflow: 'hidden',
-            mb: 2,
-          }}
-        >
-          <MarkdownEditor
-            value={localAiInstruction}
-            initialValue={localAiInstruction}
-            onChange={setLocalAiInstruction}
-            expectedSchema={localInstructionSchema}
-            exampleOutput={localInstructionExample}
-          />
-        </Box>
-        </Box>
+          <Box sx={{ color: theme.palette.text.primary, mt: 1 }}>
+            <Box
+              sx={{
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: 1,
+                overflow: 'hidden',
+                mb: 2,
+              }}
+            >
+              <MarkdownEditor
+                value={localAiInstruction}
+                initialValue={localAiInstruction}
+                onChange={setLocalAiInstruction}
+                expectedSchema={localInstructionSchema}
+                exampleOutput={localInstructionExample}
+              />
+            </Box>
+          </Box>
         )}
 
         {/* ---------- Accordion: JSON Schema ---------- */}
         {tab === 1 && (
-        <Box>
-          <Box
-            sx={{ color: theme.palette.text.primary, mt: 1 }}
-          >
-
-            <Box
-              sx={{
-                borderTop: `1px solid ${theme.palette.divider}`,
-                overflow: 'hidden',
-              }}
-            >
-              <CodeMirrorEditor
-                value={localInstructionSchema}
-                onChange={setLocalInstructionSchema}
-                language="json"
-                filePath="schema.json"
-              />
+          <Box>
+            <Box sx={{ color: theme.palette.text.primary, mt: 1 }}>
+              <Box
+                sx={{
+                  borderTop: `1px solid ${theme.palette.divider}`,
+                  overflow: 'hidden',
+                }}
+              >
+                <CodeMirrorEditor
+                  value={localInstructionSchema}
+                  onChange={setLocalInstructionSchema}
+                  language="json"
+                  filePath="schema.json"
+                />
+              </Box>
             </Box>
-
           </Box>
-        </Box>
         )}
 
         {/* ---------- Accordion: Example Output ---------- */}
         {tab === 2 && (
-         <Box>
-          <Box
-            sx={{ color: theme.palette.text.primary, mt: 1 }}
-          >
-           <Box
-              sx={{
-                borderTop: `1px solid ${theme.palette.divider}`,
-                overflow: 'hidden',
-              }}
-            >
-              <CodeMirrorEditor
-                value={localInstructionExample}
-                onChange={setLocalInstructionExample}
-                language="json"
-                filePath="example.json"
-              />
+          <Box>
+            <Box sx={{ color: theme.palette.text.primary, mt: 1 }}>
+              <Box
+                sx={{
+                  borderTop: `1px solid ${theme.palette.divider}`,
+                  overflow: 'hidden',
+                }}
+              >
+                <CodeMirrorEditor
+                  value={localInstructionExample}
+                  onChange={setLocalInstructionExample}
+                  language="json"
+                  filePath="example.json"
+                />
+              </Box>
             </Box>
-
-
           </Box>
-         </Box>
         )}
       </Box>
 
-      <Box sx={{ backgroundColor: theme.palette.background.paper, display: 'flex', gap: 1 }}>
-          {globalActions &&
-            globalActions.map((action, index) => (
-              <Button
-                key={index}
-                onClick={action.action}
-                color="primary"
-                variant="contained"
-                startIcon={action.icon ? <action.icon /> : null}
-              >
-                {action.label}
-              </Button>
-            ))}
-      </Box>
+      <GlobalActionButton globalActions={globalActions || []} />
     </Paper>
   );
 };
