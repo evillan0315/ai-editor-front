@@ -99,8 +99,8 @@ export interface MediaFileResponseDto {
   createdById: string;
   folderId?: string | null;
   metadata?: MediaMetadata[] | null; // Changed to array of MediaMetadata
-  song?: any | null;
-  video?: any | null;
+  song?: Song | null;
+  video?: Video | null;
 }
 
 /**
@@ -199,4 +199,35 @@ export interface TranscriptionApi {
     fileId: string,
     currentTime: number,
   ) => Promise<SyncTranscriptionResponse>;
+}
+
+// =========================================================================
+// Song and Video Types
+// =========================================================================
+
+export interface Song {
+  id: string;
+  title: string;
+  duration: number;
+  year: number | null;
+  createdAt: string;
+  updatedAt: string;
+  artistId: string;
+  albumId: string;
+  createdById: string;
+}
+
+export interface Video {
+  id: string;
+  title: string;
+  description: string | null;
+  duration: number;
+  year: number | null;
+  rating: number | null;
+  director: string | null;
+  cast: string[];
+  resolution: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdById: string;
 }
