@@ -196,7 +196,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         open={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         position="left"
-        size="normal"
+        size="medium"
         title="Prompt Generator Settings"
         hasBackdrop={false}
         footerActionButton={GlobalActionButtons}

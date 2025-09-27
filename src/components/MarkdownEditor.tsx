@@ -32,6 +32,9 @@ import 'github-markdown-css/github-markdown.css';
 import 'github-markdown-css/github-markdown-dark.css';
 //import '@/styles/markdown.css';
 import ReactMarkdownWithCodeCopy from '@/components/markdown/ReactMarkdownWithCodeCopy';
+import EditIcon from '@mui/icons-material/Edit';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import SchemaIcon from '@mui/icons-material/Schema';
 
 interface MarkdownEditorProps {
   value?: string;
@@ -169,10 +172,10 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             textColor="primary"
             indicatorColor="primary"
           >
-            <Tab label="Write" />
-            <Tab label="Preview" />
+            <Tab icon={<EditIcon />} aria-label="write" />
+            <Tab icon={<VisibilityIcon />} aria-label="preview" />
             {expectedSchema && exampleOutput && (
-              <Tab label="Schema" />
+              <Tab icon={<SchemaIcon />} aria-label="schema" />
             )}
             
           </Tabs>
