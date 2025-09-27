@@ -1,26 +1,22 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  Alert,
-  useTheme,
-} from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, useTheme } from '@mui/material';
 import { useStore } from '@nanostores/react';
 import {
-  $spotifyStore,
-  playTrack,
-  fetchMediaForPurpose,
-  isPlayingAtom,
-  currentTrackAtom,
-} from '@/stores/spotifyStore';
-import { MediaFileResponseDto, FileType } from '@/types';
+  $mediaStore,
+  setPlaying,
+  setCurrentTrack,
+} from '@/stores/mediaStore';
+
+import {
+  fetchMediaFiles,
+} from '@/api/media'
+import { MediaFileResponseDto, FileType, Track, Video } from '@/types/refactored/media';
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';
 import { authStore } from '@/stores/authStore';
 import SongList from '@/components/ui/SongList';
 import VideoList from '@/components/ui/VideoList';
 import { showGlobalSnackbar } from '@/stores/aiEditorStore';
-
+import { API_BASE_URL } from '@/api';
 
 interface SpotifyHomePageProps {
   // No specific props for now, just static content
@@ -29,37 +25,86 @@ interface SpotifyHomePageProps {
 const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   const theme = useTheme();
   const { isLoggedIn } = useStore(authStore); // Get login status
-  const { allAvailableMediaFiles, isFetchingMedia, fetchMediaError } = useStore($spotifyStore);
+  const {
+    loading: isFetchingMedia,
+    error: fetchMediaError,
+  } = useStore($mediaStore);
+  const [allAvailableMediaFiles, setAllAvailableMediaFiles] = useState<MediaFileResponseDto[]>([]);
 
   // Directly get isPlaying and currentTrack from their respective atoms
-  const isPlaying = useStore(isPlayingAtom);
-  const currentTrack = useStore(currentTrackAtom);
+  // const isPlaying = useStore(isPlayingAtom);
+  // const currentTrack = useStore(currentTrackAtom);
   const [favoriteSongs, setFavoriteSongs] = useState<string[]>([]);
   const [favoriteVideos, setFavoriteVideos] = useState<string[]>([]);
   const [hasFetchedMedia, setHasFetchedMedia] = useState(false);
+
+  const fetchMediaForPurpose = useCallback(async () => {
+    if (!isLoggedIn) {
+      console.warn('User is not logged in. Skipping media fetch.');
+      return;
+    }
+
+    try {
+      const media = await fetchMediaFiles({ page: 1, pageSize: 200 });
+      console.log(media, 'media');
+      if (media && media.items) {
+        setAllAvailableMediaFiles(media.items);
+      }
+      setHasFetchedMedia(true);
+
+    } catch (error: any) {
+      console.error('Error fetching media:', error);
+      showGlobalSnackbar(
+        `Failed to fetch media: ${error.message || error}`,
+        'error',
+      );
+    }
+  }, [isLoggedIn]);
+
 
   useEffect(() => {
     // Fetch media files when the component mounts if not already fetched
     // Use 'general' purpose to populate allAvailableMediaFiles, with reset: true
     if (!hasFetchedMedia && !isFetchingMedia) {
-      fetchMediaForPurpose({ page: 1, pageSize: 200, fileType: 'AUDIO' }, 'general', false);
-      setHasFetchedMedia(true);
+      fetchMediaForPurpose();
     }
-  }, [hasFetchedMedia, isFetchingMedia]);
+  }, [fetchMediaForPurpose, hasFetchedMedia, isFetchingMedia]);
 
   // Filter for audio files
-  const playableAudioTracks: MediaFileResponseDto[] = allAvailableMediaFiles.filter(media => media.fileType === FileType.AUDIO);
+  const playableAudioTracks: MediaFileResponseDto[] = useMemo(() => {
+  console.log(allAvailableMediaFiles, 'allAvailableMediaFiles');
+    return allAvailableMediaFiles.filter(media => media.fileType === FileType.AUDIO);
+  }, [allAvailableMediaFiles]);
+
   // Filter for video files
-  const playableVideoTracks: MediaFileResponseDto[] = allAvailableMediaFiles.filter(media => media.fileType === FileType.VIDEO);
+  const playableVideoTracks: MediaFileResponseDto[] = useMemo(() => {
+    return allAvailableMediaFiles.filter(media => media.fileType === FileType.VIDEO);
+  }, [allAvailableMediaFiles]);
 
-  const handlePlayAudio = useCallback((song: any) => {
-    console.log(song, 'song')
-    playTrack(song, playableAudioTracks.map(mapMediaFileToTrack));
-  }, [playableAudioTracks]);
+  const handlePlayAudio = useCallback((song: MediaFileResponseDto) => {
+    const track = mapMediaFileToTrack(song);
+    setCurrentTrack(track);
+    // Construct the full URL to the audio file
+    const audioUrl = `${API_BASE_URL}/file/stream?filePath=${song.path}&token=${authStore.get().token}`;
 
-  const handlePlayVideo = useCallback((video: any) => {
-    playTrack(video, playableVideoTracks.map(mapMediaFileToTrack));
-  }, [playableVideoTracks]);
+    // Play the audio
+    const audio = new Audio(audioUrl);
+    audio.play();
+    setPlaying(true);
+  }, []);
+
+  const handlePlayVideo = useCallback((video: MediaFileResponseDto) => {
+    const track = mapMediaFileToTrack(video);
+    setCurrentTrack(track);
+    // Construct the full URL to the video file
+    const videoUrl = `${API_BASE_URL}/file/stream?filePath=${video.path}&token=${authStore.get().token}`;
+
+    // Play the video
+    const videoElement = document.createElement('video');
+    videoElement.src = videoUrl;
+    videoElement.play();
+    setPlaying(true);
+  }, []);
 
   const toggleFavoriteSong = useCallback((songId: string) => {
     setFavoriteSongs(prev =>
@@ -73,13 +118,13 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
     );
   }, []);
 
-  const handleSongAction = (action: string, song: any) => {
-    showGlobalSnackbar(`Action: ${action} on song ${song.title}`, 'info');
+  const handleSongAction = (action: string, song: MediaFileResponseDto) => {
+    showGlobalSnackbar(`Action: ${action} on song ${song.name}`, 'info');
     // Implement other actions like edit, delete, download, etc.
   };
 
-  const handleVideoAction = (action: string, video: any) => {
-    showGlobalSnackbar(`Action: ${action} on video ${video.title}`, 'info');
+  const handleVideoAction = (action: string, video: MediaFileResponseDto) => {
+    showGlobalSnackbar(`Action: ${action} on video ${video.name}`, 'info');
     // Implement other actions like trailer, watchlist, download, etc.
   };
 
@@ -159,7 +204,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
         All Available Audio Tracks
       </Typography>
       <SongList
-        songs={audioList}
+        songs={playableAudioTracks}
         onPlay={handlePlayAudio}
         onFavorite={toggleFavoriteSong}
         onAction={handleSongAction}
@@ -169,7 +214,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
         All Available Video Tracks
       </Typography>
       <VideoList
-        videos={videoList}
+        videos={playableVideoTracks}
         onPlay={handlePlayVideo}
         onFavorite={toggleFavoriteVideo}
         onAction={handleVideoAction}

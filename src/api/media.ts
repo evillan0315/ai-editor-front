@@ -66,7 +66,7 @@ export const fetchMediaFiles = async (
     );
 
     const media = await handleResponse<PaginationMediaResultDto>(response);
-    console.log(media, 'media');
+    console.log(media, 'fetchMediaFiles');
     if(media && media.items.length > 0){
       return media;
     }

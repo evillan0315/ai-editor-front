@@ -41,20 +41,7 @@ import {
 } from '@mui/icons-material';
 
 // Types
-interface Video {
-  id: string;
-  title: string;
-  description: string;
-  duration: number;
-  thumbnail: string;
-  genre: string[];
-  isFavorite: boolean;
-  year: number;
-  rating: number;
-  director?: string;
-  cast?: string[];
-  resolution?: string;
-}
+import { Video, MediaFileResponseDto } from '@/types/refactored/media';
 
 interface MenuItem {
   label: string;
@@ -64,10 +51,10 @@ interface MenuItem {
 }
 
 interface VideoListProps {
-  videos: Video[];
-  onPlay: (video: Video) => void;
+  videos: MediaFileResponseDto[];
+  onPlay: (video: MediaFileResponseDto) => void;
   onFavorite: (videoId: string) => void;
-  onAction: (action: string, video: Video) => void;
+  onAction: (action: string, video: MediaFileResponseDto) => void;
   menuItems?: MenuItem[];
 }
 
@@ -98,7 +85,7 @@ const VideoList: React.FC<VideoListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<MediaFileResponseDto | null>(null);
   const [hoveredVideo, setHoveredVideo] = useState<string | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
@@ -107,7 +94,7 @@ const VideoList: React.FC<VideoListProps> = ({
 
   // Derived data
   const genres = useMemo(() => {
-    const allGenres = videos.flatMap((video) => video.genre);
+    const allGenres = videos.flatMap((video) => video.video?.cast ?? []);
     return ['all', ...Array.from(new Set(allGenres))];
   }, [videos]);
 
@@ -116,26 +103,43 @@ const VideoList: React.FC<VideoListProps> = ({
       videos
         .filter((video) => {
           const matchesSearch =
-            video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            video.description
-              .toLowerCase()
+            video.video?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            video.video?.description
+              ?.toLowerCase()
               .includes(searchQuery.toLowerCase()) ||
-            (video.cast &&
-              video.cast.some((actor) =>
+            (video.video?.cast &&
+              video.video?.cast.some((actor) =>
                 actor.toLowerCase().includes(searchQuery.toLowerCase()),
               ));
 
           const matchesGenre =
-            selectedGenre === 'all' || video.genre.includes(selectedGenre);
+            selectedGenre === 'all' || video.video?.cast?.includes(selectedGenre) || false;
 
           return matchesSearch && matchesGenre;
         })
         .sort((a, b) => {
           const modifier = sortOrder === 'asc' ? 1 : -1;
 
-          if (a[sortField] < b[sortField]) return -1 * modifier;
-          if (a[sortField] > b[sortField]) return 1 * modifier;
-          return 0;
+          if (sortField === 'title') {
+            const aValue = a.video ? a.video.title : '';
+            const bValue = b.video ? b.video.title : '';
+
+            if (aValue < bValue) return -1 * modifier;
+            if (aValue > bValue) return 1 * modifier;
+            return 0;
+          } else if (sortField === 'year') {
+            const aYear = a.video ? (a.video.year || 0) : 0;
+            const bYear = b.video ? (b.video.year || 0) : 0;
+            return (aYear - bYear) * modifier;
+          } else if (sortField === 'rating') {
+            const aRating = a.video ? (a.video.rating || 0) : 0;
+            const bRating = b.video ? (b.video.rating || 0) : 0;
+            return (aRating - bRating) * modifier;
+          } else {
+            const aDuration = a.video ? (a.video.duration || 0) : 0;
+            const bDuration = b.video ? (b.video.duration || 0) : 0;
+            return (aDuration - bDuration) * modifier;
+          }
         }),
     [videos, searchQuery, selectedGenre, sortField, sortOrder],
   );
@@ -152,7 +156,7 @@ const VideoList: React.FC<VideoListProps> = ({
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
-    video: Video,
+    video: MediaFileResponseDto,
   ) => {
     setMenuAnchor(event.currentTarget);
     setSelectedVideo(video);
@@ -167,7 +171,7 @@ const VideoList: React.FC<VideoListProps> = ({
     setHoveredVideo(videoId);
   };
 
-  const openDetailDialog = (video: Video) => {
+  const openDetailDialog = (video: MediaFileResponseDto) => {
     setSelectedVideo(video);
     setDetailDialogOpen(true);
   };
@@ -202,8 +206,8 @@ const VideoList: React.FC<VideoListProps> = ({
             <CardMedia
               component="img"
               sx={{ width: 160, height: 90, objectFit: 'cover' }}
-              image={video.thumbnail}
-              alt={video.title}
+              image={video.url || ''}
+              alt={video.video?.title}
             />
             <Box
               sx={{
@@ -215,7 +219,7 @@ const VideoList: React.FC<VideoListProps> = ({
             >
               <CardContent sx={{ flexGrow: 1, py: 1 }}>
                 <Typography variant="h6" noWrap>
-                  {video.title}
+                  {video.video?.title}
                 </Typography>
                 <Box
                   sx={{
@@ -227,31 +231,31 @@ const VideoList: React.FC<VideoListProps> = ({
                   }}
                 >
                   <Typography variant="body2" color="text.secondary">
-                    {video.year}
+                    {video.video?.year}
                   </Typography>
                   <span>•</span>
                   <Typography variant="body2" color="text.secondary">
-                    {formatDuration(video.duration)}
+                    {formatDuration(video.video?.duration || 0)}
                   </Typography>
                   <span>•</span>
                   <Rating
                     size="small"
-                    value={video.rating / 2}
+                    value={(video.video?.rating || 0) / 2}
                     precision={0.5}
                     readOnly
                   />
                 </Box>
                 <Typography variant="body2" color="text.secondary" noWrap>
-                  {video.description}
+                  {video.video?.description}
                 </Typography>
               </CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
                 <IconButton
                   onClick={() => onFavorite(video.id)}
-                  color={video.isFavorite ? 'error' : 'default'}
+                  color={video.video?.rating ? 'error' : 'default'}
                   size="small"
                 >
-                  {video.isFavorite ? <Favorite /> : <FavoriteBorder />}
+                  {video.video?.rating ? <Favorite /> : <FavoriteBorder />}
                 </IconButton>
                 <IconButton onClick={() => onPlay(video)} size="small">
                   <PlayArrow />
@@ -292,8 +296,8 @@ const VideoList: React.FC<VideoListProps> = ({
                 <CardMedia
                   component="img"
                   height="200"
-                  image={video.thumbnail}
-                  alt={video.title}
+                  image={video.url || ''}
+                  alt={video.video?.title}
                   sx={{ objectFit: 'cover' }}
                 />
                 <Slide
@@ -322,7 +326,7 @@ const VideoList: React.FC<VideoListProps> = ({
             </Box>
             <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
               <Typography gutterBottom variant="h6" noWrap>
-                {video.title}
+                {video.video?.title}
               </Typography>
               <Box
                 sx={{
@@ -333,12 +337,12 @@ const VideoList: React.FC<VideoListProps> = ({
                 }}
               >
                 <Typography variant="body2" color="text.secondary">
-                  {video.year}
+                  {video.video?.year}
                 </Typography>
-                <Chip label={formatDuration(video.duration)} size="small" />
+                <Chip label={formatDuration(video.video?.duration || 0)} size="small" />
               </Box>
               <Rating
-                value={video.rating / 2}
+                value={(video.video?.rating || 0) / 2}
                 precision={0.5}
                 size="small"
                 readOnly
@@ -349,10 +353,10 @@ const VideoList: React.FC<VideoListProps> = ({
             >
               <IconButton
                 onClick={() => onFavorite(video.id)}
-                color={video.isFavorite ? 'error' : 'default'}
+                color={video.video?.rating ? 'error' : 'default'}
                 size="small"
               >
-                {video.isFavorite ? <Favorite /> : <FavoriteBorder />}
+                {video.video?.rating ? <Favorite /> : <FavoriteBorder />}
               </IconButton>
               <IconButton
                 onClick={(e) => handleMenuOpen(e, video)}
@@ -386,8 +390,8 @@ const VideoList: React.FC<VideoListProps> = ({
               <CardMedia
                 component="img"
                 height="320"
-                image={video.thumbnail}
-                alt={video.title}
+                image={video.url || ''}
+                alt={video.video?.title}
                 sx={{ objectFit: 'cover' }}
               />
               <Grow in={hoveredVideo === video.id} timeout={300}>
@@ -403,7 +407,7 @@ const VideoList: React.FC<VideoListProps> = ({
                   }}
                 >
                   <Typography variant="h6" noWrap>
-                    {video.title}
+                    {video.video?.title}
                   </Typography>
                   <Box
                     sx={{
@@ -413,14 +417,14 @@ const VideoList: React.FC<VideoListProps> = ({
                       gap: 0.5,
                     }}
                   >
-                    <Typography variant="body2">{video.year}</Typography>
+                    <Typography variant="body2">{video.video?.year}</Typography>
                     <span>•</span>
                     <Typography variant="body2">
-                      {formatDuration(video.duration)}
+                      {formatDuration(video.video?.duration || 0)}
                     </Typography>
                   </Box>
                   <Rating
-                    value={video.rating / 2}
+                    value={(video.video?.rating || 0) / 2}
                     precision={0.5}
                     size="small"
                     readOnly
@@ -439,14 +443,14 @@ const VideoList: React.FC<VideoListProps> = ({
             >
               <IconButton
                 onClick={() => onFavorite(video.id)}
-                color={video.isFavorite ? 'error' : 'default'}
+                color={video.video?.rating ? 'error' : 'default'}
                 size="small"
                 sx={{
                   bgcolor: 'background.paper',
                   '&:hover': { bgcolor: 'background.paper' },
                 }}
               >
-                {video.isFavorite ? <Favorite /> : <FavoriteBorder />}
+                {video.video?.rating ? <Favorite /> : <FavoriteBorder />}
               </IconButton>
               <IconButton
                 onClick={(e) => handleMenuOpen(e, video)}
@@ -604,8 +608,8 @@ const VideoList: React.FC<VideoListProps> = ({
             <>
               <CardMedia
                 component="img"
-                image={selectedVideo.thumbnail}
-                alt={selectedVideo.title}
+                image={selectedVideo.url || ''}
+                alt={selectedVideo.video?.title}
                 sx={{ width: '100%', height: { xs: 200, sm: 400 } }}
               />
               <IconButton
@@ -623,34 +627,34 @@ const VideoList: React.FC<VideoListProps> = ({
               </IconButton>
               <Box sx={{ p: 3 }}>
                 <Typography variant="h4" gutterBottom>
-                  {selectedVideo.title}
+                  {selectedVideo.video?.title}
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-                  <Typography variant="body1">{selectedVideo.year}</Typography>
+                  <Typography variant="body1">{selectedVideo.video?.year}</Typography>
                   <Typography variant="body1">
-                    {formatDuration(selectedVideo.duration)}
+                    {formatDuration(selectedVideo.video?.duration || 0)}
                   </Typography>
                   <Rating
-                    value={selectedVideo.rating / 2}
+                    value={(selectedVideo.video?.rating || 0) / 2}
                     precision={0.5}
                     readOnly
                   />
                 </Box>
                 <Typography variant="body1" paragraph>
-                  {selectedVideo.description}
+                  {selectedVideo.video?.description}
                 </Typography>
-                {selectedVideo.director && (
+                {selectedVideo.video?.director && (
                   <Typography variant="body2" gutterBottom>
-                    <strong>Director:</strong> {selectedVideo.director}
+                    <strong>Director:</strong> {selectedVideo.video?.director}
                   </Typography>
                 )}
-                {selectedVideo.cast && (
+                {selectedVideo.video?.cast && (
                   <Typography variant="body2" gutterBottom>
-                    <strong>Cast:</strong> {selectedVideo.cast.join(', ')}
+                    <strong>Cast:</strong> {selectedVideo.video?.cast.join(', ')}
                   </Typography>
                 )}
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
-                  {selectedVideo.genre.map((genre) => (
+                  {selectedVideo.video?.cast?.map((genre) => (
                     <Chip key={genre} label={genre} variant="outlined" />
                   ))}
                 </Box>
@@ -666,10 +670,10 @@ const VideoList: React.FC<VideoListProps> = ({
                   </Fab>
                   <IconButton
                     onClick={() => onFavorite(selectedVideo.id)}
-                    color={selectedVideo.isFavorite ? 'error' : 'default'}
+                    color={selectedVideo.video?.rating ? 'error' : 'default'}
                     size="large"
                   >
-                    {selectedVideo.isFavorite ? (
+                    {selectedVideo.video?.rating ? (
                       <Favorite />
                     ) : (
                       <FavoriteBorder />

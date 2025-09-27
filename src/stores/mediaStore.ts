@@ -229,4 +229,29 @@ export const deletePlaylistAction = async (id: string) => {
   }
 };
 
+export const fetchingMediaFiles = async (query?: PaginationMediaQueryDto) => {
+  $mediaStore.setKey('loading', true);
+  try {
+    const media = await fetchMediaFiles(query);
+    $mediaStore.setKey('loading', false);
+
+    if (media && media.items) {
+      // Update the media store with the fetched media files
+      $mediaStore.setKey('playlists', media.items as any);
+      return media;
+    } else {
+      // If media or media.items is undefined, handle the case appropriately
+      showGlobalSnackbar('Failed to fetch media files or empty media list', 'warning');
+      $mediaStore.setKey('error', 'Failed to fetch media files or empty media list');
+      return null;
+    }
+  } catch (error: any) {
+    $mediaStore.setKey('loading', false);
+    // Handle errors and display a snackbar
+    showGlobalSnackbar(`Failed to fetch media files: ${error.message}`, 'error');
+    $mediaStore.setKey('error', error.message);
+    return null;
+  }
+};
+
 export type MediaStoreType = typeof $mediaStore;
