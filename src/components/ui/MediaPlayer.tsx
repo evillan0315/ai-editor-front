@@ -161,7 +161,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
         mediaRef.current.play();
       }
     }
-  }, [currentTrack]);
+  }, [currentTrack, isPlaying]);
 
 
   // Handler functions
