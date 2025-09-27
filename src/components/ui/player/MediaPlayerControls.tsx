@@ -19,32 +19,29 @@ import {
 import { MediaFileResponseDtoUrl, FileType } from '@/types/refactored/media';
 
 interface MediaPlayerControlsProps {
-  mediaFile: MediaFileResponseDto;
+  isPlaying: boolean;
+  currentTrack: MediaFileResponseDtoUrl | null;
+  onPlayPause: () => void;
+  onNext: () => void;
+  onPrevious: () => void;
 }
 
-const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({mediaFile}) => {
+const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
+  isPlaying,
+  currentTrack,
+  onPlayPause,
+  onNext,
+  onPrevious,
+}) => {
   const theme = useTheme();
-  const [isPlaying, setIsPlaying] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState<'off' | 'context' | 'track'>('off');
   const [duration, setDuration] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState<MediaFileResponseDtoUrl>(null);
-
+  const [trackProgress, setTrackProgress] = useState<number>(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [currentSrc, setCurrentSrc] = useState<string | null>(null);
-  const [trackProgress, setTrackProgress] = useState<number>(0);
   const mediaRef = currentTrack?.fileType === 'VIDEO' ? videoRef : audioRef;
-
-  useEffect(() => {
-    if(mediaFile) {
-            console.log(mediaFile, 'mediaFile MediaPlayerControls');
-      setCurrentTrack(mediaFile);
-      setCurrentSrc(mediaFile?.streamUrl)
-
-    }
-  }, [mediaFile]);
 
 
   useEffect(() => {
@@ -74,8 +71,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({mediaFile}) =>
       };
 
       const handleEnded = () => {
-        setIsPlaying(false);
-        setTrackProgress(0);
+        setLoading(false)
       };
 
       media.addEventListener('loadedmetadata', handleMetadata);
@@ -95,44 +91,13 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({mediaFile}) =>
     }
   }, [mediaRef]);
 
-  // Play/Pause based on isPlaying state
   useEffect(() => {
-    const media = mediaRef?.current;
-
-    if (media) {
-      if (isPlaying) {
-        media.play().catch((error) => {
-          console.error('Playback failed:', error);
-          setIsPlaying(false);
-        });
-      } else {
-        media.pause();
+    if(currentTrack){
+      if (mediaRef?.current) {
+        mediaRef.current.load();
       }
     }
-  }, [isPlaying, currentTrack]);
-
-  // Load media when currentTrack changes
-  useEffect(() => {
-    if (!currentTrack) {
-      setCurrentSrc(null);
-      return;
-    }
-    let mediaUrl = currentTrack.streamUrl;
-    if (mediaRef?.current && currentSrc !== mediaUrl) {
-      setCurrentSrc(currentTrack.streamUrl);
-      mediaRef.current.load();
-      if (isPlaying) {
-        mediaRef.current.play();
-      }
-    }
-  }, [currentTrack, isPlaying, currentSrc]);
-
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
-
-  const handleNext = () => {};
-  const handlePrevious = () => {};
+  }, [currentTrack])
 
   const formatTime = (time: number): string => {
     const minutes = Math.floor(time / 60);
@@ -194,13 +159,13 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({mediaFile}) =>
         <IconButton
           size='small'
           sx={{ color: theme.palette.text.primary }}
-          onClick={handlePrevious}
+          onClick={onPrevious}
         >
           <SkipPrevious fontSize='small' />
         </IconButton>
         <IconButton
           size='large'
-          onClick={handlePlayPause}
+          onClick={onPlayPause}
           disabled={loading}
           sx={{
             color: theme.palette.text.primary,
@@ -224,7 +189,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({mediaFile}) =>
         <IconButton
           size='small'
           sx={{ color: theme.palette.text.primary }}
-          onClick={handleNext}
+          onClick={onNext}
         >
           <SkipNext fontSize='small' />
         </IconButton>
@@ -251,7 +216,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({mediaFile}) =>
           gap: 1,
         }}
       >
-         <Typography variant='caption' color='text.secondary'>
+        <Typography variant='caption' color='text.secondary'>
           {formatTime(trackProgress)}
         </Typography>
         <Slider
@@ -271,11 +236,11 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({mediaFile}) =>
               height: 12,
             },
           }}
-          disabled={!currentSrc}
+          disabled={!currentTrack}
         />
         <Typography variant='caption' color='text.secondary'>
           {formatTime(duration)}
-        </Typography> 
+        </Typography>
       </Box>
     </Box>
   );

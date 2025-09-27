@@ -1,27 +1,39 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Box, useTheme } from '@mui/material';
 import MediaPlayerControls from './MediaPlayerControls';
 import MediaPlayerTrackInfo from './MediaPlayerTrackInfo';
 import MediaPlayerVolumeControl from './MediaPlayerVolumeControl';
 import { MediaFileResponseDtoUrl, FileType } from '@/types/refactored/media';
-
-
+import { useStore } from '@nanostores/react';
+import {
+  isPlayingAtom,
+  currentTrackAtom,
+  setPlaying,
+  nextTrack,
+  previousTrack,
+} from '@/stores/mediaStore';
 
 interface MediaPlayerProps {
-  mediaFile: MediaFileResponseDtoUrl;
   mediaType: FileType.AUDIO | FileType.VIDEO;
 }
 
-const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaFile, mediaType }) => {
+const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
   const theme = useTheme();
-    // Set initial loading state when a new track is selected
-  useEffect(() => {
-    if (mediaFile) {
-      console.log(mediaFile, 'mediaFile MediaPlayer');
-    } else {
+  const isPlaying = useStore(isPlayingAtom);
+  const currentTrack = useStore(currentTrackAtom);
 
-    }
-  }, [mediaFile]);
+  const handlePlayPause = () => {
+    setPlaying(!isPlaying);
+  };
+
+  const handleNext = () => {
+    nextTrack();
+  };
+
+  const handlePrevious = () => {
+    previousTrack();
+  };
+
   return (
     <Box
       sx={{
@@ -39,7 +51,13 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaFile, mediaType }) => {
       }}
     >
       <MediaPlayerTrackInfo mediaType={mediaType} />
-      <MediaPlayerControls mediaFile={mediaFile}/>
+      <MediaPlayerControls
+        isPlaying={isPlaying}
+        currentTrack={currentTrack}
+        onPlayPause={handlePlayPause}
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+      />
       <MediaPlayerVolumeControl />
     </Box>
   );
