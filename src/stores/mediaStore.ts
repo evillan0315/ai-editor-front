@@ -58,12 +58,12 @@ export const isVideoModalOpenAtom = persistentAtom<boolean>(
 );
 
 // User preferences are persistent
-export const volumeAtom = persistentAtom<number>('spotify:volume', 70); // Persistent
+export const volumeAtom = persistentAtom<number>('media:volume', 70); // Persistent
 export const repeatModeAtom = persistentAtom<RepeatMode>(
   'media:repeatMode',
   'off',
 ); // Persistent
-export const shuffleAtom = persistentAtom<boolean>('spotify:shuffle', false); // Persistent
+export const shuffleAtom = persistentAtom<boolean>('media:shuffle', false); // Persistent
 
 
 // --- Map Store (Non-persistent for shared playback state) ---
