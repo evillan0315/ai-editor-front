@@ -53,13 +53,13 @@ export interface MediaMetadataData {
   duration?: string;
   thumbnail?: string | null;
 }
-
+export type MediaPlayerType = 'AUDIO' | 'VIDEO';
 /**
  * Interface for generic metadata associated with a media file.
  */
 export interface MediaMetadata {
   id: string;
-  type: 'AUDIO' | 'VIDEO';
+  type: MediaPlayerType;
   data: MediaMetadataData;
   tags: string[];
   createdAt: string;

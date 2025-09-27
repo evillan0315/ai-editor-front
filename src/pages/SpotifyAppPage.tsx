@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Box, useTheme } from '@mui/material';
 import SpotifySidebar from '@/pages/spotify/SpotifySidebar';
 import SpotifyMainContent from '@/pages/spotify/SpotifyMainContent';
-import SpotifyPlayerBar from '@/pages/spotify/SpotifyPlayerBar';
+import MediaPlayer from '@/components/ui/MediaPlayer';
 import VideoModal from '@/components/VideoModal';
 import { useStore } from '@nanostores/react';
 import {
@@ -416,9 +416,8 @@ const SpotifyAppPage: React.FC = () => {
         />
       )}
 
-      <SpotifyPlayerBar
-        mediaRef={mediaElementRef}
-        playerBarRef={playerBarRef}
+      <MediaPlayer
+
       />
     </Box>
   );
