@@ -12,8 +12,7 @@ import {
 
 import {
   fetchMediaFiles,
-}
-  from '@/api/media'
+} from '@/api/media'
 import { MediaFileResponseDto, FileType } from '@/types/refactored/media';
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';
 import { authStore } from '@/stores/authStore';
@@ -98,26 +97,11 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   const handlePlayAudio = useCallback((song: MediaFileResponseDto) => {
     const track = mapMediaFileToTrack(song);
     setCurrentTrack(track);
-    // Construct the full URL to the audio file
-    const audioUrl = `${API_BASE_URL}/file/stream?filePath=${song.path}&token=${authStore.get().token}`;
-
-    // Play the audio
-    const audio = new Audio(audioUrl);
-    audio.play();
-    setPlaying(true);
   }, []);
 
   const handlePlayVideo = useCallback((video: MediaFileResponseDto) => {
     const track = mapMediaFileToTrack(video);
     setCurrentTrack(track);
-    // Construct the full URL to the video file
-    const videoUrl = `${API_BASE_URL}/file/stream?filePath=${video.path}&token=${authStore.get().token}`;
-
-    // Play the video
-    const videoElement = document.createElement('video');
-    videoElement.src = videoUrl;
-    videoElement.play();
-    setPlaying(true);
   }, []);
 
   const toggleFavoriteSong = useCallback((songId: string) => {
@@ -233,7 +217,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
         onFavorite={toggleFavoriteVideo}
         onAction={handleVideoAction}
       />
-       <MediaPlayer mediaType='AUDIO' />
+      <MediaPlayer mediaType='AUDIO' />
     </Box>
   );
 };
