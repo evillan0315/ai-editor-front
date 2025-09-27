@@ -3,6 +3,8 @@ import { Box, Typography, CircularProgress, Alert, useTheme } from '@mui/materia
 import { useStore } from '@nanostores/react';
 import {
   $mediaStore,
+  setLoading,
+  setError,
   setPlaying,
   setCurrentTrack,
 } from '@/stores/mediaStore';
@@ -28,6 +30,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   const {
     loading: isFetchingMedia,
     error: fetchMediaError,
+    playlists: storedMediaFiles,
   } = useStore($mediaStore);
   const [allAvailableMediaFiles, setAllAvailableMediaFiles] = useState<MediaFileResponseDto[]>([]);
 
@@ -44,15 +47,19 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
       return;
     }
 
+    setLoading(true);
     try {
-      const media = await fetchMediaFiles({ page: 1, pageSize: 200 });
-      console.log(media, 'media');
+       const media = await fetchMediaFiles({ page: 1, pageSize: 200 });
+       console.log(media, 'media');
       if (media && media.items) {
-        setAllAvailableMediaFiles(media.items);
-      }
-      setHasFetchedMedia(true);
+         setAllAvailableMediaFiles(media.items);
+       }
+       setHasFetchedMedia(true);
+      setLoading(false);
 
     } catch (error: any) {
+       setError(error.message || error);
+      setLoading(false);
       console.error('Error fetching media:', error);
       showGlobalSnackbar(
         `Failed to fetch media: ${error.message || error}`,
@@ -69,6 +76,14 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
       fetchMediaForPurpose();
     }
   }, [fetchMediaForPurpose, hasFetchedMedia, isFetchingMedia]);
+
+
+  useEffect(() => {
+     if(storedMediaFiles){
+       setAllAvailableMediaFiles(storedMediaFiles as MediaFileResponseDto[])
+     }
+
+  }, [storedMediaFiles])
 
   // Filter for audio files
   const playableAudioTracks: MediaFileResponseDto[] = useMemo(() => {
