@@ -308,12 +308,11 @@ export const toggleShuffle = () => {
 
 export const toggleRepeat = () => {
   const currentMode = repeatModeAtom.get(); // Get from persistent atom
-  const newMode: RepeatMode =
-    currentMode === 'off'
-      ? 'context'
-      : currentMode === 'context'
-        ? 'track'
-        : 'off';
+  const newMode: RepeatMode = currentMode === 'off'
+    ? 'context'
+    : currentMode === 'context'
+      ? 'track'
+      : 'off';
   repeatModeAtom.set(newMode); // Set the persistent atom
 };
 
@@ -459,11 +458,8 @@ export const fetchMediaForPurpose = async (
   switch (purpose) {
     case 'general':
       $spotifyStore.setKey('isFetchingMedia', true);
+      $spotifyStore.setKey('fetchMediaError', null); // Clear any existing error before fetching
       currentFiles = state.allAvailableMediaFiles;
-      if(currentFiles.length >= 0 ){
-        $spotifyStore.setKey('fetchMediaError', 'No Media files found');
-        $spotifyStore.setKey('isFetchingMedia', false);
-      }
 
       break;
     case 'paginatedAudio':
@@ -496,12 +492,12 @@ export const fetchMediaForPurpose = async (
       effectiveQuery.pageSize = currentPagination.pageSize;
 
     const result = await apiFetchAllMediaFiles(effectiveQuery);
-
+    console.log(result, effectiveQuery)
     const newItems = result.items.filter(
       (newItem) =>
         !currentFiles.some((existingItem) => existingItem.id === newItem.id),
     );
-
+    
     const updatedFiles = reset ? newItems : [...currentFiles, ...newItems];
 
     const newPagination = {
@@ -515,6 +511,10 @@ export const fetchMediaForPurpose = async (
     switch (purpose) {
       case 'general':
         $spotifyStore.setKey('allAvailableMediaFiles', updatedFiles);
+        // If no media files were found, set the fetchMediaError
+        if (updatedFiles.length === 0) {
+          $spotifyStore.setKey('fetchMediaError', 'No Media files found');
+        }
         break;
       case 'paginatedAudio':
         $spotifyStore.setKey('paginatedAudioFiles', updatedFiles);
@@ -564,11 +564,10 @@ export const addExtractedMediaFile = (mediaFile: MediaFileResponseDto) => {
       mediaFile,
     ]);
   }
-  // For paginated lists, a full re-fetch of the first page is safer to ensure correct ordering/inclusion
-  // The LibraryPage component will handle triggering this based on the active tab
+
 };
 
-// --- Playlist Actions ---
+
 
 export const fetchUserPlaylists = async (
   query?: PaginationPlaylistQueryDto,
@@ -577,7 +576,7 @@ export const fetchUserPlaylists = async (
   $spotifyStore.setKey('playlistError', null);
   try {
     const result = await fetchPlaylists(query);
-    // Transform backend PlaylistResponseDto to frontend Playlist interface
+
     const transformedPlaylists: Playlist[] = result.items.map((p) => ({
       id: p.id,
       name: p.name,
@@ -646,7 +645,7 @@ export const createUserPlaylist = async (payload: PlaylistCreationRequest) => {
   try {
     const newPlaylist = await apiCreatePlaylist(payload);
     showGlobalSnackbar(
-      `Playlist "${newPlaylist.name}" created successfully!`,
+      `Playlist ${newPlaylist.name} created successfully!`,
       'success',
     );
     fetchUserPlaylists();
@@ -666,7 +665,7 @@ export const updateExistingPlaylist = async (
   try {
     const updatedPlaylist = await updatePlaylist(playlistId, dto);
     showGlobalSnackbar(
-      `Playlist "${updatedPlaylist.name}" updated successfully!`,
+      `Playlist ${updatedPlaylist.name} updated successfully!`,
       'success',
     );
     fetchUserPlaylists();

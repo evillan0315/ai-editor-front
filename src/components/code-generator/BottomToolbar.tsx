@@ -37,6 +37,7 @@ import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
 import PromptGeneratorSettings, { type GlobalAction } from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import ImportData from './ImportData';
+import { ImportJsonDialog } from './ImportJsonDialog';
 import { setOpenedFileContent } from '@/stores/fileStore';
 import { RequestType } from '@/types/llm';
 import {
@@ -89,6 +90,10 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   const commonDisabled = false;
   const GlobalActionButtons: GlobalAction[] = [{label:'Cancel',action: () => setIsSettingsOpen(false), icon: CloseIcon}, {label:'Save',action: handleSave, icon: SaveIcon}] // Pass handleSave to the action
+  
+  const handleImportJson = () => {
+    console.log('handleImportJson');
+  }
   return (
   <Box className="flex items-center justify-between gap-2 ">
     <Box className="flex flex-wrap gap-2 ">
@@ -177,9 +182,13 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         initialPath={projectInput || '/'}
         allowExternalPaths
       />
-      
+      <ImportJsonDialog 
+        open={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        onImport={handleImportJson}
+      />
 
-      <CustomDrawer
+      {/*<CustomDrawer
         open={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
         position="bottom"
@@ -191,7 +200,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           onDataLoaded={setOpenedFileContent}
           onClose={() => setIsImportDialogOpen(false)}
         />
-      </CustomDrawer>
+      </CustomDrawer>*/}
        <CustomDrawer
         open={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}

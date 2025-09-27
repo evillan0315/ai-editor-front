@@ -36,14 +36,16 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   const currentTrack = useStore(currentTrackAtom);
   const [favoriteSongs, setFavoriteSongs] = useState<string[]>([]);
   const [favoriteVideos, setFavoriteVideos] = useState<string[]>([]);
+  const [hasFetchedMedia, setHasFetchedMedia] = useState(false);
 
   useEffect(() => {
     // Fetch media files when the component mounts if not already fetched
     // Use 'general' purpose to populate allAvailableMediaFiles, with reset: true
-    if (allAvailableMediaFiles.length === 0 && !isFetchingMedia) {
-      fetchMediaForPurpose({ page: 1, pageSize: 200 }, 'general', false); // Fetch a larger set for general use
+    if (!hasFetchedMedia && !isFetchingMedia) {
+      fetchMediaForPurpose({ page: 1, pageSize: 200 }, 'general', false);
+      setHasFetchedMedia(true);
     }
-  }, [allAvailableMediaFiles.length, isFetchingMedia]);
+  }, [hasFetchedMedia, isFetchingMedia]);
 
   // Filter for audio files
   const playableAudioTracks: MediaFileResponseDto[] = allAvailableMediaFiles.filter(media => media.fileType === FileType.AUDIO);
@@ -51,6 +53,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   const playableVideoTracks: MediaFileResponseDto[] = allAvailableMediaFiles.filter(media => media.fileType === FileType.VIDEO);
 
   const handlePlayAudio = useCallback((song: any) => {
+    console.log(song, 'song')
     playTrack(song, playableAudioTracks.map(mapMediaFileToTrack));
   }, [playableAudioTracks]);
 
@@ -129,13 +132,13 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
     );
   }
 
+  const noPlayableMedia = playableAudioTracks.length === 0 && playableVideoTracks.length === 0;
+
   if (fetchMediaError) {
     return (
       <Alert severity="error">Error loading media: {fetchMediaError}</Alert>
     );
   }
-
-  const noPlayableMedia = playableAudioTracks.length === 0 && playableVideoTracks.length === 0;
 
   if (noPlayableMedia) {
     return (
