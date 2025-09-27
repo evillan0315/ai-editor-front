@@ -7,6 +7,7 @@ import {
   setError,
   setPlaying,
   setCurrentTrack,
+  isPlayingAtom,
 } from '@/stores/mediaStore';
 
 import {
@@ -35,7 +36,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   const [allAvailableMediaFiles, setAllAvailableMediaFiles] = useState<MediaFileResponseDto[]>([]);
 
   // Directly get isPlaying and currentTrack from their respective atoms
-  // const isPlaying = useStore(isPlayingAtom);
+  const isPlaying = useStore(isPlayingAtom);
   // const currentTrack = useStore(currentTrackAtom);
   const [favoriteSongs, setFavoriteSongs] = useState<string[]>([]);
   const [favoriteVideos, setFavoriteVideos] = useState<string[]>([]);
@@ -180,10 +181,10 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
 
   if (isFetchingMedia) {
     return (
-      <Box className="flex justify-center items-center h-full">
+      <Box className='flex justify-center items-center h-full'>
         <CircularProgress size={40} />
         <Typography
-          variant="h6"
+          variant='h6'
           sx={{ ml: 2, color: theme.palette.text.secondary }}
         >
           Loading media files...
@@ -196,13 +197,13 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
 
   if (fetchMediaError) {
     return (
-      <Alert severity="error">Error loading media: {fetchMediaError}</Alert>
+      <Alert severity='error'>Error loading media: {fetchMediaError}</Alert>
     );
   }
 
   if (noPlayableMedia) {
     return (
-      <Alert severity="info">
+      <Alert severity='info'>
         No playable audio or video files found. Upload some via the AI Editor or
         backend.
       </Alert>
@@ -211,11 +212,11 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 3 }}>
+      <Typography variant='h4' sx={{ fontWeight: 'bold', mb: 3 }}>
         Good evening
       </Typography>
 
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mt: 4, mb: 2 }}>
+      <Typography variant='h5' sx={{ fontWeight: 'bold', mt: 4, mb: 2 }}>
         All Available Audio Tracks
       </Typography>
       <SongList
@@ -225,7 +226,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
         onAction={handleSongAction}
       />
 
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mt: 4, mb: 2 }}>
+      <Typography variant='h5' sx={{ fontWeight: 'bold', mt: 4, mb: 2 }}>
         All Available Video Tracks
       </Typography>
       <VideoList

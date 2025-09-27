@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, SyntheticEvent } from 'react';
+import { useStore } from '@nanostores/react';
 import {
   Box,
   IconButton,
@@ -24,6 +25,18 @@ import {
   Movie,
 } from '@mui/icons-material';
 import { MediaPlayerType } from '@/types/refactored/media';
+import {
+  $mediaStore,
+  setPlaying,
+  setVolume,
+  setTrackProgress,
+  isPlayingAtom,
+  volumeAtom,
+  progressAtom,
+  durationAtom,
+  shuffleAtom,
+  repeatModeAtom,
+} from '@/stores/mediaStore';
 
 // Define types for props
 interface MediaPlayerProps {
@@ -43,17 +56,18 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(0.5);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const isPlaying = useStore(isPlayingAtom);
+  const volume = useStore(volumeAtom);
+  const progress = useStore(progressAtom);
+  const duration = useStore(durationAtom);
+  const shuffle = useStore(shuffleAtom);
+  const repeatMode = useStore(repeatModeAtom);
+
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [internalVolume, setInternalVolume] = useState(volume);
   const [isSeeking, setIsSeeking] = useState(false);
-  const [internalProgress, setInternalProgress] = useState(currentTime);
-  const [shuffle, setShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<'off' | 'context' | 'track'>('off');
+  const [internalProgress, setInternalProgress] = useState(progress);
   const [loading, setLoading] = useState(false);
 
   const theme = useTheme();
@@ -70,20 +84,34 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const media = mediaRef.current;
     if (media) {
       const handleMetadata = () => {
+        setLoading(false);
         setDuration(media.duration);
       };
 
       const handleData = () => {
         setDuration(media.duration);
+        setLoading(false);
+      };
+
+      const handleWaiting = () => {
+        setLoading(true);
+      };
+
+      const handlePlaying = () => {
+        setLoading(false);
       };
 
       media.addEventListener('loadedmetadata', handleMetadata);
       media.addEventListener('loadeddata', handleData);
+      media.addEventListener('waiting', handleWaiting);
+      media.addEventListener('playing', handlePlaying);
       media.addEventListener('ended', handleEnded);
 
       return () => {
         media.removeEventListener('loadedmetadata', handleMetadata);
         media.removeEventListener('loadeddata', handleData);
+        media.removeEventListener('waiting', handleWaiting);
+        media.removeEventListener('playing', handlePlaying);
         media.removeEventListener('ended', handleEnded);
       };
     }
@@ -96,7 +124,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       if (isPlaying) {
         media.play().catch((error) => {
           console.error('Playback failed:', error);
-          setIsPlaying(false);
+          setPlaying(false);
         });
       } else {
         media.pause();
@@ -106,20 +134,20 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   // Handler functions
   const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
+    setPlaying(!isPlaying);
   };
 
   const handleNext = () => {
     if (onNext) {
       onNext();
-      setCurrentTime(0); // Reset current time when moving to the next media
+      setTrackProgress(0); // Reset current time when moving to the next media
     }
   };
 
   const handlePrevious = () => {
     if (onPrevious) {
       onPrevious();
-      setCurrentTime(0); // Reset current time when moving to the previous media
+      setTrackProgress(0); // Reset current time when moving to the previous media
     }
   };
 
@@ -129,6 +157,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     if (mediaRef.current) {
       mediaRef.current.volume = newVolume;
+      setVolume(newVolume);
     }
   };
 
@@ -160,7 +189,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       const media = mediaRef.current;
       if (media) {
         media.currentTime = newValue as number;
-        setCurrentTime(newValue as number);
+        setTrackProgress(newValue as number);
       }
       setIsSeeking(false);
     },
@@ -169,13 +198,13 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   const handleTimeUpdate = () => {
     if (mediaRef.current) {
-      setCurrentTime(mediaRef.current.currentTime);
+      setTrackProgress(mediaRef.current.currentTime);
     }
   };
 
   const handleEnded = useCallback(() => {
-    setIsPlaying(false);
-    setCurrentTime(0);
+    setPlaying(false);
+    setTrackProgress(0);
     if (onEnded) {
       onEnded();
     }
@@ -199,20 +228,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
-  const toggleShuffle = () => {
-    setShuffle(!shuffle);
-  };
-
-  const toggleRepeat = () => {
-    if (repeatMode === 'off') {
-      setRepeatMode('context');
-    } else if (repeatMode === 'context') {
-      setRepeatMode('track');
-    } else {
-      setRepeatMode('off');
-    }
-  };
-
   return (
     <Box
       sx={{
@@ -220,6 +235,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         bgcolor: theme.palette.background.paper,
         borderTop: `1px solid ${theme.palette.divider}`,
         height: '80px',
+        width: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -278,7 +294,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           <IconButton
             size='small'
             sx={{ color: theme.palette.text.primary }}
-            onClick={toggleShuffle}
+            onClick={() => toggleShuffle}
           >
             <Shuffle fontSize='small' color={shuffle ? 'primary' : 'inherit'} />
           </IconButton>
@@ -324,7 +340,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           <IconButton
             size='small'
             sx={{ color: theme.palette.text.primary }}
-            onClick={toggleRepeat}
+            onClick={() =>{
+            }}
           >
             {repeatMode === 'track' ? (
               <RepeatOne fontSize='small' color='primary' />
