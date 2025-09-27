@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef, useEffect, SyntheticEvent } from 'react';
+import React, { useCallback, useState, SyntheticEvent } from 'react';
 import {
   Box,
   IconButton,
@@ -16,88 +16,59 @@ import {
   Repeat,
   RepeatOne,
 } from '@mui/icons-material';
-import { MediaFileResponseDtoUrl, FileType } from '@/types/refactored/media';
+import { MediaFileResponseDtoUrl } from '@/types/refactored/media';
+import { useStore } from '@nanostores/react';
+import {
+  isPlayingAtom,
+  progressAtom,
+  durationAtom,
+  setTrackProgress,
+  setTrackDuration,
+  setLoading,
+  nextTrack,
+  previousTrack,
+  toggleShuffle,
+  toggleRepeat,
+  repeatModeAtom,
+  shuffleAtom,
+  currentTrackAtom,
+  $mediaStore
+} from '@/stores/mediaStore';
 
 interface MediaPlayerControlsProps {
-  isPlaying: boolean;
-  currentTrack: MediaFileResponseDtoUrl | null;
-  onPlayPause: () => void;
-  onNext: () => void;
-  onPrevious: () => void;
+  mediaElementRef: React.RefObject<HTMLMediaElement>;
 }
 
 const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
-  isPlaying,
-  currentTrack,
-  onPlayPause,
-  onNext,
-  onPrevious,
+  mediaElementRef
 }) => {
   const theme = useTheme();
-  const [shuffle, setShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<'off' | 'context' | 'track'>('off');
-  const [duration, setDuration] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [trackProgress, setTrackProgress] = useState<number>(0);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const mediaRef = currentTrack?.fileType === 'VIDEO' ? videoRef : audioRef;
+  const { loading } = useStore($mediaStore);
+  const isPlaying = useStore(isPlayingAtom);
+  const trackProgress = useStore(progressAtom);
+  const duration = useStore(durationAtom);
+  const currentTrack = useStore(currentTrackAtom);
+  const shuffle = useStore(shuffleAtom);
+  const repeatMode = useStore(repeatModeAtom);
+  const [isSeeking, setIsSeeking] = useState(false);
 
-
-  useEffect(() => {
-    const media = mediaRef?.current;
-    if (media) {
-      const handleMetadata = () => {
-        setLoading(false);
-        setDuration(media.duration);
-      };
-
-      const handleData = () => {
-        setDuration(media.duration);
-        setLoading(false);
-      };
-
-      const handleWaiting = () => {
-        setLoading(true);
-      };
-
-      const handlePlaying = () => {
-        setLoading(false);
-      };
-
-      const handleTimeUpdate = () => {
-        if (!mediaRef.current) return;
-        setTrackProgress(mediaRef.current.currentTime);
-      };
-
-      const handleEnded = () => {
-        setLoading(false)
-      };
-
-      media.addEventListener('loadedmetadata', handleMetadata);
-      media.addEventListener('loadeddata', handleData);
-      media.addEventListener('waiting', handleWaiting);
-      media.addEventListener('playing', handlePlaying);
-      media.addEventListener('timeupdate', handleTimeUpdate);
-      media.addEventListener('ended', handleEnded);
-      return () => {
-        media.removeEventListener('loadedmetadata', handleMetadata);
-        media.removeEventListener('loadeddata', handleData);
-        media.removeEventListener('waiting', handleWaiting);
-        media.removeEventListener('playing', handlePlaying);
-        media.removeEventListener('timeupdate', handleTimeUpdate);
-        media.removeEventListener('ended', handleEnded);
-      };
-    }
-  }, [mediaRef]);
-
-  useEffect(() => {
-    if(currentTrack){
-      if (mediaRef?.current) {
-        mediaRef.current.load();
+  const handlePlayPause = () => {
+    if (mediaElementRef.current) {
+      if (isPlaying) {
+        mediaElementRef.current.pause();
+      } else {
+        mediaElementRef.current.play();
       }
     }
-  }, [currentTrack])
+  };
+
+  const handleNext = () => {
+    nextTrack();
+  };
+
+  const handlePrevious = () => {
+    previousTrack();
+  };
 
   const formatTime = (time: number): string => {
     const minutes = Math.floor(time / 60);
@@ -108,40 +79,28 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
   const handleTimeChange = (event: Event, newValue: number | number[]) => {
     const newTime = typeof newValue === 'number' ? newValue : 0;
 
-    if (mediaRef?.current) {
-      mediaRef.current.currentTime = newTime;
+    if (mediaElementRef?.current) {
+      mediaElementRef.current.currentTime = newTime;
+      setTrackProgress(newTime);
     }
   };
 
   const handleTimeChangeCommitted = useCallback(
     (_event: Event | SyntheticEvent, newValue: number | number[]) => {
-      const media = mediaRef?.current;
-      if (media) {
-        media.currentTime = newValue as number;
-        setTrackProgress(newValue as number);
+      const newTime = typeof newValue === 'number' ? newValue : 0;
+      if (mediaElementRef?.current) {
+        mediaElementRef.current.currentTime = newTime;
+        setTrackProgress(newTime);
       }
     },
-    [],
+    [mediaElementRef, setTrackProgress],
   );
 
-  const toggleShuffle = () => {
-    setShuffle(!shuffle);
-  };
-
-  const toggleRepeat = () => {
-    if (repeatMode === 'off') {
-      setRepeatMode('context');
-    } else if (repeatMode === 'context') {
-      setRepeatMode('track');
-    } else {
-      setRepeatMode('off');
-    }
-  };
+  const $isLoading = loading;
 
   return (
     <Box
-      sx={{
-        display: 'flex',
+      sx={{ display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         flexGrow: 1,
@@ -159,14 +118,14 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
         <IconButton
           size='small'
           sx={{ color: theme.palette.text.primary }}
-          onClick={onPrevious}
+          onClick={handlePrevious}
         >
           <SkipPrevious fontSize='small' />
         </IconButton>
         <IconButton
           size='large'
-          onClick={onPlayPause}
-          disabled={loading}
+          onClick={handlePlayPause}
+          disabled={$isLoading}
           sx={{
             color: theme.palette.text.primary,
             bgcolor: theme.palette.primary.main,
@@ -178,7 +137,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
             height: 48,
           }}
         >
-          {loading ? (
+          {$isLoading ? (
             <CircularProgress size={24} color='inherit' />
           ) : isPlaying ? (
             <Pause fontSize='large' />
@@ -189,7 +148,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
         <IconButton
           size='small'
           sx={{ color: theme.palette.text.primary }}
-          onClick={onNext}
+          onClick={handleNext}
         >
           <SkipNext fontSize='small' />
         </IconButton>
@@ -209,8 +168,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
         </IconButton>
       </Box>
       <Box
-        sx={{
-          width: '100%',
+        sx={{ width: '100%',
           display: 'flex',
           alignItems: 'center',
           gap: 1,
