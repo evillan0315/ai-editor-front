@@ -46,7 +46,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
   onClose,
   position,
   size = 'medium',
-  hasBackdrop = true,
+  hasBackdrop = false,
   closeOnEscape = true,
   stickyHeader,
   footerActionButton,
@@ -80,7 +80,11 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
       anchor={position}
       open={open}
       onClose={onClose}
-      ModalProps={{ backdrop: hasBackdrop, disableEscapeKeyDown: closeOnKey }}
+      ModalProps={{ 
+        backdrop: hasBackdrop,
+        disableEscapeKeyDown: closeOnKey,
+        ...(hasBackdrop === false ? { disableBackdropClick: true } : {})
+       }}
       PaperProps={{ sx: drawerPaperStyle }}
     >
       {isFullScreen ? (
