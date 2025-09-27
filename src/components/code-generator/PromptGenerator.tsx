@@ -283,6 +283,18 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
     setLastLlmResponse(null);
   }, []);
 
+  const handleSave = useCallback(() => {
+    // Implement save logic here (e.g., save to a file, update settings)
+    console.log('Save action triggered!');
+
+    setAiInstruction(aiInstruction);
+    setExpectedOutputInstruction(expectedOutputInstruction);
+
+    setIsSettingsOpen(false);
+
+    onClose(); // Close the settings dialog
+  }, [aiInstruction, expectedOutputInstruction]);
+
   const toggleCodeRepair = useCallback(() => {
     setIsCodeRepairOpen((open) => !open);
   }, []);
@@ -383,6 +395,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         updateScanPaths={updateScanPaths}
         handleClear={handleClear}
         requestType={requestType}
+        handleSave={handleSave}
       />
       <CustomDrawer
         open={isCodeRepairOpen}

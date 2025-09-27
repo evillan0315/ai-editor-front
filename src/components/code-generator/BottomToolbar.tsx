@@ -61,9 +61,10 @@ interface BottomToolbarProps {
 
   updateScanPaths: (paths: string[]) => void;
   requestType: RequestType;
+  handleSave: () => void; // Add handleSave prop
 }
 
-const BottomToolbar: React.FC<BottomToolbarProps> = ({ 
+const BottomToolbar: React.FC<BottomToolbarProps> = ({
   scanPathAutocompleteOptions,
   currentScanPathsArray,
   projectInput,
@@ -81,12 +82,13 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   updateScanPaths,
   requestType,
+  handleSave, // Receive handleSave
 }) => {
   const theme = useTheme();
   const $autoApplyChanges = useStore(autoApplyChanges);
 
   const commonDisabled = false;
-  const GlobalActionButtons: GlobalAction[] = [{label:'Cancel',action: () => setIsSettingsOpen(false), icon: CloseIcon}, {label:'Save',action: () => setIsSettingsOpen(false), icon: SaveIcon}]
+  const GlobalActionButtons: GlobalAction[] = [{label:'Cancel',action: () => setIsSettingsOpen(false), icon: CloseIcon}, {label:'Save',action: handleSave, icon: SaveIcon}] // Pass handleSave to the action
   return (
   <Box className="flex items-center justify-between gap-2 ">
     <Box className="flex flex-wrap gap-2 ">
