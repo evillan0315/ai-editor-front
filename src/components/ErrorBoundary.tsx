@@ -1,5 +1,5 @@
 import React, { Component, ReactNode } from 'react';
-import { Box, Typography, Button, useTheme } from '@mui/material';
+import { Box, Typography, Button, useTheme, Alert } from '@mui/material';
 import { Link } from 'react-router-dom';
 
 interface ErrorBoundaryProps {
@@ -75,7 +75,7 @@ const DefaultFallback: React.FC<DefaultFallbackProps> = ({error, errorInfo}) => 
         We've encountered an error and are working to fix it.
       </Typography>
       {process.env.NODE_ENV === 'development' && error && (
-        <>
+        <Alert severity="error">
           <Typography variant="h6" color="error" gutterBottom>
             Error Details:
           </Typography>
@@ -87,7 +87,7 @@ const DefaultFallback: React.FC<DefaultFallbackProps> = ({error, errorInfo}) => 
               {errorInfo.componentStack}
             </Typography>
           )}
-        </>
+        </Alert>
       )}
       <Button component={Link} to="/" variant="contained" color="primary">
         Go Home

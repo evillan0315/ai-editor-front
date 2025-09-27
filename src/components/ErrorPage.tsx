@@ -1,5 +1,5 @@
 import { useRouteError } from 'react-router-dom';
-import { Box, Typography, Button, useTheme } from '@mui/material';
+import { Box, Typography, Button, useTheme, Alert } from '@mui/material';
 import { Link } from 'react-router-dom';
 
 export default function ErrorPage() {
@@ -28,15 +28,17 @@ export default function ErrorPage() {
       </Typography>
       {process.env.NODE_ENV === 'development' && (
         <>
-          <Typography variant="h6" color="error" gutterBottom>
-            Error Details:
-          </Typography>
-          <Typography variant="body2" color="error">
-            {error.statusText || error.message}
-          </Typography>
-          <Typography variant="caption" color="textSecondary">
-            {error.status}
-          </Typography>
+          <Alert severity="error">
+            <Typography variant="h6" color="error" gutterBottom>
+              Error Details:
+            </Typography>
+            <Typography variant="body2" color="error">
+              {error.statusText || error.message}
+            </Typography>
+            <Typography variant="caption" color="textSecondary">
+              {error.status}
+            </Typography>
+          </Alert>
         </>
       )}
       <Button component={Link} to="/" variant="contained" color="primary">
