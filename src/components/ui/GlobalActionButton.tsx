@@ -1,10 +1,13 @@
 import React from 'react';
-import { Box, Button, useTheme } from '@mui/material';
+import { Box, Button, useTheme, ButtonProps } from '@mui/material';
+import { ButtonColor, ButtonVariant } from '@mui/material/Button';
 
 interface GlobalAction {
   label: string;
   action: () => void;
   icon?: React.ElementType;
+  color?: ButtonColor;
+  variant?: ButtonVariant;
 }
 
 interface GlobalActionButtonProps {
@@ -27,8 +30,8 @@ function GlobalActionButton({ globalActions }: GlobalActionButtonProps) {
           <Button
             key={index}
             onClick={action.action}
-            color="primary"
-            variant="contained"
+            color={action.color || "primary"}
+            variant={action.variant || "contained"}
             startIcon={action.icon ? <action.icon /> : null}
           >
             {action.label}
