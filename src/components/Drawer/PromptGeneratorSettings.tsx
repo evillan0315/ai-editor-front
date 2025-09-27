@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-
   Button,
   Typography,
   Box,
@@ -10,7 +9,7 @@ import {
   useTheme,
   Paper,
   Tabs,
-  Tab
+  Tab,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useStore } from '@nanostores/react';
@@ -25,15 +24,26 @@ import {
 } from '@/stores/llmStore';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import MarkdownEditor from '@/components/MarkdownEditor'; // ✅ New rich editor
+import {
+  SvgIconComponent
+} from '@mui/material'
+
+export interface GlobalAction {
+  label: string;
+  action: () => void;
+  icon?: SvgIconComponent;
+  theme?: any; // Optional theme overrides
+}
 
 interface PromptGeneratorSettingsProps {
   open: boolean;
   onClose: () => void;
+  globalActions?: GlobalAction[];
 }
 
 const PromptGeneratorSettings: React.FC<
   PromptGeneratorSettingsProps
-> = ({ open, onClose }) => {
+> = ({ open, onClose, globalActions }) => {
   const theme = useTheme();
   const { aiInstruction } = useStore(llmStore);
   const [tab, setTab] = React.useState(0); // 0 = General Instruction, 1 = JSON Schema, 2 = Example Output
@@ -165,7 +175,21 @@ ${localInstructionExample}
         )}
       </Box>
 
-      <Box sx={{ backgroundColor: theme.palette.background.paper }}>
+      <Box sx={{ backgroundColor: theme.palette.background.paper, display: 'flex', gap: 1 }}>
+          {globalActions &&
+            globalActions.map((action, index) => (
+              <Button
+                key={index}
+                onClick={action.action}
+                color="primary"
+                variant="contained"
+                startIcon={action.icon ? <action.icon /> : null}
+                {...action.theme}
+              >
+                {action.label}
+              </Button>
+            ))}
+
         <Button onClick={onClose} color="primary">
           Cancel
         </Button>
