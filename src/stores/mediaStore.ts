@@ -10,11 +10,12 @@ import {
   UpdatePlaylistDto,
   AddRemoveMediaToPlaylistDto,
   MediaFileResponseDto,
+  MediaFileResponseDtoUrl,
   RepeatMode,
   PlaylistCreationRequest,
   PaginationMediaQueryDto,
   FileType,
-  BufferedRange, // New: Import BufferedRange
+  BufferedRange,
 } from '@/types/refactored/media';
 import {
   fetchPlaylists,
@@ -31,9 +32,12 @@ import {
   transcribeAudio,
   getTranscription,
   getSyncTranscription,
+  getFileStreamUrl
 } from '@/api/media';
 import { authStore } from './authStore'; // Import authStore for login check
 import { TranscriptionResult, SyncTranscriptionResponse } from '@/types';
+
+
 
 // --- Atoms (Non-persistent for transient playback state, persistent for user preferences) ---
 // Playback state should NOT be persistent to avoid browser autoplay issues on refresh.
@@ -42,7 +46,7 @@ export const isPlayingAtom = persistentAtom<boolean>(
   'media:isPlaying',
   false,
 );
-export const currentTrackAtom = persistentAtom<Track | null>(
+export const currentTrackAtom = persistentAtom<MediaFileResponseDtoUrl | null>(
   'media:currentTrack',
   null,
 );
@@ -144,8 +148,12 @@ n
   repeatModeAtom.set(newMode);
 };
 
-export const setCurrentTrack = (track: Track | null) => {
-  currentTrackAtom.set(track);
+export const setCurrentTrack = (track: MediaFileResponseDto | null) => {
+  const newTrack: MediaFileResponseDtoUrl = {
+    ...track,
+    streamUrl: getFileStreamUrl(track.path)
+  }
+  currentTrackAtom.set(newTrack);
 };
 
 export const clearError = () => {
@@ -237,7 +245,7 @@ export const fetchingMediaFiles = async (query?: PaginationMediaQueryDto) => {
 
     if (media && media.items) {
       // Update the media store with the fetched media files
-      $mediaStore.setKey('playlists', media.items as any);
+      $mediaStore.setKey('playlists', media.items as MediaFileResponseDto[]);
       return media;
     } else {
       // If media or media.items is undefined, handle the case appropriately

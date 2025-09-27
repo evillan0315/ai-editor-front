@@ -77,77 +77,8 @@ const SpotifyAppPage: React.FC = () => {
     resetPlaybackState(); // New: Reset all playback related state
   }, [mediaElementRef]); // resetPlaybackState is now a global action, no need to include in dependency array.
 
-  // Effect to manage which HTMLMediaElement is active (audio or video) and control modal visibility
-  useEffect(() => {
-    const audioMedia = audioRef.current;
-    const videoMedia = mediaElementRef.current; // This ref will point to video element when modal is open
 
-    if (currentTrack?.fileType === FileType.AUDIO) {
-      mediaElementRef.current = audioMedia;
-      if (videoMedia && isVideoModalOpenAtom.get()) {
-        // If video was playing/modal open
-        videoMedia.pause(); // Pause video if switching to audio
-      }
-      setIsVideoModalOpen(false); // Close video modal if switching to audio
-    } else if (currentTrack?.fileType === FileType.VIDEO) {
-      if (audioMedia && isPlayingAtom.get()) {
-        // If audio was playing
-        audioMedia.pause(); // Pause audio if switching to video
-      }
-      // For video, mediaElementRef.current will be set by handleMediaElementReady (from VideoModal)
-      // We set it to null here temporarily, it will be populated by VideoPlayer in modal
-      mediaElementRef.current = null;
-      setIsVideoModalOpen(true); // Open video modal for video track
-    } else {
-      // No track selected or track removed
-      if (audioMedia) audioMedia.pause();
-      if (videoMedia && isVideoModalOpenAtom.get()) videoMedia.pause();
-      mediaElementRef.current = null;
-      setIsVideoModalOpen(false); // Close video modal if no track
-      //resetPlaybackState(); // Reset all playback state if no track is active
-    }
-  }, [currentTrack?.fileType, setIsVideoModalOpen, audioRef, mediaElementRef]); // resetPlaybackState is now a global action, no need to include in dependency array.
-
-  // Effect to handle setting media source and loading for the active media element
-  useEffect(() => {
-    const media = mediaElementRef.current;
-
-    if (!media || !currentTrack?.mediaSrc) {
-      // No track or source, ensure media is paused and cleared
-      if (media) {
-        media.pause();
-        media.src = '';
-      }
-      setTrackProgress(0);
-      setTrackDuration(0);
-      setBuffered([]); // New: Clear buffered ranges
-      setLoading(false);
-      setPlaying(false); // Ensure store reflects paused state
-      return;
-    }
-
-    // Only update src if it's different to prevent unnecessary reloads
-    if (media.src !== currentTrack.mediaSrc) {
-      setLoading(true);
-      setPlaying(false); // Temporarily set playing to false while new media loads
-      media.src = currentTrack.mediaSrc;
-      media.load(); // Load new source
-      setTrackProgress(0); // Reset progress for new track
-      setBuffered([]); // New: Clear buffered ranges for new track
-    }
-    // Set initial duration if available and not already set, or if track changes
-    if (currentTrack.duration) {
-      setTrackDuration(currentTrack.duration);
-    }
-  }, [
-    currentTrack,
-    mediaElementRef.current,
-    setTrackProgress,
-    setTrackDuration,
-    setLoading,
-    setPlaying,
-    setBuffered,
-  ]); // Re-run when currentTrack or the active media element changes
+  
 
   // Event handlers for the active media element, defined at the top level
   const handleTimeUpdate = useCallback(() => {
@@ -328,48 +259,7 @@ const SpotifyAppPage: React.FC = () => {
     volume,
   ]); // Re-attach listeners if active media element or any callback changes
 
-  // Control playback based on isPlaying state (from store)
-  useEffect(() => {
-    const media = mediaElementRef.current;
-
-    if (!media || !currentTrack) return; // Ensure media element and track exist
-
-    if (isPlaying) {
-      // Only attempt to play if not already playing or paused
-      if (media.paused) {
-        media.play().catch((e) => {
-          console.error('HTMLMediaElement.play() failed:', e);
-          setError('Media playback prevented. User interaction required.');
-          setPlaying(false);
-        });
-        setLoading(true); // Indicate loading while media prepares to play
-      }
-    } else {
-      // Pause if not playing
-      if (!media.paused) {
-        media.pause();
-      }
-      setLoading(false);
-    }
-  }, [
-    isPlaying,
-    mediaElementRef.current,
-    currentTrack,
-    setLoading,
-    setError,
-    setPlaying,
-  ]);
-
-  // Set initial loading state when a new track is selected
-  useEffect(() => {
-    if (currentTrack) {
-      setLoading(true); // Always set loading when a new track is selected
-      setError(null); // Clear any previous errors
-    } else {
-      setLoading(false);
-      setError(null);
-    }
-  }, [currentTrack, setLoading, setError]);
+  
 
   return (
     <Box
@@ -403,8 +293,8 @@ const SpotifyAppPage: React.FC = () => {
      
 
       <MediaPlayer
-        src={currentTrack?.mediaSrc || ''}
-        type={currentTrack?.fileType || 'AUDIO'}
+        mediaFile={currentTrack}
+        mediaType={currentTrack?.fileType || 'AUDIO'}
       />
     </Box>
   );

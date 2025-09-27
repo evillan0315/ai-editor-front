@@ -8,6 +8,7 @@ import {
   setPlaying,
   setCurrentTrack,
   isPlayingAtom,
+  currentTrackAtom
 } from '@/stores/mediaStore';
 
 import {
@@ -34,6 +35,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
 
   // Directly get isPlaying and currentTrack from their respective atoms
   const isPlaying = useStore(isPlayingAtom);
+  const currentTrack = useStore(currentTrackAtom);
   // const currentTrack = useStore(currentTrackAtom);
   const [favoriteSongs, setFavoriteSongs] = useState<string[]>([]);
   const [favoriteVideos, setFavoriteVideos] = useState<string[]>([]);
@@ -85,7 +87,6 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
 
   // Filter for audio files
   const playableAudioTracks: MediaFileResponseDto[] = useMemo(() => {
-    console.log(allAvailableMediaFiles, 'allAvailableMediaFiles');
     return allAvailableMediaFiles.filter(media => media.fileType === FileType.AUDIO);
   }, [allAvailableMediaFiles]);
 
@@ -95,14 +96,16 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   }, [allAvailableMediaFiles]);
 
   const handlePlayAudio = useCallback((song: MediaFileResponseDto) => {
-    console.log(song, 'song');
-    const track = mapMediaFileToTrack(song);
-    setCurrentTrack(track);
+    if(!isPlaying){
+      isPlayingAtom.set(true);
+    }
+    setCurrentTrack(song);
+    //const track = mapMediaFileToTrack(song);
   }, []);
 
   const handlePlayVideo = useCallback((video: MediaFileResponseDto) => {
-    const track = mapMediaFileToTrack(video);
-    setCurrentTrack(track);
+    //const track = mapMediaFileToTrack(video);
+    setCurrentTrack(video);
   }, []);
 
   const toggleFavoriteSong = useCallback((songId: string) => {

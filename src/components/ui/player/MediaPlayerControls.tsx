@@ -1,15 +1,4 @@
-import React, { useCallback } from 'react';
-import { useStore } from '@nanostores/react';
-import {
-  isPlayingAtom,
-  setPlaying,
-  shuffleAtom,
-  repeatModeAtom,
-  toggleRepeat,
-  toggleShuffle,
-  setTrackProgress,
-  durationAtom,
-} from '@/stores/mediaStore';
+import React, { useCallback, useState, useRef, useEffect, SyntheticEvent } from 'react';
 import {
   Box,
   IconButton,
@@ -27,35 +16,47 @@ import {
   Repeat,
   RepeatOne,
 } from '@mui/icons-material';
-import { currentTrackAtom } from '@/stores/mediaStore';
-import { SyntheticEvent, useState, useRef, useEffect } from 'react';
-interface MediaPlayerControlsProps {}
+import { MediaFileResponseDtoUrl, FileType } from '@/types/refactored/media';
 
-const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
+interface MediaPlayerControlsProps {
+  mediaFile: MediaFileResponseDto;
+}
+
+const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({mediaFile}) => {
   const theme = useTheme();
-  const isPlaying = useStore(isPlayingAtom);
-  const shuffle = useStore(shuffleAtom);
-  const repeatMode = useStore(repeatModeAtom);
-  const duration = useStore(durationAtom);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [shuffle, setShuffle] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<'off' | 'context' | 'track'>('off');
+  const [duration, setDuration] = useState(0);
   const [loading, setLoading] = useState(false);
-  const currentTrack = useStore(currentTrackAtom);
+  const [currentTrack, setCurrentTrack] = useState<MediaFileResponseDtoUrl>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentSrc, setCurrentSrc] = useState<string | null>(null);
-
+  const [trackProgress, setTrackProgress] = useState<number>(0);
   const mediaRef = currentTrack?.fileType === 'VIDEO' ? videoRef : audioRef;
+
+  useEffect(() => {
+    if(mediaFile) {
+            console.log(mediaFile, 'mediaFile MediaPlayerControls');
+      setCurrentTrack(mediaFile);
+      setCurrentSrc(mediaFile?.streamUrl)
+
+    }
+  }, [mediaFile]);
+
 
   useEffect(() => {
     const media = mediaRef?.current;
     if (media) {
       const handleMetadata = () => {
         setLoading(false);
-        //setTrackDuration(media.duration);
+        setDuration(media.duration);
       };
 
       const handleData = () => {
-        //setTrackDuration(media.duration);
+        setDuration(media.duration);
         setLoading(false);
       };
 
@@ -73,7 +74,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
       };
 
       const handleEnded = () => {
-        setPlaying(false);
+        setIsPlaying(false);
         setTrackProgress(0);
       };
 
@@ -102,7 +103,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
       if (isPlaying) {
         media.play().catch((error) => {
           console.error('Playback failed:', error);
-          setPlaying(false);
+          setIsPlaying(false);
         });
       } else {
         media.pause();
@@ -116,9 +117,9 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
       setCurrentSrc(null);
       return;
     }
-    let mediaUrl = currentTrack.mediaSrc;
+    let mediaUrl = currentTrack.streamUrl;
     if (mediaRef?.current && currentSrc !== mediaUrl) {
-      setCurrentSrc(currentTrack.mediaSrc);
+      setCurrentSrc(currentTrack.streamUrl);
       mediaRef.current.load();
       if (isPlaying) {
         mediaRef.current.play();
@@ -127,7 +128,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
   }, [currentTrack, isPlaying, currentSrc]);
 
   const handlePlayPause = () => {
-    setPlaying(!isPlaying);
+    setIsPlaying(!isPlaying);
   };
 
   const handleNext = () => {};
@@ -157,6 +158,21 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
     },
     [],
   );
+
+  const toggleShuffle = () => {
+    setShuffle(!shuffle);
+  };
+
+  const toggleRepeat = () => {
+    if (repeatMode === 'off') {
+      setRepeatMode('context');
+    } else if (repeatMode === 'context') {
+      setRepeatMode('track');
+    } else {
+      setRepeatMode('off');
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -235,12 +251,12 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
           gap: 1,
         }}
       >
-        {/*  <Typography variant='caption' color='text.secondary'>
-          {formatTime(internalProgress)}
+         <Typography variant='caption' color='text.secondary'>
+          {formatTime(trackProgress)}
         </Typography>
         <Slider
           size='small'
-          value={internalProgress ?? 0}
+          value={trackProgress ?? 0}
           onChange={handleTimeChange}
           onChangeCommitted={handleTimeChangeCommitted}
           min={0}
@@ -259,7 +275,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
         />
         <Typography variant='caption' color='text.secondary'>
           {formatTime(duration)}
-        </Typography> */}
+        </Typography> 
       </Box>
     </Box>
   );

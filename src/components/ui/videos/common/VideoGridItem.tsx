@@ -40,13 +40,14 @@ const VideoGridItem: React.FC<VideoGridItemProps> = ({
         onMouseLeave={() => handleVideoHover(null)}
       >
         <Box sx={{ position: 'relative' }}>
-          <CardActionArea onClick={() => openDetailDialog(video)}>
+    
             <CardMedia
               component="img"
               height="200"
               image={video.url || ''}
               alt={video.video?.title}
               sx={{ objectFit: 'cover' }}
+              onClick={() => openDetailDialog(video)}
             />
             <Slide
               direction="up"
@@ -70,7 +71,7 @@ const VideoGridItem: React.FC<VideoGridItemProps> = ({
                 <PlayArrow />
               </Fab>
             </Slide>
-          </CardActionArea>
+      
         </Box>
         <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
           <Typography gutterBottom variant="h6" noWrap>

@@ -91,29 +91,7 @@ export const SongListItem: React.FC<SongListItemProps> = ({ song, onPlay, onFavo
           )}
           <ListItemText
             primary={song.song?.title}
-            secondary={
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: 0.5,
-                }}
-              >
-                <Typography variant="body2" color="text.primary">
-                </Typography>
-                <span>•</span>
-                <Typography variant="body2" color="text.secondary">
-                </Typography>
-                {
-                  <>
-                    <span>•</span>
-                    <Typography variant="body2" color="text.secondary">
-                    </Typography>
-                  </>
-                }
-              </Box>
-            }
+            
           />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box sx={{ display: 'flex', gap: 0.5 }}>

@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import { useStore } from '@nanostores/react';
-import { volumeAtom, setVolume } from '@/stores/mediaStore';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   IconButton,
@@ -17,23 +15,28 @@ interface MediaPlayerVolumeControlProps {}
 
 const MediaPlayerVolumeControl: React.FC<MediaPlayerVolumeControlProps> = () => {
   const theme = useTheme();
-  const volume = useStore(volumeAtom);
+  const [volume, setVolume] = useState(1);
 
   const [isMuted, setIsMuted] = useState(false);
   const [internalVolume, setInternalVolume] = useState(volume);
-  const audioRef = React.useRef<HTMLAudioElement>(null);
-  const videoRef = React.useRef<HTMLVideoElement>(null);
-  const currentTrack = useStore(volumeAtom);
-  // Handler functions
-  const mediaRef = React.useRef<HTMLMediaElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const mediaRef = useRef<HTMLMediaElement>(null);
+
+  useEffect(() => {
+    if (mediaRef.current) {
+      mediaRef.current.volume = internalVolume;
+      mediaRef.current.muted = isMuted;
+    }
+  }, [isMuted, internalVolume]);
 
   const handleVolumeChange = (_event: Event, newValue: number | number[]) => {
     const newVolume = typeof newValue === 'number' ? newValue : 0;
-    setInternalVolume(newVolume);
+    setInternalVolume(newVolume / 100);
     setVolume(newVolume);
 
     if (mediaRef.current) {
-      mediaRef.current.volume = newVolume;
+      mediaRef.current.volume = newVolume / 100;
     }
   };
 

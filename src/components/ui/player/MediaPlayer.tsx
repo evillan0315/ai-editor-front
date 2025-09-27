@@ -1,16 +1,27 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, useTheme } from '@mui/material';
 import MediaPlayerControls from './MediaPlayerControls';
 import MediaPlayerTrackInfo from './MediaPlayerTrackInfo';
 import MediaPlayerVolumeControl from './MediaPlayerVolumeControl';
+import { MediaFileResponseDtoUrl, FileType } from '@/types/refactored/media';
+
+
 
 interface MediaPlayerProps {
-  mediaType: 'AUDIO' | 'VIDEO';
+  mediaFile: MediaFileResponseDtoUrl;
+  mediaType: FileType.AUDIO | FileType.VIDEO;
 }
 
-const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
+const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaFile, mediaType }) => {
   const theme = useTheme();
+    // Set initial loading state when a new track is selected
+  useEffect(() => {
+    if (mediaFile) {
+      console.log(mediaFile, 'mediaFile MediaPlayer');
+    } else {
 
+    }
+  }, [mediaFile]);
   return (
     <Box
       sx={{
@@ -28,7 +39,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
       }}
     >
       <MediaPlayerTrackInfo mediaType={mediaType} />
-      <MediaPlayerControls />
+      <MediaPlayerControls mediaFile={mediaFile}/>
       <MediaPlayerVolumeControl />
     </Box>
   );

@@ -59,7 +59,7 @@ export type MediaPlayerType = 'AUDIO' | 'VIDEO';
  */
 export interface MediaMetadata {
   id: string;
-  type: MediaPlayerType;
+  type: FileType;
   data: MediaMetadataData;
   tags: string[];
   createdAt: string;
@@ -102,7 +102,9 @@ export interface MediaFileResponseDto {
   song?: Song | null;
   video?: Video | null;
 }
-
+export interface MediaFileResponseDtoUrl extends MediaFileResponseDto {
+  streamUrl: string;
+}
 /**
  * DTO for querying media files with pagination.
  */
@@ -200,10 +202,6 @@ export interface TranscriptionApi {
     currentTime: number,
   ) => Promise<SyncTranscriptionResponse>;
 }
-
-// =========================================================================
-// Song and Video Types
-// =========================================================================
 
 export interface Song {
   id: string;

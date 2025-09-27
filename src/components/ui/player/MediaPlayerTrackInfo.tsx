@@ -1,6 +1,4 @@
-import React, { useRef, useEffect } from 'react';
-import { useStore } from '@nanostores/react';
-import { currentTrackAtom, setTrackDuration } from '@/stores/mediaStore';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   Box,
   IconButton,
@@ -21,12 +19,29 @@ const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({
   mediaType,
 }) => {
   const theme = useTheme();
-  const currentTrack = useStore(currentTrackAtom);
+  const [currentTrack, setCurrentTrack] = useState<any>(null);
+  const [trackDuration, setTrackDuration] = useState(0);
+
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Get the correct ref based on media type
   const mediaRef = currentTrack?.fileType === 'VIDEO' ? videoRef : audioRef;
+
+  useEffect(() => {
+    // Fetch track data when track changes
+    const fetchData = async () => {
+      try {
+        // Replace with your actual API call to get track data
+        const response = await Promise.resolve({/* your mock API response*/});
+        setCurrentTrack(response);
+      } catch (error) {
+        console.error('Error fetching track data:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const media = mediaRef?.current;

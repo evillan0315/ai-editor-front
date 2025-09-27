@@ -10,7 +10,9 @@ import {
   Typography,
   Menu,
   MenuItem,
-  Divider
+  Divider,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
 import {
   MoreVert,
@@ -57,7 +59,7 @@ export const SongGridItem: React.FC<SongGridItemProps> = ({ song, onPlay, onFavo
   ];
 
   return (
-    <Grid item xs={12} sm={6} md={4} lg={3}>
+    <Grid container xs={12} sm={6} md={4} lg={3}>
       <Card
         sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
       >
