@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Box, useTheme } from '@mui/material';
 import SpotifySidebar from '@/pages/spotify/SpotifySidebar';
 import SpotifyMainContent from '@/pages/spotify/SpotifyMainContent';
-import MediaPlayer from '@/components/ui/MediaPlayer';
+import MediaPlayer from '@/components/ui/player/MediaPlayer';
 import VideoModal from '@/components/VideoModal';
 import { useStore } from '@nanostores/react';
 
