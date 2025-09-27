@@ -6,6 +6,7 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
+  CircularProgress,
 } from '@mui/material';
 import {
   PlayArrow,
@@ -13,12 +14,17 @@ import {
   SkipNext,
   SkipPrevious,
   VolumeUp,
-  VolumeDown,
   VolumeOff,
-  Fullscreen, // Add Fullscreen Icon
-  FullscreenExit // Add FullscreenExit Icon
+  VolumeDown,
+  Shuffle,
+  Repeat,
+  RepeatOne,
+  FavoriteBorder,
+  Album,
+  Movie,
 } from '@mui/icons-material';
-import { MediaPlayerType } from '@/types/refactored/media'
+import { MediaPlayerType } from '@/types/refactored/media';
+
 // Define types for props
 interface MediaPlayerProps {
   src: string; // Audio/Video source URL
@@ -28,7 +34,13 @@ interface MediaPlayerProps {
   onEnded?: () => void; // Optional callback for when the media ends
 }
 
-const MediaPlayer: React.FC<MediaPlayerProps> = ({ src, type, onNext, onPrevious, onEnded }) => {
+const MediaPlayer: React.FC<MediaPlayerProps> = ({
+  src,
+  type,
+  onNext,
+  onPrevious,
+  onEnded,
+}) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -37,6 +49,13 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ src, type, onNext, onPrevious
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [internalVolume, setInternalVolume] = useState(volume);
+  const [isSeeking, setIsSeeking] = useState(false);
+  const [internalProgress, setInternalProgress] = useState(currentTime);
+  const [shuffle, setShuffle] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<'off' | 'context' | 'track'>('off');
+  const [loading, setLoading] = useState(false);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -55,7 +74,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ src, type, onNext, onPrevious
       };
 
       const handleData = () => {
-          setDuration(media.duration);
+        setDuration(media.duration);
       };
 
       media.addEventListener('loadedmetadata', handleMetadata);
@@ -75,8 +94,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ src, type, onNext, onPrevious
     const media = mediaRef.current;
     if (media) {
       if (isPlaying) {
-        media.play().catch(error => {
-          console.error("Playback failed:", error);
+        media.play().catch((error) => {
+          console.error('Playback failed:', error);
           setIsPlaying(false);
         });
       } else {
@@ -106,11 +125,19 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ src, type, onNext, onPrevious
 
   const handleVolumeChange = (event: Event, newValue: number | number[]) => {
     const newVolume = typeof newValue === 'number' ? newValue : 0;
-    setVolume(newVolume);
+    setInternalVolume(newVolume);
+
     if (mediaRef.current) {
       mediaRef.current.volume = newVolume;
     }
   };
+
+  const handleVolumeChangeCommitted = useCallback(
+    (_event: Event | SyntheticEvent, newValue: number | number[]) => {
+      setVolume(newValue as number);
+    },
+    [],
+  );
 
   const handleMute = () => {
     setIsMuted(!isMuted);
@@ -121,11 +148,24 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ src, type, onNext, onPrevious
 
   const handleTimeChange = (event: Event, newValue: number | number[]) => {
     const newTime = typeof newValue === 'number' ? newValue : 0;
-    setCurrentTime(newTime);
+    setInternalProgress(newTime);
+
     if (mediaRef.current) {
       mediaRef.current.currentTime = newTime;
     }
   };
+
+  const handleTimeChangeCommitted = useCallback(
+    (_event: Event | SyntheticEvent, newValue: number | number[]) => {
+      const media = mediaRef.current;
+      if (media) {
+        media.currentTime = newValue as number;
+        setCurrentTime(newValue as number);
+      }
+      setIsSeeking(false);
+    },
+    [mediaRef],
+  );
 
   const handleTimeUpdate = () => {
     if (mediaRef.current) {
@@ -143,9 +183,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ src, type, onNext, onPrevious
 
   // Volume Icon
   const getVolumeIcon = () => {
-    if (isMuted || volume === 0) {
-      return <VolumeOff />; 
-    } else if (volume < 0.5) {
+    if (isMuted || internalVolume === 0) {
+      return <VolumeOff />;
+    } else if (internalVolume < 0.5) {
       return <VolumeDown />;
     } else {
       return <VolumeUp />;
@@ -159,124 +199,214 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ src, type, onNext, onPrevious
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
-  // Function to handle fullscreen toggle
-  const handleFullscreen = () => {
-    if (mediaRef.current) {
-      if (!isFullscreen) {
-        if (mediaRef.current.requestFullscreen) {
-          mediaRef.current.requestFullscreen();
-        } else if ((mediaRef.current as any).mozRequestFullScreen) { /* Firefox */
-          (mediaRef.current as any).mozRequestFullScreen();
-        } else if ((mediaRef.current as any).webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-          (mediaRef.current as any).webkitRequestFullscreen();
-        } else if ((mediaRef.current as any).msRequestFullscreen) { /* IE/Edge */
-          (mediaRef.current as any).msRequestFullscreen();
-        }
-      } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if ((document as any).mozCancelFullScreen) { /* Firefox */
-          (document as any).mozCancelFullScreen();
-        } else if ((document as any).webkitExitFullscreen) { /* Chrome, Safari and Opera */
-          (document as any).webkitExitFullscreen();
-        } else if ((document as any).msExitFullscreen) { /* IE/Edge */
-          (document as any).msExitFullscreen();
-        }
-      }
+  const toggleShuffle = () => {
+    setShuffle(!shuffle);
+  };
 
-      setIsFullscreen(!isFullscreen);
+  const toggleRepeat = () => {
+    if (repeatMode === 'off') {
+      setRepeatMode('context');
+    } else if (repeatMode === 'context') {
+      setRepeatMode('track');
+    } else {
+      setRepeatMode('off');
     }
   };
 
   return (
-    <Box sx={{ // Main Container
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: 2,
-      bgcolor: 'background.paper',
-      borderRadius: 1,
-      width: isMobile ? '100%' : '400px',
-    }}>
-      {isVideo ? (
-        <video
-          ref={videoRef}
-          src={src}
-          onTimeUpdate={handleTimeUpdate}
-          style={{ width: '100%', maxHeight: '300px' }}
-        />
-      ) : (
-        <audio
-          ref={audioRef}
-          src={src}
-          onTimeUpdate={handleTimeUpdate}
-          style={{ width: '100%' }}
-        />
-      )}
-
-      {/* Media Controls */}
-      <Box sx={{// Control Container
+    <Box
+      sx={{
+        // Main Container
+        bgcolor: theme.palette.background.paper,
+        borderTop: `1px solid ${theme.palette.divider}`,
+        height: '80px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        width: '100%',
-      }}>
-
-        <IconButton aria-label="previous" onClick={handlePrevious} disabled={!onPrevious}>
-          <SkipPrevious />
-        </IconButton>
-        <IconButton aria-label="play/pause" onClick={handlePlayPause}>
-          {isPlaying ? <Pause /> : <PlayArrow />}
-        </IconButton>
-        <IconButton aria-label="next" onClick={handleNext} disabled={!onNext}>
-          <SkipNext />
-        </IconButton>
-        {isVideo && (
-          <IconButton aria-label="fullscreen" onClick={handleFullscreen}>
-            {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
-          </IconButton>
+        px: 2,
+        color: theme.palette.text.primary,
+        flexShrink: 0,
+        zIndex: 11, // Ensure player bar is above video overlay
+      }}
+    >
+      {/* Left section: Current Song Info */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          width: '30%',
+          minWidth: '180px',
+        }}
+      >
+        {type === 'VIDEO' ? (
+          <Movie
+            sx={{ fontSize: 40, mr: 1, color: theme.palette.text.secondary }}
+          />
+        ) : (
+          <Album
+            sx={{ fontSize: 40, mr: 1, color: theme.palette.text.secondary }}
+          />
         )}
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
+            {type} - track title
+          </Typography>
+          <Typography variant='caption' color='text.secondary'>
+            Artist Name
+          </Typography>
+        </Box>
+        <IconButton
+          size='small'
+          sx={{ ml: 2, color: theme.palette.text.secondary }}
+          disabled
+        >
+          <FavoriteBorder fontSize='small' />
+        </IconButton>
       </Box>
 
-      {/* Track Progress */}
-      <Box sx={{ // Progress Container
-         width: '100%',
-         display: 'flex',
-         alignItems: 'center',
-       }}>
-        <Typography variant="body2" sx={{ width: '40px', textAlign: 'right', mr: 1 }}>
-          {formatTime(currentTime)}
-        </Typography>
-        <Slider
-          aria-label="time-progress"
-          value={currentTime}
-          min={0}
-          max={duration}
-          onChange={handleTimeChange}
-          sx={{ flexGrow: 1, height: 4 }} // Adjust height here
-        />
-        <Typography variant="body2" sx={{ width: '40px', textAlign: 'left', ml: 1 }}>
-          {formatTime(duration)}
-        </Typography>
+      {/* Middle section: Playback Controls and Progress */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          flexGrow: 1,
+          maxWidth: '600px',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+          <IconButton
+            size='small'
+            sx={{ color: theme.palette.text.primary }}
+            onClick={toggleShuffle}
+          >
+            <Shuffle fontSize='small' color={shuffle ? 'primary' : 'inherit'} />
+          </IconButton>
+          <IconButton
+            size='small'
+            sx={{ color: theme.palette.text.primary }}
+            onClick={handlePrevious}
+            disabled={!onPrevious}
+          >
+            <SkipPrevious fontSize='small' />
+          </IconButton>
+          <IconButton
+            size='large'
+            onClick={handlePlayPause}
+            disabled={loading}
+            sx={{
+              color: theme.palette.text.primary,
+              bgcolor: theme.palette.primary.main,
+              '&:hover': {
+                bgcolor: theme.palette.primary.dark,
+              },
+              borderRadius: '50%',
+              width: 48,
+              height: 48,
+            }}
+          >
+            {loading ? (
+              <CircularProgress size={24} color='inherit' />
+            ) : isPlaying ? (
+              <Pause fontSize='large' />
+            ) : (
+              <PlayArrow fontSize='large' />
+            )}
+          </IconButton>
+          <IconButton
+            size='small'
+            sx={{ color: theme.palette.text.primary }}
+            onClick={handleNext}
+            disabled={!onNext}
+          >
+            <SkipNext fontSize='small' />
+          </IconButton>
+          <IconButton
+            size='small'
+            sx={{ color: theme.palette.text.primary }}
+            onClick={toggleRepeat}
+          >
+            {repeatMode === 'track' ? (
+              <RepeatOne fontSize='small' color='primary' />
+            ) : (
+              <Repeat fontSize='small' color={repeatMode === 'context' ? 'primary' : 'inherit'} />
+            )}
+          </IconButton>
+        </Box>
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          <Typography variant='caption' color='text.secondary'>
+            {formatTime(internalProgress)}
+          </Typography>
+          <Slider
+            size='small'
+            value={internalProgress ?? 0}
+            onChange={handleTimeChange}
+            onChangeCommitted={handleTimeChangeCommitted}
+            min={0}
+            max={duration ?? 0}
+            aria-label='Track progress'
+            sx={{
+              color: theme.palette.primary.main,
+              height: 4,
+              width: '100%',
+              '& .MuiSlider-thumb': {
+                width: 12,
+                height: 12,
+              },
+            }}
+            disabled={!src}
+          />
+          <Typography variant='caption' color='text.secondary'>
+            {formatTime(duration)}
+          </Typography>
+        </Box>
       </Box>
 
-      {/* Volume Controls */}
-      <Box sx={{ // Volume Container
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-      }}>
-        <IconButton aria-label="mute/unmute" onClick={handleMute}>
-          {getVolumeIcon()}
+      {/* Right section: Volume and other controls */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          width: '30%',
+          justifyContent: 'flex-end',
+          minWidth: '180px',
+        }}
+      >
+        <IconButton
+          size='small'
+          sx={{ color: theme.palette.text.primary }}
+          onClick={handleMute}
+        >
+          {isMuted || internalVolume === 0 ? (
+            <VolumeOff />
+          ) : (
+            <VolumeUp />
+          )}
         </IconButton>
         <Slider
-          aria-label="volume"
-          value={volume}
-          min={0}
-          max={1}
-          step={0.01}
+          size='small'
+          value={internalVolume * 100 ?? 0}
           onChange={handleVolumeChange}
-          sx={{ width: '88%' }}
+          onChangeCommitted={handleVolumeChangeCommitted}
+          min={0}
+          max={100}
+          aria-label='Volume'
+          sx={{
+            width: 100,
+            color: theme.palette.primary.main,
+            height: 4,
+            '& .MuiSlider-thumb': {
+              width: 12,
+              height: 12,
+            },
+          }}
         />
       </Box>
     </Box>
