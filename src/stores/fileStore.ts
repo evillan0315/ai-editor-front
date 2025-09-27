@@ -21,7 +21,7 @@ export interface FileStoreState {
   isSavingFileContent: boolean;
   saveFileContentError: string | null;
   isOpenedFileDirty: boolean;
-  openedTabs: string[];
+  //openedTabs: string[]; // Removed from FileStoreState, now managed by persistentAtom
 }
 
 export const fileStore = map<FileStoreState>({
@@ -36,16 +36,18 @@ export const fileStore = map<FileStoreState>({
   isSavingFileContent: false,
   saveFileContentError: null,
   isOpenedFileDirty: false,
-  openedTabs: [],
+  //openedTabs: [], // Removed from fileStore, now managed by persistentAtom
 });
 export const openedFileContent = persistentAtom<string | null>('openedFileContent', null);
 export const openedFile = persistentAtom<string | null>('openedFile', null);
 export const isOpenedFileDirty = persistentAtom<boolean>('isOpenedFileDirty', false);
+export const openedTabs = persistentAtom<string[]>('openedTabs', []);
 
 export const setOpenedFile = (filePath: string | null) => {
   fileStore.setKey('openedFile', filePath);
   openedFile.set(filePath);
-  if (filePath && !fileStore.get().openedTabs.includes(filePath)) {
+  //if (filePath && !fileStore.get().openedTabs.includes(filePath)) {
+  if (filePath && !openedTabs.get().includes(filePath)) {
     addOpenedTab(filePath);
   } else if (filePath) {
     addLog('File Editor', `Switched to file: ${filePath}`, 'info');
@@ -130,23 +132,28 @@ export const setIsOpenedFileDirty = (isDirty: boolean) => {
 };
 
 export const addOpenedTab = (filePath: string) => {
-  const state = fileStore.get();
-  if (!state.openedTabs.includes(filePath)) {
-    fileStore.setKey('openedTabs', [...state.openedTabs, filePath]);
+  //const state = fileStore.get();
+  //if (!state.openedTabs.includes(filePath)) {
+  if (!openedTabs.get().includes(filePath)) {
+    //fileStore.setKey('openedTabs', [...state.openedTabs, filePath]);
+    openedTabs.set([...openedTabs.get(), filePath]);
     addLog('File Editor', `Opened new tab for: ${filePath}`, 'info');
   }
 };
 
 export const removeOpenedTab = (filePath: string) => {
-  const state = fileStore.get();
-  const newOpenedTabs = state.openedTabs.filter((tab) => tab !== filePath);
+  //const state = fileStore.get();
+  //const newOpenedTabs = state.openedTabs.filter((tab) => tab !== filePath);
+  const newOpenedTabs = openedTabs.get().filter((tab) => tab !== filePath);
   const openFile = openedFile.get();
-  fileStore.setKey('openedTabs', newOpenedTabs);
+  //fileStore.setKey('openedTabs', newOpenedTabs);
+  openedTabs.set(newOpenedTabs);
   addLog('File Editor', `Closed tab for: ${filePath}`, 'info');
 
   if (openFile === filePath) {
     if (newOpenedTabs.length > 0) {
-      const oldIndex = state.openedTabs.indexOf(filePath);
+      //const oldIndex = state.openedTabs.indexOf(filePath);
+      const oldIndex = openedTabs.get().indexOf(filePath);
       const newActiveFile =
         oldIndex > 0 ? newOpenedTabs[oldIndex - 1] : newOpenedTabs[0];
       setOpenedFile(newActiveFile);
@@ -263,4 +270,3 @@ export const setUploadedFile = (
   fileStore.setKey('uploadedFileMimeType', mimeType);
   fileStore.setKey('uploadedFileName', fileName);
 };
-

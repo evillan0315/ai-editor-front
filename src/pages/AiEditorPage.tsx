@@ -13,7 +13,7 @@ import { setError } from '@/stores/errorStore';
 import { addLog } from '@/stores/logStore';
 import { isTerminalVisible, setShowTerminal } from '@/stores/terminalStore';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
-import { fileStore, setUploadedFile } from '@/stores/fileStore';
+import { fileStore, setUploadedFile, openedTabs } from '@/stores/fileStore';
 
 import {
   Box,
@@ -38,7 +38,7 @@ const RESIZE_HANDLE_HEIGHT = 2;
 const AiEditorPage: React.FC = () => {
   const $rightSidebarContent = useStore(rightSidebarContent);
   const currentProjectPath = useStore(projectRootDirectoryStore);
-  const { openedTabs } = useStore(fileStore);
+  const $openedTabs = useStore(openedTabs);
   const {
     error: globalError,
     lastLlmResponse,
@@ -250,9 +250,9 @@ const AiEditorPage: React.FC = () => {
             bgcolor: theme.palette.background.paper,
           }}
         >
-          {/*openedTabs && openedTabs.length > 0 && (
+          {$openedTabs && $openedTabs.length > 0 && (
             <FileTabs sx={{ flexShrink: 0, height: FILE_TABS_HEIGHT }} />
-          )*/}
+          )}
 
           <Box
             ref={contentAreaRef}

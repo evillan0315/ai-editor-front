@@ -36,7 +36,8 @@ import {
   removeOpenedTab,
   openedFile,
   openedFileContent,
-  isOpenedFileDirty
+  isOpenedFileDirty,
+  openedTabs // import openedTabs
 } from '@/stores/fileStore';
 import * as path from 'path-browserify';
 
@@ -44,7 +45,7 @@ interface FileTabsProps extends BoxProps {}
 
 const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
   const {
-    openedTabs,
+    //openedTabs,
     //openedFile,
     discardActiveFileChanges,
     //openedFileContent,
@@ -56,9 +57,10 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
   const $openedFile = useStore(openedFile);
   const $openedFileContent = useStore(openedFileContent);
   const $isOpenedFileDirty = useStore(isOpenedFileDirty);
+  const $openedTabs = useStore(openedTabs); // get openedTabs from persistentAtom
   const theme = useTheme();
   const showTerminal = useStore(isTerminalVisible);
-  const activeTabIndex = openedTabs.indexOf($openedFile || '');
+  const activeTabIndex = $openedTabs.indexOf($openedFile || '');
 
   const handleTabChange = (_event: SyntheticEvent, newValue: string) => {
     // newValue is the file path of the selected tab
@@ -72,7 +74,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
 
   const handleCloseAllTabs = (event: React.MouseEvent) => {
     event.stopPropagation();
-    openedTabs.forEach((filePath) => {
+    $openedTabs.forEach((filePath) => {
       removeOpenedTab(filePath);
     });
     //removeAllOpenedTabs();
@@ -102,7 +104,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
       }}
       {...otherProps} // Pass any other props to the Box
     >
-      {openedTabs.length > 0 && (
+      {$openedTabs.length > 0 && (
         <Box
           sx={{
             display: 'flex',
@@ -158,7 +160,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
           },
         }}
       >
-        {openedTabs.map((filePath) => {
+        {$openedTabs.map((filePath) => {
           const fileName = path.basename(filePath);
           const isActiveTab = $openedFile === filePath;
           const isDirty = isActiveTab && $isOpenedFileDirty; // Only show dirty status for the currently active tab
