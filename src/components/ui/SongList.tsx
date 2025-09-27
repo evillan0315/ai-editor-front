@@ -39,18 +39,9 @@ import {
   LibraryMusic,
 } from '@mui/icons-material';
 
+import { MediaFileResponseDto } from '@/types/refactored/media';
+
 // Types
-interface Song {
-  id: string;
-  title: string;
-  artist: string;
-  album: string;
-  duration: number;
-  genre: string[];
-  isFavorite: boolean;
-  thumbnail?: string;
-  year?: number;
-}
 
 interface MenuItem {
   label: string;
@@ -60,10 +51,10 @@ interface MenuItem {
 }
 
 interface SongListProps {
-  songs: Song[];
-  onPlay: (song: Song) => void;
+  songs: MediaFileResponseDto[];
+  onPlay: (song: MediaFileResponseDto) => void;
   onFavorite: (songId: string) => void;
-  onAction: (action: string, song: Song) => void;
+  onAction: (action: string, song: MediaFileResponseDto) => void;
   menuItems?: MenuItem[];
 }
 
@@ -89,11 +80,19 @@ const SongList: React.FC<SongListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
+  const [selectedSong, setSelectedSong] = useState<MediaFileResponseDto | null>(null);
 
   // Derived data
   const genres = useMemo(() => {
-    const allGenres = songs.flatMap((song) => song.genre);
+    const allGenres: string[] = [];
+    songs.forEach((song) => {
+      if (song.metadata && song.metadata.length > 0) {
+        const genre = song.metadata[0].tags;
+        if (genre) {
+          allGenres.push(...genre);
+        }
+      }
+    });
     return ['all', ...Array.from(new Set(allGenres))];
   }, [songs]);
 
@@ -101,13 +100,14 @@ const SongList: React.FC<SongListProps> = ({
     () =>
       songs
         .filter((song) => {
-          const matchesSearch =
-            song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            song.album.toLowerCase().includes(searchQuery.toLowerCase());
+          const matchesSearch = (
+            song.song?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            ''.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            ''.toLowerCase().includes(searchQuery.toLowerCase())
+          );
 
-          const matchesGenre =
-            selectedGenre === 'all' || song.genre.includes(selectedGenre);
+          const matchesGenre = song.metadata && song.metadata[0] && song.metadata[0].tags ?
+            selectedGenre === 'all' || song.metadata[0].tags.includes(selectedGenre) : selectedGenre === 'all';
 
           return matchesSearch && matchesGenre;
         })
@@ -115,19 +115,19 @@ const SongList: React.FC<SongListProps> = ({
           const modifier = sortOrder === 'asc' ? 1 : -1;
 
           if (sortField === 'duration') {
-            return (a.duration - b.duration) * modifier;
+            return ((a.song?.duration || 0) - (b.song?.duration || 0)) * modifier;
           }
 
           // Handle optional year field
           if (sortField === 'year') {
-            const aYear = a.year ?? 0;
-            const bYear = b.year ?? 0;
+            const aYear = a.song?.year ?? 0;
+            const bYear = b.song?.year ?? 0;
             return (aYear - bYear) * modifier;
           }
 
           // For string fields (title, artist, album)
-          const aValue = a[sortField] ?? '';
-          const bValue = b[sortField] ?? '';
+          const aValue = a.song ? a.song.title ?? '' : '';
+          const bValue = b.song ? b.song.title ?? '' : '';
 
           if (aValue < bValue) return -1 * modifier;
           if (aValue > bValue) return 1 * modifier;
@@ -146,7 +146,7 @@ const SongList: React.FC<SongListProps> = ({
     }
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, song: Song) => {
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, song: MediaFileResponseDto) => {
     setMenuAnchor(event.currentTarget);
     setSelectedSong(song);
   };
@@ -172,9 +172,8 @@ const SongList: React.FC<SongListProps> = ({
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <IconButton
                 onClick={() => onFavorite(song.id)}
-                color={song.isFavorite ? 'error' : 'default'}
+                color={true ? 'error' : 'default'}
               >
-                {song.isFavorite ? <Favorite /> : <FavoriteBorder />}
               </IconButton>
               <IconButton onClick={(e) => handleMenuOpen(e, song)}>
                 <MoreVert />
@@ -187,16 +186,16 @@ const SongList: React.FC<SongListProps> = ({
             <ListItemIcon sx={{ minWidth: 40 }}>
               <PlayArrow />
             </ListItemIcon>
-            {song.thumbnail && (
+            {song.metadata && song.metadata[0]?.data.thumbnail && (
               <CardMedia
                 component="img"
                 sx={{ width: 60, height: 60, borderRadius: 1, mr: 2 }}
-                image={song.thumbnail}
-                alt={song.title}
+                image={song.metadata[0]?.data.thumbnail}
+                alt={song.song?.title}
               />
             )}
             <ListItemText
-              primary={song.title}
+              primary={song.song?.title}
               secondary={
                 <Box
                   sx={{
@@ -207,43 +206,30 @@ const SongList: React.FC<SongListProps> = ({
                   }}
                 >
                   <Typography variant="body2" color="text.primary">
-                    {song.artist}
                   </Typography>
                   <span>•</span>
                   <Typography variant="body2" color="text.secondary">
-                    {song.album}
                   </Typography>
-                  {song.year && (
+                  {
                     <>
                       <span>•</span>
                       <Typography variant="body2" color="text.secondary">
-                        {song.year}
                       </Typography>
                     </>
-                  )}
+                  }
                 </Box>
               }
             />
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ display: 'flex', gap: 0.5 }}>
-                {song.genre.slice(0, 2).map((genre) => (
-                  <Chip
-                    key={genre}
-                    label={genre}
-                    size="small"
-                    variant="outlined"
-                  />
-                ))}
-                {song.genre.length > 2 && (
-                  <Chip label={`+${song.genre.length - 2}`} size="small" />
-                )}
+                
               </Box>
               <Typography
                 variant="body2"
                 color="text.secondary"
                 sx={{ minWidth: 50, textAlign: 'right' }}
               >
-                {formatDuration(song.duration)}
+                {formatDuration(song.song?.duration || 0)}
               </Typography>
             </Box>
           </ListItemButton>
@@ -263,19 +249,19 @@ const SongList: React.FC<SongListProps> = ({
               <CardMedia
                 component="img"
                 height="200"
-                image={song.thumbnail || '/placeholder-album.jpg'}
-                alt={song.title}
+                image={song.metadata && song.metadata[0]?.data.thumbnail || '/placeholder-album.jpg'}
+                alt={song.song?.title}
                 sx={{ objectFit: 'cover' }}
               />
               <CardContent>
                 <Typography gutterBottom variant="h6" noWrap>
-                  {song.title}
+                  {song.song?.title}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" noWrap>
-                  {song.artist}
+
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {song.album}
+
                 </Typography>
                 <Box
                   sx={{
@@ -285,10 +271,10 @@ const SongList: React.FC<SongListProps> = ({
                   }}
                 >
                   <Typography variant="body2" color="text.secondary">
-                    {song.year}
+
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {formatDuration(song.duration)}
+                    {formatDuration(song.song?.duration || 0)}
                   </Typography>
                 </Box>
               </CardContent>
@@ -298,9 +284,8 @@ const SongList: React.FC<SongListProps> = ({
             >
               <IconButton
                 onClick={() => onFavorite(song.id)}
-                color={song.isFavorite ? 'error' : 'default'}
+                color={true ? 'error' : 'default'}
               >
-                {song.isFavorite ? <Favorite /> : <FavoriteBorder />}
               </IconButton>
               <IconButton onClick={(e) => handleMenuOpen(e, song)}>
                 <MoreVert />
@@ -321,17 +306,17 @@ const SongList: React.FC<SongListProps> = ({
               <CardMedia
                 component="img"
                 height="160"
-                image={song.thumbnail || '/placeholder-album.jpg'}
-                alt={song.title}
+                image={song.metadata && song.metadata[0]?.data.thumbnail || '/placeholder-album.jpg'}
+                alt={song.song?.title}
                 sx={{ objectFit: 'cover' }}
               />
             </CardActionArea>
             <Box sx={{ p: 1 }}>
-              <Typography variant="subtitle2" noWrap title={song.title}>
-                {song.title}
+              <Typography variant="subtitle2" noWrap title={song.song?.title}>
+                {song.song?.title}
               </Typography>
               <Typography variant="body2" color="text.secondary" noWrap>
-                {song.artist}
+
               </Typography>
               <Box
                 sx={{
@@ -344,12 +329,11 @@ const SongList: React.FC<SongListProps> = ({
                 <IconButton
                   size="small"
                   onClick={() => onFavorite(song.id)}
-                  color={song.isFavorite ? 'error' : 'default'}
+                  color={true ? 'error' : 'default'}
                 >
-                  {song.isFavorite ? <Favorite /> : <FavoriteBorder />}
                 </IconButton>
                 <Typography variant="caption" color="text.secondary">
-                  {formatDuration(song.duration)}
+                  {formatDuration(song.song?.duration || 0)}
                 </Typography>
                 <IconButton
                   size="small"
