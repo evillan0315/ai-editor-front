@@ -76,10 +76,11 @@ export const SongListItem: React.FC<SongListItemProps> = ({ song, onPlay, onFavo
         }
         disablePadding
       >
-        <ListItemButton onClick={() => onPlay(song)} sx={{ py: 1 }}>
+        <ListItemButton onClick={() => onPlay(song)}  sx={{ py: 1 }}>
           <ListItemIcon sx={{ minWidth: 40 }}>
             <PlayArrow />
           </ListItemIcon>
+        
           {song.metadata && song.metadata[0]?.data.thumbnail && (
             <CardMedia
               component="img"

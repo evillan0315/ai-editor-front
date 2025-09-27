@@ -17,7 +17,7 @@ import { MediaFileResponseDto, FileType } from '@/types/refactored/media';
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';
 import { authStore } from '@/stores/authStore';
 import SongList from '@/components/ui/songs/SongList';
-import VideoList from '@/components/ui/VideoList';
+import VideoList from '@/components/ui/videos/VideoList';
 import { showGlobalSnackbar } from '@/stores/aiEditorStore';
 import { API_BASE_URL } from '@/api';
 import MediaPlayer from '@/components/ui/MediaPlayer';
