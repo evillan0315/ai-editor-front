@@ -42,7 +42,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
     // Fetch media files when the component mounts if not already fetched
     // Use 'general' purpose to populate allAvailableMediaFiles, with reset: true
     if (!hasFetchedMedia && !isFetchingMedia) {
-      fetchMediaForPurpose({ page: 1, pageSize: 200 }, 'general', false);
+      fetchMediaForPurpose({ page: 1, pageSize: 200, fileType: 'AUDIO' }, 'general', false);
       setHasFetchedMedia(true);
     }
   }, [hasFetchedMedia, isFetchingMedia]);

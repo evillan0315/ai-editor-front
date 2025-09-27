@@ -441,7 +441,7 @@ const shuffleArray = <T>(array: T[]): T[] => {
  * @param reset If true, clears existing data for the purpose before adding new.
  */
 export const fetchMediaForPurpose = async (
-  query: PaginationMediaQueryDto = {},
+  query: PaginationMediaQueryDto = { page:1, pageSize:20, fileType: FileType.VIDEO || FileType.AUDIO },
   purpose: 'general' | 'paginatedAudio' | 'paginatedVideo',
   reset: boolean = false,
 ) => {
