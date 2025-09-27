@@ -399,25 +399,11 @@ const SpotifyAppPage: React.FC = () => {
         <SpotifyMainContent currentView={currentView} />
       </Box>
 
-      {/* Hidden audio element (always present) */}
-      <audio ref={audioRef} style={{ display: 'none' }} preload="metadata" />
-
-      {/* Video Modal - conditionally rendered */}
-      {currentTrack?.fileType === FileType.VIDEO && currentTrack.mediaSrc && (
-        <VideoModal
-          open={isVideoModalOpen} // Now controlled by the store
-          onClose={handleVideoModalClose}
-          src={currentTrack.mediaSrc}
-          mediaElementRef={mediaElementRef}
-          autoplay={isPlaying} // Autoplay based on store's isPlaying
-          controls={false}
-          muted={false}
-          onPlayerReady={handleVideoPlayerReady}
-        />
-      )}
+     
 
       <MediaPlayer
-
+        src={currentTrack?.mediaSrc || ''}
+        type={currentTrack?.fileType || 'AUDIO'}
       />
     </Box>
   );
