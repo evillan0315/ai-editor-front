@@ -70,7 +70,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
     zIndex: 1000
   };
 
-  const backdrop = hasBackdrop ? 'static' : undefined;
+  const backdrop = hasBackdrop ? true : false;
   const closeOnKey = closeOnEscape ? undefined : 'escapeKeyDown';
 
   const container = isFullScreen ? Dialog : Slide;
@@ -80,7 +80,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
       anchor={position}
       open={open}
       onClose={onClose}
-      ModalProps={{ backdrop: backdrop, disableEscapeKeyDown: closeOnKey }}
+      ModalProps={{ backdrop: hasBackdrop, disableEscapeKeyDown: closeOnKey }}
       PaperProps={{ sx: drawerPaperStyle }}
     >
       {isFullScreen ? (
