@@ -293,8 +293,8 @@ const SpotifyAppPage: React.FC = () => {
      
 
       <MediaPlayer
-        mediaFile={currentTrack}
         mediaType={currentTrack?.fileType || 'AUDIO'}
+        mediaElementRef={mediaElementRef}
       />
     </Box>
   );

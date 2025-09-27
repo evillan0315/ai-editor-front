@@ -15,9 +15,10 @@ import {
 
 interface MediaPlayerProps {
   mediaType: FileType.AUDIO | FileType.VIDEO;
+  mediaElementRef: React.RefObject<HTMLMediaElement>;
 }
 
-const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
+const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType, mediaElementRef }) => {
   const theme = useTheme();
   const isPlaying = useStore(isPlayingAtom);
   const currentTrack = useStore(currentTrackAtom);
@@ -52,11 +53,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
     >
       <MediaPlayerTrackInfo mediaType={mediaType} />
       <MediaPlayerControls
-        isPlaying={isPlaying}
-        currentTrack={currentTrack}
-        onPlayPause={handlePlayPause}
-        onNext={handleNext}
-        onPrevious={handlePrevious}
+        mediaElementRef={mediaElementRef}
       />
       <MediaPlayerVolumeControl />
     </Box>

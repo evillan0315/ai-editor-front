@@ -32,7 +32,8 @@ import {
   repeatModeAtom,
   shuffleAtom,
   currentTrackAtom,
-  $mediaStore
+  $mediaStore,
+  setPlaying
 } from '@/stores/mediaStore';
 
 interface MediaPlayerControlsProps {
@@ -56,8 +57,10 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
     if (mediaElementRef.current) {
       if (isPlaying) {
         mediaElementRef.current.pause();
+        setPlaying(false)
       } else {
         mediaElementRef.current.play();
+        setPlaying(true)
       }
     }
   };
