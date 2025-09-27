@@ -64,7 +64,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
       ? { width: isFullScreen ? '100%' : drawerWidth }
       : { height: isFullScreen ? '100%' : drawerWidth }),
     bgcolor: theme.palette.background.paper,
-    border: theme.palette.divider,
+    border: `1px solid ${theme.palette.divider}`,
     color: theme.palette.text.primary,
     overflow: 'auto'
   };
@@ -80,9 +80,11 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
       open={open}
       onClose={onClose}
       hideBackdrop={backdrop}
-      ModalProps={{ 
-        disableEscapeKeyDown: closeOnKey,
-       }}
+      sx={{
+        ...(position === 'left' || position === 'right'
+      ? { width: isFullScreen ? '100%' : drawerWidth }
+      : { height: isFullScreen ? '100%' : drawerWidth }),
+      }}
       PaperProps={{ sx: drawerPaperStyle }}
     >
       {isFullScreen ? (
