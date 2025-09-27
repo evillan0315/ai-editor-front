@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React from 'react';
 import {
   Box,
   IconButton,
@@ -10,58 +10,17 @@ import {
   Album,
   Movie,
 } from '@mui/icons-material';
+import { useStore } from '@nanostores/react';
+import { currentTrackAtom } from '@/stores/mediaStore';
 
 interface MediaPlayerTrackInfoProps {
   mediaType: 'AUDIO' | 'VIDEO';
 }
 
-const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({
-  mediaType,
-}) => {
+const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({ mediaType }) => {
   const theme = useTheme();
-  const [currentTrack, setCurrentTrack] = useState<any>(null);
-  const [trackDuration, setTrackDuration] = useState(0);
+  const currentTrack = useStore(currentTrackAtom);
 
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  // Get the correct ref based on media type
-  const mediaRef = currentTrack?.fileType === 'VIDEO' ? videoRef : audioRef;
-
-  useEffect(() => {
-    // Fetch track data when track changes
-    const fetchData = async () => {
-      try {
-        // Replace with your actual API call to get track data
-        const response = await Promise.resolve({/* your mock API response*/});
-        setCurrentTrack(response);
-      } catch (error) {
-        console.error('Error fetching track data:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    const media = mediaRef?.current;
-    if (media) {
-      const handleMetadata = () => {
-        setTrackDuration(media.duration);
-      };
-
-      const handleData = () => {
-        setTrackDuration(media.duration);
-      };
-      media.addEventListener('loadedmetadata', handleMetadata);
-      media.addEventListener('loadeddata', handleData);
-
-      return () => {
-        media.removeEventListener('loadedmetadata', handleMetadata);
-        media.removeEventListener('loadeddata', handleData);
-      };
-    }
-  }, [mediaRef]);
   return (
     <Box
       sx={{
@@ -82,10 +41,10 @@ const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({
       )}
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
         <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
-          {currentTrack?.title}
+          {currentTrack?.song?.title}
         </Typography>
         <Typography variant='caption' color='text.secondary'>
-          {currentTrack?.artist}
+          {currentTrack?.metadata?.[0]?.tags?.join(', ')}
         </Typography>
       </Box>
       <IconButton
