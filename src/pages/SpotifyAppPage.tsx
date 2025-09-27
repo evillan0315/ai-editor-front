@@ -5,8 +5,9 @@ import SpotifyMainContent from '@/pages/spotify/SpotifyMainContent';
 import MediaPlayer from '@/components/ui/MediaPlayer';
 import VideoModal from '@/components/VideoModal';
 import { useStore } from '@nanostores/react';
+
 import {
-  $spotifyStore,
+  $mediaStore,
   setPlaying,
   setTrackProgress,
   setTrackDuration,
@@ -25,7 +26,7 @@ import {
   resetPlaybackState,
   bufferedAtom, // New: Import bufferedAtom
   setBuffered, // New: Import setBuffered
-} from '@/stores/spotifyStore';
+} from '@/stores/mediaStore';
 import { FileType, BufferedRange } from '@/types'; // New: Import BufferedRange
 
 type SpotifyView = 'home' | 'search' | 'library' | 'settings';
@@ -43,7 +44,7 @@ const SpotifyAppPage: React.FC = () => {
   const volume = useStore(volumeAtom);
   const isVideoModalOpen = useStore(isVideoModalOpenAtom);
   const buffered = useStore(bufferedAtom); // New: Get buffered ranges
-  const { loading, error } = useStore($spotifyStore); // Keep general loading/error from map
+  const { loading, error } = useStore($mediaStore); // Keep general loading/error from map
 
   const mediaElementRef = useRef<HTMLMediaElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -51,7 +52,7 @@ const SpotifyAppPage: React.FC = () => {
   const playerBarRef = useRef<HTMLDivElement | null>(null);
 
   // Callback for when the native HTML5 video element is ready (from VideoModal's VideoPlayer)
-  const handleVideoPlayerReady = useCallback(
+  const handleMediaElementReady = useCallback(
     (htmlMediaElement: HTMLVideoElement) => {
       mediaElementRef.current = htmlMediaElement;
 
@@ -93,7 +94,7 @@ const SpotifyAppPage: React.FC = () => {
         // If audio was playing
         audioMedia.pause(); // Pause audio if switching to video
       }
-      // For video, mediaElementRef.current will be set by handleVideoPlayerReady (from VideoModal)
+      // For video, mediaElementRef.current will be set by handleMediaElementReady (from VideoModal)
       // We set it to null here temporarily, it will be populated by VideoPlayer in modal
       mediaElementRef.current = null;
       setIsVideoModalOpen(true); // Open video modal for video track
