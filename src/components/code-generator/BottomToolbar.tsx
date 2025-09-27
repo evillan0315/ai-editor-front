@@ -14,6 +14,8 @@ import {
   CloudUpload as CloudUploadIcon,
   Settings as SettingsIcon,
   Clear as ClearIcon,
+  Close as CloseIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 import {
   setScanPathsInput,
@@ -32,7 +34,7 @@ import { useStore } from '@nanostores/react';
 import FilePickerDialog from '@/components/dialogs/FilePickerDialog';
 import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
 import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
-import PromptGeneratorSettings from '@/components/Drawer/PromptGeneratorSettings';
+import PromptGeneratorSettings, { type GlobalActions } from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import ImportData from './ImportData';
 import { setOpenedFileContent } from '@/stores/fileStore';
@@ -81,7 +83,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   const $autoApplyChanges = useStore(autoApplyChanges);
 
   const commonDisabled = false;
-
+  const GlobalActionButtons: GlobalActions[] = [{label:'Cancel',action: () => setIsSettingsOpen(false), icon: <CloseIcon />}, {label:'Save',action: () => setIsSettingsOpen(false), icon: <SaveIcon />}]
   return (
   <Box className="flex items-center justify-between gap-2 ">
     <Box className="flex flex-wrap gap-2 ">
@@ -196,6 +198,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           <PromptGeneratorSettings
             open={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
+            globalActions={GlobalActionButtons}
           />
       </CustomDrawer>
     </Box>
