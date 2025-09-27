@@ -10,6 +10,8 @@ import {
   setIsOpenedFileDirty,
   setInitialFileContentSnapshot,
   saveActiveFile,
+  openedFileContent,
+  openedFile,
 } from '@/stores/fileStore';
 import { readFileContent } from '@/api/file';
 import CodeMirror from '@uiw/react-codemirror';
@@ -24,20 +26,21 @@ interface OpenedFileViewerProps {}
 
 const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   const {
-    openedFile,
-    openedFileContent,
+    //openedFile,
     initialFileContentSnapshot,
     isFetchingFileContent,
     fetchFileContentError,
     isOpenedFileDirty,
     isSavingFileContent,
   } = useStore(fileStore);
+  const $openedFileContent = useStore(openedFileContent);
+  const $openedFile = useStore(openedFile);
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
 
   useEffect(() => {
     const fetchContent = async () => {
-      if (!openedFile) {
+      if (!$openedFile) {
         setOpenedFileContent(null);
         setInitialFileContentSnapshot(null);
         setFetchFileContentError(null);
@@ -49,12 +52,12 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
       setFetchFileContentError(null);
 
       try {
-        const content = await readFileContent(openedFile);
+        const content = await readFileContent($openedFile);
         setOpenedFileContent(content);
         setInitialFileContentSnapshot(content);
         setIsOpenedFileDirty(false);
       } catch (err) {
-        console.error(`Error reading file ${openedFile}:`, err);
+        console.error(`Error reading file ${$openedFile}:`, err);
         setFetchFileContentError(
           `Failed to read file: ${err instanceof Error ? err.message : String(err)}`,
         );
@@ -66,15 +69,15 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
     };
 
     fetchContent();
-  }, [openedFile]);
+  }, [$openedFile]);
 
   useEffect(() => {
     if (
-      openedFile &&
+      $openedFile &&
       !isFetchingFileContent &&
       initialFileContentSnapshot !== null
     ) {
-      const isDirty = openedFileContent !== initialFileContentSnapshot;
+      const isDirty = $openedFileContent !== initialFileContentSnapshot;
       if (isDirty !== isOpenedFileDirty) {
         setIsOpenedFileDirty(isDirty);
       }
@@ -82,8 +85,8 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
       setIsOpenedFileDirty(false);
     }
   }, [
-    openedFile,
-    openedFileContent,
+    $openedFile,
+    $openedFileContent,
     initialFileContentSnapshot,
     isFetchingFileContent,
     isOpenedFileDirty,
@@ -93,13 +96,13 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
     setOpenedFileContent(value);
   };
 
-  if (!openedFile) return <InitialEditorViewer />;
+  if (!$openedFile) return <InitialEditorViewer />;
 
   const isLoadingContent = isFetchingFileContent;
   const isDisabled = isLoadingContent || isSavingFileContent;
 
   // ✅ Detect markdown files by extension
-  const isMarkdownFile = openedFile?.toLowerCase().endsWith('.md');
+  const isMarkdownFile = $openedFile?.toLowerCase().endsWith('.md');
 
   return (
     <Paper
@@ -120,7 +123,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
         </Alert>
       )}
 
-      {isFetchingFileContent && !openedFileContent ? (
+      {isFetchingFileContent && !$openedFileContent ? (
         <Box
           className="flex justify-center items-center flex-grow"
           sx={{ bgcolor: muiTheme.palette.background.paper }}
@@ -146,7 +149,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
           {isMarkdownFile ? (
             // ✅ Use MarkdownEditor for .md files
             <MarkdownEditor
-              value={openedFileContent || ''}
+              value={$openedFileContent || ''}
               onChange={handleContentChange}
               disabled={isDisabled}
               onSave={() => saveActiveFile()}
@@ -154,10 +157,10 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
           ) : (
             // ✅ Default: CodeMirror editor for other files
             <CodeMirror
-              value={openedFileContent || ''}
+              value={$openedFileContent || ''}
               onChange={handleContentChange}
               extensions={[
-                getCodeMirrorLanguage(openedFile),
+                getCodeMirrorLanguage($openedFile),
                 createCodeMirrorTheme(muiTheme),
                 keymap.of([
                   {

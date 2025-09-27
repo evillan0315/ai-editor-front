@@ -34,6 +34,9 @@ import {
   setOpenedFile,
   saveActiveFile,
   removeOpenedTab,
+  openedFile,
+  openedFileContent,
+  isOpenedFileDirty
 } from '@/stores/fileStore';
 import * as path from 'path-browserify';
 
@@ -42,17 +45,20 @@ interface FileTabsProps extends BoxProps {}
 const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
   const {
     openedTabs,
-    openedFile,
+    //openedFile,
     discardActiveFileChanges,
-    openedFileContent,
+    //openedFileContent,
     isFetchingFileContent,
-    isOpenedFileDirty,
+    //isOpenedFileDirty,
     isSavingFileContent,
     snackbar, // Get global snackbar state
   } = useStore(fileStore);
+  const $openedFile = useStore(openedFile);
+  const $openedFileContent = useStore(openedFileContent);
+  const $isOpenedFileDirty = useStore(isOpenedFileDirty);
   const theme = useTheme();
   const showTerminal = useStore(isTerminalVisible);
-  const activeTabIndex = openedTabs.indexOf(openedFile || '');
+  const activeTabIndex = openedTabs.indexOf($openedFile || '');
 
   const handleTabChange = (_event: SyntheticEvent, newValue: string) => {
     // newValue is the file path of the selected tab
@@ -123,7 +129,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
         </Box>
       )}
       <Tabs
-        value={openedFile || false} // Use openedFile as the value for the active tab
+        value={$openedFile || false} // Use $openedFile as the value for the active tab
         onChange={handleTabChange}
         aria-label="opened files tabs"
         variant="scrollable"
@@ -154,8 +160,8 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
       >
         {openedTabs.map((filePath) => {
           const fileName = path.basename(filePath);
-          const isActiveTab = openedFile === filePath;
-          const isDirty = isActiveTab && isOpenedFileDirty; // Only show dirty status for the currently active tab
+          const isActiveTab = $openedFile === filePath;
+          const isDirty = isActiveTab && $isOpenedFileDirty; // Only show dirty status for the currently active tab
           return (
             <Tab
               key={filePath}
@@ -214,7 +220,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
         })}
       </Tabs>
 
-      {openedFile && (
+      {$openedFile && (
         <Box
           sx={{
             display: 'flex',
@@ -224,7 +230,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
             pr: 1,
           }}
         >
-          {isOpenedFileDirty && (
+          {$isOpenedFileDirty && (
             <Tooltip title="Discard unsaved changes">
               <span>
                 <IconButton
@@ -249,7 +255,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
 
           <Tooltip title={'Save changes'}>
             <IconButton
-              disabled={isDisabled || !isOpenedFileDirty}
+              disabled={isDisabled || !$isOpenedFileDirty}
               onClick={saveActiveFile}
               size="small"
               sx={{

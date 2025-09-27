@@ -120,9 +120,20 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
                 p: 2,
                 bgcolor: theme.palette.background.default,
                 borderBottom: `1px solid ${theme.palette.divider}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
               }}
             >
               {stickyHeader}
+              <IconButton
+                edge="end"
+                color="inherit"
+                onClick={onClose}
+                aria-label="close"
+              >
+                <CloseIcon />
+              </IconButton>
             </Box>
           )}
           {title && (
@@ -131,9 +142,22 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
                 p: 2,
                 bgcolor: theme.palette.background.default,
                 borderBottom: `1px solid ${theme.palette.divider}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
               }}
             >
-              {title}
+              <Typography variant="h6" component="div">
+                {title}
+              </Typography>
+              <IconButton
+                edge="end"
+                color="inherit"
+                onClick={onClose}
+                aria-label="close"
+              >
+                <CloseIcon />
+              </IconButton>
             </Box>
           )}
           <Paper

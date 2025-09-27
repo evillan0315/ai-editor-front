@@ -21,7 +21,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 // You need to provide these components or stub them out in your project
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import BottomToolbar from '@/components/code-generator/BottomToolbar';
-import CustomDrawer from '@/components/Drawer/CustomDrawer';
+
 
 // import useHandleMessages from '@/hooks/useHandleMessages';
 import { generateText } from '@/api/ai';
@@ -47,7 +47,7 @@ Provide a summary of the latest cloud-computing trends
 `;
 const AIPromptGenerator: React.FC = () => {
   const theme = useTheme();
-  const [instruction, setInstruction] = useState(INSTRUCTION);
+  const [instruction, setInstruction] = useState('');
   const [editorContent, setEditorContent] = useState('');
   const [isCodeRepairOpen, setIsCodeRepairOpen] = useState(false);
   const [isSystemInstructionOpen, setIsSystemInstructionOpen] = useState(false);
@@ -88,8 +88,8 @@ const AIPromptGenerator: React.FC = () => {
     }
   };
 
-  const toggleCodeRepair = () => setIsCodeRepairOpen((prev) => !prev);
-  const toggleSystemInstruction = () => setIsSystemInstructionOpen((prev) => !prev);
+  //const toggleCodeRepair = () => setIsCodeRepairOpen((prev) => !prev);
+  ///const toggleSystemInstruction = () => setIsSystemInstructionOpen((prev) => !prev);
 
   return (
     <Box className="flex flex-col gap-2 w-full relative">
@@ -155,15 +155,6 @@ const AIPromptGenerator: React.FC = () => {
           </IconButton>
         </Tooltip>
        
-        <Tooltip title="System Instruction">
-          <IconButton
-            color="secondary"
-            onClick={toggleSystemInstruction}
-            disabled={commonDisabled}
-          >
-            <SettingsIcon />
-          </IconButton>
-        </Tooltip>
       </Box>
 
       {$aiChat.loading && (
@@ -192,33 +183,7 @@ const AIPromptGenerator: React.FC = () => {
         requestType={`TEXT_ONLY`}
       />
 
-      <CustomDrawer
-        open={isCodeRepairOpen}
-        onClose={() => setIsCodeRepairOpen(false)}
-        position="left"
-        size="large"
-        title="Code Repair"
-        hasBackdrop={false}
-      >
-       
-      </CustomDrawer>
-       <CustomDrawer
-        open={isSystemInstructionOpen}
-        onClose={() => setIsSystemInstructionOpen(false)}
-        position="left"
-        size="normal"
-        title="System Instruction"
-        hasBackdrop={false}
-      >
-          <TextField
-            multiline
-            fullWidth
-            placeholder="Enter system instruction..."
-            value={systemInstruction}
-            onChange={(e) => setSystemInstruction(e.target.value)}
-            variant="outlined"
-          />
-      </CustomDrawer>
+      
     </Box>
   );
 };

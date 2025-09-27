@@ -1,6 +1,13 @@
 import { map } from 'nanostores';
 import { writeFileContent, readFileContent } from '@/api/file';
 import { addLog } from './logStore';
+import { persistentAtom } from '@/utils/persistentAtom';
+
+interface OpenFile {
+  content: string;
+  path: string;
+  isDirty?: boolean;
+}
 
 export interface FileStoreState {
   uploadedFileData: string | null;
@@ -31,9 +38,13 @@ export const fileStore = map<FileStoreState>({
   isOpenedFileDirty: false,
   openedTabs: [],
 });
+export const openedFileContent = persistentAtom<string | null>('openedFileContent', null);
+export const openedFile = persistentAtom<string | null>('openedFile', null);
+export const isOpenedFileDirty = persistentAtom<boolean>('isOpenedFileDirty', false);
 
 export const setOpenedFile = (filePath: string | null) => {
   fileStore.setKey('openedFile', filePath);
+  openedFile.set(filePath);
   if (filePath && !fileStore.get().openedTabs.includes(filePath)) {
     addOpenedTab(filePath);
   } else if (filePath) {
@@ -41,6 +52,9 @@ export const setOpenedFile = (filePath: string | null) => {
   } else {
     addLog('File Editor', 'No file is currently opened in the editor.', 'info');
   }
+  
+  openedFileContent.set(null);
+  isOpenedFileDirty.set(false);
   fileStore.setKey('openedFileContent', null);
   fileStore.setKey('initialFileContentSnapshot', null);
   fileStore.setKey('isFetchingFileContent', false);
@@ -49,9 +63,8 @@ export const setOpenedFile = (filePath: string | null) => {
   fileStore.setKey('saveFileContentError', null);
   fileStore.setKey('isOpenedFileDirty', false);
 };
-
 export const setOpenedFileContent = (content: string | null) => {
-  fileStore.setKey('openedFileContent', content);
+  openedFileContent.set(content);
   fileStore.setKey('saveFileContentError', null);
   // Log a debug message, as this can be very frequent
   // addLog('File Editor', `Content updated for active file.`, 'debug');
@@ -109,6 +122,7 @@ export const setSaveFileContentError = (message: string | null) => {
 };
 
 export const setIsOpenedFileDirty = (isDirty: boolean) => {
+  isOpenedFileDirty.set(isDirty);
   fileStore.setKey('isOpenedFileDirty', isDirty);
   if (isDirty) {
     //addLog('File Editor', `Active file has unsaved changes.`, 'warning');
@@ -126,10 +140,11 @@ export const addOpenedTab = (filePath: string) => {
 export const removeOpenedTab = (filePath: string) => {
   const state = fileStore.get();
   const newOpenedTabs = state.openedTabs.filter((tab) => tab !== filePath);
+  const openFile = openedFile.get();
   fileStore.setKey('openedTabs', newOpenedTabs);
   addLog('File Editor', `Closed tab for: ${filePath}`, 'info');
 
-  if (state.openedFile === filePath) {
+  if (openFile === filePath) {
     if (newOpenedTabs.length > 0) {
       const oldIndex = state.openedTabs.indexOf(filePath);
       const newActiveFile =
@@ -140,11 +155,12 @@ export const removeOpenedTab = (filePath: string) => {
     }
   }
 };
-
 export const saveActiveFile = async () => {
-  const { openedFile, openedFileContent } = fileStore.get();
+  //const { openedFile } = fileStore.get();
+  const openFile = openedFile.get();
+  const fileContent = openedFileContent.get();
 
-  if (!openedFile || openedFileContent === null) {
+  if (!openFile || fileContent === null) {
     addLog(
       'File Editor',
       'Attempted to save, but no file or content available.',
@@ -160,17 +176,17 @@ export const saveActiveFile = async () => {
   setSaveFileContentError(null); // Clear local error
 
   try {
-    const result = await writeFileContent(openedFile, openedFileContent);
+    const result = await writeFileContent(openFile, fileContent);
     if (result.success) {
-      setInitialFileContentSnapshot(openedFileContent);
+      setInitialFileContentSnapshot(fileContent);
       setIsOpenedFileDirty(false);
-      addLog('File Editor', `File saved: ${openedFile}`, 'success');
+      addLog('File Editor', `File saved: ${openFile}`, 'success');
     } else {
       const msg = result.message || 'Failed to save file.';
       setSaveFileContentError(msg);
       addLog(
         'File Editor',
-        `Failed to save file: ${openedFile}`,
+        `Failed to save file: ${openFile}`,
         'error',
         msg,
         undefined,
@@ -182,7 +198,7 @@ export const saveActiveFile = async () => {
     setSaveFileContentError(`Failed to save file: ${errorMessage}`);
     addLog(
       'File Editor',
-      `Error saving file: ${openedFile}`,
+      `Error saving file: ${openFile}`,
       'error',
       errorMessage,
       undefined,
@@ -194,10 +210,10 @@ export const saveActiveFile = async () => {
 };
 
 export const discardActiveFileChanges = () => {
-  const { openedFile, initialFileContentSnapshot, isOpenedFileDirty } =
-    fileStore.get();
-
-  if (!openedFile || !isOpenedFileDirty) {
+  const { initialFileContentSnapshot } = fileStore.get();
+    const openFile = openedFile.get();
+  const isDirty = isOpenedFileDirty.get();
+  if (!openFile || !isDirty) {
     addLog(
       'File Editor',
       'Attempted to discard, but no unsaved changes.',
@@ -247,3 +263,4 @@ export const setUploadedFile = (
   fileStore.setKey('uploadedFileMimeType', mimeType);
   fileStore.setKey('uploadedFileName', fileName);
 };
+
