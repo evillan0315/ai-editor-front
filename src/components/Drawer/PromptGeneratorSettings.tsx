@@ -107,6 +107,8 @@ ${localInstructionExample}
             value={localAiInstruction}
             initialValue={localAiInstruction}
             onChange={setLocalAiInstruction}
+            expectedSchema={localInstructionSchema}
+            exampleOutput={localInstructionExample}
           />
         </Box>
         </Box>

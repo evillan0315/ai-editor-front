@@ -11,6 +11,7 @@ import {
   useTheme,
   Paper,
   Divider,
+  Typography
 } from '@mui/material';
 import BoldIcon from '@mui/icons-material/FormatBold';
 import ItalicIcon from '@mui/icons-material/FormatItalic';
@@ -170,7 +171,10 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           >
             <Tab label="Write" />
             <Tab label="Preview" />
-            <Tab label="Schema" />
+            {expectedSchema && exampleOutput && (
+              <Tab label="Schema" />
+            )}
+            
           </Tabs>
         </Toolbar>
         <Divider />
@@ -208,7 +212,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             className={markdownClass}
           >
             <ReactMarkdownWithCodeCopy>
-              {internalValue}
+              {internalValue }
             </ReactMarkdownWithCodeCopy>
           </Box>
         )}

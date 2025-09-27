@@ -134,7 +134,6 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
             sx={{
               flexGrow: 1,
               overflowY: 'auto',
-              p: 2,
             }}
           >
             {children}
