@@ -32,7 +32,6 @@ export interface GlobalAction {
   label: string;
   action: () => void;
   icon?: SvgIconComponent;
-  theme?: any; // Optional theme overrides
 }
 
 interface PromptGeneratorSettingsProps {
@@ -184,18 +183,10 @@ ${localInstructionExample}
                 color="primary"
                 variant="contained"
                 startIcon={action.icon ? <action.icon /> : null}
-                {...action.theme}
               >
                 {action.label}
               </Button>
             ))}
-
-        <Button onClick={onClose} color="primary">
-          Cancel
-        </Button>
-        <Button onClick={handleSave} color="primary" variant="contained">
-          Save
-        </Button>
       </Box>
     </Paper>
   );

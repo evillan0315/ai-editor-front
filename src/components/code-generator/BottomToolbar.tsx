@@ -34,11 +34,14 @@ import { useStore } from '@nanostores/react';
 import FilePickerDialog from '@/components/dialogs/FilePickerDialog';
 import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
 import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
-import PromptGeneratorSettings, { type GlobalActions } from '@/components/Drawer/PromptGeneratorSettings';
+import PromptGeneratorSettings, { type GlobalAction } from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import ImportData from './ImportData';
 import { setOpenedFileContent } from '@/stores/fileStore';
 import { RequestType } from '@/types/llm';
+import {
+  SvgIconComponent
+} from '@mui/material'
 
 interface BottomToolbarProps {
   scanPathAutocompleteOptions: string[];
@@ -60,7 +63,7 @@ interface BottomToolbarProps {
   requestType: RequestType;
 }
 
-const BottomToolbar: React.FC<BottomToolbarProps> = ({
+const BottomToolbar: React.FC<BottomToolbarProps> = ({ 
   scanPathAutocompleteOptions,
   currentScanPathsArray,
   projectInput,
@@ -83,7 +86,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   const $autoApplyChanges = useStore(autoApplyChanges);
 
   const commonDisabled = false;
-  const GlobalActionButtons: GlobalActions[] = [{label:'Cancel',action: () => setIsSettingsOpen(false), icon: <CloseIcon />}, {label:'Save',action: () => setIsSettingsOpen(false), icon: <SaveIcon />}]
+  const GlobalActionButtons: GlobalAction[] = [{label:'Cancel',action: () => setIsSettingsOpen(false), icon: CloseIcon}, {label:'Save',action: () => setIsSettingsOpen(false), icon: SaveIcon}]
   return (
   <Box className="flex items-center justify-between gap-2 ">
     <Box className="flex flex-wrap gap-2 ">
