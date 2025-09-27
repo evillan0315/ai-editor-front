@@ -198,7 +198,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         position="left"
         size="medium"
         title="Prompt Generator Settings"
-        hasBackdrop={false}
+        hasBackdrop={true}
         footerActionButton={GlobalActionButtons}
       >
           <PromptGeneratorSettings

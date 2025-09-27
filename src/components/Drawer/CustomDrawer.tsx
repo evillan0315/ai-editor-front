@@ -66,8 +66,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
     bgcolor: theme.palette.background.paper,
     border: theme.palette.divider,
     color: theme.palette.text.primary,
-    overflow: 'auto',
-    zIndex: 1000
+    overflow: 'auto'
   };
 
   const backdrop = hasBackdrop ? true : false;
@@ -80,10 +79,9 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
       anchor={position}
       open={open}
       onClose={onClose}
+      hideBackdrop={backdrop}
       ModalProps={{ 
-        backdrop: hasBackdrop,
         disableEscapeKeyDown: closeOnKey,
-        ...(hasBackdrop === false ? { disableBackdropClick: true } : {})
        }}
       PaperProps={{ sx: drawerPaperStyle }}
     >
