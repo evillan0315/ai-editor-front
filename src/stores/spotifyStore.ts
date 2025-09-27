@@ -810,31 +810,35 @@ export const loadTranscription = async (fileId: string) => {
       transcriptionError:
         err instanceof Error ? err.message : 'Failed to load transcription',
     });
+  } finally{
+     $spotifyStore.setKey('isTranscribing', false);
   }
 };
 
 export const transcribeAudioAction = async (fileId: string) => {
-  const state = $spotifyStore.get();
-  $spotifyStore.setKey('isTranscribing', true);
-  $spotifyStore.setKey('transcriptionError', null);
-
-  try {
-    const data = await transcribeAudio(fileId);
-    $spotifyStore.set({
-      ...state,
-      transcriptionData: data,
-      isTranscribing: false,
-      transcriptionError: null,
-    });
-  } catch (err) {
-    $spotifyStore.set({
-      ...state,
-      isTranscribing: false,
-      transcriptionError:
-        err instanceof Error ? err.message : 'Transcription failed',
-    });
-  }
-};
+    const state = $spotifyStore.get();
+    $spotifyStore.setKey('isTranscribing', true);
+    $spotifyStore.setKey('transcriptionError', null);
+  
+    try {
+      const data = await transcribeAudio(fileId);
+      $spotifyStore.set({
+        ...state,
+        transcriptionData: data,
+        isTranscribing: false,
+        transcriptionError: null,
+      });
+    } catch (err) {
+      $spotifyStore.set({
+        ...state,
+        isTranscribing: false,
+        transcriptionError:
+          err instanceof Error ? err.message : 'Transcription failed',
+      });
+    } finally{
+      $spotifyStore.setKey('isTranscribing', false);
+    }
+  };
 
 export const updateTranscriptionSync = async (
   fileId: string,

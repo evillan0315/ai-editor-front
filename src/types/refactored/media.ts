@@ -44,18 +44,27 @@ export const allowedMediaFormats = [
  * Type representing one of the allowed media formats.
  */
 export type AllowedMediaFormat = (typeof allowedMediaFormats)[number];
+
 /**
- * Interface for metadata often returned by media extraction or processing services.
- * This is distinct from the Prisma `Metadata` model which is a separate entity.
+ * Interface for audio or video metadata.
  */
-export interface MediaFileMetadata {
-  data?: {
-    title?: string;
-    duration?: number;
-    uploader?: string;
-    thumbnail?: string;
-  };
-  // Add any other top-level metadata properties here if needed
+export interface MediaMetadataData {
+  title?: string;
+  duration?: string;
+  thumbnail?: string | null;
+}
+
+/**
+ * Interface for generic metadata associated with a media file.
+ */
+export interface MediaMetadata {
+  id: string;
+  type: 'AUDIO' | 'VIDEO';
+  data: MediaMetadataData;
+  tags: string[];
+  createdAt: string;
+  fileId: string;
+  createdById: string | null;
 }
 
 /**
@@ -85,11 +94,13 @@ export interface MediaFileResponseDto {
   url?: string | null;
   createdAt: string; // Assuming string serialization of Date from backend
   updatedAt: string | null; // Assuming string serialization of Date from backend
-  createdById: string;
-  folderId?: string | null;
   songId?: string | null;
   videoId?: string | null;
-  metadata?: MediaFileMetadata | null; // Added metadata field back for frontend use, assuming it's nested
+  createdById: string;
+  folderId?: string | null;
+  metadata?: MediaMetadata[] | null; // Changed to array of MediaMetadata
+  song?: any | null;
+  video?: any | null;
 }
 
 /**

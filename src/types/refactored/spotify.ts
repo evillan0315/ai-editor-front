@@ -1,5 +1,5 @@
 // /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/src/types/refactored/spotify.ts
-import { MediaFileResponseDto } from './media'; // Explicitly import MediaFileResponseDto
+import { MediaFileResponseDto, FileType } from './media'; // Explicitly import MediaFileResponseDto and FileType
 // REMOVE THIS LINE: export * from './media'; // This causes circular dependency
 
 /**
@@ -29,7 +29,7 @@ export interface Track {
   duration?: number; // Duration in seconds, if available
   mediaSrc: string; // The direct stream URL for playback (can be audio or video)
   // Include other relevant MediaFileResponseDto properties that are useful for a Track
-  fileType: MediaFileResponseDto['fileType']; // Use indexed access type
+  fileType: FileType; // Use indexed access type
   mimeType?: MediaFileResponseDto['mimeType'];
   size?: MediaFileResponseDto['size'];
   provider?: MediaFileResponseDto['provider'];
@@ -40,6 +40,10 @@ export interface Track {
   folderId?: MediaFileResponseDto['folderId'];
   content?: MediaFileResponseDto['content'];
   mediaFileId: string; // Keep a reference to the original media file ID
+  songId?: string | null;
+  videoId?: string | null;
+  song?: any | null;
+  video?: any | null;
 }
 
 /**
