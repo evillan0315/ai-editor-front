@@ -25,8 +25,7 @@ import {
   useTheme,
   useMediaQuery,
   CircularProgress,
-}
-  from '@mui/material';
+} from '@mui/material';
 import {
   PlayArrow,
   Pause,
@@ -315,7 +314,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
             size='small'
             sx={{ color: theme.palette.text.primary }}
             onClick={handlePrevious}
-            disabled={!onPrevious}
           >
             <SkipPrevious fontSize='small' />
           </IconButton>
@@ -346,7 +344,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
             size='small'
             sx={{ color: theme.palette.text.primary }}
             onClick={handleNext}
-            disabled={!onNext}
           >
             <SkipNext fontSize='small' />
           </IconButton>
