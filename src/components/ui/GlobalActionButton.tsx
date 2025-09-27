@@ -18,7 +18,6 @@ function GlobalActionButton({ globalActions }: GlobalActionButtonProps) {
   const theme = useTheme();
 
   const boxSx = {
-    backgroundColor: theme.palette.background.paper,
     display: 'flex',
     gap: 1,
   };

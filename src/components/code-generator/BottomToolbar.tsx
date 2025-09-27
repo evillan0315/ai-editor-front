@@ -195,15 +195,15 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
        <CustomDrawer
         open={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        position="right"
-        size="medium"
+        position="left"
+        size="normal"
         title="Prompt Generator Settings"
         hasBackdrop={false}
+        footerActionButton={GlobalActionButtons}
       >
           <PromptGeneratorSettings
             open={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
-            globalActions={GlobalActionButtons}
           />
       </CustomDrawer>
     </Box>

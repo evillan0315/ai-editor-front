@@ -21,7 +21,6 @@ import {
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import MarkdownEditor from '@/components/MarkdownEditor'; // ✅ New rich editor
 import { GlobalAction } from '@/types';
-import GlobalActionButton from '@/components/ui/GlobalActionButton';
 
 interface PromptGeneratorSettingsProps {
   open: boolean;
@@ -154,7 +153,6 @@ ${localInstructionExample}
         )}
       </Box>
 
-      <GlobalActionButton globalActions={globalActions || []} />
     </Paper>
   );
 };

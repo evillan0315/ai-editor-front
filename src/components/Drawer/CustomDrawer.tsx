@@ -16,6 +16,8 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import { useStore } from '@nanostores/react';
 import { themeStore } from '@/stores/themeStore';
+import { GlobalAction } from '@/types';
+import GlobalActionButton from '@/components/ui/GlobalActionButton';
 
 // Define the types for the drawer
 interface CustomDrawerProps {
@@ -26,7 +28,7 @@ interface CustomDrawerProps {
   hasBackdrop?: boolean;
   closeOnEscape?: boolean;
   stickyHeader?: ReactNode;
-  stickyFooter?: ReactNode;
+  footerActionButton?: GlobalAction[];
   children: ReactNode;
   title?: string;
 }
@@ -47,7 +49,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
   hasBackdrop = true,
   closeOnEscape = true,
   stickyHeader,
-  stickyFooter,
+  footerActionButton,
   children,
   title,
 }) => {
@@ -138,7 +140,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
           >
             {children}
           </Paper>
-          {stickyFooter && (
+          {footerActionButton && (
             <Box
               sx={{
                 p: 2,
@@ -146,7 +148,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
                 borderTop: `1px solid ${theme.palette.divider}`,
               }}
             >
-              {stickyFooter}
+              <GlobalActionButton globalActions={footerActionButton} />
             </Box>
           )}
         </Box>
