@@ -12,14 +12,16 @@ import {
 
 import {
   fetchMediaFiles,
-} from '@/api/media'
-import { MediaFileResponseDto, FileType, Track, Video } from '@/types/refactored/media';
+}
+  from '@/api/media'
+import { MediaFileResponseDto, FileType } from '@/types/refactored/media';
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';
 import { authStore } from '@/stores/authStore';
 import SongList from '@/components/ui/SongList';
 import VideoList from '@/components/ui/VideoList';
 import { showGlobalSnackbar } from '@/stores/aiEditorStore';
 import { API_BASE_URL } from '@/api';
+import MediaPlayer from '@/components/ui/MediaPlayer';
 
 interface SpotifyHomePageProps {
   // No specific props for now, just static content
@@ -28,11 +30,7 @@ interface SpotifyHomePageProps {
 const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   const theme = useTheme();
   const { isLoggedIn } = useStore(authStore); // Get login status
-  const {
-    loading: isFetchingMedia,
-    error: fetchMediaError,
-    playlists: storedMediaFiles,
-  } = useStore($mediaStore);
+  const { loading: isFetchingMedia, error: fetchMediaError, playlists: storedMediaFiles } = useStore($mediaStore);
   const [allAvailableMediaFiles, setAllAvailableMediaFiles] = useState<MediaFileResponseDto[]>([]);
 
   // Directly get isPlaying and currentTrack from their respective atoms
@@ -50,16 +48,16 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
 
     setLoading(true);
     try {
-       const media = await fetchMediaFiles({ page: 1, pageSize: 200 });
-       console.log(media, 'media');
+      const media = await fetchMediaFiles({ page: 1, pageSize: 200 });
+      console.log(media, 'media');
       if (media && media.items) {
-         setAllAvailableMediaFiles(media.items);
-       }
-       setHasFetchedMedia(true);
+        setAllAvailableMediaFiles(media.items);
+      }
+      setHasFetchedMedia(true);
       setLoading(false);
 
     } catch (error: any) {
-       setError(error.message || error);
+      setError(error.message || error);
       setLoading(false);
       console.error('Error fetching media:', error);
       showGlobalSnackbar(
@@ -80,15 +78,15 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
 
 
   useEffect(() => {
-     if(storedMediaFiles){
-       setAllAvailableMediaFiles(storedMediaFiles as MediaFileResponseDto[])
-     }
+    if (storedMediaFiles) {
+      setAllAvailableMediaFiles(storedMediaFiles as MediaFileResponseDto[])
+    }
 
   }, [storedMediaFiles])
 
   // Filter for audio files
   const playableAudioTracks: MediaFileResponseDto[] = useMemo(() => {
-  console.log(allAvailableMediaFiles, 'allAvailableMediaFiles');
+    console.log(allAvailableMediaFiles, 'allAvailableMediaFiles');
     return allAvailableMediaFiles.filter(media => media.fileType === FileType.AUDIO);
   }, [allAvailableMediaFiles]);
 
@@ -235,6 +233,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
         onFavorite={toggleFavoriteVideo}
         onAction={handleVideoAction}
       />
+       <MediaPlayer mediaType='AUDIO' />
     </Box>
   );
 };

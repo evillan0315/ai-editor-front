@@ -1,5 +1,22 @@
 import React, { useState, useRef, useEffect, useCallback, SyntheticEvent } from 'react';
 import { useStore } from '@nanostores/react';
+import { FileType, MediaPlayerType } from '@/types/refactored/media';
+import {
+  $mediaStore,
+  setPlaying,
+  setVolume,
+  setTrackProgress,
+  isPlayingAtom,
+  volumeAtom,
+  progressAtom,
+  durationAtom,
+  shuffleAtom,
+  repeatModeAtom,
+  toggleRepeat,
+  toggleShuffle,
+  resetPlaybackState,
+  setTrackDuration,
+} from '@/stores/mediaStore';
 import {
   Box,
   IconButton,
@@ -8,7 +25,8 @@ import {
   useTheme,
   useMediaQuery,
   CircularProgress,
-} from '@mui/material';
+}
+  from '@mui/material';
 import {
   PlayArrow,
   Pause,
@@ -24,38 +42,18 @@ import {
   Album,
   Movie,
 } from '@mui/icons-material';
-import { MediaPlayerType } from '@/types/refactored/media';
-import {
-  $mediaStore,
-  setPlaying,
-  setVolume,
-  setTrackProgress,
-  isPlayingAtom,
-  volumeAtom,
-  progressAtom,
-  durationAtom,
-  shuffleAtom,
-  repeatModeAtom,
-} from '@/stores/mediaStore';
+import { authStore } from '@/stores/authStore';
+import { API_BASE_URL } from '@/api';
 
-// Define types for props
 interface MediaPlayerProps {
-  src: string; // Audio/Video source URL
-  type: MediaPlayerType; // Media type
-  onNext?: () => void; // Optional callback for next track
-  onPrevious?: () => void; // Optional callback for previous track
-  onEnded?: () => void; // Optional callback for when the media ends
+  mediaType: MediaPlayerType;
 }
 
-const MediaPlayer: React.FC<MediaPlayerProps> = ({
-  src,
-  type,
-  onNext,
-  onPrevious,
-  onEnded,
-}) => {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Access state from mediaStore
   const isPlaying = useStore(isPlayingAtom);
   const volume = useStore(volumeAtom);
   const progress = useStore(progressAtom);
@@ -63,19 +61,23 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const shuffle = useStore(shuffleAtom);
   const repeatMode = useStore(repeatModeAtom);
 
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+
+  const { currentTrack } = useStore($mediaStore);
+
+  // Local state for UI
   const [isMuted, setIsMuted] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [internalVolume, setInternalVolume] = useState(volume);
-  const [isSeeking, setIsSeeking] = useState(false);
-  const [internalProgress, setInternalProgress] = useState(progress);
   const [loading, setLoading] = useState(false);
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
+  const [internalVolume, setInternalVolume] = useState(volume);
+  const [internalProgress, setInternalProgress] = useState(progress);
+  // Handlers to avoid calling the store to much
+  const [currentSrc, setCurrentSrc] = useState<string | null>(null);
   // Determine whether it's currently a video or audio player
-  const isVideo = type === 'VIDEO';
-  const isAudio = type === 'AUDIO';
+  const isVideo = mediaType === 'VIDEO';
+  const isAudio = mediaType === 'AUDIO';
+
   // Get the correct ref based on media type
   const mediaRef = isVideo ? videoRef : audioRef;
 
@@ -85,11 +87,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     if (media) {
       const handleMetadata = () => {
         setLoading(false);
-        setDuration(media.duration);
+        setTrackDuration(media.duration);
       };
 
       const handleData = () => {
-        setDuration(media.duration);
+        setTrackDuration(media.duration);
         setLoading(false);
       };
 
@@ -101,21 +103,33 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         setLoading(false);
       };
 
+      const handleTimeUpdate = () => {
+        if (!mediaRef.current) return
+        setTrackProgress(mediaRef.current.currentTime);
+      };
+
+
+      const handleEnded = () => {
+        setPlaying(false);
+        setTrackProgress(0);
+      };
+
       media.addEventListener('loadedmetadata', handleMetadata);
       media.addEventListener('loadeddata', handleData);
       media.addEventListener('waiting', handleWaiting);
       media.addEventListener('playing', handlePlaying);
+      media.addEventListener('timeupdate', handleTimeUpdate);
       media.addEventListener('ended', handleEnded);
-
       return () => {
         media.removeEventListener('loadedmetadata', handleMetadata);
         media.removeEventListener('loadeddata', handleData);
         media.removeEventListener('waiting', handleWaiting);
         media.removeEventListener('playing', handlePlaying);
+        media.removeEventListener('timeupdate', handleTimeUpdate);
         media.removeEventListener('ended', handleEnded);
       };
     }
-  }, [src, isVideo]);
+  }, []);
 
   // Play/Pause based on isPlaying state
   useEffect(() => {
@@ -132,41 +146,47 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     }
   }, [isPlaying, isVideo]);
 
+  // Load media when currentTrack changes
+  useEffect(() => {
+    if (!currentTrack) {
+      setCurrentSrc(null);
+      return;
+    }
+
+    let mediaUrl = `${API_BASE_URL}/file/stream?filePath=${currentTrack.path}&token=${authStore.get().token}`;
+
+    if (mediaRef.current) {
+      setCurrentSrc(mediaUrl);
+      mediaRef.current.load();
+      if (isPlaying) {
+        mediaRef.current.play();
+      }
+    }
+  }, [currentTrack]);
+
+
   // Handler functions
   const handlePlayPause = () => {
     setPlaying(!isPlaying);
   };
 
   const handleNext = () => {
-    if (onNext) {
-      onNext();
-      setTrackProgress(0); // Reset current time when moving to the next media
-    }
+
   };
 
   const handlePrevious = () => {
-    if (onPrevious) {
-      onPrevious();
-      setTrackProgress(0); // Reset current time when moving to the previous media
-    }
   };
 
+  // Update volume in the store
   const handleVolumeChange = (event: Event, newValue: number | number[]) => {
     const newVolume = typeof newValue === 'number' ? newValue : 0;
     setInternalVolume(newVolume);
-
+    setVolume(newVolume);
     if (mediaRef.current) {
       mediaRef.current.volume = newVolume;
-      setVolume(newVolume);
     }
   };
 
-  const handleVolumeChangeCommitted = useCallback(
-    (_event: Event | SyntheticEvent, newValue: number | number[]) => {
-      setVolume(newValue as number);
-    },
-    [],
-  );
 
   const handleMute = () => {
     setIsMuted(!isMuted);
@@ -191,24 +211,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         media.currentTime = newValue as number;
         setTrackProgress(newValue as number);
       }
-      setIsSeeking(false);
     },
-    [mediaRef],
+    [],
   );
-
-  const handleTimeUpdate = () => {
-    if (mediaRef.current) {
-      setTrackProgress(mediaRef.current.currentTime);
-    }
-  };
-
-  const handleEnded = useCallback(() => {
-    setPlaying(false);
-    setTrackProgress(0);
-    if (onEnded) {
-      onEnded();
-    }
-  }, [onEnded]);
 
   // Volume Icon
   const getVolumeIcon = () => {
@@ -245,6 +250,14 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         zIndex: 11, // Ensure player bar is above video overlay
       }}
     >
+      {/* Hidden Audio/Video element */}
+      {
+        isAudio ? (
+          <audio ref={audioRef} src={currentSrc || ''} preload='metadata' />
+        ) : (
+          <video ref={videoRef} src={currentSrc || ''} preload='metadata' />
+        )
+      }
       {/* Left section: Current Song Info */}
       <Box
         sx={{
@@ -254,7 +267,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           minWidth: '180px',
         }}
       >
-        {type === 'VIDEO' ? (
+        {mediaType === 'VIDEO' ? (
           <Movie
             sx={{ fontSize: 40, mr: 1, color: theme.palette.text.secondary }}
           />
@@ -265,10 +278,10 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         )}
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
           <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
-            {type} - track title
+            {currentTrack?.title}
           </Typography>
           <Typography variant='caption' color='text.secondary'>
-            Artist Name
+            {currentTrack?.artist}
           </Typography>
         </Box>
         <IconButton
@@ -294,7 +307,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           <IconButton
             size='small'
             sx={{ color: theme.palette.text.primary }}
-            onClick={() => toggleShuffle}
+            onClick={toggleShuffle}
           >
             <Shuffle fontSize='small' color={shuffle ? 'primary' : 'inherit'} />
           </IconButton>
@@ -340,8 +353,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           <IconButton
             size='small'
             sx={{ color: theme.palette.text.primary }}
-            onClick={() =>{
-            }}
+            onClick={toggleRepeat}
           >
             {repeatMode === 'track' ? (
               <RepeatOne fontSize='small' color='primary' />
@@ -378,7 +390,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 height: 12,
               },
             }}
-            disabled={!src}
+            disabled={!currentSrc}
           />
           <Typography variant='caption' color='text.secondary'>
             {formatTime(duration)}
@@ -411,7 +423,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           size='small'
           value={internalVolume * 100 ?? 0}
           onChange={handleVolumeChange}
-          onChangeCommitted={handleVolumeChangeCommitted}
           min={0}
           max={100}
           aria-label='Volume'
