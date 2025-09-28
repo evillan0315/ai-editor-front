@@ -1,45 +1,81 @@
-// src/components/recording/RecordingControls.tsx
 import { Box, CircularProgress, IconButton } from '@mui/material';
-import { PhotoCamera, Stop, Videocam } from '@mui/icons-material';
+import {
+  PhotoCamera,
+  Stop,
+  Videocam,
+  CameraAlt,
+  StopCircle,
+} from '@mui/icons-material';
 
 export interface RecordingControlsProps {
-  isRecording: boolean;
+  isScreenRecording: boolean;
+  isCameraRecording: boolean;
   isCapturing: boolean;
-  onStart: () => void;
-  onStop: () => void;
+  onStartScreenRecording: () => void;
+  onStopScreenRecording: () => void;
+  onStartCameraRecording: () => void;
+  onStopCameraRecording: () => void;
   onCapture: () => void;
 }
 
 export function RecordingControls({
-  isRecording,
+  isScreenRecording,
+  isCameraRecording,
   isCapturing,
-  onStart,
-  onStop,
+  onStartScreenRecording,
+  onStopScreenRecording,
+  onStartCameraRecording,
+  onStopCameraRecording,
   onCapture,
 }: RecordingControlsProps) {
   return (
     <Box className="flex items-center gap-4">
-      {/* Only show Start if not recording */}
-      {!isRecording && (
-        <IconButton aria-label="start recording" onClick={onStart}>
+
+      {!isScreenRecording && (
+        <IconButton
+          aria-label="start screen recording"
+          onClick={onStartScreenRecording}
+          color="primary"
+        >
           <Videocam />
         </IconButton>
       )}
-
-      {/* Only show Stop if recording */}
-      {isRecording && (
-        <IconButton aria-label="stop recording" onClick={onStop}>
+      {isScreenRecording && (
+        <IconButton
+          aria-label="stop screen recording"
+          onClick={onStopScreenRecording}
+          color="error"
+        >
           <Stop />
         </IconButton>
       )}
+      {!isCameraRecording && (
+        <IconButton
+          aria-label="start camera recording"
+          onClick={onStartCameraRecording}
+          color="primary"
+        >
+          <CameraAlt />
+        </IconButton>
+      )}
+      {isCameraRecording && (
+        <IconButton
+          aria-label="stop camera recording"
+          onClick={onStopCameraRecording}
+          color="error"
+        >
+          <StopCircle />
+        </IconButton>
+      )}
 
-      {/* Capture button */}
+
       <IconButton
         aria-label="capture screenshot"
         disabled={isCapturing}
         onClick={onCapture}
+        color="secondary"
       >
-        {isCapturing ? <CircularProgress size="small" /> : <PhotoCamera />}
+        {isCapturing ? <CircularProgress size={24} /> : <PhotoCamera />}
       </IconButton>
     </Box>
   );
