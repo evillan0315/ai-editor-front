@@ -63,8 +63,9 @@ export const XTerminal: React.FC<XTerminalProps> = ({
 
   const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
 
-  // Xterm theme based on MUI theme
-  const xtermTheme = {
+  // Xterm theme based on MUI theme. Memoize to prevent unnecessary re-creations
+  // if only parent component re-renders but mode/theme haven't changed meaningfully.
+  const xtermTheme = React.useMemo(() => ({
     background:
       mode === 'dark'
         ? theme.palette.background.default
@@ -101,94 +102,113 @@ export const XTerminal: React.FC<XTerminalProps> = ({
     brightMagenta: '#AD7FA8',
     brightCyan: '#34E2E2',
     brightWhite: '#EEEEEC',
-  };
+  }), [mode, theme.palette.background.default, theme.palette.grey, theme.palette.text.primary]);
 
-  /** Initialize Xterm.js terminal and addons */
+  /** Initialize Xterm.js terminal and addons ONCE on mount */
   useEffect(() => {
-    if (xtermDivRef.current && !xtermTerminalRef.current) {
-      const term = new XtermTerminal({
-        fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
-        fontSize: 12,
-        cursorBlink: true,
-        theme: xtermTheme,
-        allowTransparency: true,
-      });
+    if (!xtermDivRef.current) return;
 
-      const fitAddon = new FitAddon();
-      const webglAddon = new WebglAddon();
+    const term = new XtermTerminal({
+      fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
+      fontSize: 12,
+      cursorBlink: true,
+      theme: xtermTheme, // Use initial theme from memoized value
+      allowTransparency: true,
+    });
 
-      term.loadAddon(fitAddon);
-      term.loadAddon(webglAddon);
-      term.open(xtermDivRef.current);
+    const fitAddon = new FitAddon();
+    const webglAddon = new WebglAddon();
 
-      xtermTerminalRef.current = term;
-      fitAddonRef.current = fitAddon;
-      webglAddonRef.current = webglAddon;
+    term.loadAddon(fitAddon);
+    term.loadAddon(webglAddon);
+    term.open(xtermDivRef.current);
 
-      // Register handlers with the store
-      registerTerminalWriteHandler((data: string) => term.write(data));
-      registerTerminalClearHandler(() => term.clear());
-      registerTerminalFitHandler(() => fitAddon.fit());
+    xtermTerminalRef.current = term;
+    fitAddonRef.current = fitAddon;
+    webglAddonRef.current = webglAddon;
 
-      // Initial fit
-      fitAddon.fit();
+    // Register handlers with the store, with safety checks for disposed terminal
+    registerTerminalWriteHandler((data: string) => {
+      if (xtermTerminalRef.current && !xtermTerminalRef.current.isDisposed) {
+        xtermTerminalRef.current.write(data);
+      }
+    });
+    registerTerminalClearHandler(() => {
+      if (xtermTerminalRef.current && !xtermTerminalRef.current.isDisposed) {
+        xtermTerminalRef.current.clear();
+      }
+    });
+    registerTerminalFitHandler(() => {
+      if (fitAddonRef.current && xtermTerminalRef.current && !xtermTerminalRef.current.isDisposed) {
+        fitAddonRef.current.fit();
+      }
+    });
 
-      // Handle terminal input (e.g., user types command)
-      term.onData((input: string) => {
-        socketService.sendInput(input);
-      });
+    // Initial fit
+    fitAddon.fit();
 
-      // Handle terminal resize (when xterm detects a change in its dimensions)
-      term.onResize(({ cols, rows }) => {
-        resizeTerminal(cols, rows); // Send to backend
-      });
+    // Handle terminal input (e.g., user types command)
+    term.onData((input: string) => {
+      socketService.sendInput(input);
+    });
 
-      return () => {
-        // Cleanup on unmount
-        webglAddon.dispose();
-        fitAddon.dispose();
-        term.dispose();
-        xtermTerminalRef.current = null;
-        fitAddonRef.current = null;
-        webglAddonRef.current = null;
-        registerTerminalWriteHandler(null);
-        registerTerminalClearHandler(null);
-        registerTerminalFitHandler(null);
-      };
-    }
-    // Update theme if mode changes (or theme object changes)
-    if (xtermTerminalRef.current) {
+    // Handle terminal resize (when xterm detects a change in its dimensions)
+    term.onResize(({ cols, rows }) => {
+      // This event fires when the *terminal itself* detects a dimension change
+      // (e.g., after fitAddon.fit()). We send these *character dimensions* to the backend PTY.
+      // The visual fitting is handled by fitAddon within the component, triggered by other effects.
+      resizeTerminal(cols, rows); // Send to backend PTY
+    });
+
+    return () => {
+      // Cleanup on unmount
+      if (webglAddonRef.current) webglAddonRef.current.dispose();
+      if (fitAddonRef.current) fitAddonRef.current.dispose();
+      if (xtermTerminalRef.current) xtermTerminalRef.current.dispose();
+
+      xtermTerminalRef.current = null;
+      fitAddonRef.current = null;
+      webglAddonRef.current = null;
+      registerTerminalWriteHandler(null);
+      registerTerminalClearHandler(null);
+      registerTerminalFitHandler(null);
+    };
+  }, [xtermTheme]); // Re-run if initial xtermTheme changes, mainly for HMR or if memoized theme changes for initial setup
+
+  /** Update theme of existing terminal when xtermTheme object itself changes (via useMemo dependencies) */
+  useEffect(() => {
+    if (xtermTerminalRef.current && !xtermTerminalRef.current.isDisposed) {
       xtermTerminalRef.current.options.theme = xtermTheme;
     }
-  }, [mode, theme.palette.background.default, theme.palette.text.primary, xtermTheme]);
+  }, [xtermTheme]);
 
   /** Auto-connect if token exists */
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) handleConnect();
-  }, []);
-
-  /**
-   * IMPORTANT: Socket listeners are registered ONCE in terminalStore.ts's connectTerminal,
-   * and they use the registered `terminalWriteHandler`. So, this component doesn't need to
-   * register its own `socketService.on` calls for output.
-   */
+  }, []); // Empty dependency array: runs once on mount
 
   /** Handle window resize -> fit xterm */
   useEffect(() => {
     const handleWindowResize = () => {
-      fitAddonRef.current?.fit();
+      // Only fit if terminal and addon are initialized and not disposed
+      if (fitAddonRef.current && xtermTerminalRef.current && !xtermTerminalRef.current.isDisposed) {
+        fitAddonRef.current.fit();
+      }
     };
 
     window.addEventListener('resize', handleWindowResize);
     handleWindowResize(); // Initial fit based on current window size
 
     return () => window.removeEventListener('resize', handleWindowResize);
-  }, []); // Run once on mount and clean up
+  }, []); // Empty dependency array: Run once on mount and clean up
 
   /** Trigger fit when terminalHeight prop changes (e.g., parent container resized) */
   useEffect(() => {
-    fitAddonRef.current?.fit();
+    // Only fit if terminal and addon are initialized and not disposed
+    if (fitAddonRef.current && xtermTerminalRef.current && !xtermTerminalRef.current.isDisposed) {
+      fitAddonRef.current.fit();
+    }
   }, [terminalHeight]);
 
   const handleConnect = async () => {
