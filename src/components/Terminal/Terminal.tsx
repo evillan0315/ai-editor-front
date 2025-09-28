@@ -121,8 +121,10 @@ export const XTerminal: React.FC<XTerminalProps> = ({
     const webglAddon = new WebglAddon();
 
     term.loadAddon(fitAddon);
+    term.open(xtermDivRef.current); // Open the terminal to attach to DOM first
+
+    // Load WebglAddon AFTER the terminal is opened to ensure canvas context is ready
     term.loadAddon(webglAddon);
-    term.open(xtermDivRef.current);
 
     xtermTerminalRef.current = term;
     fitAddonRef.current = fitAddon;
@@ -145,8 +147,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
       }
     });
 
-    // Initial fit
-    fitAddon.fit();
+    // Removed initial fitAddon.fit(); -- it's handled by the window resize effect now
 
     // Handle terminal input (e.g., user types command)
     // With disableStdin: true, term.onData will no longer fire for keyboard input.

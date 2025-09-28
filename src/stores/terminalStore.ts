@@ -183,16 +183,13 @@ export const executeCommand = (command: string) => {
 };
 
 /**
- * Resizes the frontend xterm.js instance and sends the new dimensions to the backend.
- * The `cols` and `rows` parameters are mainly for the backend to adjust PTY dimensions.
- * The frontend `terminalFitHandler` handles the visual display size via FitAddon.
+ * Sends terminal dimensions to the backend to adjust PTY size.
+ * The frontend xterm.js instance's visual resizing is handled by FitAddon
+ * in the XTerminal component, often triggered by its own onResize event or
+ * parent container changes.
  */
 export const resizeTerminal = (cols: number, rows: number) => {
-  if (terminalFitHandler) {
-    terminalFitHandler(); // Request xterm to fit its container, this also triggers onResize event on xterm itself.
-  }
   if (terminalStore.get().isConnected) {
-    // Only send the raw cols/rows to the backend, let xterm's onResize handle its own updates
-    socketService.resize(cols, rows); 
+    socketService.resize(cols, rows);
   }
 };
