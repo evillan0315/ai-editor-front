@@ -54,14 +54,15 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
   const [isSeeking, setIsSeeking] = useState(false);
 
   useEffect(() => {
-    if (mediaElementRef.current && isPlaying && trackProgress > 0) {
+    if (mediaElementRef.current && isPlaying && trackProgress > 0 && !loading) {
       mediaElementRef.current.play().catch(e => {
         console.error("Autoplay failed:", e);
+        setPlaying(false); // Reflect actual playback state if autoplay is blocked
       });
     } else if (mediaElementRef.current && !isPlaying) {
       mediaElementRef.current.pause();
     }
-  }, [isPlaying, mediaElementRef, trackProgress]);
+  }, [isPlaying, mediaElementRef, trackProgress, loading, setPlaying]); // Added loading and setPlaying to dependencies
 
   const handlePlayPause = () => {
     if (mediaElementRef.current) {

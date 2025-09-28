@@ -56,8 +56,6 @@ const Footer = () => {
         currentRecordingIdStore.set(null);
         setIsRecording(false);
         notify('Recording stopped successfully!', 'success');
-      } else {
-        notify('No recording in progress to stop.', 'warning');
       }
     } catch (error) {
       console.error('Error stopping recording:', error);
@@ -95,12 +93,13 @@ const Footer = () => {
     }
   }, [currentTrack, setPlaying, setTrackDuration, setTrackProgress, setLoading]);
 
-  // Effect to play/pause based on global isPlaying state
+  // Effect to play/pause based on global isPlaying state, guarded by loading state
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
 
-    if (isPlaying && audio.paused) {
+    // Only attempt to play if not currently loading AND isPlaying is true
+    if (isPlaying && audio.paused && !loading) {
       audio.play().catch(e => {
         console.error('Autoplay failed:', e);
         // If autoplay fails (e.g., not initiated by user gesture), reflect actual state
@@ -109,7 +108,7 @@ const Footer = () => {
     } else if (!isPlaying && !audio.paused) {
       audio.pause();
     }
-  }, [isPlaying, currentTrack, setPlaying]);
+  }, [isPlaying, currentTrack, loading, setPlaying]); // Added 'loading' to dependencies
 
   // Event listeners for audio element to update nanostores
   useEffect(() => {
@@ -120,6 +119,8 @@ const Footer = () => {
       setTrackDuration(audio.duration);
       setLoading(false); // Finished loading metadata
       if (isPlaying && audio.paused) {
+        // This `play()` call might still fail due to autoplay policies if no user gesture has occurred.
+        // The `catch` block correctly handles this by setting `isPlaying` to `false`.
         audio.play().catch(e => {
           console.error('Autoplay on metadata load failed:', e);
           setPlaying(false);
