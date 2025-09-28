@@ -45,8 +45,7 @@ export const SongListControls: React.FC<SongListControlsProps> = ({
   filteredAndSortedSongs,
   viewMode,
   setViewMode,
-}) => {
-  return (
+}) => (
     <Box
       sx={{
         display: 'flex',
@@ -92,19 +91,11 @@ export const SongListControls: React.FC<SongListControlsProps> = ({
           variant="outlined"
           sx={{ mr: 1 }}
         />
-        <IconButton
-          onClick={() => handleSortChange('title')}
-        >
-          <Typography variant="body2">
-            Title
-          </Typography>
+        <IconButton onClick={() => handleSortChange('title')}>
+          <Typography variant="body2">Title</Typography>
         </IconButton>
-        <IconButton
-          onClick={() => handleSortChange('artist')}
-        >
-          <Typography variant="body2">
-            Artist
-          </Typography>
+        <IconButton onClick={() => handleSortChange('artist')}>
+          <Typography variant="body2">Artist</Typography>
         </IconButton>
       </Box>
 
@@ -130,4 +121,3 @@ export const SongListControls: React.FC<SongListControlsProps> = ({
       </Box>
     </Box>
   );
-};

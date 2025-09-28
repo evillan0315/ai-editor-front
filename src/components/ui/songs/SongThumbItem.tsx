@@ -10,11 +10,9 @@ import {
   MenuItem,
   Divider,
   ListItemIcon,
-  ListItemText
+  ListItemText,
 } from '@mui/material';
-import {
-  MoreVert,
-} from '@mui/icons-material';
+import { MoreVert } from '@mui/icons-material';
 import { MediaFileResponseDto } from '@/types/refactored/media';
 
 // Types
@@ -32,7 +30,12 @@ interface SongThumbItemProps {
   onAction: (action: string, song: MediaFileResponseDto) => void;
 }
 
-export const SongThumbItem: React.FC<SongThumbItemProps> = ({ song, onPlay, onFavorite, onAction }) => {
+export const SongThumbItem: React.FC<SongThumbItemProps> = ({
+  song,
+  onPlay,
+  onFavorite,
+  onAction,
+}) => {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -63,7 +66,10 @@ export const SongThumbItem: React.FC<SongThumbItemProps> = ({ song, onPlay, onFa
           <CardMedia
             component="img"
             height="160"
-            image={song.metadata && song.metadata[0]?.data.thumbnail || '/placeholder-album.jpg'}
+            image={
+              (song.metadata && song.metadata[0]?.data.thumbnail) ||
+              '/placeholder-album.jpg'
+            }
             alt={song.song?.title}
             sx={{ objectFit: 'cover' }}
           />
@@ -72,9 +78,11 @@ export const SongThumbItem: React.FC<SongThumbItemProps> = ({ song, onPlay, onFa
           <Typography variant="subtitle2" noWrap title={song.song?.title}>
             {song.song?.title}
           </Typography>
-          <Typography variant="body2" color="text.secondary" noWrap>
-
-          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            noWrap
+          ></Typography>
           <Box
             sx={{
               display: 'flex',
@@ -87,15 +95,11 @@ export const SongThumbItem: React.FC<SongThumbItemProps> = ({ song, onPlay, onFa
               size="small"
               onClick={() => onFavorite(song.id)}
               color={true ? 'error' : 'default'}
-            >
-            </IconButton>
+            ></IconButton>
             <Typography variant="caption" color="text.secondary">
               {formatDuration(song.song?.duration || 0)}
             </Typography>
-            <IconButton
-              size="small"
-              onClick={handleMenuOpen}
-            >
+            <IconButton size="small" onClick={handleMenuOpen}>
               <MoreVert />
             </IconButton>
           </Box>
@@ -111,9 +115,7 @@ export const SongThumbItem: React.FC<SongThumbItemProps> = ({ song, onPlay, onFa
       >
         {menuItems.map((item, index) => (
           <Box key={item.value}>
-            <MenuItem
-              onClick={() => onAction(item.value, song)}
-            >
+            <MenuItem onClick={() => onAction(item.value, song)}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText>{item.label}</ListItemText>
             </MenuItem>

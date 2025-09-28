@@ -3,7 +3,10 @@ import { useStore } from '@nanostores/react';
 import { isScreenRecordingStore } from '@/stores/recordingStore';
 import { recordingApi } from '@/api/recording';
 import { snackbarState, setSnackbarState } from '@/stores/snackbarStore';
-import { currentRecordingIdStore, setIsScreenRecording } from '@/stores/recordingStore';
+import {
+  currentRecordingIdStore,
+  setIsScreenRecording,
+} from '@/stores/recordingStore';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -100,7 +103,14 @@ const Footer = () => {
     return () => {
       setMediaElement(null);
     };
-  }, [currentTrack, setMediaElement, setLoading, setPlaying, setTrackDuration, setTrackProgress]);
+  }, [
+    currentTrack,
+    setMediaElement,
+    setLoading,
+    setPlaying,
+    setTrackDuration,
+    setTrackProgress,
+  ]);
 
   // Removed the useEffect that previously handled play/pause based on isPlaying
   // This is now handled by the setPlaying action directly in mediaStore.ts
@@ -148,7 +158,7 @@ const Footer = () => {
       }}
     >
       {/* Left Section: Recording Controls */}
-      <Box  className="flex justify-center items-center">
+      <Box className="flex justify-center items-center">
         <IconButton
           color="inherit"
           aria-label="start recording"
@@ -176,8 +186,6 @@ const Footer = () => {
 
       <Box sx={{ minWidth: 100 }} />
       {/* Center Section: Mini Media Player Controls */}
-
-
     </Box>
   );
 };

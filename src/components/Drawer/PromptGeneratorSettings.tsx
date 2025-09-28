@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Typography,
-  Box,
-  Paper,
-  Tabs,
-  Tab,
-  useTheme,
-} from '@mui/material';
+import { Typography, Box, Paper, Tabs, Tab, useTheme } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SchemaIcon from '@mui/icons-material/Schema';
 import ExampleIcon from '@mui/icons-material/Code';
@@ -75,7 +68,7 @@ ${localInstructionExample}
   };
 
   return (
-    <Paper>
+
       <Box
         sx={{
           color: theme.palette.text.primary,
@@ -89,9 +82,27 @@ ${localInstructionExample}
           centered
         >
           <Tab label="General Instruction" />
-          <Tab label={<span>Instruction Schema <SchemaIcon /></span>} />
-          <Tab label={<span>Example Output <ExampleIcon /></span>} />
-          <Tab label={<span>AI Schema Generator <AutoAwesomeIcon /></span>} />
+          <Tab
+            label={
+              <span>
+                Instruction Schema <SchemaIcon />
+              </span>
+            }
+          />
+          <Tab
+            label={
+              <span>
+                Example Output <ExampleIcon />
+              </span>
+            }
+          />
+          <Tab
+            label={
+              <span>
+                AI Schema Generator <AutoAwesomeIcon />
+              </span>
+            }
+          />
         </Tabs>
 
         {/* ---------- General Instruction (Markdown Editor) ---------- */}
@@ -165,7 +176,6 @@ ${localInstructionExample}
         )}
       </Box>
 
-    </Paper>
   );
 };
 

@@ -57,11 +57,7 @@ import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
 import PromptGeneratorSettingsDialog from '@/components/dialogs/PromptGeneratorSettingsDialog';
 import { ImportJsonDialog } from './ImportJsonDialog';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
-import {
-  LlmOutputFormat,
-  LlmGeneratePayload,
-  ModelResponse,
-} from '@/types';
+import { LlmOutputFormat, LlmGeneratePayload, ModelResponse } from '@/types';
 import { CodeGeneratorData } from './CodeGeneratorMain';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import ImportData from './ImportData';
@@ -78,14 +74,22 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const { flatFileList } = useStore(fileTreeStore);
 
   const { uploadedFileData, uploadedFileMimeType } = useStore(llmStore);
-  const { instruction, aiInstruction, expectedOutputInstruction, requestType, llmOutputFormat, scanPathsInput } = useStore(llmStore);
+  const {
+    instruction,
+    aiInstruction,
+    expectedOutputInstruction,
+    requestType,
+    llmOutputFormat,
+    scanPathsInput,
+  } = useStore(llmStore);
   // ---- local state ----
   const [projectInput, setProjectInput] = useState(
     currentProjectPath || import.meta.env.VITE_BASE_DIR || '',
   );
   const [editorContent, setEditorContent] = useState('');
   const [isPickerDialogOpen, setIsPickerDialogOpen] = useState(false);
-  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] = useState(false);
+  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] =
+    useState(false);
   const [isScanPathsDialogOpen, setIsScanPathsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -406,7 +410,12 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         hasBackdrop={false}
       >
         {/*error && <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='400px' />*/}
-        <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='100%' />
+        <CodeRepair
+          value={editorContent}
+          onChange={setEditorContent}
+          filePath="temp.json"
+          height="100%"
+        />
       </CustomDrawer>
     </Box>
   );

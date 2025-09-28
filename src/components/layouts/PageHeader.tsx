@@ -1,6 +1,8 @@
 import React, { ReactNode } from 'react';
 import { Box, Paper, Typography, useTheme, SxProps } from '@mui/material';
-import GlobalActionButton, { GlobalAction } from '@/components/ui/GlobalActionButton';
+import GlobalActionButton, {
+  GlobalAction,
+} from '@/components/ui/GlobalActionButton';
 
 /**
  * Props for the PageHeader component.
@@ -22,7 +24,10 @@ interface PageHeaderProps {
  * @param sticky A boolean indicating if the header should be sticky.
  * @returns A SxProps object for the Paper component.
  */
-const headerPaperSx = (theme: ReturnType<typeof useTheme>, sticky: boolean): SxProps => ({
+const headerPaperSx = (
+  theme: ReturnType<typeof useTheme>,
+  sticky: boolean,
+): SxProps => ({
   px: 2,
   borderRadius: 0,
   backgroundColor: theme.palette.background.paper,
@@ -62,7 +67,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     <Paper sx={(t) => ({ ...headerPaperSx(t, sticky), ...sx })}>
       <Box className="flex-grow">
         {typeof title === 'string' ? (
-          <Typography variant="h6" component="h1" className="text-xl font-semibold">
+          <Typography
+            variant="h6"
+            component="h1"
+            className="text-xl font-semibold"
+          >
             {title}
           </Typography>
         ) : (

@@ -1,5 +1,16 @@
 import React from 'react';
-import { Box, TextField, FormControl, InputLabel, Select, MenuItem, Chip, IconButton, InputAdornment, Typography } from '@mui/material';
+import {
+  Box,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
+  IconButton,
+  InputAdornment,
+  Typography,
+} from '@mui/material';
 import { Search } from '@mui/icons-material';
 
 interface VideoControlsProps {
@@ -24,8 +35,7 @@ const VideoControls: React.FC<VideoControlsProps> = ({
   sortOrder,
   handleSortChange,
   filteredVideoCount,
-}) => {
-  return (
+}) => (
     <Box
       sx={{
         display: 'flex',
@@ -89,6 +99,5 @@ const VideoControls: React.FC<VideoControlsProps> = ({
       </Box>
     </Box>
   );
-};
 
 export default VideoControls;

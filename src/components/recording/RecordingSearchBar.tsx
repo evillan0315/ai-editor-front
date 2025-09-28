@@ -18,8 +18,7 @@ export const RecordingSearchBar: React.FC<RecordingSearchBarProps> = ({
   typeFilter,
   onTypeFilterChange,
   typeOptions = [],
-}) => {
-  return (
+}) => (
     <Box className="flex gap-2 items-center flex-wrap">
       <TextField
         label="Search"
@@ -49,4 +48,3 @@ export const RecordingSearchBar: React.FC<RecordingSearchBarProps> = ({
       </Button>
     </Box>
   );
-};

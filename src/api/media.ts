@@ -12,7 +12,6 @@ import {
   SyncTranscriptionResponse,
 } from '@/types';
 
-
 /**
  * Constructs a URL for streaming a file from the backend.
  * @param filePath The path to the file on the backend server.
@@ -62,15 +61,15 @@ export const fetchMediaFiles = async (
       query as Record<string, string>,
     ).toString();
     const response = await fetchWithAuth(
-      `${API_BASE_URL}/media?${queryString}`,{ method: 'GET' }
+      `${API_BASE_URL}/media?${queryString}`,
+      { method: 'GET' },
     );
 
     const media = await handleResponse<PaginationMediaResultDto>(response);
     console.log(media, 'fetchMediaFiles');
-    if(media && media.items.length > 0){
+    if (media && media.items.length > 0) {
       return media;
     }
-   
   } catch (error) {
     console.error('Error fetching media files:', error);
     throw error;

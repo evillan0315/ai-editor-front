@@ -8,17 +8,13 @@ export const authStore = map<AuthState>({
   loading: true,
   error: null,
 });
-export const token = persistentAtom<string | null>(
-  'token',
-  null
-);
+export const token = persistentAtom<string | null>('token', null);
 export const getToken = () => {
-	if(token) return token.get();
+  if (token) return token.get();
 };
 export const setToken = (tokenString: string | null) => {
-  if(tokenString) setLoading(false);
+  if (tokenString) setLoading(false);
   token.set(tokenString);
-  
 };
 
 export const loginSuccess = (user: UserProfile, token: string) => {
@@ -33,7 +29,7 @@ export const loginSuccess = (user: UserProfile, token: string) => {
 
 export const logout = () => {
   setToken(null);
-  setLoading(false)
+  setLoading(false);
   authStore.set({
     isLoggedIn: false,
     user: null,

@@ -26,9 +26,15 @@ export const fileStore = map<FileStoreState>({
 });
 
 // Persistent atoms for editor state that needs to survive reloads
-export const openedFileContent = persistentAtom<string | null>('openedFileContent', null);
+export const openedFileContent = persistentAtom<string | null>(
+  'openedFileContent',
+  null,
+);
 export const openedFile = persistentAtom<string | null>('openedFile', null);
-export const isOpenedFileDirty = persistentAtom<boolean>('isOpenedFileDirty', false);
+export const isOpenedFileDirty = persistentAtom<boolean>(
+  'isOpenedFileDirty',
+  false,
+);
 export const openedTabs = persistentAtom<string[]>('openedTabs', []);
 
 export const setOpenedFile = (filePath: string | null) => {
@@ -41,7 +47,7 @@ export const setOpenedFile = (filePath: string | null) => {
   } else {
     addLog('File Editor', 'No file is currently opened in the editor.', 'info');
   }
-  
+
   // Clear transient states when changing file
   openedFileContent.set(null);
   isOpenedFileDirty.set(false);
@@ -134,7 +140,8 @@ export const removeOpenedTab = (filePath: string) => {
     if (newOpenedTabs.length > 0) {
       // Determine which tab to activate next (e.g., the one before, or the first one)
       const oldIndex = openedTabs.get().indexOf(filePath); // This will be -1 as it's already filtered, need to use prev state if we want accurate prev index
-      const newActiveFile = oldIndex > 0 ? newOpenedTabs[oldIndex - 1] : newOpenedTabs[0];
+      const newActiveFile =
+        oldIndex > 0 ? newOpenedTabs[oldIndex - 1] : newOpenedTabs[0];
       setOpenedFile(newActiveFile);
     } else {
       setOpenedFile(null);
@@ -199,7 +206,7 @@ export const discardActiveFileChanges = () => {
   const { initialFileContentSnapshot } = fileStore.get(); // Still uses snapshot from fileStore
   const currentOpenedFile = openedFile.get();
   const isDirty = isOpenedFileDirty.get();
-  
+
   if (!currentOpenedFile || !isDirty) {
     addLog(
       'File Editor',
@@ -217,7 +224,11 @@ export const discardActiveFileChanges = () => {
     setOpenedFileContent(initialFileContentSnapshot);
     setIsOpenedFileDirtyAtom(false);
     setSaveFileContentError(null);
-    addLog('File Editor', `Changes discarded for: ${currentOpenedFile}`, 'info');
+    addLog(
+      'File Editor',
+      `Changes discarded for: ${currentOpenedFile}`,
+      'info',
+    );
   }
 };
 

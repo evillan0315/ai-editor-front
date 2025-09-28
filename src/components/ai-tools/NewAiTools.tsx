@@ -29,11 +29,12 @@ const NewAiTools: React.FC<NewAiToolsProps> = () => {
 
   return (
     <Box>
-      <Typography variant='h4'>New AI Tools</Typography>
-      <Typography variant='body1'>
-        This section will house new AI tools, similar to the Gemini Live Studio chat.
+      <Typography variant="h4">New AI Tools</Typography>
+      <Typography variant="body1">
+        This section will house new AI tools, similar to the Gemini Live Studio
+        chat.
       </Typography>
-      <AIPromptGenerator  />
+      <AIPromptGenerator />
     </Box>
   );
 };

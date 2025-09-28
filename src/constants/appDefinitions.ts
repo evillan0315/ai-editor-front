@@ -16,7 +16,6 @@ import GitHubIcon from '@mui/icons-material/GitHub'; // for Simple Git
 import ForumIcon from '@mui/icons-material/Forum';
 import DataObjectIcon from '@mui/icons-material/DataObject'; // For Schema Generator
 
-
 export const appDefinitions: AppDefinition[] = [
   {
     id: 'ai-editor',

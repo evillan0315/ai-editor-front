@@ -29,8 +29,8 @@ function GlobalActionButton({ globalActions }: GlobalActionButtonProps) {
           <Button
             key={index}
             onClick={action.action}
-            color={action.color || "primary"}
-            variant={action.variant || "contained"}
+            color={action.color || 'primary'}
+            variant={action.variant || 'contained'}
             startIcon={action.icon ? <action.icon /> : null}
           >
             {action.label}

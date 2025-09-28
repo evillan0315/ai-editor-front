@@ -7,8 +7,6 @@ import {
   PaginationDto,
 } from '@/types/conversation';
 
-
-
 /**
  * Fetches a paginated list of conversation summaries from the backend.
  * @param paginationDto - Pagination, search, and filter parameters.

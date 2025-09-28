@@ -20,6 +20,9 @@
       "@/*": ["./src/*"]
     },
 
+    /* Type Definitions */
+    "types": ["node"],
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": false,

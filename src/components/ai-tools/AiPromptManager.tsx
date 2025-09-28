@@ -88,13 +88,9 @@ const AIPromptManager: React.FC = () => {
                 p: 1.5,
                 maxWidth: '70%',
                 bgcolor:
-                  msg.role === 'user'
-                    ? 'primary.main'
-                    : 'background.paper',
+                  msg.role === 'user' ? 'primary.main' : 'background.paper',
                 color:
-                  msg.role === 'user'
-                    ? 'primary.contrastText'
-                    : 'text.primary',
+                  msg.role === 'user' ? 'primary.contrastText' : 'text.primary',
                 whiteSpace: 'pre-wrap',
               }}
             >

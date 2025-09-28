@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { 
+import {
   Box,
   Card,
   CardContent,
@@ -12,11 +12,9 @@ import {
   MenuItem,
   Divider,
   ListItemIcon,
-  ListItemText
+  ListItemText,
 } from '@mui/material';
-import {
-  MoreVert,
-} from '@mui/icons-material';
+import { MoreVert } from '@mui/icons-material';
 import { MediaFileResponseDto } from '@/types/refactored/media';
 
 // Types
@@ -34,7 +32,12 @@ interface SongGridItemProps {
   onAction: (action: string, song: MediaFileResponseDto) => void;
 }
 
-export const SongGridItem: React.FC<SongGridItemProps> = ({ song, onPlay, onFavorite, onAction }) => {
+export const SongGridItem: React.FC<SongGridItemProps> = ({
+  song,
+  onPlay,
+  onFavorite,
+  onAction,
+}) => {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -60,14 +63,15 @@ export const SongGridItem: React.FC<SongGridItemProps> = ({ song, onPlay, onFavo
 
   return (
     <Grid container xs={12} sm={6} md={4} lg={3}>
-      <Card
-        sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-      >
+      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <CardActionArea onClick={() => onPlay(song)} sx={{ flexGrow: 1 }}>
           <CardMedia
             component="img"
             height="200"
-            image={song.metadata && song.metadata[0]?.data.thumbnail || '/placeholder-album.jpg'}
+            image={
+              (song.metadata && song.metadata[0]?.data.thumbnail) ||
+              '/placeholder-album.jpg'
+            }
             alt={song.song?.title}
             sx={{ objectFit: 'cover' }}
           />
@@ -75,12 +79,12 @@ export const SongGridItem: React.FC<SongGridItemProps> = ({ song, onPlay, onFavo
             <Typography gutterBottom variant="h6" noWrap>
               {song.song?.title}
             </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
-
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-
-            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              noWrap
+            ></Typography>
+            <Typography variant="body2" color="text.secondary"></Typography>
             <Box
               sx={{
                 display: 'flex',
@@ -88,23 +92,18 @@ export const SongGridItem: React.FC<SongGridItemProps> = ({ song, onPlay, onFavo
                 mt: 1,
               }}
             >
-              <Typography variant="body2" color="text.secondary">
-
-              </Typography>
+              <Typography variant="body2" color="text.secondary"></Typography>
               <Typography variant="body2" color="text.secondary">
                 {formatDuration(song.song?.duration || 0)}
               </Typography>
             </Box>
           </CardContent>
         </CardActionArea>
-        <Box
-          sx={{ display: 'flex', justifyContent: 'space-between', p: 1 }}
-        >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1 }}>
           <IconButton
             onClick={() => onFavorite(song.id)}
             color={true ? 'error' : 'default'}
-          >
-          </IconButton>
+          ></IconButton>
           <IconButton onClick={handleMenuOpen}>
             <MoreVert />
           </IconButton>
@@ -120,9 +119,7 @@ export const SongGridItem: React.FC<SongGridItemProps> = ({ song, onPlay, onFavo
       >
         {menuItems.map((item, index) => (
           <Box key={item.value}>
-            <MenuItem
-              onClick={() => onAction(item.value, song)}
-            >
+            <MenuItem onClick={() => onAction(item.value, song)}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText>{item.label}</ListItemText>
             </MenuItem>

@@ -5,7 +5,10 @@
  * @param delay The delay in milliseconds.
  * @returns A new, debounced function.
  */
-export function debounce<T extends (...args: any[]) => void>(func: T, delay: number): T {
+export function debounce<T extends (...args: any[]) => void>(
+  func: T,
+  delay: number,
+): T {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
   return ((...args: Parameters<T>) => {

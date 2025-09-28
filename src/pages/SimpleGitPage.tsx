@@ -2,7 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { gitStore } from '@/stores/gitStore';
 import { GitCommit, GitBranch } from '@/types/git';
-import { Box, Button, TextField, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+} from '@mui/material';
 import RunScriptMenuItem from '@/components/RunScriptMenuItem';
 // import simpleGit from 'simple-git';
 
@@ -16,7 +25,7 @@ interface GitStatus {
 
 const SimpleGitPage = () => {
   const $git = useStore(gitStore);
-  const [status, setStatus] = useState<GitStatus>({ 
+  const [status, setStatus] = useState<GitStatus>({
     branch: 'main',
     modifiedFiles: [],
     stagedFiles: [],
@@ -24,7 +33,9 @@ const SimpleGitPage = () => {
   const [commitMessage, setCommitMessage] = useState('');
   const [branches, setBranches] = useState<GitBranch[]>([]);
   const [newBranchName, setNewBranchName] = useState('');
-  const [selectedFileToUndo, setSelectedFileToUndo] = useState<string | null>(null);
+  const [selectedFileToUndo, setSelectedFileToUndo] = useState<string | null>(
+    null,
+  );
   const [git, setGit] = useState<any>(null);
 
   useEffect(() => {
@@ -243,7 +254,9 @@ const SimpleGitPage = () => {
               <ListItem key={file}>
                 <ListItemText primary={file} />
                 <Button onClick={() => handleStage(file)}>Stage</Button>
-                <Button onClick={() => handleUndoFileChanges(file)}>Undo</Button>
+                <Button onClick={() => handleUndoFileChanges(file)}>
+                  Undo
+                </Button>
               </ListItem>
             ))}
           </List>
@@ -290,7 +303,11 @@ const SimpleGitPage = () => {
 
       <Box className="mb-4">
         <Typography variant="h6">Revert Commit</Typography>
-        <Button variant="contained" color="secondary" onClick={handleRevertCommit}>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={handleRevertCommit}
+        >
           Revert Last Commit
         </Button>
       </Box>
@@ -319,7 +336,11 @@ const SimpleGitPage = () => {
           onChange={(e) => setNewBranchName(e.target.value)}
           className="mb-2"
         />
-        <Button variant="contained" color="primary" onClick={handleCreateBranch}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleCreateBranch}
+        >
           Create Branch
         </Button>
       </Box>

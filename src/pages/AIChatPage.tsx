@@ -18,16 +18,13 @@ import AIPromptGenerator from '@/components/ai-tools/AIPromptGenerator';
 const AIChatPage: React.FC = () => {
   const theme = useTheme();
   return (
-
-
     <PageLayout
       header={<AiPromptGeneratorHeader />}
-      body={<AiPromptGeneratorBody />}  // Implemented in body
+      body={<AiPromptGeneratorBody />} // Implemented in body
       footer={<AIPromptGenerator />}
       bodyPosition={'top'}
       centerBodyPostition={false}
     />
-
   );
 };
 

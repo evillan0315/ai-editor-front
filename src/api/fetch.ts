@@ -15,7 +15,11 @@ export const handleResponse = async <T>(response: Response): Promise<T> => {
       errorData = await response.text();
     }
 
-    throw new Error(typeof errorData === 'string' ? errorData : errorData.message || `API error: ${response.status}`);
+    throw new Error(
+      typeof errorData === 'string'
+        ? errorData
+        : errorData.message || `API error: ${response.status}`,
+    );
   }
 
   const contentType = response.headers.get('content-type');

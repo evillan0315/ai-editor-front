@@ -40,20 +40,29 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   render() {
     if (this.state.hasError) {
       // Custom fallback UI
-      return this.props.fallback ? this.props.fallback : <DefaultFallback error={this.state.error} errorInfo={this.state.errorInfo}/>;
+      return this.props.fallback ? (
+        this.props.fallback
+      ) : (
+        <DefaultFallback
+          error={this.state.error}
+          errorInfo={this.state.errorInfo}
+        />
+      );
     }
 
     return this.props.children;
   }
 }
 
-
 interface DefaultFallbackProps {
   error?: Error;
   errorInfo?: React.ErrorInfo;
 }
 
-const DefaultFallback: React.FC<DefaultFallbackProps> = ({error, errorInfo}) => {
+const DefaultFallback: React.FC<DefaultFallbackProps> = ({
+  error,
+  errorInfo,
+}) => {
   const theme = useTheme();
   return (
     <Box
@@ -94,6 +103,6 @@ const DefaultFallback: React.FC<DefaultFallbackProps> = ({error, errorInfo}) => 
       </Button>
     </Box>
   );
-}
+};
 
 export default ErrorBoundary;

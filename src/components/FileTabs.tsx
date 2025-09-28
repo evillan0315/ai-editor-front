@@ -37,7 +37,7 @@ import {
   openedFile,
   openedFileContent,
   isOpenedFileDirty,
-  openedTabs // import openedTabs
+  openedTabs, // import openedTabs
 } from '@/stores/fileStore';
 import * as path from 'path-browserify';
 

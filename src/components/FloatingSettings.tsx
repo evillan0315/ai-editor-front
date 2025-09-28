@@ -101,7 +101,7 @@ const FloatingSettings: React.FC<FloatingSettingsProps> = ({
   }, [isDragging, isResizing]);
 
   const wrapperStyle = {
-    position: 'fixed' as 'fixed',
+    position: 'fixed' as const,
     left: position.x,
     top: position.y,
     width: size.width,

@@ -11,7 +11,7 @@ import {
   DialogContent,
   AppBar,
   Toolbar,
-  Paper
+  Paper,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useStore } from '@nanostores/react';
@@ -63,10 +63,10 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
     ...(position === 'left' || position === 'right'
       ? { width: isFullScreen ? '100%' : drawerWidth }
       : { height: isFullScreen ? '100%' : drawerWidth }),
-    bgcolor: theme.palette.background.paper,
+    bgcolor: theme.palette.background.default,
     border: `1px solid ${theme.palette.divider}`,
     color: theme.palette.text.primary,
-    overflow: 'auto'
+    overflow: 'auto',
   };
 
   const backdrop = hasBackdrop ? true : false;
@@ -82,8 +82,8 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
       hideBackdrop={backdrop}
       sx={{
         ...(position === 'left' || position === 'right'
-      ? { width: isFullScreen ? '100%' : drawerWidth }
-      : { height: isFullScreen ? '100%' : drawerWidth }),
+          ? { width: isFullScreen ? '100%' : drawerWidth }
+          : { height: isFullScreen ? '100%' : drawerWidth }),
       }}
       PaperProps={{ sx: drawerPaperStyle }}
     >
@@ -160,14 +160,14 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
               </IconButton>
             </Box>
           )}
-          <Paper
+          <Box
             sx={{
               flexGrow: 1,
               overflowY: 'auto',
             }}
           >
             {children}
-          </Paper>
+          </Box>
           {footerActionButton && (
             <Box
               sx={{

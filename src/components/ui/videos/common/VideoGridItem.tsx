@@ -1,6 +1,23 @@
 import React from 'react';
-import { Grid, Card, CardActionArea, CardMedia, CardContent, Typography, Box, Rating, IconButton, Slide, Fab } from '@mui/material';
-import { PlayArrow, Favorite, FavoriteBorder, MoreVert } from '@mui/icons-material';
+import {
+  Grid,
+  Card,
+  CardActionArea,
+  CardMedia,
+  CardContent,
+  Typography,
+  Box,
+  Rating,
+  IconButton,
+  Slide,
+  Fab,
+} from '@mui/material';
+import {
+  PlayArrow,
+  Favorite,
+  FavoriteBorder,
+  MoreVert,
+} from '@mui/icons-material';
 import { MediaFileResponseDto } from '@/types/refactored/media';
 
 interface VideoGridItemProps {
@@ -9,7 +26,10 @@ interface VideoGridItemProps {
   openDetailDialog: (video: MediaFileResponseDto) => void;
   onPlay: (video: MediaFileResponseDto) => void;
   onFavorite: (videoId: string) => void;
-  handleMenuOpen: (event: React.MouseEvent<HTMLElement>, video: MediaFileResponseDto) => void;
+  handleMenuOpen: (
+    event: React.MouseEvent<HTMLElement>,
+    video: MediaFileResponseDto,
+  ) => void;
   handleVideoHover: (videoId: string | null) => void;
   formatDuration: (minutes: number) => string;
 }
@@ -23,8 +43,7 @@ const VideoGridItem: React.FC<VideoGridItemProps> = ({
   handleMenuOpen,
   handleVideoHover,
   formatDuration,
-}) => {
-  return (
+}) => (
     <Grid item xs={12} sm={6} md={4} lg={3} key={video.id}>
       <Card
         sx={{
@@ -40,38 +59,32 @@ const VideoGridItem: React.FC<VideoGridItemProps> = ({
         onMouseLeave={() => handleVideoHover(null)}
       >
         <Box sx={{ position: 'relative' }}>
-    
-            <CardMedia
-              component="img"
-              height="200"
-              image={video.url || ''}
-              alt={video.video?.title}
-              sx={{ objectFit: 'cover' }}
-              onClick={() => openDetailDialog(video)}
-            />
-            <Slide
-              direction="up"
-              in={hoveredVideo === video.id}
-              timeout={300}
+          <CardMedia
+            component="img"
+            height="200"
+            image={video.url || ''}
+            alt={video.video?.title}
+            sx={{ objectFit: 'cover' }}
+            onClick={() => openDetailDialog(video)}
+          />
+          <Slide direction="up" in={hoveredVideo === video.id} timeout={300}>
+            <Fab
+              color="primary"
+              aria-label="play"
+              size="small"
+              sx={{
+                position: 'absolute',
+                bottom: 8,
+                right: 8,
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPlay(video);
+              }}
             >
-              <Fab
-                color="primary"
-                aria-label="play"
-                size="small"
-                sx={{
-                  position: 'absolute',
-                  bottom: 8,
-                  right: 8,
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPlay(video);
-                }}
-              >
-                <PlayArrow />
-              </Fab>
-            </Slide>
-      
+              <PlayArrow />
+            </Fab>
+          </Slide>
         </Box>
         <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
           <Typography gutterBottom variant="h6" noWrap>
@@ -97,9 +110,7 @@ const VideoGridItem: React.FC<VideoGridItemProps> = ({
             readOnly
           />
         </CardContent>
-        <Box
-          sx={{ display: 'flex', justifyContent: 'space-between', p: 1 }}
-        >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1 }}>
           <IconButton
             onClick={() => onFavorite(video.id)}
             color={video.video?.rating ? 'error' : 'default'}
@@ -107,16 +118,12 @@ const VideoGridItem: React.FC<VideoGridItemProps> = ({
           >
             {video.video?.rating ? <Favorite /> : <FavoriteBorder />}
           </IconButton>
-          <IconButton
-            onClick={(e) => handleMenuOpen(e, video)}
-            size="small"
-          >
+          <IconButton onClick={(e) => handleMenuOpen(e, video)} size="small">
             <MoreVert />
           </IconButton>
         </Box>
       </Card>
     </Grid>
   );
-};
 
 export default VideoGridItem;

@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Box, Typography, CircularProgress, Alert, useTheme } from '@mui/material';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  useTheme,
+} from '@mui/material';
 import { useStore } from '@nanostores/react';
 import {
   $mediaStore,
@@ -8,12 +14,10 @@ import {
   setPlaying, // Now directly controls playback via mediaStore
   setCurrentTrack,
   isPlayingAtom,
-  currentTrackAtom
+  currentTrackAtom,
 } from '@/stores/mediaStore';
 
-import {
-  fetchMediaFiles,
-} from '@/api/media'
+import { fetchMediaFiles } from '@/api/media';
 import { MediaFileResponseDto, FileType } from '@/types/refactored/media';
 import { mapMediaFileToTrack } from '@/utils/mediaUtils';
 import { authStore } from '@/stores/authStore';
@@ -30,8 +34,14 @@ interface SpotifyHomePageProps {
 const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   const theme = useTheme();
   const { isLoggedIn } = useStore(authStore); // Get login status
-  const { loading: isFetchingMedia, error: fetchMediaError, playlists: storedMediaFiles, allAvailableMediaFiles } = useStore($mediaStore);
-  const [allAvailableMediaFilesState, setAllAvailableMediaFilesState] = useState<MediaFileResponseDto[]>([]);
+  const {
+    loading: isFetchingMedia,
+    error: fetchMediaError,
+    playlists: storedMediaFiles,
+    allAvailableMediaFiles,
+  } = useStore($mediaStore);
+  const [allAvailableMediaFilesState, setAllAvailableMediaFilesState] =
+    useState<MediaFileResponseDto[]>([]);
 
   // Directly get isPlaying and currentTrack from their respective atoms
   const isPlaying = useStore(isPlayingAtom);
@@ -57,7 +67,6 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
       }
       setHasFetchedMedia(true);
       setLoading(false);
-
     } catch (error: any) {
       setError(error.message || error);
       setLoading(false);
@@ -69,7 +78,6 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
     }
   }, [isLoggedIn]);
 
-
   useEffect(() => {
     // Fetch media files when the component mounts if not already fetched
     // Use 'general' purpose to populate allAvailableMediaFiles, with reset: true
@@ -78,43 +86,47 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
     }
   }, [fetchMediaForPurpose, hasFetchedMedia, isFetchingMedia]);
 
-
   useEffect(() => {
     if (storedMediaFiles) {
-      setAllAvailableMediaFilesState(storedMediaFiles as MediaFileResponseDto[])
+      setAllAvailableMediaFilesState(
+        storedMediaFiles as MediaFileResponseDto[],
+      );
     }
-
-  }, [storedMediaFiles])
+  }, [storedMediaFiles]);
 
   // Filter for audio files
-  const playableAudioTracks: MediaFileResponseDto[] = useMemo(() => {
-    return allAvailableMediaFilesState.filter(media => media.fileType === FileType.AUDIO);
-  }, [allAvailableMediaFilesState]);
+  const playableAudioTracks: MediaFileResponseDto[] = useMemo(() => allAvailableMediaFilesState.filter(
+      (media) => media.fileType === FileType.AUDIO,
+    ), [allAvailableMediaFilesState]);
 
   // Filter for video files
-  const playableVideoTracks: MediaFileResponseDto[] = useMemo(() => {
-    return allAvailableMediaFilesState.filter(media => media.fileType === FileType.VIDEO);
-  }, [allAvailableMediaFilesState]);
+  const playableVideoTracks: MediaFileResponseDto[] = useMemo(() => allAvailableMediaFilesState.filter(
+      (media) => media.fileType === FileType.VIDEO,
+    ), [allAvailableMediaFilesState]);
 
   const handlePlayAudio = useCallback((song: MediaFileResponseDto) => {
     setCurrentTrack(song); // Set the track
-    setPlaying(true);     // Trigger playback via mediaStore (user gesture)
+    setPlaying(true); // Trigger playback via mediaStore (user gesture)
   }, []);
 
   const handlePlayVideo = useCallback((video: MediaFileResponseDto) => {
     setCurrentTrack(video); // Set the track
-    setPlaying(true);     // Trigger playback via mediaStore (user gesture)
+    setPlaying(true); // Trigger playback via mediaStore (user gesture)
   }, []);
 
   const toggleFavoriteSong = useCallback((songId: string) => {
-    setFavoriteSongs(prev =>
-      prev.includes(songId) ? prev.filter(id => id !== songId) : [...prev, songId]
+    setFavoriteSongs((prev) =>
+      prev.includes(songId)
+        ? prev.filter((id) => id !== songId)
+        : [...prev, songId],
     );
   }, []);
 
   const toggleFavoriteVideo = useCallback((videoId: string) => {
-    setFavoriteVideos(prev =>
-      prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]
+    setFavoriteVideos((prev) =>
+      prev.includes(videoId)
+        ? prev.filter((id) => id !== videoId)
+        : [...prev, videoId],
     );
   }, []);
 
@@ -128,9 +140,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
     // Implement other actions like trailer, watchlist, download, etc.l
   };
 
-
-  const audioList = useMemo(() => {
-    return playableAudioTracks.map((mediaFile) => {
+  const audioList = useMemo(() => playableAudioTracks.map((mediaFile) => {
       const track = mapMediaFileToTrack(mediaFile);
       return {
         id: track.id,
@@ -143,11 +153,9 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
         thumbnail: track.coverArt,
         year: 2023,
       };
-    });
-  }, [playableAudioTracks, favoriteSongs]);
+    }), [playableAudioTracks, favoriteSongs]);
 
-  const videoList = useMemo(() => {
-    return playableVideoTracks.map((mediaFile) => {
+  const videoList = useMemo(() => playableVideoTracks.map((mediaFile) => {
       const track = mapMediaFileToTrack(mediaFile);
       return {
         id: track.id,
@@ -160,22 +168,20 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
         year: 2013,
         rating: 4.2,
       };
-    });
-  }, [playableVideoTracks, favoriteVideos]);
+    }), [playableVideoTracks, favoriteVideos]);
 
-
-
-  const noPlayableMedia = playableAudioTracks.length === 0 && playableVideoTracks.length === 0;
+  const noPlayableMedia =
+    playableAudioTracks.length === 0 && playableVideoTracks.length === 0;
 
   if (fetchMediaError) {
     return (
-      <Alert severity='error'>Error loading media: {fetchMediaError}</Alert>
+      <Alert severity="error">Error loading media: {fetchMediaError}</Alert>
     );
   }
 
   if (noPlayableMedia) {
     return (
-      <Alert severity='info'>
+      <Alert severity="info">
         No playable audio or video files found. Upload some via the AI Editor or
         backend.
       </Alert>
@@ -184,11 +190,11 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
 
   return (
     <Box>
-      <Typography variant='h4' sx={{ fontWeight: 'bold', mb: 3 }}>
+      <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 3 }}>
         Good evening
       </Typography>
 
-      <Typography variant='h5' sx={{ fontWeight: 'bold', mt: 4, mb: 2 }}>
+      <Typography variant="h5" sx={{ fontWeight: 'bold', mt: 4, mb: 2 }}>
         All Available Audio Tracks
       </Typography>
       <SongList
@@ -198,7 +204,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
         onAction={handleSongAction}
       />
 
-      <Typography variant='h5' sx={{ fontWeight: 'bold', mt: 4, mb: 2 }}>
+      <Typography variant="h5" sx={{ fontWeight: 'bold', mt: 4, mb: 2 }}>
         All Available Video Tracks
       </Typography>
       <VideoList
@@ -207,7 +213,6 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
         onFavorite={toggleFavoriteVideo}
         onAction={handleVideoAction}
       />
-
     </Box>
   );
 };

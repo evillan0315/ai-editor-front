@@ -22,18 +22,20 @@ const AiPromptGeneratorBody: React.FC<AiPromptGeneratorBodyProps> = () => {
       <Box mt={2} className="flex-grow overflow-auto px-4 ">
         {$aiChat.messages.map((message, index) => (
           <Box
-            id='ai-chat-message-wrapper'
+            id="ai-chat-message-wrapper"
             key={index}
             mt={1}
             className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
           >
             <Box
-              className={`rounded-lg p-2 ${message.role === 'user'
-                ? `text-right`
-                : 'text-left mb-2'
-                }`}
+              className={`rounded-lg p-2 ${
+                message.role === 'user' ? `text-right` : 'text-left mb-2'
+              }`}
               sx={{
-                backgroundColor: message.role === 'user' ? theme.palette.background.default : theme.palette.background.paper,
+                backgroundColor:
+                  message.role === 'user'
+                    ? theme.palette.background.default
+                    : theme.palette.background.paper,
               }}
             >
               <strong>{message.role === 'user' ? 'You:' : 'AI:'}</strong>
@@ -42,9 +44,7 @@ const AiPromptGeneratorBody: React.FC<AiPromptGeneratorBodyProps> = () => {
                   {message.text}
                 </ReactMarkdownWithCodeCopy>
               )}
-              {message.role === 'user' && (
-                <Box ml={1}>{message.text}</Box>
-              )}
+              {message.role === 'user' && <Box ml={1}>{message.text}</Box>}
             </Box>
           </Box>
         ))}

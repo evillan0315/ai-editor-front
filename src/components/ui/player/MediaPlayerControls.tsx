@@ -33,7 +33,7 @@ import {
   shuffleAtom,
   currentTrackAtom,
   $mediaStore,
-  setPlaying
+  setPlaying,
 } from '@/stores/mediaStore';
 
 interface MediaPlayerControlsProps {
@@ -41,7 +41,7 @@ interface MediaPlayerControlsProps {
 }
 
 const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
-  mediaElementRef
+  mediaElementRef,
 }) => {
   const theme = useTheme();
   const { loading } = useStore($mediaStore);
@@ -98,35 +98,35 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
 
   return (
     <Box
-      sx={{ display: 'flex',
+      sx={{
+        display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         flexGrow: 1,
         maxWidth: '600px',
-        width: '38%'
+        width: '38%',
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
         <IconButton
-          size='small'
+          size="small"
           sx={{ color: theme.palette.text.primary }}
           onClick={toggleShuffle}
         >
-          <Shuffle fontSize='small' color={shuffle ? 'primary' : 'inherit'} />
+          <Shuffle fontSize="small" color={shuffle ? 'primary' : 'inherit'} />
         </IconButton>
         <IconButton
-          size='small'
+          size="small"
           sx={{ color: theme.palette.text.primary }}
           onClick={handlePrevious}
         >
-          <SkipPrevious fontSize='small' />
+          <SkipPrevious fontSize="small" />
         </IconButton>
         <IconButton
-          size='large'
+          size="large"
           onClick={handlePlayPause}
           disabled={$isLoading}
-          sx={
-            {
+          sx={{
             color: theme.palette.text.primary,
             bgcolor: theme.palette.primary.main,
             '&:hover': {
@@ -135,57 +135,52 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
             borderRadius: '50%',
             width: 48,
             height: 48,
-          }
-          }
+          }}
         >
           {$isLoading ? (
-            <CircularProgress size={24} color='inherit' />
+            <CircularProgress size={24} color="inherit" />
           ) : isPlaying ? (
-            <Pause fontSize='large' />
+            <Pause fontSize="large" />
           ) : (
-            <PlayArrow fontSize='large' />
+            <PlayArrow fontSize="large" />
           )}
         </IconButton>
         <IconButton
-          size='small'
+          size="small"
           sx={{ color: theme.palette.text.primary }}
           onClick={handleNext}
         >
-          <SkipNext fontSize='small' />
+          <SkipNext fontSize="small" />
         </IconButton>
         <IconButton
-          size='small'
+          size="small"
           sx={{ color: theme.palette.text.primary }}
           onClick={toggleRepeat}
         >
           {repeatMode === 'track' ? (
-            <RepeatOne fontSize='small' color='primary' />
+            <RepeatOne fontSize="small" color="primary" />
           ) : (
             <Repeat
-              fontSize='small'
+              fontSize="small"
               color={repeatMode === 'context' ? 'primary' : 'inherit'}
             />
           )}
         </IconButton>
       </Box>
       <Box
-        sx={{ width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-        }}
+        sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 1 }}
       >
-        <Typography variant='caption' color='text.secondary'>
+        <Typography variant="caption" color="text.secondary">
           {formatTime(trackProgress)}
         </Typography>
         <Slider
-          size='small'
+          size="small"
           value={trackProgress ?? 0}
           onChange={handleTimeChange}
           onChangeCommitted={handleTimeChangeCommitted}
           min={0}
           max={duration ?? 0}
-          aria-label='Track progress'
+          aria-label="Track progress"
           sx={{
             color: theme.palette.primary.main,
             height: 4,
@@ -197,7 +192,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
           }}
           disabled={!currentTrack}
         />
-        <Typography variant='caption' color='text.secondary'>
+        <Typography variant="caption" color="text.secondary">
           {formatTime(duration)}
         </Typography>
       </Box>

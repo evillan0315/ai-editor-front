@@ -8,7 +8,6 @@ import {
   PaginationOrganizationResultDto,
 } from '@/types';
 
-
 /**
  * Creates a new organization.
  */
@@ -16,7 +15,7 @@ export const createOrganization = async (
   dto: CreateOrganizationDto,
 ): Promise<Organization> => {
   try {
-    const response = await fetchWithAuth( `${API_BASE_URL}/organization`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/organization`, {
       method: 'POST',
       body: JSON.stringify(dto),
     });
@@ -32,7 +31,6 @@ export const createOrganization = async (
  */
 export const getOrganizations = async (): Promise<Organization[]> => {
   try {
-
     const response = await fetchWithAuth(`${API_BASE_URL}/organization`, {
       method: 'GET',
     });

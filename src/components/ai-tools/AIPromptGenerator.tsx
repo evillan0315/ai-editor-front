@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { useStore } from '@nanostores/react';
-import { aiChatStore, addMessage, setLoading, setError } from '@/stores/aiChatStore';
+import {
+  aiChatStore,
+  addMessage,
+  setLoading,
+  setError,
+} from '@/stores/aiChatStore';
 import { ErrorMessage, SuccessMessage } from '@/types/ai';
 import {
   Accordion,
@@ -21,7 +26,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 // You need to provide these components or stub them out in your project
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import BottomToolbar from '@/components/code-generator/BottomToolbar';
-
 
 // import useHandleMessages from '@/hooks/useHandleMessages';
 import { generateText } from '@/api/ai';
@@ -63,7 +67,8 @@ const AIPromptGenerator: React.FC = () => {
   const [projectInput, setProjectInput] = useState('');
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] = useState(false);
+  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] =
+    useState(false);
   const [isScanPathsDialogOpen, setIsScanPathsDialogOpen] = useState(false);
   const updateScanPaths = () => {};
   const handleLoadProject = () => {};
@@ -75,7 +80,10 @@ const AIPromptGenerator: React.FC = () => {
       setLoading(true);
       addMessage({ role: 'user', text: instruction.trim() });
       try {
-        const data: GenerateTextDto = { prompt: instruction.trim(), systemInstruction };
+        const data: GenerateTextDto = {
+          prompt: instruction.trim(),
+          systemInstruction,
+        };
         const response = await generateText(data);
         addMessage({ role: 'model', text: response });
         // await sendMessage(instruction.trim());
@@ -154,7 +162,6 @@ const AIPromptGenerator: React.FC = () => {
             {$aiChat.loading ? <CircularProgress size={16} /> : <SendIcon />}
           </IconButton>
         </Tooltip>
-       
       </Box>
 
       {$aiChat.loading && (
@@ -182,8 +189,6 @@ const AIPromptGenerator: React.FC = () => {
         handleClear={handleClear}
         requestType={`TEXT_ONLY`}
       />
-
-      
     </Box>
   );
 };

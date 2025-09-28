@@ -1,21 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  Box,
-  IconButton,
-  Slider,
-  useTheme,
-} from '@mui/material';
-import {
-  VolumeUp,
-  VolumeOff,
-  VolumeDown,
-} from '@mui/icons-material';
+import { Box, IconButton, Slider, useTheme } from '@mui/material';
+import { VolumeUp, VolumeOff, VolumeDown } from '@mui/icons-material';
 
 interface MediaPlayerVolumeControlProps {
   mediaRef: React.RefObject<HTMLMediaElement>;
 }
 
-const MediaPlayerVolumeControl: React.FC<MediaPlayerVolumeControlProps> = ({ mediaRef }) => {
+const MediaPlayerVolumeControl: React.FC<MediaPlayerVolumeControlProps> = ({
+  mediaRef,
+}) => {
   const theme = useTheme();
   const [volume, setVolume] = useState(1);
 
@@ -66,23 +59,23 @@ const MediaPlayerVolumeControl: React.FC<MediaPlayerVolumeControlProps> = ({ med
         alignItems: 'center',
         justifyContent: 'flex-end',
         minWidth: '180px',
-        width: '30%'
+        width: '30%',
       }}
     >
       <IconButton
-        size='small'
+        size="small"
         sx={{ color: theme.palette.text.primary }}
         onClick={handleMute}
       >
         {isMuted || internalVolume === 0 ? <VolumeOff /> : <VolumeUp />}
       </IconButton>
       <Slider
-        size='small'
+        size="small"
         value={internalVolume * 100 ?? 0}
         onChange={handleVolumeChange}
         min={0}
         max={100}
-        aria-label='Volume'
+        aria-label="Volume"
         sx={{
           width: 100,
           color: theme.palette.primary.main,

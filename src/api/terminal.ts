@@ -1,7 +1,6 @@
 import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
 import { TerminalCommandResponse, ProjectScriptsResponse } from '@/types';
 
-
 /**
  * Executes a terminal command on the backend.
  * @param command The shell command string to execute.

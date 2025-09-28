@@ -1,5 +1,12 @@
 import React, { ReactNode } from 'react';
-import { Box, useTheme, AppBar, Toolbar, IconButton, Typography } from '@mui/material';
+import {
+  Box,
+  useTheme,
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 interface PageLayoutProps {
   header?: ReactNode;
@@ -44,15 +51,17 @@ const PageLayout: React.FC<PageLayoutProps> = ({
       className="h-screen flex flex-col overflow-hidden"
       sx={{ backgroundColor: theme.palette.background.default }}
     >
-      {header && 
-      <AppBar sx={{ position: 'relative', p: 0, '& .MuiToolbar-root': { p:0, minHeight: 20 } }}>
-            <Toolbar >
-              {header}
-            </Toolbar>
-          </AppBar>
-
-      
-      }
+      {header && (
+        <AppBar
+          sx={{
+            position: 'relative',
+            p: 0,
+            '& .MuiToolbar-root': { p: 0, minHeight: 20 },
+          }}
+        >
+          <Toolbar>{header}</Toolbar>
+        </AppBar>
+      )}
 
       <Box className="flex-grow w-full overflow-auto" sx={bodyStyles}>
         {body}

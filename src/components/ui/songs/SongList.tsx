@@ -1,10 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Box,
-  Typography,
-  Chip,
-  IconButton,
-} from '@mui/material';
+import { Box, Typography, Chip, IconButton } from '@mui/material';
 import {
   LibraryMusic,
   ViewList,
@@ -17,7 +12,6 @@ import { SongListItem } from './SongListItem';
 import { SongGridItem } from './SongGridItem';
 import { SongThumbItem } from './SongThumbItem';
 import { SongListControls } from './SongListControls';
-
 
 // Types
 interface MenuItem {
@@ -75,14 +69,18 @@ const SongList: React.FC<SongListProps> = ({
     () =>
       songs
         .filter((song) => {
-          const matchesSearch = (
-            song.song?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          const matchesSearch =
+            song.song?.title
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
             ''.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            ''.toLowerCase().includes(searchQuery.toLowerCase())
-          );
+            ''.toLowerCase().includes(searchQuery.toLowerCase());
 
-          const matchesGenre = song.metadata && song.metadata[0] && song.metadata[0].tags ?
-            selectedGenre === 'all' || song.metadata[0].tags.includes(selectedGenre) : selectedGenre === 'all';
+          const matchesGenre =
+            song.metadata && song.metadata[0] && song.metadata[0].tags
+              ? selectedGenre === 'all' ||
+                song.metadata[0].tags.includes(selectedGenre)
+              : selectedGenre === 'all';
 
           return matchesSearch && matchesGenre;
         })
@@ -90,7 +88,9 @@ const SongList: React.FC<SongListProps> = ({
           const modifier = sortOrder === 'asc' ? 1 : -1;
 
           if (sortField === 'duration') {
-            return ((a.song?.duration || 0) - (b.song?.duration || 0)) * modifier;
+            return (
+              ((a.song?.duration || 0) - (b.song?.duration || 0)) * modifier
+            );
           }
 
           // Handle optional year field
@@ -101,8 +101,8 @@ const SongList: React.FC<SongListProps> = ({
           }
 
           // For string fields (title, artist, album)
-          const aValue = a.song ? a.song.title ?? '' : '';
-          const bValue = b.song ? b.song.title ?? '' : '';
+          const aValue = a.song ? (a.song.title ?? '') : '';
+          const bValue = b.song ? (b.song.title ?? '') : '';
 
           if (aValue < bValue) return -1 * modifier;
           if (aValue > bValue) return 1 * modifier;

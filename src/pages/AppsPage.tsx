@@ -16,7 +16,6 @@ import { Link } from 'react-router-dom';
 import { AppDefinition } from '@/types'; // Import AppDefinition
 import { appDefinitions } from '@/constants/appDefinitions'; // New: Import appDefinitions
 
-
 interface AppCardProps {
   app: AppDefinition;
 }
@@ -82,13 +81,13 @@ const AppsPage: React.FC = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4, flexGrow: 1 }}>
       <AppsIcon sx={{ fontSize: 60, color: theme.palette.secondary.main }} />
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-          Applications
-        </Typography>
-        <Typography variant="body1" color="text.secondary" align="center">
-          Discover and launch various AI-powered tools and features to enhance
-          your development workflow.
-        </Typography>
+      <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+        Applications
+      </Typography>
+      <Typography variant="body1" color="text.secondary" align="center">
+        Discover and launch various AI-powered tools and features to enhance
+        your development workflow.
+      </Typography>
       <Paper
         elevation={3}
         sx={{
@@ -102,9 +101,7 @@ const AppsPage: React.FC = () => {
           gap: 3,
         }}
       >
-        
         <Box sx={{ mt: 3, width: '100%' }}>
- 
           {Object.entries(categorizedApps).map(([category, apps]) => (
             <Box key={category} sx={{ mb: 4 }}>
               <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>

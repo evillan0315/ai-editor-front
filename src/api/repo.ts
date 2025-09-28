@@ -1,1 +1,1 @@
-// Git and repository functions 
+// Git and repository functions

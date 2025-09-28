@@ -24,6 +24,6 @@ export interface SchemaProperty {
   showOptions?: boolean; // Controls visibility of advanced options for THIS property
   showChildren?: boolean; // Controls visibility of nested properties (for array/object types)
   xOrder?: number; // Custom property for UI ordering
-  xClassNames?: string; // Custom property for UI CSS classes (e.g., Tailwind)
-  xLayout?: string; // Custom property for UI layout of children (e.g., Tailwind grid classes)
+  xClassNames?: string; // Custom property for UI CSS classes (supports Tailwind classes)
+  xLayout?: string; // Custom property for UI layout of children (supports Tailwind grid/flex classes)
 }

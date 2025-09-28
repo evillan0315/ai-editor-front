@@ -13,14 +13,17 @@ export const fetchScannedFilesForAI = async (
   scanPaths: string[],
 ): Promise<ApiFileScanResult[]> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/file/list?directory=${projectRoot}&recursive=false`, {
-      method: 'POST',
-      body: JSON.stringify({
-        scanPaths: scanPaths,
-        projectRoot: projectRoot,
-        verbose: false,
-      }),
-    });
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/file/list?directory=${projectRoot}&recursive=false`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          scanPaths: scanPaths,
+          projectRoot: projectRoot,
+          verbose: false,
+        }),
+      },
+    );
     return handleResponse<ApiFileScanResult[]>(response);
   } catch (error) {
     console.error('Error fetching project files for AI scan:', error);

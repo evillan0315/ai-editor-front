@@ -8,8 +8,5 @@ import { getFileStreamUrl } from '@/api/media';
 export const mapMediaFileToTrack = (mediaFile: MediaFileResponseDto): Track => {
   console.log(mediaFile, 'mediaFile mapMediaFileToTrack');
 
-
-  return {
-
-  };
+  return {};
 };

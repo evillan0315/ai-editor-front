@@ -1,15 +1,6 @@
 import React from 'react';
-import {
-  Box,
-  IconButton,
-  Typography,
-  useTheme,
-} from '@mui/material';
-import {
-  FavoriteBorder,
-  Album,
-  Movie,
-} from '@mui/icons-material';
+import { Box, IconButton, Typography, useTheme } from '@mui/material';
+import { FavoriteBorder, Album, Movie } from '@mui/icons-material';
 import { useStore } from '@nanostores/react';
 import { currentTrackAtom } from '@/stores/mediaStore';
 
@@ -17,7 +8,9 @@ interface MediaPlayerTrackInfoProps {
   mediaType: 'AUDIO' | 'VIDEO';
 }
 
-const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({ mediaType }) => {
+const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({
+  mediaType,
+}) => {
   const theme = useTheme();
   const currentTrack = useStore(currentTrackAtom);
 
@@ -27,7 +20,7 @@ const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({ mediaType }
         display: 'flex',
         alignItems: 'center',
         minWidth: '180px',
-        maxWidth: '30%'
+        maxWidth: '30%',
       }}
     >
       {currentTrack?.fileType === 'VIDEO' ? (
@@ -40,19 +33,19 @@ const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({ mediaType }
         />
       )}
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-        <Typography variant='body2' sx={{ fontWeight: 'bold' }}>
+        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
           {currentTrack?.song?.title}
         </Typography>
-        <Typography variant='caption' color='text.secondary'>
+        <Typography variant="caption" color="text.secondary">
           {currentTrack?.metadata?.[0]?.tags?.join(', ')}
         </Typography>
       </Box>
       <IconButton
-        size='small'
+        size="small"
         sx={{ ml: 2, color: theme.palette.text.secondary }}
         disabled
       >
-        <FavoriteBorder fontSize='small' />
+        <FavoriteBorder fontSize="small" />
       </IconButton>
     </Box>
   );

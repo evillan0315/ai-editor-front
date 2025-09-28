@@ -64,7 +64,8 @@ export function Recording() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedRecording, setSelectedRecording] = useState<RecordingItem | null>(null);
+  const [selectedRecording, setSelectedRecording] =
+    useState<RecordingItem | null>(null);
   const [editableRecording, setEditableRecording] = useState<
     Partial<RecordingItem>
   >({});
@@ -72,8 +73,12 @@ export function Recording() {
 
   // State for VideoModal / MediaModal
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-  const [currentPlayingVideoSrc, setCurrentPlayingVideoSrc] = useState<string | null>(null);
-  const [currentPlayingMediaType, setCurrentPlayingMediaType] = useState<'video' | 'gif'>('video');
+  const [currentPlayingVideoSrc, setCurrentPlayingVideoSrc] = useState<
+    string | null
+  >(null);
+  const [currentPlayingMediaType, setCurrentPlayingMediaType] = useState<
+    'video' | 'gif'
+  >('video');
   const mediaElementRef = useRef<HTMLVideoElement | HTMLImageElement>(null); // Ref can be either
 
   // Fetch recordings from API
@@ -112,7 +117,13 @@ export function Recording() {
 
   useEffect(() => {
     fetchRecordings();
-  }, [fetchRecordings, isScreenRecording, currentRecordingId, isCameraRecording, currentCameraRecordingId]); // Add camera recording states
+  }, [
+    fetchRecordings,
+    isScreenRecording,
+    currentRecordingId,
+    isCameraRecording,
+    currentCameraRecordingId,
+  ]); // Add camera recording states
 
   // Screen Recording actions
   const handleStartScreenRecording = async () => {
@@ -224,9 +235,12 @@ export function Recording() {
     }
   };
 
-  const handlePlayerReady = useCallback((_htmlMediaElement: HTMLVideoElement) => {
-    // Can be used to perform actions when the video player is ready
-  }, []);
+  const handlePlayerReady = useCallback(
+    (_htmlMediaElement: HTMLVideoElement) => {
+      // Can be used to perform actions when the video player is ready
+    },
+    [],
+  );
 
   const handleEdit = (id: string) => recordingApi.editRecording?.(id);
 

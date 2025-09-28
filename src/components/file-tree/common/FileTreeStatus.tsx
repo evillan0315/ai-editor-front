@@ -1,5 +1,11 @@
 import React from 'react';
-import { Box, Typography, CircularProgress, Alert, useTheme } from '@mui/material';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  useTheme,
+} from '@mui/material';
 
 interface FileTreeStatusProps {
   isFetchingTree: boolean;

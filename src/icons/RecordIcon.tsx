@@ -1,7 +1,6 @@
 import React from 'react';
 
-export const RecordIcon: React.FC = () => {
-  return (
+export const RecordIcon: React.FC = () => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="24"
@@ -16,4 +15,3 @@ export const RecordIcon: React.FC = () => {
       <circle cx="12" cy="12" r="10"></circle>
     </svg>
   );
-};

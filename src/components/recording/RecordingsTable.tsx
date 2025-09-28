@@ -40,7 +40,10 @@ const tableContainerSx: SxProps<Theme> = (theme) => ({
 });
 
 const tableHeadSx: SxProps<Theme> = (theme) => ({
-  backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.primary.light,
+  backgroundColor:
+    theme.palette.mode === 'dark'
+      ? theme.palette.grey[800]
+      : theme.palette.primary.light,
 });
 
 const tableHeaderCellSx: SxProps<Theme> = (theme) => ({
@@ -120,17 +123,26 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
               sx={tableHeaderCellSx(theme)}
               onClick={() => onSort('createdAt')}
             >
-              Created At {sortBy === 'createdAt' && (sortOrder === 'asc' ? '▲' : '▼')}
+              Created At{' '}
+              {sortBy === 'createdAt' && (sortOrder === 'asc' ? '▲' : '▼')}
             </TableCell>
-            <TableCell sx={{ ...tableHeaderCellSx(theme), textAlign: 'right' }}>Actions</TableCell>
+            <TableCell sx={{ ...tableHeaderCellSx(theme), textAlign: 'right' }}>
+              Actions
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody sx={{ backgroundColor: theme.palette.background.default }}>
           {recordings.map((recording) => (
             <TableRow key={recording.id} sx={tableBodyRowSx(theme)}>
-              <TableCell sx={tableBodyCellSx(theme)}>{recording.name}</TableCell>
-              <TableCell sx={tableBodyCellSx(theme)}>{recording.type}</TableCell>
-              <TableCell sx={tableBodyCellSx(theme)}>{recording.status}</TableCell>
+              <TableCell sx={tableBodyCellSx(theme)}>
+                {recording.name}
+              </TableCell>
+              <TableCell sx={tableBodyCellSx(theme)}>
+                {recording.type}
+              </TableCell>
+              <TableCell sx={tableBodyCellSx(theme)}>
+                {recording.status}
+              </TableCell>
               <TableCell sx={tableBodyCellSx(theme)}>
                 {formatBytes(recording.sizeBytes)}
               </TableCell>
@@ -139,16 +151,18 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
               </TableCell>
               <TableCell sx={{ ...tableBodyCellSx(theme), textAlign: 'right' }}>
                 <Box className="flex justify-end space-x-2">
-                  {recording.type === 'screenRecord' && !recording.data?.animatedGif && (
-                    <IconButton
-                      onClick={() => onConvertToGif(recording)}
-                      color="primary"
-                      title="Convert to GIF"
-                    >
-                      <GifIcon />
-                    </IconButton>
-                  )}
-                  {(recording.type === 'screenRecord' || recording.type === 'cameraRecord') && (
+                  {recording.type === 'screenRecord' &&
+                    !recording.data?.animatedGif && (
+                      <IconButton
+                        onClick={() => onConvertToGif(recording)}
+                        color="primary"
+                        title="Convert to GIF"
+                      >
+                        <GifIcon />
+                      </IconButton>
+                    )}
+                  {(recording.type === 'screenRecord' ||
+                    recording.type === 'cameraRecord') && (
                     <IconButton
                       onClick={() => onPlay(recording)}
                       color="primary"
@@ -163,12 +177,19 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
                       color="primary"
                       title="View Screenshot"
                     >
-                      <PlayArrowIcon /> {/* Re-using PlayArrow for consistency, but means 'view' */}
+                      <PlayArrowIcon />{' '}
+                      {/* Re-using PlayArrow for consistency, but means 'view' */}
                     </IconButton>
                   )}
                   {recording.data?.animatedGif && (
                     <IconButton
-                      onClick={() => onPlay({ ...recording, path: recording.data.animatedGif!, type: 'animatedGif' })} // Pass a modified recording item for GIF playback
+                      onClick={() =>
+                        onPlay({
+                          ...recording,
+                          path: recording.data.animatedGif!,
+                          type: 'animatedGif',
+                        })
+                      } // Pass a modified recording item for GIF playback
                       color="primary"
                       title="View Animated GIF"
                     >

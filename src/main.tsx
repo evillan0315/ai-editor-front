@@ -34,4 +34,3 @@ const Root = () => {
 };
 
 ReactDOM.createRoot(rootElement).render(<Root />);
-

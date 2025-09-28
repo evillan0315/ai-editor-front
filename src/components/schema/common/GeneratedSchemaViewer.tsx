@@ -25,97 +25,98 @@ interface GeneratedSchemaViewerProps {
 
 // Sample JSON Schema for demonstration
 const SAMPLE_JSON_SCHEMA: JsonSchema = {
-  "type": "object",
-  "$id": "https://example.com/project-metadata.schema.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Software Project Metadata",
-  "description": "A schema defining the structure for a software project's metadata.",
-  "properties": {
-    "projectName": {
-      "type": "string",
-      "title": "Project Name",
-      "description": "The name of the software project.",
-      "default": "My Awesome Project"
+  type: 'object',
+  $id: 'https://example.com/project-metadata.schema.json',
+  $schema: 'http://json-schema.org/draft-07/schema#',
+  title: 'Software Project Metadata',
+  description:
+    "A schema defining the structure for a software project's metadata.",
+  properties: {
+    projectName: {
+      type: 'string',
+      title: 'Project Name',
+      description: 'The name of the software project.',
+      default: 'My Awesome Project',
     },
-    "version": {
-      "type": "string",
-      "title": "Version",
-      "default": "1.0.0"
+    version: {
+      type: 'string',
+      title: 'Version',
+      default: '1.0.0',
     },
-    "isPublic": {
-      "type": "boolean",
-      "title": "Is Public?",
-      "description": "Indicates if the project is publicly accessible.",
-      "default": false
+    isPublic: {
+      type: 'boolean',
+      title: 'Is Public?',
+      description: 'Indicates if the project is publicly accessible.',
+      default: false,
     },
-    "teamSize": {
-      "type": "number",
-      "title": "Team Size",
-      "minimum": 1,
-      "default": 5
+    teamSize: {
+      type: 'number',
+      title: 'Team Size',
+      minimum: 1,
+      default: 5,
     },
-    "technologies": {
-      "type": "array",
-      "title": "Technologies Used",
-      "items": {
-        "type": "string"
+    technologies: {
+      type: 'array',
+      title: 'Technologies Used',
+      items: {
+        type: 'string',
       },
-      "default": ["React", "TypeScript", "NestJS"]
+      default: ['React', 'TypeScript', 'NestJS'],
     },
-    "manager": {
-      "type": "object",
-      "title": "Project Manager",
-      "description": "Details about the project manager.",
-      "properties": {
-        "name": { "type": "string", "title": "Manager Name", "default": "John Doe" },
-        "email": { "type": "string", "title": "Manager Email", "format": "email" },
-        "contact": {
-          "type": "object",
-          "title": "Contact Info",
-          "properties": {
-            "phone": { "type": "string", "title": "Phone Number" },
-            "slackId": { "type": "string", "title": "Slack ID" }
-          }
-        }
-      },
-      "required": ["name"]
-    },
-    "startDate": {
-      "type": "string",
-      "title": "Start Date",
-      "format": "date"
-    },
-    "status": {
-      "type": "string",
-      "title": "Project Status",
-      "enum": ["Planning", "In Progress", "Completed", "On Hold"],
-      "default": "Planning"
-    },
-    "projects": {
-      "type": "array",
-      "title": "Related Projects",
-      "description": "List of related sub-projects or modules.",
-      "items": {
-        "type": "object",
-        "title": "Sub-Project",
-        "properties": {
-          "id": { "type": "string", "title": "Sub-Project ID", "format": "uuid" },
-          "name": { "type": "string", "title": "Sub-Project Name" },
-          "budget": { "type": "number", "title": "Budget (USD)", "minimum": 0 },
-          "lead": { "type": "string", "title": "Project Lead" },
-          "tasks": {
-            "type": "array",
-            "title": "Tasks",
-            "items": {
-              "type": "string"
-            }
-          }
+    manager: {
+      type: 'object',
+      title: 'Project Manager',
+      description: 'Details about the project manager.',
+      properties: {
+        name: { type: 'string', title: 'Manager Name', default: 'John Doe' },
+        email: { type: 'string', title: 'Manager Email', format: 'email' },
+        contact: {
+          type: 'object',
+          title: 'Contact Info',
+          properties: {
+            phone: { type: 'string', title: 'Phone Number' },
+            slackId: { type: 'string', title: 'Slack ID' },
+          },
         },
-        "required": ["id", "name"]
-      }
-    }
+      },
+      required: ['name'],
+    },
+    startDate: {
+      type: 'string',
+      title: 'Start Date',
+      format: 'date',
+    },
+    status: {
+      type: 'string',
+      title: 'Project Status',
+      enum: ['Planning', 'In Progress', 'Completed', 'On Hold'],
+      default: 'Planning',
+    },
+    projects: {
+      type: 'array',
+      title: 'Related Projects',
+      description: 'List of related sub-projects or modules.',
+      items: {
+        type: 'object',
+        title: 'Sub-Project',
+        properties: {
+          id: { type: 'string', title: 'Sub-Project ID', format: 'uuid' },
+          name: { type: 'string', title: 'Sub-Project Name' },
+          budget: { type: 'number', title: 'Budget (USD)', minimum: 0 },
+          lead: { type: 'string', title: 'Project Lead' },
+          tasks: {
+            type: 'array',
+            title: 'Tasks',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['id', 'name'],
+      },
+    },
   },
-  "required": ["projectName", "teamSize"],
+  required: ['projectName', 'teamSize'],
 };
 
 const GeneratedSchemaViewer: React.FC<GeneratedSchemaViewerProps> = () => {
@@ -143,16 +144,24 @@ const GeneratedSchemaViewer: React.FC<GeneratedSchemaViewerProps> = () => {
   }, []);
 
   return (
-    <Paper className='p-4 w-full mt-2'>
+    <Paper className="p-4 w-full mt-2">
       <Box className="flex justify-between items-center mb-2">
         <Typography variant="subtitle1" gutterBottom className="mb-0">
           Generated Schema (Editable):
         </Typography>
         <Box>
-          <IconButton aria-label="load sample schema" onClick={handleLoadSampleSchema} size="small">
+          <IconButton
+            aria-label="load sample schema"
+            onClick={handleLoadSampleSchema}
+            size="small"
+          >
             <CodeIcon />
           </IconButton>
-          <IconButton aria-label="toggle form view" onClick={handleToggleView} size="small">
+          <IconButton
+            aria-label="toggle form view"
+            onClick={handleToggleView}
+            size="small"
+          >
             {showDynamicForm ? <CloseIcon /> : <ArticleIcon />}
           </IconButton>
         </Box>
@@ -165,8 +174,8 @@ const GeneratedSchemaViewer: React.FC<GeneratedSchemaViewerProps> = () => {
           language="json"
           filePath="schema.json"
           onChange={handleGeneratedSchemaEditorChange}
-          height='400px'
-          width='100%'
+          height="400px"
+          width="100%"
         />
       )}
     </Paper>

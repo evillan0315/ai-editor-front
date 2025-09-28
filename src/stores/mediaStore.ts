@@ -32,20 +32,15 @@ import {
   transcribeAudio,
   getTranscription,
   getSyncTranscription,
-  getFileStreamUrl
+  getFileStreamUrl,
 } from '@/api/media';
 import { authStore } from './authStore'; // Import authStore for login check
 import { TranscriptionResult, SyncTranscriptionResponse } from '@/types';
 
-
-
 // --- Atoms (Non-persistent for transient playback state, persistent for user preferences) ---
 // Playback state should NOT be persistent to avoid browser autoplay issues on refresh.
 // However, the user explicitly requested these to be persistent.
-export const isPlayingAtom = persistentAtom<boolean>(
-  'media:isPlaying',
-  false,
-);
+export const isPlayingAtom = persistentAtom<boolean>('media:isPlaying', false);
 export const currentTrackAtom = persistentAtom<MediaFileResponseDtoUrl | null>(
   'media:currentTrack',
   null,
@@ -68,7 +63,6 @@ export const repeatModeAtom = persistentAtom<RepeatMode>(
   'off',
 ); // Persistent
 export const shuffleAtom = persistentAtom<boolean>('media:shuffle', false); // Persistent
-
 
 // --- Map Store (Non-persistent for shared playback state) ---
 export const $mediaStore = map({
@@ -117,8 +111,8 @@ export const setPlaying = (isPlaying: boolean) => {
   if (mediaElement) {
     if (isPlaying) {
       // Attempt to play, catch potential autoplay errors
-      mediaElement.play().catch(e => {
-        console.error("Autoplay failed:", e);
+      mediaElement.play().catch((e) => {
+        console.error('Autoplay failed:', e);
         isPlayingAtom.set(false); // Reflect actual playback state if autoplay is blocked
       });
     } else {
@@ -174,8 +168,8 @@ export const toggleRepeat = () => {
 export const setCurrentTrack = (track: MediaFileResponseDto | null) => {
   const newTrack: MediaFileResponseDtoUrl = {
     ...track,
-    streamUrl: getFileStreamUrl(track.path)
-  }
+    streamUrl: getFileStreamUrl(track.path),
+  };
   currentTrackAtom.set(newTrack);
 };
 
@@ -200,7 +194,9 @@ export const nextTrack = async () => {
       return;
     }
 
-    const randomIndex = Math.floor(Math.random() * allAvailableMediaFiles.length);
+    const randomIndex = Math.floor(
+      Math.random() * allAvailableMediaFiles.length,
+    );
     const nextTrack = allAvailableMediaFiles[randomIndex];
     setCurrentTrack(nextTrack);
     setPlaying(true); // Automatically play next track
@@ -239,7 +235,9 @@ export const previousTrack = async () => {
       return;
     }
 
-    const randomIndex = Math.floor(Math.random() * allAvailableMediaFiles.length);
+    const randomIndex = Math.floor(
+      Math.random() * allAvailableMediaFiles.length,
+    );
     const previousTrack = allAvailableMediaFiles[randomIndex];
     setCurrentTrack(previousTrack);
     setPlaying(true); // Automatically play previous track
@@ -254,7 +252,9 @@ export const previousTrack = async () => {
       return;
     }
 
-    const previousIndex = (currentIndex - 1 + allAvailableMediaFiles.length) % allAvailableMediaFiles.length;
+    const previousIndex =
+      (currentIndex - 1 + allAvailableMediaFiles.length) %
+      allAvailableMediaFiles.length;
     const previousTrack = allAvailableMediaFiles[previousIndex];
     setCurrentTrack(previousTrack);
     setPlaying(true); // Automatically play previous track
@@ -343,14 +343,23 @@ export const fetchingMediaFiles = async (query?: PaginationMediaQueryDto) => {
       return media;
     } else {
       // If media or media.items is undefined, handle the case appropriately
-      showGlobalSnackbar('Failed to fetch media files or empty media list', 'warning');
-      $mediaStore.setKey('error', 'Failed to fetch media files or empty media list');
+      showGlobalSnackbar(
+        'Failed to fetch media files or empty media list',
+        'warning',
+      );
+      $mediaStore.setKey(
+        'error',
+        'Failed to fetch media files or empty media list',
+      );
       return null;
     }
   } catch (error: any) {
     $mediaStore.setKey('loading', false);
     // Handle errors and display a snackbar
-    showGlobalSnackbar(`Failed to fetch media files: ${error.message}`, 'error');
+    showGlobalSnackbar(
+      `Failed to fetch media files: ${error.message}`,
+      'error',
+    );
     $mediaStore.setKey('error', error.message);
     return null;
   }

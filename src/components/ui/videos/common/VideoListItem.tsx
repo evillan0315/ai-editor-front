@@ -1,6 +1,19 @@
 import React from 'react';
-import { Box, Card, CardMedia, CardContent, Typography, IconButton, Rating } from '@mui/material';
-import { PlayArrow, Favorite, FavoriteBorder, MoreVert } from '@mui/icons-material';
+import {
+  Box,
+  Card,
+  CardMedia,
+  CardContent,
+  Typography,
+  IconButton,
+  Rating,
+} from '@mui/material';
+import {
+  PlayArrow,
+  Favorite,
+  FavoriteBorder,
+  MoreVert,
+} from '@mui/icons-material';
 import { MediaFileResponseDto } from '@/types/refactored/media';
 
 interface VideoListItemProps {
@@ -8,7 +21,10 @@ interface VideoListItemProps {
   hoveredVideo: string | null;
   onPlay: (video: MediaFileResponseDto) => void;
   onFavorite: (videoId: string) => void;
-  handleMenuOpen: (event: React.MouseEvent<HTMLElement>, video: MediaFileResponseDto) => void;
+  handleMenuOpen: (
+    event: React.MouseEvent<HTMLElement>,
+    video: MediaFileResponseDto,
+  ) => void;
   handleVideoHover: (videoId: string | null) => void;
   formatDuration: (minutes: number) => string;
 }
@@ -21,8 +37,7 @@ const VideoListItem: React.FC<VideoListItemProps> = ({
   handleMenuOpen,
   handleVideoHover,
   formatDuration,
-}) => {
-  return (
+}) => (
     <Card
       key={video.id}
       sx={{
@@ -92,10 +107,7 @@ const VideoListItem: React.FC<VideoListItemProps> = ({
             <IconButton onClick={() => onPlay(video)} size="small">
               <PlayArrow />
             </IconButton>
-            <IconButton
-              onClick={(e) => handleMenuOpen(e, video)}
-              size="small"
-            >
+            <IconButton onClick={(e) => handleMenuOpen(e, video)} size="small">
               <MoreVert />
             </IconButton>
           </Box>
@@ -103,6 +115,5 @@ const VideoListItem: React.FC<VideoListItemProps> = ({
       </Box>
     </Card>
   );
-};
 
 export default VideoListItem;

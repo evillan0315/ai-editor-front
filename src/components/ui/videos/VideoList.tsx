@@ -12,13 +12,18 @@ import {
   ViewModule,
   ViewComfy,
   MoreVert,
-}
-  from '@mui/material';
+} from '@mui/material';
 
 // Types
 import { MediaFileResponseDto } from '@/types/refactored/media';
 
-import { VideoGridItem, VideoListItem, VideoThumbItem, VideoControls, VideoDetailDialog } from './common';
+import {
+  VideoGridItem,
+  VideoListItem,
+  VideoThumbItem,
+  VideoControls,
+  VideoDetailDialog,
+} from './common';
 
 interface MenuItemType {
   label: string;
@@ -37,7 +42,6 @@ interface VideoListProps {
 
 type ViewMode = 'list' | 'grid' | 'thumb';
 type SortField = 'title' | 'year' | 'rating' | 'duration';
-
 
 const VideoList: React.FC<VideoListProps> = ({
   videos,
@@ -63,7 +67,8 @@ const VideoList: React.FC<VideoListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedVideo, setSelectedVideo] = useState<MediaFileResponseDto | null>(null);
+  const [selectedVideo, setSelectedVideo] =
+    useState<MediaFileResponseDto | null>(null);
   const [hoveredVideo, setHoveredVideo] = useState<string | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
@@ -78,7 +83,9 @@ const VideoList: React.FC<VideoListProps> = ({
       videos
         .filter((video) => {
           const matchesSearch =
-            video.video?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            video.video?.title
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
             video.video?.description
               ?.toLowerCase()
               .includes(searchQuery.toLowerCase()) ||
@@ -88,7 +95,9 @@ const VideoList: React.FC<VideoListProps> = ({
               ));
 
           const matchesGenre =
-            selectedGenre === 'all' || video.video?.cast?.includes(selectedGenre) || false;
+            selectedGenre === 'all' ||
+            video.video?.cast?.includes(selectedGenre) ||
+            false;
 
           return matchesSearch && matchesGenre;
         })
@@ -103,12 +112,12 @@ const VideoList: React.FC<VideoListProps> = ({
             if (aValue > bValue) return 1 * modifier;
             return 0;
           } else if (sortField === 'year') {
-            const aYear = a.video ? (a.video.year || 0) : 0;
-            const bYear = b.video ? (b.video.year || 0) : 0;
+            const aYear = a.video ? a.video.year || 0 : 0;
+            const bYear = b.video ? b.video.year || 0 : 0;
             return (aYear - bYear) * modifier;
           } else {
-            const aDuration = a.video ? (a.video.duration || 0) : 0;
-            const bDuration = b.video ? (b.video.duration || 0) : 0;
+            const aDuration = a.video ? a.video.duration || 0 : 0;
+            const bDuration = b.video ? b.video.duration || 0 : 0;
             return (aDuration - bDuration) * modifier;
           }
         }),

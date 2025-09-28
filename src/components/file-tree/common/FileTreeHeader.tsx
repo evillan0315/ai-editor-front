@@ -1,12 +1,9 @@
 import React from 'react';
+import { Box, IconButton, TextField, useTheme, Paper } from '@mui/material';
 import {
-  Box,
-  IconButton,
-  TextField,
-  useTheme,
-  Paper,
-} from '@mui/material';
-import { ArrowUpward as ArrowUpwardIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+  ArrowUpward as ArrowUpwardIcon,
+  Refresh as RefreshIcon,
+} from '@mui/icons-material';
 
 interface FileTreeHeaderProps {
   projectRoot: string;

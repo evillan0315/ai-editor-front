@@ -42,10 +42,10 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ footer }) => {
-  const { loading: authLoading } = useStore(authStore);
+  const { loading: authLoading, isLoggedIn } = useStore(authStore);
   const { loading: llmLoading, isBuilding } = useStore(llmStore);
   const { loading: mediaLoading } = useStore($mediaStore);
-  
+
   const { openedFile } = useStore(fileStore);
 
   // ✅ subscribe to global loading store
@@ -57,7 +57,11 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const isAnyGlobalRequestLoading =
     Object.values(globalLoadingState).some(Boolean);
   const layoutLoader =
-    authLoading || llmLoading || isBuilding || isAnyGlobalRequestLoading || mediaLoading;
+    authLoading ||
+    llmLoading ||
+    isBuilding ||
+    isAnyGlobalRequestLoading ||
+    mediaLoading;
 
   const $isRightSidebarVisible = useStore(isRightSidebarVisible);
   const $isLeftSidebarVisible = useStore(isLeftSidebarVisible);
@@ -158,7 +162,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
         }}
       >
         {/* Left sidebar */}
-        {$isLeftSidebarVisible && (
+        {isLoggedIn && $isLeftSidebarVisible && (
           <>
             <Box
               className="flex-shrink-0 overflow-auto flex flex-col border-r"
@@ -197,7 +201,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
         </Box>
 
         {/* Right sidebar */}
-        {$isRightSidebarVisible && (
+        {isLoggedIn && $isRightSidebarVisible && (
           <>
             {/* Draggable resizer */}
             <Box

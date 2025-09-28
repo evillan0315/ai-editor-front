@@ -1,5 +1,14 @@
 import React from 'react';
-import { Box, Card, CardActionArea, CardMedia, Typography, IconButton, Grow, Rating } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardActionArea,
+  CardMedia,
+  Typography,
+  IconButton,
+  Grow,
+  Rating,
+} from '@mui/material';
 import { Favorite, FavoriteBorder, MoreVert } from '@mui/icons-material';
 import { MediaFileResponseDto } from '@/types/refactored/media';
 
@@ -8,7 +17,10 @@ interface VideoThumbItemProps {
   hoveredVideo: string | null;
   openDetailDialog: (video: MediaFileResponseDto) => void;
   onFavorite: (videoId: string) => void;
-  handleMenuOpen: (event: React.MouseEvent<HTMLElement>, video: MediaFileResponseDto) => void;
+  handleMenuOpen: (
+    event: React.MouseEvent<HTMLElement>,
+    video: MediaFileResponseDto,
+  ) => void;
   handleVideoHover: (videoId: string | null) => void;
   formatDuration: (minutes: number) => string;
 }
@@ -21,8 +33,7 @@ const VideoThumbItem: React.FC<VideoThumbItemProps> = ({
   handleMenuOpen,
   handleVideoHover,
   formatDuration,
-}) => {
-  return (
+}) => (
     <Box
       key={video.id}
       sx={{
@@ -115,6 +126,5 @@ const VideoThumbItem: React.FC<VideoThumbItemProps> = ({
       </Card>
     </Box>
   );
-};
 
 export default VideoThumbItem;

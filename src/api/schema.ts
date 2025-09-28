@@ -41,8 +41,12 @@ export const schemaApi = {
    * @param query Pagination and filter options.
    * @returns A paginated list of schemas.
    */
-  getPaginatedSchemas: async (query: PaginationSchemaQuery): Promise<PaginationSchemaResult> => {
-    const queryString = new URLSearchParams(query as Record<string, string>).toString();
+  getPaginatedSchemas: async (
+    query: PaginationSchemaQuery,
+  ): Promise<PaginationSchemaResult> => {
+    const queryString = new URLSearchParams(
+      query as Record<string, string>,
+    ).toString();
     const url = `${SCHEMA_API_PATH}/paginated?${queryString}`;
     const response = await fetchWithAuth(url);
     return handleResponse<PaginationSchemaResult>(response);
@@ -64,7 +68,10 @@ export const schemaApi = {
    * @param payload The update data for the schema.
    * @returns The updated schema.
    */
-  updateSchema: async (id: string, payload: UpdateSchemaPayload): Promise<Schema> => {
+  updateSchema: async (
+    id: string,
+    payload: UpdateSchemaPayload,
+  ): Promise<Schema> => {
     const response = await fetchWithAuth(`${SCHEMA_API_PATH}/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),

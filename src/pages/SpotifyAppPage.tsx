@@ -84,9 +84,6 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
     resetPlaybackState(); // New: Reset all playback related state
   }, [mediaElementRef]); // resetPlaybackState is now a global action, no need to include in dependency array.
 
-
-  
-
   // Event handlers for the active media element, defined at the top level
   const handleTimeUpdate = useCallback(() => {
     const media = mediaElementRef.current;
@@ -270,66 +267,66 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
   useEffect(() => {
     if (isPlaying && currentTrack && progress > 0 && mediaElementRef.current) {
       mediaElementRef.current.play().catch((e) => {
-        console.error("Autoplay failed:", e);
+        console.error('Autoplay failed:', e);
       });
     }
   }, [isPlaying, currentTrack, mediaElementRef, progress]);
 
   return (
-  <>
-    <Box
-      sx={{ // Outer container, the parent.
-        display: 'grid',
-        gridTemplateAreas: `'sidebar main'
-                          'player player'`,
-        gridTemplateColumns: '250px 1fr',
-        gridTemplateRows: '1fr auto',
-        flexGrow: 1,
-        bgcolor: theme.palette.background.default,
-        color: theme.palette.text.primary,
-        overflow: 'hidden',
-        position: 'relative',
-      }}
-    >
-      <SpotifySidebar currentView={currentView} onSelectView={setCurrentView} />
-
-
+    <>
       <Box
         sx={{
-          gridArea: 'main',
+          // Outer container, the parent.
+          display: 'grid',
+          gridTemplateAreas: `'sidebar main'
+                          'player player'`,
+          gridTemplateColumns: '250px 1fr',
+          gridTemplateRows: '1fr auto',
+          flexGrow: 1,
           bgcolor: theme.palette.background.default,
-          overflowY: 'auto',
+          color: theme.palette.text.primary,
+          overflow: 'hidden',
+          position: 'relative',
         }}
       >
-        <SpotifyMainContent currentView={currentView} />
-      </Box>
-     
-  
-     
-    </Box>
-    <Box className='flex sticky bottom-0 justify-center items-center'>
-      {currentTrack?.fileType === FileType.AUDIO ? (
-        <audio
-          ref={mediaElementRef}
-          src={currentTrack?.streamUrl}
-          style={{ display: 'none' }}
-          preload='metadata'
+        <SpotifySidebar
+          currentView={currentView}
+          onSelectView={setCurrentView}
         />
-      ) : currentTrack?.fileType === FileType.VIDEO ? (
-        <video
-          ref={mediaElementRef}
-          src={currentTrack?.streamUrl}
-          style={{ display: 'none' }}
-          preload='metadata'
-        />
-      ) : null}
 
-      <MediaPlayer
-        mediaType={currentTrack?.fileType || FileType.AUDIO}
-        mediaElementRef={mediaElementRef}
-      />
+        <Box
+          sx={{
+            gridArea: 'main',
+            bgcolor: theme.palette.background.default,
+            overflowY: 'auto',
+          }}
+        >
+          <SpotifyMainContent currentView={currentView} />
+        </Box>
       </Box>
-      </>
+      <Box className="flex sticky bottom-0 justify-center items-center">
+        {currentTrack?.fileType === FileType.AUDIO ? (
+          <audio
+            ref={mediaElementRef}
+            src={currentTrack?.streamUrl}
+            style={{ display: 'none' }}
+            preload="metadata"
+          />
+        ) : currentTrack?.fileType === FileType.VIDEO ? (
+          <video
+            ref={mediaElementRef}
+            src={currentTrack?.streamUrl}
+            style={{ display: 'none' }}
+            preload="metadata"
+          />
+        ) : null}
+
+        <MediaPlayer
+          mediaType={currentTrack?.fileType || FileType.AUDIO}
+          mediaElementRef={mediaElementRef}
+        />
+      </Box>
+    </>
   );
 };
 

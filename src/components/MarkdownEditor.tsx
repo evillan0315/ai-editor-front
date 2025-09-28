@@ -11,7 +11,7 @@ import {
   useTheme,
   Paper,
   Divider,
-  Typography
+  Typography,
 } from '@mui/material';
 import BoldIcon from '@mui/icons-material/FormatBold';
 import ItalicIcon from '@mui/icons-material/FormatItalic';
@@ -177,7 +177,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             {expectedSchema && exampleOutput && (
               <Tab icon={<SchemaIcon />} aria-label="schema" />
             )}
-            
           </Tabs>
         </Toolbar>
         <Divider />
@@ -215,7 +214,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             className={markdownClass}
           >
             <ReactMarkdownWithCodeCopy>
-              {internalValue }
+              {internalValue}
             </ReactMarkdownWithCodeCopy>
           </Box>
         )}
@@ -225,14 +224,14 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               <>
                 <Typography variant="h6">Expected Schema:</Typography>
                 <CodeMirror
-                    value={expectedSchema}
-                    height="200px"
-                    extensions={[
-                      getCodeMirrorLanguage(`json`),
-                      createCodeMirrorTheme(theme),
-                    ]}
-                    theme={mode}
-                    editable={false}
+                  value={expectedSchema}
+                  height="200px"
+                  extensions={[
+                    getCodeMirrorLanguage(`json`),
+                    createCodeMirrorTheme(theme),
+                  ]}
+                  theme={mode}
+                  editable={false}
                 />
               </>
             )}
@@ -240,14 +239,14 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               <>
                 <Typography variant="h6">Example Output:</Typography>
                 <CodeMirror
-                    value={exampleOutput}
-                    height="200px"
-                    extensions={[
-                      getCodeMirrorLanguage(`json`),
-                      createCodeMirrorTheme(theme),
-                    ]}
-                    theme={mode}
-                    editable={false}
+                  value={exampleOutput}
+                  height="200px"
+                  extensions={[
+                    getCodeMirrorLanguage(`json`),
+                    createCodeMirrorTheme(theme),
+                  ]}
+                  theme={mode}
+                  editable={false}
                 />
               </>
             )}

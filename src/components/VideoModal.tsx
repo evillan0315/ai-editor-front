@@ -1,5 +1,12 @@
 import React from 'react';
-import { Dialog, DialogContent, Box, IconButton, SxProps, Theme } from '@mui/material';
+import {
+  Dialog,
+  DialogContent,
+  Box,
+  IconButton,
+  SxProps,
+  Theme,
+} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import VideoPlayer from '@/pages/spotify/VideoPlayer';
 
@@ -11,7 +18,9 @@ interface VideoModalProps {
   open: boolean;
   onClose: () => void;
   src: string;
-  mediaElementRef?: React.MutableRefObject<HTMLVideoElement | HTMLImageElement | null>;
+  mediaElementRef?: React.MutableRefObject<
+    HTMLVideoElement | HTMLImageElement | null
+  >;
   autoplay?: boolean; // Make optional, usually true for videos in modals
   controls?: boolean; // Make optional, usually true for videos in modals
   muted?: boolean; // Make optional, usually true for autoplay
@@ -24,7 +33,7 @@ interface VideoModalProps {
 const getModalWidthSx = (size: VideoModalSize): SxProps<Theme> => {
   let width: string;
   let height: string = 'auto';
-  let maxWidth: string = 'none'; // Override default maxWidth from Dialog
+  const maxWidth: string = 'none'; // Override default maxWidth from Dialog
   let maxHeight: string = '90vh'; // Max height to ensure it fits on screen, leaving some margin
 
   switch (size) {
@@ -110,7 +119,9 @@ const VideoModal: React.FC<VideoModalProps> = ({
         {mediaType === 'video' ? (
           <VideoPlayer
             src={src}
-            mediaElementRef={mediaElementRef as React.MutableRefObject<HTMLVideoElement | null>}
+            mediaElementRef={
+              mediaElementRef as React.MutableRefObject<HTMLVideoElement | null>
+            }
             autoplay={autoplay}
             controls={controls}
             loop={false}
@@ -123,7 +134,9 @@ const VideoModal: React.FC<VideoModalProps> = ({
             src={src}
             alt="Animated GIF"
             className="w-full h-full object-contain"
-            ref={mediaElementRef as React.MutableRefObject<HTMLImageElement | null>}
+            ref={
+              mediaElementRef as React.MutableRefObject<HTMLImageElement | null>
+            }
             // GIFs autoplay by default, controls/muted are not applicable
           />
         )}

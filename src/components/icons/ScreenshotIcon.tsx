@@ -1,7 +1,6 @@
 import React from 'react';
 
-export const ScreenshotIcon: React.FC = () => {
-  return (
+export const ScreenshotIcon: React.FC = () => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="24"
@@ -17,4 +16,3 @@ export const ScreenshotIcon: React.FC = () => {
       <circle cx="8" cy="8" r="2"></circle>
     </svg>
   );
-};

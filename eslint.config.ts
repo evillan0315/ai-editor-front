@@ -46,7 +46,7 @@ export default tseslint.config(
       'react-hooks': eslintPluginReactHooks,
       'react-refresh': eslintPluginReactRefresh,
       'unused-imports': eslintPluginUnusedImports,
-      prettier: pluginPrettier,
+      //prettier: pluginPrettier,
     },
     languageOptions: {
       parser: tseslint.parser,
@@ -54,7 +54,11 @@ export default tseslint.config(
         ecmaFeatures: { jsx: true },
         ecmaVersion: 'latest',
         sourceType: 'module',
-        project: ['./tsconfig.json', './tsconfig.app.json', './tsconfig.node.json'],
+        project: [
+          './tsconfig.json',
+          './tsconfig.app.json',
+          './tsconfig.node.json',
+        ],
         tsconfigRootDir: __dirname,
       },
       globals: {
@@ -69,7 +73,11 @@ export default tseslint.config(
       'import/resolver': {
         typescript: {
           alwaysTryTypes: true,
-          project: ['./tsconfig.json', './tsconfig.app.json', './tsconfig.node.json'],
+          project: [
+            './tsconfig.json',
+            './tsconfig.app.json',
+            './tsconfig.node.json',
+          ],
         },
         node: true,
       },
@@ -90,7 +98,10 @@ export default tseslint.config(
       ...eslintPluginReactHooks.configs.recommended.rules,
 
       // React Refresh
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
 
       // TypeScript rules
       '@typescript-eslint/explicit-module-boundary-types': 'off',
@@ -98,12 +109,12 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'off',
 
       // Unused imports
-      'unused-imports/no-unused-imports': 'warn',
+      'unused-imports/no-unused-imports': 'off',
       'unused-imports/no-unused-vars': 'off',
 
       // Prettier
-      'prettier/prettier': [
-        'error',
+      /*'prettier/prettier': [
+        'warn',
         {
           endOfLine: 'lf',
           tabWidth: 2,
@@ -112,11 +123,10 @@ export default tseslint.config(
           trailingComma: 'all',
           printWidth: 100,
         },
-      ],
+      ],*/
     },
   },
 
   // Must be last: disables rules that conflict with Prettier
   eslintConfigPrettier,
 );
-

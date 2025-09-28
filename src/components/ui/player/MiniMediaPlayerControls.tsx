@@ -7,12 +7,7 @@ import {
   useTheme,
   CircularProgress,
 } from '@mui/material';
-import {
-  PlayArrow,
-  Pause,
-  SkipNext,
-  SkipPrevious,
-} from '@mui/icons-material';
+import { PlayArrow, Pause, SkipNext, SkipPrevious } from '@mui/icons-material';
 import { useStore } from '@nanostores/react';
 import {
   isPlayingAtom,
@@ -136,41 +131,40 @@ const MiniMediaPlayerControls: React.FC<MiniMediaPlayerControlsProps> = ({
           <SkipNext fontSize="small" />
         </IconButton>
         <Box
-        sx={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-        }}
-      >
-        <Typography variant="caption" color="text.secondary">
-          {formatTime(trackProgress)}
-        </Typography>
-        <Slider
-          size="small"
-          value={trackProgress ?? 0}
-          onChange={handleTimeChange}
-          onChangeCommitted={handleTimeChangeCommitted}
-          min={0}
-          max={duration ?? 0}
-          aria-label="Track progress"
           sx={{
-            color: theme.palette.primary.main,
-            height: 4,
             width: '100%',
-            '& .MuiSlider-thumb': {
-              width: 10,
-              height: 10,
-            },
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
           }}
-          disabled={isPlayerDisabled}
-        />
-        <Typography variant="caption" color="text.secondary">
-          {formatTime(duration)}
-        </Typography>
+        >
+          <Typography variant="caption" color="text.secondary">
+            {formatTime(trackProgress)}
+          </Typography>
+          <Slider
+            size="small"
+            value={trackProgress ?? 0}
+            onChange={handleTimeChange}
+            onChangeCommitted={handleTimeChangeCommitted}
+            min={0}
+            max={duration ?? 0}
+            aria-label="Track progress"
+            sx={{
+              color: theme.palette.primary.main,
+              height: 4,
+              width: '100%',
+              '& .MuiSlider-thumb': {
+                width: 10,
+                height: 10,
+              },
+            }}
+            disabled={isPlayerDisabled}
+          />
+          <Typography variant="caption" color="text.secondary">
+            {formatTime(duration)}
+          </Typography>
+        </Box>
       </Box>
-      </Box>
-      
     </Box>
   );
 };

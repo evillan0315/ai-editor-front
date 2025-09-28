@@ -53,7 +53,6 @@ export function setTerminalTheme(theme: TerminalTheme) {
   });
 }
 
-
 export const createUniquetId = () => {
   const requestId = nanoid();
   addLog('LLM', `Created request with ID: ${requestId}`, 'debug');

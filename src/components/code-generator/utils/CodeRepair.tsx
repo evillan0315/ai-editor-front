@@ -111,18 +111,18 @@ export const CodeRepair: React.FC<CodeRepairProps> = ({
           gap: (theme) => theme.spacing(1),
         }}
       >
-        <Tooltip title='Fix'>
-          <IconButton color='primary' onClick={handleFix}>
+        <Tooltip title="Fix">
+          <IconButton color="primary" onClick={handleFix}>
             <AutoFixIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title='Undo'>
-          <IconButton color='primary' onClick={handleUndo}>
+        <Tooltip title="Undo">
+          <IconButton color="primary" onClick={handleUndo}>
             <UndoIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title='Redo'>
-          <IconButton color='primary' onClick={handleRedo}>
+        <Tooltip title="Redo">
+          <IconButton color="primary" onClick={handleRedo}>
             <RedoIcon />
           </IconButton>
         </Tooltip>

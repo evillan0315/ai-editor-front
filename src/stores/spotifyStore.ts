@@ -308,11 +308,12 @@ export const toggleShuffle = () => {
 
 export const toggleRepeat = () => {
   const currentMode = repeatModeAtom.get(); // Get from persistent atom
-  const newMode: RepeatMode = currentMode === 'off'
-    ? 'context'
-    : currentMode === 'context'
-      ? 'track'
-      : 'off';
+  const newMode: RepeatMode =
+    currentMode === 'off'
+      ? 'context'
+      : currentMode === 'context'
+        ? 'track'
+        : 'off';
   repeatModeAtom.set(newMode); // Set the persistent atom
 };
 
@@ -441,7 +442,11 @@ const shuffleArray = <T>(array: T[]): T[] => {
  * @param reset If true, clears existing data for the purpose before adding new.
  */
 export const fetchMediaForPurpose = async (
-  query: PaginationMediaQueryDto = { page:1, pageSize:20, fileType: FileType.VIDEO || FileType.AUDIO },
+  query: PaginationMediaQueryDto = {
+    page: 1,
+    pageSize: 20,
+    fileType: FileType.VIDEO || FileType.AUDIO,
+  },
   purpose: 'general' | 'paginatedAudio' | 'paginatedVideo',
   reset: boolean = false,
 ) => {
@@ -492,12 +497,12 @@ export const fetchMediaForPurpose = async (
       effectiveQuery.pageSize = currentPagination.pageSize;
 
     const result = await apiFetchAllMediaFiles(effectiveQuery);
-    console.log(result, effectiveQuery)
+    console.log(result, effectiveQuery);
     const newItems = result.items.filter(
       (newItem) =>
         !currentFiles.some((existingItem) => existingItem.id === newItem.id),
     );
-    
+
     const updatedFiles = reset ? newItems : [...currentFiles, ...newItems];
 
     const newPagination = {
@@ -564,10 +569,7 @@ export const addExtractedMediaFile = (mediaFile: MediaFileResponseDto) => {
       mediaFile,
     ]);
   }
-
 };
-
-
 
 export const fetchUserPlaylists = async (
   query?: PaginationPlaylistQueryDto,
@@ -810,35 +812,35 @@ export const loadTranscription = async (fileId: string) => {
       transcriptionError:
         err instanceof Error ? err.message : 'Failed to load transcription',
     });
-  } finally{
-     $spotifyStore.setKey('isTranscribing', false);
+  } finally {
+    $spotifyStore.setKey('isTranscribing', false);
   }
 };
 
 export const transcribeAudioAction = async (fileId: string) => {
-    const state = $spotifyStore.get();
-    $spotifyStore.setKey('isTranscribing', true);
-    $spotifyStore.setKey('transcriptionError', null);
-  
-    try {
-      const data = await transcribeAudio(fileId);
-      $spotifyStore.set({
-        ...state,
-        transcriptionData: data,
-        isTranscribing: false,
-        transcriptionError: null,
-      });
-    } catch (err) {
-      $spotifyStore.set({
-        ...state,
-        isTranscribing: false,
-        transcriptionError:
-          err instanceof Error ? err.message : 'Transcription failed',
-      });
-    } finally{
-      $spotifyStore.setKey('isTranscribing', false);
-    }
-  };
+  const state = $spotifyStore.get();
+  $spotifyStore.setKey('isTranscribing', true);
+  $spotifyStore.setKey('transcriptionError', null);
+
+  try {
+    const data = await transcribeAudio(fileId);
+    $spotifyStore.set({
+      ...state,
+      transcriptionData: data,
+      isTranscribing: false,
+      transcriptionError: null,
+    });
+  } catch (err) {
+    $spotifyStore.set({
+      ...state,
+      isTranscribing: false,
+      transcriptionError:
+        err instanceof Error ? err.message : 'Transcription failed',
+    });
+  } finally {
+    $spotifyStore.setKey('isTranscribing', false);
+  }
+};
 
 export const updateTranscriptionSync = async (
   fileId: string,

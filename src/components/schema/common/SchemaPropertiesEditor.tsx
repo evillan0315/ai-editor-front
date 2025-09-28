@@ -105,7 +105,9 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
       currentProps: SchemaProperty[],
       path: string[],
       type: 'item' | 'property',
-    ): SchemaProperty[] => {
+    ):
+      | SchemaProperty[]
+      | undefined => {
       if (!currentProps || path.length === 0) return currentProps;
 
       const [targetId, ...restPath] = path;
@@ -148,7 +150,7 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
                 [prop.items],
                 restPath,
                 type,
-              )[0];
+              )?.[0]; // Use optional chaining because addNestedPropertyByPath can return undefined.
               return { ...prop, items: updatedItems };
             }
           }
@@ -226,9 +228,11 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
 
   const handleAddNestedProperty = useCallback(
     (path: string[], type: 'item' | 'property') => {
-      onPropertiesChange((prev) =>
-        addNestedPropertyByPath(prev as SchemaProperty[], path, type),
-      );
+      onPropertiesChange((prev) => {
+        const result = addNestedPropertyByPath(prev as SchemaProperty[], path, type);
+        // filter out undefined if addNestedPropertyByPath returns undefined
+        return result ? result.filter(Boolean) as SchemaProperty[] : prev;
+      });
     },
     [onPropertiesChange, addNestedPropertyByPath],
   );

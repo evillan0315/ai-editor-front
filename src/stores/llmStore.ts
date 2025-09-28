@@ -185,10 +185,7 @@ export const updateProposedChangeContent = (
   addLog('Proposed Change Card', `Content updated for: ${filePath}`, 'debug');
 };
 
-export const updateProposedChangePath = (
-  oldPath: string,
-  newPath: string,
-) => {
+export const updateProposedChangePath = (oldPath: string, newPath: string) => {
   const state = llmStore.get();
   if (!state.lastLlmResponse) {
     setError('Cannot update path: no LLM response.');
@@ -256,9 +253,7 @@ export const performPostApplyActions = async (
   llmGeneratePayload: LlmGeneratePayload,
   llmResponse: ModelResponse,
 ) => {
-
-  let buildPassed = false;
-
+  const buildPassed = false;
 
   if (llmResponse?.gitInstructions?.length) {
     addLog(

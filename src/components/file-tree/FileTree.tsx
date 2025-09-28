@@ -147,7 +147,8 @@ const FileTree: React.FC<FileTreeProps> = () => {
       const isRoot = parentDir === targetPath; // This means targetPath is the root itself or a root-level item
       // If refreshing a root-level item, or the root itself, reload the initial tree.
       // Otherwise, load children of its parent.
-      const pathToRefresh = isRoot && parentDir === '/' ? targetPath : parentDir;
+      const pathToRefresh =
+        isRoot && parentDir === '/' ? targetPath : parentDir;
 
       if (pathToRefresh && pathToRefresh !== '.') {
         await loadChildrenForDirectory(pathToRefresh);
@@ -455,7 +456,6 @@ const FileTree: React.FC<FileTreeProps> = () => {
         snackbar={{ show: showGlobalSnackbar }}
         projectRoot={projectRoot}
       />
-
     </Box>
   );
 };

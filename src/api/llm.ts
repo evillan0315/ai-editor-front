@@ -1,5 +1,5 @@
 import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
-import { generateText } from './ai'
+import { generateText } from './ai';
 import {
   ModelResponse,
   FileChange,
@@ -7,9 +7,8 @@ import {
   LlmReportErrorApiPayload,
   LLM_ENDPOINT,
   SchemaResponse,
-  RequestType
+  RequestType,
 } from '@/types'; // Import new LLM types and FileChange, RequestType, LlmOutputFormat, LlmGeneratePayload, LlmReportErrorApiPayload
-
 
 interface ConvertYamlResponse {
   json: {};
@@ -63,15 +62,13 @@ function parseJSONSafe(jsonString: string): ModelResponse {
 // ────────────────────────────
 // Safe LLM code generation
 // ────────────────────────────
-export const generateSchema = async (
-  prompt: string,
-): Promise<string> => {
-  let rawText: string | null = null;
+export const generateSchema = async (prompt: string): Promise<string> => {
+  const rawText: string | null = null;
   console.log(prompt, 'prompt');
   try {
-    const response = await generateText({prompt});
+    const response = await generateText({ prompt });
     return extractCodeFromMarkdown(response);
-   
+
     //return extractCodeFromMarkdown(res);
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -82,21 +79,18 @@ export const generateSchema = async (
       error: errorMsg,
     };
   }
-}
+};
 export const generateCode = async (
   data: LlmGeneratePayload,
 ): Promise<ModelResponse> => {
   let rawText: string | null = null;
 
   try {
-    const response = await fetchWithAuth(
-      `${API_BASE_URL}/llm/generate-llm`,
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-        //headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    const response = await fetchWithAuth(`${API_BASE_URL}/llm/generate-llm`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      //headers: { 'Content-Type': 'application/json' },
+    });
 
     console.log(response, 'response');
     rawText = await response.text();

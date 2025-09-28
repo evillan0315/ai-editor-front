@@ -247,18 +247,22 @@ const Navbar: React.FC = () => {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              color="inherit"
-              onClick={() => isLeftSidebarVisible.set(!$isLeftSidebarVisible)}
-              aria-label="toggle left sidebar"
-              sx={{ color: theme.palette.text.primary }}
-            >
-              {$isLeftSidebarVisible ? (
-                <CodiconLayoutSidebarLeft />
-              ) : (
-                <CodiconLayoutSidebarLeftOff />
-              )}
-            </IconButton>
+            {isLoggedIn && (
+              <IconButton
+                color="inherit"
+                onClick={() => isLeftSidebarVisible.set(!$isLeftSidebarVisible)}
+                aria-label="toggle left sidebar"
+                sx={{ color: theme.palette.text.primary }}
+                disabled={!isLoggedIn}
+              >
+                {$isLeftSidebarVisible ? (
+                  <CodiconLayoutSidebarLeft />
+                ) : (
+                  <CodiconLayoutSidebarLeftOff />
+                )}
+              </IconButton>
+            )}
+
             <Typography
               variant="h6"
               component={Link}
@@ -271,138 +275,148 @@ const Navbar: React.FC = () => {
             >
               {APP_NAME}
             </Typography>
-
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
-              <Button
-                id="apps-menu-button"
-                aria-controls={isAppsMenuOpen ? 'apps-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={isAppsMenuOpen ? 'true' : undefined}
-                onClick={handleAppsMenuClick}
-                startIcon={<AppsIcon />}
-                endIcon={<KeyboardArrowDownIcon />}
-                sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
-              >
-                Apps
-              </Button>
-              <Menu
-                id="apps-menu"
-                anchorEl={appsMenuAnchorEl}
-                open={isAppsMenuOpen}
-                onClose={handleAppsMenuClose}
-                MenuListProps={{ 'aria-labelledby': 'apps-menu-button' }}
-                PaperProps={{
-                  sx: { bgcolor: theme.palette.background.paper, p: 0 },
-                }}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-              >
-                <AppsMenuContent
-                  apps={navbarApps}
-                  onClose={handleAppsMenuClose}
-                />
-                <MenuItem
-                  component={Link}
-                  to="/apps"
-                  onClick={handleAppsMenuClose}
-                  sx={{
-                    borderTop: `1px solid ${theme.palette.divider}`,
-                    justifyContent: 'center',
-                    fontWeight: 'bold',
-                    color: theme.palette.primary.main,
-                    py: 1,
-                    '&:hover': { bgcolor: theme.palette.action.hover },
-                  }}
-                >
-                  View All Apps
-                </MenuItem>
-              </Menu>
-
-              <Button
-                color="inherit"
-                component={Link}
-                to="/organizations"
-                sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
-              >
-                Organizations
-              </Button>
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {scriptsLoading ? (
-                <CircularProgress
-                  size={20}
-                  sx={{ color: theme.palette.text.secondary }}
-                />
-              ) : (
-                <Button
-                  id="run-scripts-button"
-                  aria-controls={
-                    isScriptMenuOpen ? 'run-scripts-menu' : undefined
-                  }
-                  aria-haspopup="true"
-                  aria-expanded={isScriptMenuOpen ? 'true' : undefined}
-                  onClick={handleScriptMenuClick}
-                  variant="text"
-                  color="inherit"
-                  size="small"
-                  disabled={
-                    !currentProjectPath ||
-                    packageScripts.length === 0 ||
-                    isAnyScriptRunning
-                  }
-                  sx={{
-                    color: theme.palette.text.primary,
-                    '&:hover': { bgcolor: theme.palette.action.hover },
-                    minWidth: 'auto',
-                    px: 1,
-                    py: 0.5,
-                    fontSize: '0.75rem',
-                    whiteSpace: 'nowrap',
-                    fontWeight: 'bold',
-                  }}
-                  startIcon={<TerminalIcon fontSize="small" />}
-                  endIcon={<KeyboardArrowDownIcon fontSize="small" />}
-                >
-                  Run Scripts
-                </Button>
-              )}
-              <Menu
-                id="run-scripts-menu"
-                anchorEl={scriptMenuAnchorEl}
-                open={isScriptMenuOpen}
-                onClose={handleScriptMenuClose}
-                MenuListProps={{ 'aria-labelledby': 'run-scripts-button' }}
-                PaperProps={{ sx: { bgcolor: theme.palette.background.paper } }}
-              >
-                {packageScripts.length > 0 ? (
-                  packageScripts.map((script) => (
-                    <RunScriptMenuItem
-                      key={script.name}
-                      name={script.name}
-                      command={script.script}
-                      onClick={(name, content) => {
-                        handleRunScript(name, content);
-                        handleScriptMenuClose();
-                      }}
-                      status={
-                        scriptExecutionStatus[script.name]?.status ||
-                        ScriptStatus.IDLE
-                      }
-                      disabled={isAnyScriptRunning}
-                    />
-                  ))
-                ) : (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ p: 2 }}
+            {isLoggedIn && (
+              <Box class="flex items-center gap-2">
+                <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
+                  <Button
+                    id="apps-menu-button"
+                    aria-controls={isAppsMenuOpen ? 'apps-menu' : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={isAppsMenuOpen ? 'true' : undefined}
+                    onClick={handleAppsMenuClick}
+                    startIcon={<AppsIcon />}
+                    endIcon={<KeyboardArrowDownIcon />}
+                    sx={{
+                      fontWeight: 'bold',
+                      color: theme.palette.text.primary,
+                    }}
                   >
-                    No scripts found.
-                  </Typography>
-                )}
-              </Menu>
-            </Box>
+                    Apps
+                  </Button>
+                  <Menu
+                    id="apps-menu"
+                    anchorEl={appsMenuAnchorEl}
+                    open={isAppsMenuOpen}
+                    onClose={handleAppsMenuClose}
+                    MenuListProps={{ 'aria-labelledby': 'apps-menu-button' }}
+                    PaperProps={{
+                      sx: { bgcolor: theme.palette.background.paper, p: 0 },
+                    }}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                  >
+                    <AppsMenuContent
+                      apps={navbarApps}
+                      onClose={handleAppsMenuClose}
+                    />
+                    <MenuItem
+                      component={Link}
+                      to="/apps"
+                      onClick={handleAppsMenuClose}
+                      sx={{
+                        borderTop: `1px solid ${theme.palette.divider}`,
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        color: theme.palette.primary.main,
+                        py: 1,
+                        '&:hover': { bgcolor: theme.palette.action.hover },
+                      }}
+                    >
+                      View All Apps
+                    </MenuItem>
+                  </Menu>
+
+                  <Button
+                    color="inherit"
+                    component={Link}
+                    to="/organizations"
+                    sx={{
+                      fontWeight: 'bold',
+                      color: theme.palette.text.primary,
+                    }}
+                  >
+                    Organizations
+                  </Button>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  {scriptsLoading ? (
+                    <CircularProgress
+                      size={20}
+                      sx={{ color: theme.palette.text.secondary }}
+                    />
+                  ) : (
+                    <Button
+                      id="run-scripts-button"
+                      aria-controls={
+                        isScriptMenuOpen ? 'run-scripts-menu' : undefined
+                      }
+                      aria-haspopup="true"
+                      aria-expanded={isScriptMenuOpen ? 'true' : undefined}
+                      onClick={handleScriptMenuClick}
+                      variant="text"
+                      color="inherit"
+                      size="small"
+                      disabled={
+                        !currentProjectPath ||
+                        packageScripts.length === 0 ||
+                        isAnyScriptRunning
+                      }
+                      sx={{
+                        color: theme.palette.text.primary,
+                        '&:hover': { bgcolor: theme.palette.action.hover },
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.5,
+                        fontSize: '0.75rem',
+                        whiteSpace: 'nowrap',
+                        fontWeight: 'bold',
+                      }}
+                      startIcon={<TerminalIcon fontSize="small" />}
+                      endIcon={<KeyboardArrowDownIcon fontSize="small" />}
+                    >
+                      Run Scripts
+                    </Button>
+                  )}
+                  <Menu
+                    id="run-scripts-menu"
+                    anchorEl={scriptMenuAnchorEl}
+                    open={isScriptMenuOpen}
+                    onClose={handleScriptMenuClose}
+                    MenuListProps={{ 'aria-labelledby': 'run-scripts-button' }}
+                    PaperProps={{
+                      sx: { bgcolor: theme.palette.background.paper },
+                    }}
+                  >
+                    {packageScripts.length > 0 ? (
+                      packageScripts.map((script) => (
+                        <RunScriptMenuItem
+                          key={script.name}
+                          name={script.name}
+                          command={script.script}
+                          onClick={(name, content) => {
+                            handleRunScript(name, content);
+                            handleScriptMenuClose();
+                          }}
+                          status={
+                            scriptExecutionStatus[script.name]?.status ||
+                            ScriptStatus.IDLE
+                          }
+                          disabled={isAnyScriptRunning}
+                        />
+                      ))
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ p: 2 }}
+                      >
+                        No scripts found.
+                      </Typography>
+                    )}
+                  </Menu>
+                </Box>
+              </Box>
+            )}
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

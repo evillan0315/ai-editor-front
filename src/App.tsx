@@ -1,5 +1,11 @@
 import React, { Suspense, lazy, type JSX } from 'react';
-import { createBrowserRouter, RouterProvider, Route, Navigate, createRoutesFromElements } from 'react-router-dom';
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Route,
+  Navigate,
+  createRoutesFromElements,
+} from 'react-router-dom';
 import Layout from './components/Layout';
 import Loading from './components/Loading';
 import CustomSnackbar from '@/components/Snackbar';
@@ -20,7 +26,6 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 
   return isLoggedIn ? children : <Navigate to="/login" replace />;
 }
-
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -49,14 +54,21 @@ const SchemeGeneratorPage = lazy(() => import('./pages/SchemeGeneratorPage')); /
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" element={<Layout footer={`Developed by Eddie Villanueva`}/>} errorElement={<ErrorPage/>}>
-      <Route index element={
-        <Suspense fallback={<Loading />}>
-          <ErrorBoundary>
-            <HomePage />
-          </ErrorBoundary>
-        </Suspense>
-      } />
+    <Route
+      path="/"
+      element={<Layout footer={`Developed by Eddie Villanueva`} />}
+      errorElement={<ErrorPage />}
+    >
+      <Route
+        index
+        element={
+          <Suspense fallback={<Loading />}>
+            <ErrorBoundary>
+              <HomePage />
+            </ErrorBoundary>
+          </Suspense>
+        }
+      />
 
       {/* ✅ Protected Routes */}
       <Route
@@ -95,13 +107,13 @@ const router = createBrowserRouter(
           </RequireAuth>
         }
       />
-       <Route
+      <Route
         path="/apps/ai-chat"
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
-               <AIChatPage/>
+                <AIChatPage />
               </ErrorBoundary>
             </Suspense>
           </RequireAuth>
@@ -215,44 +227,43 @@ const router = createBrowserRouter(
           </RequireAuth>
         }
       />
-       <Route
-            path="/apps/kanban-board"
-            element={
-              <RequireAuth>
-                <Suspense fallback={<Loading />}>
-                  <ErrorBoundary>
-                    <KanbanBoardPage />
-                  </ErrorBoundary>
-                </Suspense>
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/apps/simple-git"
-            element={
-              <RequireAuth>
-                <Suspense fallback={<Loading />}>
-                 <ErrorBoundary>
-                   <SimpleGitPage/>
-                 </ErrorBoundary>
-                </Suspense>
-              </RequireAuth>
-            }
-          />
-          {/* New: Route for Schema Generator Page */}
-          <Route
-            path="/apps/schema-generator"
-            element={
-              <RequireAuth>
-                <Suspense fallback={<Loading />}>
-                  <ErrorBoundary>
-                    <SchemeGeneratorPage />
-                  </ErrorBoundary>
-                </Suspense>
-              </RequireAuth>
-            }
-          />
-
+      <Route
+        path="/apps/kanban-board"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <KanbanBoardPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/apps/simple-git"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <SimpleGitPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+      {/* New: Route for Schema Generator Page */}
+      <Route
+        path="/apps/schema-generator"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <SchemeGeneratorPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
 
       <Route
         path="/organizations"
@@ -329,8 +340,8 @@ const router = createBrowserRouter(
           </Suspense>
         }
       />
-    </Route>
-  )
+    </Route>,
+  ),
 );
 
 function App() {
@@ -342,7 +353,7 @@ function App() {
 
   return (
     <>
-       <RouterProvider router={router} />
+      <RouterProvider router={router} />
 
       <CustomSnackbar
         open={snackbar.open}

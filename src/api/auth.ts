@@ -1,15 +1,21 @@
-import { loginSuccess, logout, setLoading, setError, getToken } from '@/stores/authStore';
+import {
+  loginSuccess,
+  logout,
+  setLoading,
+  setError,
+  getToken,
+} from '@/stores/authStore';
 import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
 import { UserProfile, LoginRequest, RegisterRequest } from '@/types/auth';
 
 export interface LoginLocalResponse {
   access_token: string;
-  refresh_token:string;
-  user: UserProfile
+  refresh_token: string;
+  user: UserProfile;
 }
 export interface RegisterLocalResponse {
   access_token: string;
-  user: UserProfile
+  user: UserProfile;
 }
 
 export interface LogoutResponse {
@@ -18,7 +24,7 @@ export interface LogoutResponse {
 export interface CheckAuthResponse {
   id: string;
   email: string;
-  username: string | null,
+  username: string | null;
   emailVerified: string;
   image: string;
   name: string;
@@ -39,7 +45,7 @@ export const handleLogout = async (): Promise<LogoutResponse> => {
   setError(null);
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST'
+      method: 'POST',
     });
     logout();
     return handleResponse<LogoutResponse>(response);
@@ -58,12 +64,11 @@ export const checkAuthStatus = async (): Promise<CheckAuthResponse> => {
   setLoading(true);
   setError(null);
   try {
-    
     const response = await fetchWithAuth(`${API_BASE_URL}/auth/me`, {
-      method: 'GET'
+      method: 'GET',
     });
     const authData = await handleResponse<CheckAuthResponse>(response);
-    if(authData && getToken()){
+    if (authData && getToken()) {
       loginSuccess(authData.user, getToken());
     }
     return authData;
@@ -79,7 +84,9 @@ export const checkAuthStatus = async (): Promise<CheckAuthResponse> => {
  * Handles local email/password login.
  * @param credentials User's email and password.
  */
-export const loginLocal = async (credentials: LoginRequest): Promise<LoginLocalResponse> => {
+export const loginLocal = async (
+  credentials: LoginRequest,
+): Promise<LoginLocalResponse> => {
   setLoading(true);
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/auth/login`, {
@@ -87,13 +94,15 @@ export const loginLocal = async (credentials: LoginRequest): Promise<LoginLocalR
       body: JSON.stringify(credentials),
     });
     const authData = await handleResponse<LoginLocalResponse>(response);
-    if(authData && authData.access_token){
+    if (authData && authData.access_token) {
       loginSuccess(authData.user, authData.access_token);
     }
     return authData;
   } catch (error: ApiError) {
     console.error('Failed to authenticate:', error);
-    setError(error.message || 'An unknown error message occurred during login.');
+    setError(
+      error.message || 'An unknown error message occurred during login.',
+    );
   } finally {
     setLoading(false);
   }
@@ -103,7 +112,9 @@ export const loginLocal = async (credentials: LoginRequest): Promise<LoginLocalR
  * Handles local email/password registration.
  * @param userData User's registration data (email, password, username).
  */
-export const registerLocal = async (userData: RegisterRequest): Promise<RegisterLocalResponse> => {
+export const registerLocal = async (
+  userData: RegisterRequest,
+): Promise<RegisterLocalResponse> => {
   setLoading(true);
   setError(null);
   try {
@@ -111,13 +122,15 @@ export const registerLocal = async (userData: RegisterRequest): Promise<Register
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    if(response && response.access_token){
+    if (response && response.access_token) {
       loginSuccess(response.user, response.access_token);
     }
     return handleResponse<RegisterLocalResponse>(response);
   } catch (error: ApiError) {
     console.error('Registration failed', error);
-    setError(error.message || 'An unknown error message occurred during registration.');
+    setError(
+      error.message || 'An unknown error message occurred during registration.',
+    );
   } finally {
     setLoading(false);
   }

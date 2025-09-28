@@ -13,10 +13,7 @@ import {
   MenuItem,
   Divider,
 } from '@mui/material';
-import {
-  PlayArrow,
-  MoreVert,
-} from '@mui/icons-material';
+import { PlayArrow, MoreVert } from '@mui/icons-material';
 import { MediaFileResponseDto } from '@/types/refactored/media';
 
 // Types
@@ -34,7 +31,12 @@ interface SongListItemProps {
   onAction: (action: string, song: MediaFileResponseDto) => void;
 }
 
-export const SongListItem: React.FC<SongListItemProps> = ({ song, onPlay, onFavorite, onAction }) => {
+export const SongListItem: React.FC<SongListItemProps> = ({
+  song,
+  onPlay,
+  onFavorite,
+  onAction,
+}) => {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -67,8 +69,7 @@ export const SongListItem: React.FC<SongListItemProps> = ({ song, onPlay, onFavo
             <IconButton
               onClick={() => onFavorite(song.id)}
               color={true ? 'error' : 'default'}
-            >
-            </IconButton>
+            ></IconButton>
             <IconButton onClick={handleMenuOpen}>
               <MoreVert />
             </IconButton>
@@ -76,11 +77,11 @@ export const SongListItem: React.FC<SongListItemProps> = ({ song, onPlay, onFavo
         }
         disablePadding
       >
-        <ListItemButton onClick={() => onPlay(song)}  sx={{ py: 1 }}>
+        <ListItemButton onClick={() => onPlay(song)} sx={{ py: 1 }}>
           <ListItemIcon sx={{ minWidth: 40 }}>
             <PlayArrow />
           </ListItemIcon>
-        
+
           {song.metadata && song.metadata[0]?.data.thumbnail && (
             <CardMedia
               component="img"
@@ -89,14 +90,9 @@ export const SongListItem: React.FC<SongListItemProps> = ({ song, onPlay, onFavo
               alt={song.song?.title}
             />
           )}
-          <ListItemText
-            primary={song.song?.title}
-            
-          />
+          <ListItemText primary={song.song?.title} />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              
-            </Box>
+            <Box sx={{ display: 'flex', gap: 0.5 }}></Box>
             <Typography
               variant="body2"
               color="text.secondary"
@@ -117,13 +113,11 @@ export const SongListItem: React.FC<SongListItemProps> = ({ song, onPlay, onFavo
       >
         {menuItems.map((item, index) => (
           <Box key={item.value}>
-            <MenuItem
-              onClick={() => onAction(item.value, song)}
-            >
+            <MenuItem onClick={() => onAction(item.value, song)}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText>{item.label}</ListItemText>
             </MenuItem>
-            {item.divider && <Divider />} 
+            {item.divider && <Divider />}
           </Box>
         ))}
       </Menu>

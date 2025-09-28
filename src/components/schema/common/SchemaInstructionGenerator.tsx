@@ -5,7 +5,13 @@
  */
 
 import React from 'react';
-import { Box, TextField, Button, CircularProgress, Typography } from '@mui/material';
+import {
+  Box,
+  TextField,
+  Button,
+  CircularProgress,
+  Typography,
+} from '@mui/material';
 
 /**
  * Props for the SchemaInstructionGenerator component.
@@ -28,10 +34,11 @@ const SchemaInstructionGenerator: React.FC<SchemaInstructionGeneratorProps> = ({
   applyInstruction,
   onApplyInstructionChange,
   onApplySchemaToInstruction,
-}) => {
-  return (
+}) => (
     <Box>
-      <Typography variant="subtitle1" gutterBottom>Generate Schema from Instruction:</Typography>
+      <Typography variant="subtitle1" gutterBottom>
+        Generate Schema from Instruction:
+      </Typography>
       <TextField
         label="Instruction"
         fullWidth
@@ -41,8 +48,17 @@ const SchemaInstructionGenerator: React.FC<SchemaInstructionGeneratorProps> = ({
         onChange={(e) => onInstructionChange(e.target.value)}
         margin="normal"
       />
-      <Button variant="contained" color="primary" onClick={onGenerateSchemaFromInstruction} disabled={loading}>
-        {loading ? <CircularProgress size={24} /> : 'Generate Schema from Instruction'}
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={onGenerateSchemaFromInstruction}
+        disabled={loading}
+      >
+        {loading ? (
+          <CircularProgress size={24} />
+        ) : (
+          'Generate Schema from Instruction'
+        )}
       </Button>
 
       <Box mt={3}>
@@ -58,12 +74,15 @@ const SchemaInstructionGenerator: React.FC<SchemaInstructionGeneratorProps> = ({
           onChange={(e) => onApplyInstructionChange(e.target.value)}
           margin="normal"
         />
-        <Button variant="contained" color="primary" onClick={onApplySchemaToInstruction}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={onApplySchemaToInstruction}
+        >
           Apply Generated Schema To Instruction
         </Button>
       </Box>
     </Box>
   );
-};
 
 export default SchemaInstructionGenerator;

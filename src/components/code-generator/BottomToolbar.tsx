@@ -34,15 +34,15 @@ import { useStore } from '@nanostores/react';
 import FilePickerDialog from '@/components/dialogs/FilePickerDialog';
 import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
 import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
-import PromptGeneratorSettings, { type GlobalAction } from '@/components/Drawer/PromptGeneratorSettings';
+import PromptGeneratorSettings, {
+  type GlobalAction,
+} from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import ImportData from './ImportData';
 import { ImportJsonDialog } from './ImportJsonDialog';
 import { setOpenedFileContent } from '@/stores/fileStore';
 import { RequestType } from '@/types/llm';
-import {
-  SvgIconComponent
-} from '@mui/material'
+import { SvgIconComponent } from '@mui/material';
 
 interface BottomToolbarProps {
   scanPathAutocompleteOptions: string[];
@@ -89,80 +89,86 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   const $autoApplyChanges = useStore(autoApplyChanges);
 
   const commonDisabled = false;
-  const GlobalActionButtons: GlobalAction[] = [{label:'Cancel',action: () => setIsSettingsOpen(false), icon: CloseIcon}, {label:'Save',action: handleSave, icon: SaveIcon}] // Pass handleSave to the action
-  
+  const GlobalActionButtons: GlobalAction[] = [
+    {
+      label: 'Cancel',
+      action: () => setIsSettingsOpen(false),
+      icon: CloseIcon,
+    },
+    { label: 'Save', action: handleSave, icon: SaveIcon },
+  ]; // Pass handleSave to the action
+
   const handleImportJson = () => {
     console.log('handleImportJson');
-  }
+  };
   return (
-  <Box className="flex items-center justify-between gap-2 ">
-    <Box className="flex flex-wrap gap-2 ">
-      <Tooltip title="Load the selected project">
-        <IconButton
-          color="primary"
-          disabled={commonDisabled}
-          onClick={handleLoadProject}
-        >
-          <DriveFolderUploadIcon />
-        </IconButton>
-      </Tooltip>
-
-      <Tooltip title="Pick project root directory">
-        <IconButton
-          color="primary"
-          onClick={() => setIsProjectRootPickerDialogOpen(true)}
-        >
-          <FolderOpenIcon />
-        </IconButton>
-      </Tooltip>
-
-      <Tooltip title="Manage scan paths for the AI search">
-        <IconButton
-          color="primary"
-          onClick={() => setIsScanPathsDialogOpen(true)}
-        >
-          <AddRoadIcon />
-        </IconButton>
-      </Tooltip>
-
-      {requestType === RequestType.LLM_GENERATION && (
-        <Tooltip title="Import prompt data from JSON file">
-          <IconButton color="primary" onClick={() => setIsImportDialogOpen(true)}>
-            <CloudUploadIcon />
+    <Box className="flex items-center justify-between gap-2 ">
+      <Box className="flex flex-wrap gap-2 ">
+        <Tooltip title="Load the selected project">
+          <IconButton
+            color="primary"
+            disabled={commonDisabled}
+            onClick={handleLoadProject}
+          >
+            <DriveFolderUploadIcon />
           </IconButton>
         </Tooltip>
-      )}
 
-   
+        <Tooltip title="Pick project root directory">
+          <IconButton
+            color="primary"
+            onClick={() => setIsProjectRootPickerDialogOpen(true)}
+          >
+            <FolderOpenIcon />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="Manage scan paths for the AI search">
+          <IconButton
+            color="primary"
+            onClick={() => setIsScanPathsDialogOpen(true)}
+          >
+            <AddRoadIcon />
+          </IconButton>
+        </Tooltip>
+
+        {requestType === RequestType.LLM_GENERATION && (
+          <Tooltip title="Import prompt data from JSON file">
+            <IconButton
+              color="primary"
+              onClick={() => setIsImportDialogOpen(true)}
+            >
+              <CloudUploadIcon />
+            </IconButton>
+          </Tooltip>
+        )}
+
         <Tooltip title="Prompt generator settings">
           <IconButton color="primary" onClick={() => setIsSettingsOpen(true)}>
             <SettingsIcon />
           </IconButton>
         </Tooltip>
-      
-    </Box>
-    {requestType === RequestType.LLM_GENERATION && (
-      <Box className="flex flex-wrap gap-2 ">
-      
-        <Tooltip title="Clear editor and AI response">
-        <IconButton color="error" disabled={commonDisabled}>
-          <ClearIcon />
-        </IconButton>
-      </Tooltip>
-
-      <FormControlLabel
-        control={
-          <Switch
-            checked={$autoApplyChanges}
-            onChange={(e) => setAutoApplyChanges(e.target.checked)}
-            name="autoApply"
-          />
-        }
-        label="Auto Apply"
-      />
-        
       </Box>
-     )}
+      {requestType === RequestType.LLM_GENERATION && (
+        <Box className="flex flex-wrap gap-2 ">
+          <Tooltip title="Clear editor and AI response">
+            <IconButton color="error" disabled={commonDisabled}>
+              <ClearIcon />
+            </IconButton>
+          </Tooltip>
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={$autoApplyChanges}
+                onChange={(e) => setAutoApplyChanges(e.target.checked)}
+                name="autoApply"
+              />
+            }
+            label="Auto Apply"
+          />
+        </Box>
+      )}
       {/* Dialogs */}
       <ScanPathsDialog
         open={isScanPathsDialogOpen}
@@ -182,7 +188,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         initialPath={projectInput || '/'}
         allowExternalPaths
       />
-      <ImportJsonDialog 
+      <ImportJsonDialog
         open={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
         onImport={handleImportJson}
@@ -201,7 +207,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           onClose={() => setIsImportDialogOpen(false)}
         />
       </CustomDrawer>*/}
-       <CustomDrawer
+      <CustomDrawer
         open={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         position="left"
@@ -210,10 +216,10 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         hasBackdrop={true}
         footerActionButton={GlobalActionButtons}
       >
-          <PromptGeneratorSettings
-            open={isSettingsOpen}
-            onClose={() => setIsSettingsOpen(false)}
-          />
+        <PromptGeneratorSettings
+          open={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+        />
       </CustomDrawer>
     </Box>
   );

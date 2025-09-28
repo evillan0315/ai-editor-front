@@ -1,6 +1,23 @@
 import React from 'react';
-import { Box, Dialog, DialogContent, CardMedia, IconButton, Typography, Rating, Chip, Fab, useMediaQuery, useTheme } from '@mui/material';
-import { PlayArrow, Favorite, FavoriteBorder, Close } from '@mui/icons-material';
+import {
+  Box,
+  Dialog,
+  DialogContent,
+  CardMedia,
+  IconButton,
+  Typography,
+  Rating,
+  Chip,
+  Fab,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import {
+  PlayArrow,
+  Favorite,
+  FavoriteBorder,
+  Close,
+} from '@mui/icons-material';
 import { MediaFileResponseDto } from '@/types/refactored/media';
 
 interface VideoDetailDialogProps {
@@ -58,7 +75,9 @@ const VideoDetailDialog: React.FC<VideoDetailDialogProps> = ({
                 {selectedVideo.video?.title}
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-                <Typography variant="body1">{selectedVideo.video?.year}</Typography>
+                <Typography variant="body1">
+                  {selectedVideo.video?.year}
+                </Typography>
                 <Typography variant="body1">
                   {formatDuration(selectedVideo.video?.duration || 0)}
                 </Typography>

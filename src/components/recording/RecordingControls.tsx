@@ -1,4 +1,11 @@
-import { Box, CircularProgress, IconButton, SxProps, Theme, Tooltip } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  SxProps,
+  Theme,
+  Tooltip,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
 import {
@@ -6,7 +13,7 @@ import {
   Videocam,
   CameraAlt,
   StopCircle,
-  ScreenshotMonitor // Changed from PhotoCamera
+  ScreenshotMonitor, // Changed from PhotoCamera
 } from '@mui/icons-material';
 
 export interface RecordingControlsProps {

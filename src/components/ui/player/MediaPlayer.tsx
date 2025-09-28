@@ -18,7 +18,10 @@ interface MediaPlayerProps {
   mediaElementRef: React.RefObject<HTMLMediaElement>;
 }
 
-const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType, mediaElementRef }) => {
+const MediaPlayer: React.FC<MediaPlayerProps> = ({
+  mediaType,
+  mediaElementRef,
+}) => {
   const theme = useTheme();
   const isPlaying = useStore(isPlayingAtom);
   const currentTrack = useStore(currentTrackAtom);
@@ -33,9 +36,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType, mediaElementRef })
   };
 
   return (
-
     <Box
-
       sx={{
         bgcolor: theme.palette.background.paper,
         borderTop: `1px solid ${theme.palette.divider}`,
@@ -47,16 +48,13 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType, mediaElementRef })
         flexShrink: 0,
         zIndex: 11,
         width: '100%',
-        px: 4
+        px: 4,
       }}
     >
       <MediaPlayerTrackInfo mediaType={mediaType} />
-      <MediaPlayerControls
-        mediaElementRef={mediaElementRef}
-      />
-      <MediaPlayerVolumeControl mediaRef={mediaElementRef}/>
+      <MediaPlayerControls mediaElementRef={mediaElementRef} />
+      <MediaPlayerVolumeControl mediaRef={mediaElementRef} />
     </Box>
-
   );
 };
 
