@@ -295,9 +295,21 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
       >
         <SpotifyMainContent currentView={currentView} />
       </Box>
-
-      <audio ref={audioRef} style={{ display: 'none' }} />
-      <video ref={videoRef} style={{ display: 'none' }}  />
+      {currentTrack?.fileType === FileType.AUDIO ? (
+        <audio
+          ref={mediaElementRef}
+          src={currentTrack?.streamUrl}
+          style={{ display: 'none' }}
+          preload='metadata'
+        />
+      ) : currentTrack?.fileType === FileType.VIDEO ? (
+        <video
+          ref={mediaElementRef}
+          src={currentTrack?.streamUrl}
+          style={{ display: 'none' }}
+          preload='metadata'
+        />
+      ) : null}
 
       <MediaPlayer
         mediaType={currentTrack?.fileType || 'AUDIO'}
