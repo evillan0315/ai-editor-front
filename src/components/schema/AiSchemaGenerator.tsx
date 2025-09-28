@@ -173,6 +173,17 @@ const AiSchemaGenerator: React.FC = () => {
     }
   }, [instruction]);
 
+  // Handle direct edits (paste, type) in the generated schema editor
+  const handleGeneratedSchemaEditorChange = useCallback((newValue: string) => {
+    try {
+      const parsed = JSON.parse(newValue);
+      schemaStore.set(parsed);
+    } catch (error) {
+      console.error('Invalid JSON in generated schema editor:', error);
+      // Optionally, show a temporary error message to the user
+    }
+  }, []);
+
   // General generate schema function
   const handleGenerateSchema = () => {
     if (useInstruction) {
@@ -190,7 +201,7 @@ const AiSchemaGenerator: React.FC = () => {
 
       <FormGroup>
         <FormControlLabel
-          control={<Switch checked={useInstruction} onChange={(e) => setUseInstruction(e.target.checked)} />}
+          control={<Switch checked={useInstruction} onChange={(e) => setUseInstruction(e.target.checked)} />} 
           label="Generate Schema from Instruction"
         />
       </FormGroup>
@@ -243,7 +254,7 @@ const AiSchemaGenerator: React.FC = () => {
                 </FormControl>
                 <FormGroup>
                   <FormControlLabel
-                    control={<Switch checked={property.required} onChange={e => handlePropertyChange(property.id, 'required', e.target.checked)} />}
+                    control={<Switch checked={property.required} onChange={e => handlePropertyChange(property.id, 'required', e.target.checked)} />} 
                     label="Required"
                   />
                 </FormGroup>
@@ -352,7 +363,12 @@ const AiSchemaGenerator: React.FC = () => {
         <Typography variant="subtitle1" gutterBottom>
           Generated Schema:
         </Typography>
-        <CodeMirrorEditor value={JSON.stringify($schema, null, 2)} language="json" readOnly filePath="schema.json" />
+        <CodeMirrorEditor 
+          value={JSON.stringify($schema, null, 2)} 
+          language="json" 
+          filePath="schema.json" 
+          onChange={handleGeneratedSchemaEditorChange} // Added onChange handler
+        />
       </Box>
       <Box mt={3}>
         <Typography variant="subtitle1" gutterBottom>
