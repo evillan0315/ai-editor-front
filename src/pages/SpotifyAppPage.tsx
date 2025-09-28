@@ -266,7 +266,14 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
     volume,
   ]); // Re-attach listeners if active media element or any callback changes
 
-  
+  // useEffect to trigger play when isPlayingAtom becomes true and a track is loaded
+  useEffect(() => {
+    if (isPlaying && currentTrack && mediaElementRef.current) {
+      mediaElementRef.current.play().catch((e) => {
+        console.error("Autoplay failed:", e);
+      });
+    }
+  }, [isPlaying, currentTrack, mediaElementRef]);
 
   return (
     <Box

@@ -1,4 +1,4 @@
-import React, { useCallback, useState, SyntheticEvent } from 'react';
+import React, { useCallback, useState, SyntheticEvent, useEffect } from 'react';
 import {
   Box,
   IconButton,
@@ -52,6 +52,16 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
   const shuffle = useStore(shuffleAtom);
   const repeatMode = useStore(repeatModeAtom);
   const [isSeeking, setIsSeeking] = useState(false);
+
+  useEffect(() => {
+    if (mediaElementRef.current && isPlaying) {
+      mediaElementRef.current.play().catch(e => {
+        console.error("Autoplay failed:", e);
+      });
+    } else if (mediaElementRef.current && !isPlaying) {
+      mediaElementRef.current.pause();
+    }
+  }, [isPlaying, mediaElementRef]);
 
   const handlePlayPause = () => {
     if (mediaElementRef.current) {
@@ -129,7 +139,8 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
           size='large'
           onClick={handlePlayPause}
           disabled={$isLoading}
-          sx={{
+          sx={
+            {
             color: theme.palette.text.primary,
             bgcolor: theme.palette.primary.main,
             '&:hover': {
@@ -138,7 +149,8 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
             borderRadius: '50%',
             width: 48,
             height: 48,
-          }}
+          }
+          }
         >
           {$isLoading ? (
             <CircularProgress size={24} color='inherit' />
