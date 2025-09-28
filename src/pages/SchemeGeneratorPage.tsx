@@ -11,11 +11,15 @@ const AiSchemaGenerator = lazy(() => import('@/components/schema/AiSchemaGenerat
  */
 const SchemeGeneratorPage: React.FC = () => {
   return (
-    <PageLayout title="AI Schema Generator" description="Generate and manage JSON schemas with AI assistance.">
-      <Suspense fallback={<Loading message="Loading Schema Generator..." />}>
-        <AiSchemaGenerator />
-      </Suspense>
-    </PageLayout>
+    <PageLayout
+      header={"AI Schema Generator"}
+      body={
+        <Suspense fallback={<Loading message="Loading Schema Generator..." />}>
+          <AiSchemaGenerator />
+        </Suspense>
+      }
+      centerBodyContent={false}
+    />
   );
 };
 
