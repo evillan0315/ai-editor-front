@@ -21,7 +21,8 @@ import {
 } from '@/stores/fileTreeStore';
 import { llmStore, showGlobalSnackbar } from '@/stores/llmStore';
 
-import { ContextMenuItem, FileEntry } from '@/types';
+import { ContextMenuItem } from '@/types/main';
+import { FileEntry } from '@/types/refactored/fileTree'; // Updated import path
 import { showFileTreeContextMenu } from '@/stores/contextMenuStore';
 import {
   ContentCopy as ContentCopyIcon,
@@ -58,6 +59,10 @@ import {
   setShowTerminal,
   connectTerminal,
 } from '@/stores/terminalStore';
+
+import FileTreeHeader from './common/FileTreeHeader';
+import FileTreeStatus from './common/FileTreeStatus';
+import FileTreeList from './common/FileTreeList';
 
 interface FileTreeProps {
   //projectRoot?: string;
@@ -104,10 +109,12 @@ const FileTree: React.FC<FileTreeProps> = () => {
   const refreshPath = useCallback(
     async (targetPath: string) => {
       const parentDir = path.dirname(targetPath);
-      const isRoot = parentDir === targetPath;
-      const pathToRefresh = isRoot ? targetPath : parentDir;
+      const isRoot = parentDir === targetPath; // This means targetPath is the root itself or a root-level item
+      // If refreshing a root-level item, or the root itself, reload the initial tree.
+      // Otherwise, load children of its parent.
+      const pathToRefresh = isRoot && parentDir === '/' ? targetPath : parentDir;
 
-      if (pathToRefresh) {
+      if (pathToRefresh && pathToRefresh !== '.') {
         await loadChildrenForDirectory(pathToRefresh);
       } else if (projectRoot) {
         await loadInitialTree(projectRoot);
@@ -163,8 +170,8 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
   const handleRenameSuccess = useCallback(
     (oldPath: string, newPath: string) => {
-      refreshPath(oldPath);
-      refreshPath(newPath);
+      refreshPath(oldPath); // Refresh old parent to remove old name
+      refreshPath(newPath); // Refresh new parent to add new name (could be same parent)
       showGlobalSnackbar('Item renamed successfully!', 'success');
     },
     [refreshPath],
@@ -173,9 +180,9 @@ const FileTree: React.FC<FileTreeProps> = () => {
   const handleOperationSuccess = useCallback(
     (sourcePath: string, destinationPath: string) => {
       if (operationMode === 'move') {
-        refreshPath(sourcePath);
+        refreshPath(sourcePath); // Remove from source if moved
       }
-      refreshPath(destinationPath);
+      refreshPath(destinationPath); // Add to destination
       showGlobalSnackbar(
         `${operationMode === 'copy' ? 'Copied' : 'Moved'} successfully!`,
         'success',
@@ -198,6 +205,8 @@ const FileTree: React.FC<FileTreeProps> = () => {
               setSelectedFile(file.path);
               showGlobalSnackbar(`Opening file: ${file.name}`, 'info');
             } else {
+              // For folders, we might want to expand/collapse or navigate
+              // For now, just a snackbar message
               showGlobalSnackbar(`Folder selected: ${file.name}`, 'info');
             }
           },
@@ -269,7 +278,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
               connectTerminal();
             }
           },
-          disabled: isFile,
+          disabled: isFile, // Disable for files
         },
         {
           label: 'Send to AI Scan Path',
@@ -298,7 +307,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
           label: `Delete ${isFile ? 'File' : 'Folder'}...`,
           icon: <DeleteIcon fontSize="small" />,
           action: handleDeleteItem,
-          className: '!text-red-500 hover:!bg-red-900/50',
+          className: '!text-red-500 hover:!bg-red-900/50', // Tailwind class for danger styling
         },
       ];
 
@@ -326,18 +335,27 @@ const FileTree: React.FC<FileTreeProps> = () => {
   // Function to handle search term changes
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
-    // Implement your search logic here.  Consider filtering the `treeFiles`
-    // and updating the display accordingly.  Since `treeFiles` is a nanostore,
-    // you'll need to manage a separate state for the filtered results.
-    // For example, update the `fileTreeStore` with the search results.
+    // Search logic will be implemented here, potentially by filtering treeFiles
+    // or triggering a new API call if search needs to be server-side.
+    // For now, it's a controlled input.
   };
 
   // Function to handle going up a directory
   const handleGoUpDirectory = () => {
+    // Ensure projectRoot is not null before proceeding
     if (projectRoot) {
       const parentDir = path.dirname(projectRoot);
-      projectRootDirectoryStore.set(parentDir);
-      loadInitialTree(parentDir);
+      // If parentDir is the same as projectRoot, we are at the root already.
+      // Or if parentDir is '.' which means projectRoot is a top-level directory in the current working directory
+      // For a file tree starting at a specific projectRoot, going up means setting the parent of that root as the new root.
+      // Assuming '/' is the absolute root that should stop further 'up' navigation.
+      if (parentDir && parentDir !== '.' && parentDir !== projectRoot) {
+        projectRootDirectoryStore.set(parentDir);
+        // loadInitialTree will be triggered by the useEffect observing projectRoot
+      } else if (projectRoot !== '/') {
+        // If at a top-level folder within '/' and try to go up, set root to '/'
+        projectRootDirectoryStore.set('/');
+      }
     }
   };
 
@@ -346,95 +364,34 @@ const FileTree: React.FC<FileTreeProps> = () => {
       sx={{
         height: '100%',
         overflowY: 'auto',
-
         display: 'flex',
         flexDirection: 'column',
       }}
     >
       {/* Sticky Header */}
-      <Paper
-        sx={{
-          position: 'sticky',
-          top: 0,
-          left: 0,
-          borderRadius: 0,
-          backgroundColor: theme.palette.background.paper,
-          color: theme.palette.text.primary,
-          borderBottom: `1px solid ${theme.palette.divider}`,
-          zIndex: 1, // Ensure it stays on top of the file list
-          p: 0.5,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          boxShadow: 0,
-        }}
-      >
-        <Box className="flex items-center gap-0">
-          <IconButton
-            onClick={handleGoUpDirectory}
-            disabled={!projectRoot || projectRoot === '/'}
-            size="small"
-            sx={{ color: theme.palette.text.secondary, mr: 1 }}
-          >
-            <ArrowUpwardIcon fontSize="small" />
-          </IconButton>
-        </Box>
-        <TextField
-          size="small"
-          placeholder="Search files..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          sx={{
-            width: '100%',
-            maxWidth: '70%',
-            mr: 0.5,
-            border: `1px solid ${theme.palette.divider}`,
-            backgroundColor: theme.palette.background.paper,
-          }} // Adjust width as needed
+      <FileTreeHeader
+        projectRoot={projectRoot}
+        isFetchingTree={isFetchingTree}
+        searchTerm={searchTerm}
+        onGoUpDirectory={handleGoUpDirectory}
+        onRefreshTree={handleRefreshTree}
+        onSearchChange={handleSearchChange}
+      />
+
+      {/* File List or Status Messages */}
+      <FileTreeStatus
+        isFetchingTree={isFetchingTree}
+        fetchTreeError={fetchTreeError}
+        treeFilesCount={treeFiles.length}
+        projectRoot={projectRoot}
+      />
+
+      {!isFetchingTree && !fetchTreeError && treeFiles.length > 0 && (
+        <FileTreeList
+          treeFiles={treeFiles}
+          projectRoot={projectRoot}
+          onNodeContextMenu={handleNodeContextMenu}
         />
-
-        <Box className="flex items-center gap-0">
-          <IconButton
-            onClick={handleRefreshTree}
-            disabled={isFetchingTree || !projectRoot}
-            size="small"
-            sx={{ color: theme.palette.text.secondary }}
-          >
-            <RefreshIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </Paper>
-
-      {/* File List */}
-      {isFetchingTree ? (
-        <Box className="flex justify-center items-center flex-grow">
-          <CircularProgress size={24} />
-          <Typography
-            variant="body2"
-            sx={{ ml: 2, color: theme.palette.text.secondary }}
-          >
-            Loading files...
-          </Typography>
-        </Box>
-      ) : fetchTreeError ? (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {fetchTreeError}
-        </Alert>
-      ) : treeFiles.length === 0 && projectRoot ? (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          No files found for project root: {projectRoot}. Check path.
-        </Alert>
-      ) : (
-        <Box className="flex-grow h-full">
-          {treeFiles.map((entry) => (
-            <FileTreeItem
-              key={entry.path}
-              fileEntry={entry}
-              projectRoot={projectRoot}
-              onContextMenu={handleNodeContextMenu}
-            />
-          ))}
-        </Box>
       )}
 
       <FileTreeContextMenuRenderer />
@@ -465,12 +422,6 @@ const FileTree: React.FC<FileTreeProps> = () => {
         projectRoot={projectRoot}
       />
 
-      {/*<TerminalDialog
-        open={terminalDialogOpen}
-        onClose={() => setTerminalDialogOpen(false)}
-        token={localStorage.getItem('token') || ''}
-        initialCwd={terminalStore.get().currentPath}
-      />*/}
     </Box>
   );
 };
