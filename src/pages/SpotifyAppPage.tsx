@@ -26,8 +26,9 @@ import {
   resetPlaybackState,
   bufferedAtom, // New: Import bufferedAtom
   setBuffered, // New: Import setBuffered
+  setCurrentTrack,
 } from '@/stores/mediaStore';
-import { FileType, BufferedRange } from '@/types'; // New: Import BufferedRange
+import { FileType, BufferedRange, MediaFileResponseDtoUrl } from '@/types'; // New: Import BufferedRange
 
 type SpotifyView = 'home' | 'search' | 'library' | 'settings';
 
