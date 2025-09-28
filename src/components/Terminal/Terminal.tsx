@@ -109,7 +109,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
     if (!xtermDivRef.current) return;
 
     const term = new XtermTerminal({
-      fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
+      fontFamily: '\"Fira Code\", \"Monaco\", \"Consolas\", monospace',
       fontSize: 12,
       cursorBlink: true,
       theme: xtermTheme, // Use initial theme from memoized value
@@ -152,7 +152,8 @@ export const XTerminal: React.FC<XTerminalProps> = ({
     // With disableStdin: true, term.onData will no longer fire for keyboard input.
     // We use term.onKey instead to send input to the backend.
     term.onKey((e: { key: string; domEvent: KeyboardEvent }) => {
-      if (isConnected) {
+      // Access isConnected directly from the store to avoid stale closures
+      if (terminalStore.get().isConnected) {
         socketService.sendInput(e.key);
       }
     });
@@ -178,14 +179,14 @@ export const XTerminal: React.FC<XTerminalProps> = ({
       registerTerminalClearHandler(null);
       registerTerminalFitHandler(null);
     };
-  }, [isConnected, xtermTheme]); // Re-run if initial xtermTheme changes or connection status affects onKey binding
+  }, []); // Empty dependency array: runs ONCE on mount
 
   /** Update theme of existing terminal when xtermTheme object itself changes (via useMemo dependencies) */
   useEffect(() => {
     if (xtermTerminalRef.current && !xtermTerminalRef.current.isDisposed) {
       xtermTerminalRef.current.options.theme = xtermTheme;
     }
-  }, [xtermTheme]);
+  }, [xtermTheme]); // Only re-runs if the xtermTheme object reference changes
 
   /** Auto-connect if token exists */
   useEffect(() => {
