@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Box, TextField, Select, MenuItem, FormControl, InputLabel, Switch, FormGroup, FormControlLabel, IconButton, useTheme, Typography, Paper, Button, CircularProgress, Tooltip } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Box, TextField, Select, MenuItem, FormControl, InputLabel, Switch, FormGroup, FormControlLabel, IconButton, useTheme, Typography, Paper, Button, CircularProgress, Tooltip, Collapse } from '@mui/material';
+import { Add as AddIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, VisibilityOff as VisibilityOffIcon } from '@mui/icons-material';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { generateSchema } from '@/api/llm';
 import { LLM_ENDPOINT, RequestType } from '@/types/llm';
@@ -30,6 +30,7 @@ const AiSchemaGenerator: React.FC = () => {
   const $schema = useStore(schemaStore);
   const [loading, setLoading] = useState(false);
   const [applyInstruction, setApplyInstruction] = useState('');
+  const [showOtherOptions, setShowOtherOptions] = useState(false);
 
   // Function to parse JSON schema and update properties
   const parseSchema = useCallback((schema: any) => {
@@ -179,6 +180,10 @@ const AiSchemaGenerator: React.FC = () => {
     }
   };
 
+  const handleToggleOtherOptions = () => {
+    setShowOtherOptions(!showOtherOptions);
+  };
+
   return (
     <Box sx={{ padding: 3 }}>
       <Typography variant="h6" gutterBottom>
@@ -244,77 +249,83 @@ const AiSchemaGenerator: React.FC = () => {
                     label="Required"
                   />
                 </FormGroup>
-                <Tooltip title="Description">
-                  <TextField
-                    label="Description"
-                    value={property.description || ''}
-                    onChange={e => handlePropertyChange(property.id, 'description', e.target.value)}
-                    size="small"
-                    sx={{ flexGrow: 1 }}
-                  />
-                </Tooltip>
-                <Tooltip title="Format">
-                  <TextField
-                    label="Format"
-                    value={property.format || ''}
-                    onChange={e => handlePropertyChange(property.id, 'format', e.target.value)}
-                    size="small"
-                    sx={{ flexGrow: 1 }}
-                  />
-                </Tooltip>
-                <Tooltip title="Enum">
-                  <TextField
-                    label="Enum (comma separated)"
-                    value={(property.enum || []).join(', ')}
-                    onChange={e => {
-                      const enumValues = e.target.value.split(',').map(item => item.trim());
-                      handlePropertyChange(property.id, 'enum', enumValues);
-                    }}
-                    size="small"
-                    sx={{ flexGrow: 1 }}
-                  />
-                </Tooltip>
+                 <IconButton aria-label="toggle other options" onClick={handleToggleOtherOptions}>
+                    {showOtherOptions ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+                <Collapse in={showOtherOptions} timeout="auto" unmountOnExit>
+                  <Tooltip title="Description">
+                    <TextField
+                      label="Description"
+                      value={property.description || ''}
+                      onChange={e => handlePropertyChange(property.id, 'description', e.target.value)}
+                      size="small"
+                      sx={{ flexGrow: 1 }}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Format">
+                    <TextField
+                      label="Format"
+                      value={property.format || ''}
+                      onChange={e => handlePropertyChange(property.id, 'format', e.target.value)}
+                      size="small"
+                      sx={{ flexGrow: 1 }}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Enum">
+                    <TextField
+                      label="Enum (comma separated)"
+                      value={(property.enum || []).join(', ')}
+                      onChange={e => {
+                        const enumValues = e.target.value.split(',').map(item => item.trim());
+                        handlePropertyChange(property.id, 'enum', enumValues);
+                      }}
+                      size="small"
+                      sx={{ flexGrow: 1 }}
+                    />
+                  </Tooltip>
 
-                <Tooltip title="Minimum">
-                  <TextField
-                    label="Minimum"
-                    type="number"
-                    value={property.minimum !== undefined ? property.minimum : ''}
-                    onChange={e => handlePropertyChange(property.id, 'minimum', Number(e.target.value))}
-                    size="small"
-                    sx={{ flexGrow: 1 }}
-                  />
-                </Tooltip>
-                <Tooltip title="Maximum">
-                  <TextField
-                    label="Maximum"
-                    type="number"
-                    value={property.maximum !== undefined ? property.maximum : ''}
-                    onChange={e => handlePropertyChange(property.id, 'maximum', Number(e.target.value))}
-                    size="small"
-                    sx={{ flexGrow: 1 }}
-                  />
-                </Tooltip>
-                <Tooltip title="Min Length">
-                  <TextField
-                    label="Min Length"
-                    type="number"
-                    value={property.minLength !== undefined ? property.minLength : ''}
-                    onChange={e => handlePropertyChange(property.id, 'minLength', Number(e.target.value))}
-                    size="small"
-                    sx={{ flexGrow: 1 }}
-                  />
-                </Tooltip>
-                <Tooltip title="Max Length">
-                  <TextField
-                    label="Max Length"
-                    type="number"
-                    value={property.maxLength !== undefined ? property.maxLength : ''}
-                    onChange={e => handlePropertyChange(property.id, 'maxLength', Number(e.target.value))}
-                    size="small"
-                    sx={{ flexGrow: 1 }}
-                  />
-                </Tooltip>
+                  <Tooltip title="Minimum">
+                    <TextField
+                      label="Minimum"
+                      type="number"
+                      value={property.minimum !== undefined ? property.minimum : ''}
+                      onChange={e => handlePropertyChange(property.id, 'minimum', Number(e.target.value))}
+                      size="small"
+                      sx={{ flexGrow: 1 }}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Maximum">
+                    <TextField
+                      label="Maximum"
+                      type="number"
+                      value={property.maximum !== undefined ? property.maximum : ''}
+                      onChange={e => handlePropertyChange(property.id, 'maximum', Number(e.target.value))}
+                      size="small"
+                      sx={{ flexGrow: 1 }}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Min Length">
+                    <TextField
+                      label="Min Length"
+                      type="number"
+                      value={property.minLength !== undefined ? property.minLength : ''}
+                      onChange={e => handlePropertyChange(property.id, 'minLength', Number(e.target.value))}
+                      size="small"
+                      sx={{ flexGrow: 1 }}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Max Length">
+                    <TextField
+                      label="Max Length"
+                      type="number"
+                      value={property.maxLength !== undefined ? property.maxLength : ''}
+                      onChange={e => handlePropertyChange(property.id, 'maxLength', Number(e.target.value))}
+                      size="small"
+                      sx={{ flexGrow: 1 }}
+                    />
+                  </Tooltip>
+                </Collapse>
+
                 <IconButton aria-label="delete" onClick={() => handleDeleteProperty(property.id)}>
                   <DeleteIcon />
                 </IconButton>
