@@ -277,6 +277,37 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
             size="small"
             fullWidth
           />
+
+          <TextField
+            label="x-order (for UI sorting)"
+            type="number"
+            value={property.xOrder !== undefined ? property.xOrder : ''}
+            onChange={(e) =>
+              handleFieldChange(
+                'xOrder',
+                e.target.value === '' ? undefined : Number(e.target.value),
+              )
+            }
+            size="small"
+            fullWidth
+            helperText="Order hint for UI display (e.g., in DynamicFormBuilder)"
+          />
+          <TextField
+            label="x-classNames (Tailwind)"
+            value={property.xClassNames || ''}
+            onChange={(e) => handleFieldChange('xClassNames', e.target.value)}
+            size="small"
+            fullWidth
+            helperText="Tailwind classes for UI styling (e.g., col-span-6)"
+          />
+          <TextField
+            label="x-layout (Tailwind) (for object/array children)"
+            value={property.xLayout || ''}
+            onChange={(e) => handleFieldChange('xLayout', e.target.value)}
+            size="small"
+            fullWidth
+            helperText="Tailwind classes for layout of children (e.g., grid grid-cols-2)"
+          />
         </Box>
       </Collapse>
 

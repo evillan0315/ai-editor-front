@@ -71,6 +71,9 @@ const AiSchemaGenerator: React.FC = () => {
         maxLength: details.maxLength,
         showOptions: false, // Start collapsed
         showChildren: false, // Start collapsed
+        xOrder: details['x-order'],
+        xClassNames: details['x-classNames'],
+        xLayout: details['x-layout'],
       };
 
       // Handle array items
@@ -172,6 +175,11 @@ const AiSchemaGenerator: React.FC = () => {
         jsonSchema.minLength = property.minLength;
       if (property.maxLength !== undefined)
         jsonSchema.maxLength = property.maxLength;
+
+      // Add custom 'x-' properties if they exist
+      if (property.xOrder !== undefined) jsonSchema['x-order'] = property.xOrder;
+      if (property.xClassNames) jsonSchema['x-classNames'] = property.xClassNames;
+      if (property.xLayout) jsonSchema['x-layout'] = property.xLayout;
 
       if (property.type === 'array' && property.items) {
         // For arrays, the 'items' field directly holds the schema for a single array element
