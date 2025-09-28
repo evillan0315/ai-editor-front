@@ -10,7 +10,7 @@ import { schemaStore } from '@/stores/schemaStore';
 interface SchemaProperty {
   id: string;
   name: string;
-  type: 'string' | 'number' | 'boolean';
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'null';
   required: boolean;
 }
 
@@ -159,11 +159,14 @@ const AiSchemaGenerator: React.FC = () => {
                     labelId="type-label"
                     value={property.type}
                     label="Type"
-                    onChange={e => handlePropertyChange(property.id, 'type', e.target.value as 'string' | 'number' | 'boolean')}
+                    onChange={e => handlePropertyChange(property.id, 'type', e.target.value as 'string' | 'number' | 'boolean' | 'array' | 'object' | 'null')}
                   >
                     <MenuItem value="string">String</MenuItem>
                     <MenuItem value="number">Number</MenuItem>
                     <MenuItem value="boolean">Boolean</MenuItem>
+                    <MenuItem value="array">Array</MenuItem>
+                    <MenuItem value="object">Object</MenuItem>
+                    <MenuItem value="null">Null</MenuItem>
                   </Select>
                 </FormControl>
                 <FormGroup>
