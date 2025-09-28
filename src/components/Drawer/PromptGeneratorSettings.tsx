@@ -8,6 +8,8 @@ import {
   useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import SchemaIcon from '@mui/icons-material/Schema';
+import ExampleIcon from '@mui/icons-material/Code';
 import { useStore } from '@nanostores/react';
 import {
   INSTRUCTION_SCHEMA_OUTPUT,
@@ -84,8 +86,8 @@ ${localInstructionExample}
           centered
         >
           <Tab label="General Instruction" />
-          <Tab label="Instruction Schema" />
-          <Tab label="Example Output" />
+          <Tab label={<span>Instruction Schema <SchemaIcon /></span>} />
+          <Tab label={<span>Example Output <ExampleIcon /></span>} />
         </Tabs>
 
         {/* ---------- General Instruction (Markdown Editor) ---------- */}
