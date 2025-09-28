@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, useTheme } from '@mui/material';
+import { Box, useTheme, Paper } from '@mui/material';
 import MediaPlayerControls from './MediaPlayerControls';
 import MediaPlayerTrackInfo from './MediaPlayerTrackInfo';
 import MediaPlayerVolumeControl from './MediaPlayerVolumeControl';
@@ -36,6 +36,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType, mediaElementRef })
   };
 
   return (
+  <Paper className='flex flex-col'>
     <Box
       sx={{
         bgcolor: theme.palette.background.paper,
@@ -57,6 +58,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType, mediaElementRef })
       />
       <MediaPlayerVolumeControl mediaRef={mediaElementRef}/>
     </Box>
+    </Paper>
   );
 };
 

@@ -64,7 +64,6 @@ const MediaPlayerVolumeControl: React.FC<MediaPlayerVolumeControlProps> = ({ med
       sx={{
         display: 'flex',
         alignItems: 'center',
-        width: '30%',
         justifyContent: 'flex-end',
         minWidth: '180px',
       }}

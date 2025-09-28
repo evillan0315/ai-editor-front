@@ -30,8 +30,8 @@ interface SpotifyHomePageProps {
 const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   const theme = useTheme();
   const { isLoggedIn } = useStore(authStore); // Get login status
-  const { loading: isFetchingMedia, error: fetchMediaError, playlists: storedMediaFiles } = useStore($mediaStore);
-  const [allAvailableMediaFiles, setAllAvailableMediaFiles] = useState<MediaFileResponseDto[]>([]);
+  const { loading: isFetchingMedia, error: fetchMediaError, playlists: storedMediaFiles, allAvailableMediaFiles } = useStore($mediaStore);
+  const [allAvailableMediaFilesState, setAllAvailableMediaFilesState] = useState<MediaFileResponseDto[]>([]);
 
   // Directly get isPlaying and currentTrack from their respective atoms
   const isPlaying = useStore(isPlayingAtom);
@@ -52,7 +52,8 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
       const media = await fetchMediaFiles({ page: 1, pageSize: 200 });
       console.log(media, 'media');
       if (media && media.items) {
-        setAllAvailableMediaFiles(media.items);
+        setAllAvailableMediaFilesState(media.items);
+        $mediaStore.setKey('allAvailableMediaFiles', media.items);
       }
       setHasFetchedMedia(true);
       setLoading(false);
@@ -80,20 +81,20 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
 
   useEffect(() => {
     if (storedMediaFiles) {
-      setAllAvailableMediaFiles(storedMediaFiles as MediaFileResponseDto[])
+      setAllAvailableMediaFilesState(storedMediaFiles as MediaFileResponseDto[])
     }
 
   }, [storedMediaFiles])
 
   // Filter for audio files
   const playableAudioTracks: MediaFileResponseDto[] = useMemo(() => {
-    return allAvailableMediaFiles.filter(media => media.fileType === FileType.AUDIO);
-  }, [allAvailableMediaFiles]);
+    return allAvailableMediaFilesState.filter(media => media.fileType === FileType.AUDIO);
+  }, [allAvailableMediaFilesState]);
 
   // Filter for video files
   const playableVideoTracks: MediaFileResponseDto[] = useMemo(() => {
-    return allAvailableMediaFiles.filter(media => media.fileType === FileType.VIDEO);
-  }, [allAvailableMediaFiles]);
+    return allAvailableMediaFilesState.filter(media => media.fileType === FileType.VIDEO);
+  }, [allAvailableMediaFilesState]);
 
   const handlePlayAudio = useCallback((song: MediaFileResponseDto) => {
     if(!isPlaying){

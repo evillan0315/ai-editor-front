@@ -26,7 +26,6 @@ const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({ mediaType }
       sx={{
         display: 'flex',
         alignItems: 'center',
-        width: '30%',
         minWidth: '180px',
       }}
     >

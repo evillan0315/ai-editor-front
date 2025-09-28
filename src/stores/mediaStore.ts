@@ -76,6 +76,7 @@ export const $mediaStore = map({
   error: null as string | null,
   currentPlaylist: null as Playlist | null,
   playlists: [] as Playlist[],
+  allAvailableMediaFiles: [] as MediaFileResponseDto[],
 });
 
 // --- Global Actions (Stateless logic) ---
@@ -161,11 +162,77 @@ export const clearError = () => {
 };
 
 export const nextTrack = async () => {
-  showGlobalSnackbar('Next Track', 'info');
+  const shuffle = shuffleAtom.get();
+  const allAvailableMediaFiles = $mediaStore.get().allAvailableMediaFiles;
+  const currentTrack = currentTrackAtom.get();
+
+  if (!currentTrack) {
+    console.warn('No current track to go to next.');
+    return;
+  }
+
+  if (shuffle) {
+    // Logic for shuffled playback (simple random selection)
+    if (allAvailableMediaFiles.length === 0) {
+      console.warn('No tracks available to shuffle.');
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * allAvailableMediaFiles.length);
+    const nextTrack = allAvailableMediaFiles[randomIndex];
+    setCurrentTrack(nextTrack);
+  } else {
+    // Logic for sequential playback
+    const currentIndex = allAvailableMediaFiles.findIndex(
+      (track) => track.id === currentTrack.id,
+    );
+
+    if (currentIndex === -1) {
+      console.warn('Current track not found in allAvailableMediaFiles.');
+      return;
+    }
+
+    const nextIndex = (currentIndex + 1) % allAvailableMediaFiles.length;
+    const nextTrack = allAvailableMediaFiles[nextIndex];
+    setCurrentTrack(nextTrack);
+  }
 };
 
 export const previousTrack = async () => {
-  showGlobalSnackbar('Previous Track', 'info');
+  const shuffle = shuffleAtom.get();
+  const allAvailableMediaFiles = $mediaStore.get().allAvailableMediaFiles;
+  const currentTrack = currentTrackAtom.get();
+
+  if (!currentTrack) {
+    console.warn('No current track to go to previous.');
+    return;
+  }
+
+  if (shuffle) {
+    // If shuffle is enabled, play a random track
+    if (allAvailableMediaFiles.length === 0) {
+      console.warn('No tracks available to shuffle.');
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * allAvailableMediaFiles.length);
+    const previousTrack = allAvailableMediaFiles[randomIndex];
+    setCurrentTrack(previousTrack);
+  } else {
+    // If shuffle is disabled, play the previous track in the sequence
+    const currentIndex = allAvailableMediaFiles.findIndex(
+      (track) => track.id === currentTrack.id,
+    );
+
+    if (currentIndex === -1) {
+      console.warn('Current track not found in allAvailableMediaFiles.');
+      return;
+    }
+
+    const previousIndex = (currentIndex - 1 + allAvailableMediaFiles.length) % allAvailableMediaFiles.length;
+    const previousTrack = allAvailableMediaFiles[previousIndex];
+    setCurrentTrack(previousTrack);
+  }
 };
 
 export const addMediaToPlaylistAction = async (
@@ -252,7 +319,7 @@ export const fetchingMediaFiles = async (query?: PaginationMediaQueryDto) => {
       showGlobalSnackbar('Failed to fetch media files or empty media list', 'warning');
       $mediaStore.setKey('error', 'Failed to fetch media files or empty media list');
       return null;
-    }
+    } 
   } catch (error: any) {
     $mediaStore.setKey('loading', false);
     // Handle errors and display a snackbar
