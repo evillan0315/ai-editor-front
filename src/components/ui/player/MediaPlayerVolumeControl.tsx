@@ -11,9 +11,11 @@ import {
   VolumeDown,
 } from '@mui/icons-material';
 
-interface MediaPlayerVolumeControlProps {}
+interface MediaPlayerVolumeControlProps {
+  mediaRef: React.RefObject<HTMLMediaElement>;
+}
 
-const MediaPlayerVolumeControl: React.FC<MediaPlayerVolumeControlProps> = () => {
+const MediaPlayerVolumeControl: React.FC<MediaPlayerVolumeControlProps> = ({ mediaRef }) => {
   const theme = useTheme();
   const [volume, setVolume] = useState(1);
 
@@ -21,7 +23,7 @@ const MediaPlayerVolumeControl: React.FC<MediaPlayerVolumeControlProps> = () => 
   const [internalVolume, setInternalVolume] = useState(volume);
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const mediaRef = useRef<HTMLMediaElement>(null);
+  //const mediaRef = useRef<HTMLMediaElement>(null);
 
   useEffect(() => {
     if (mediaRef.current) {

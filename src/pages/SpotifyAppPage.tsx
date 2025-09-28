@@ -31,7 +31,12 @@ import { FileType, BufferedRange } from '@/types'; // New: Import BufferedRange
 
 type SpotifyView = 'home' | 'search' | 'library' | 'settings';
 
-const SpotifyAppPage: React.FC = () => {
+interface SpotifyAppPageProps {
+  //audioRef: React.RefObject<HTMLAudioElement>;
+  //videoRef: React.RefObject<HTMLVideoElement>;
+}
+
+const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
   const theme = useTheme();
   const [currentView, setCurrentView] = useState<SpotifyView>('home');
 
@@ -48,6 +53,7 @@ const SpotifyAppPage: React.FC = () => {
 
   const mediaElementRef = useRef<HTMLMediaElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const playerBarRef = useRef<HTMLDivElement | null>(null);
 
@@ -290,7 +296,8 @@ const SpotifyAppPage: React.FC = () => {
         <SpotifyMainContent currentView={currentView} />
       </Box>
 
-     
+      <audio ref={audioRef} style={{ display: 'none' }} />
+      <video ref={videoRef} style={{ display: 'none' }}  />
 
       <MediaPlayer
         mediaType={currentTrack?.fileType || 'AUDIO'}
