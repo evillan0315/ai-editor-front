@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Typography, TextField } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { nanoid } from 'nanoid';
 import { SchemaProperty } from './SchemaPropertyTypes';
@@ -18,12 +18,24 @@ interface SchemaPropertiesEditorProps {
   properties: SchemaProperty[];
   onPropertiesChange: (newProperties: SchemaProperty[]) => void;
   onGenerateSchema: () => void;
+  schemaUrl: string;
+  onSchemaUrlChange: (url: string) => void;
+  schemaTitle: string;
+  onSchemaTitleChange: (title: string) => void;
+  schemaDescription: string;
+  onSchemaDescriptionChange: (description: string) => void;
 }
 
 const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   properties,
   onPropertiesChange,
   onGenerateSchema,
+  schemaUrl,
+  onSchemaUrlChange,
+  schemaTitle,
+  onSchemaTitleChange,
+  schemaDescription,
+  onSchemaDescriptionChange,
 }) => {
 
   // Helper function to update a property deeply nested in the state
@@ -174,6 +186,35 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   return (
     <Box>
       <Typography variant="subtitle1" gutterBottom>Manual Schema Definition:</Typography>
+
+      {/* Top-level Schema Metadata Fields */}
+      <TextField
+        label="Schema URL ($id)"
+        value={schemaUrl}
+        onChange={(e) => onSchemaUrlChange(e.target.value)}
+        fullWidth
+        margin="normal"
+        size="small"
+      />
+      <TextField
+        label="Schema Title"
+        value={schemaTitle}
+        onChange={(e) => onSchemaTitleChange(e.target.value)}
+        fullWidth
+        margin="normal"
+        size="small"
+      />
+      <TextField
+        label="Schema Description"
+        value={schemaDescription}
+        onChange={(e) => onSchemaDescriptionChange(e.target.value)}
+        fullWidth
+        multiline
+        rows={2}
+        margin="normal"
+        size="small"
+      />
+
       {properties.map(property => (
         <SchemaPropertyField
           key={property.id}

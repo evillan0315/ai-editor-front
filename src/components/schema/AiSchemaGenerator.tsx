@@ -25,6 +25,11 @@ const AiSchemaGenerator: React.FC = () => {
   const [applyInstruction, setApplyInstruction] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // New state for top-level schema metadata
+  const [schemaUrl, setSchemaUrl] = useState('');
+  const [schemaTitle, setSchemaTitle] = useState('');
+  const [schemaDescription, setSchemaDescription] = useState('');
+
   const $schema = useStore(schemaStore);
 
   // Helper function to convert JSON schema to SchemaProperty structure recursively
@@ -76,8 +81,13 @@ const AiSchemaGenerator: React.FC = () => {
     return baseProperty;
   }, []);
 
-  // Function to parse JSON schema and update properties
+  // Function to parse JSON schema and update properties and top-level metadata
   const parseSchema = useCallback((schema: any) => {
+    // Update top-level schema metadata
+    setSchemaUrl(schema.$id || '');
+    setSchemaTitle(schema.title || '');
+    setSchemaDescription(schema.description || '');
+
     if (typeof schema === 'object' && schema !== null && schema.properties) {
       const newProperties: SchemaProperty[] = Object.entries(schema.properties).map(([name, details]: [string, any]) =>
         convertJsonSchemaToSchemaPropertyRecursive(
@@ -97,6 +107,12 @@ const AiSchemaGenerator: React.FC = () => {
   useEffect(() => {
     if ($schema && Object.keys($schema).length > 0) { // Check if $schema is not empty
       parseSchema($schema);
+    } else {
+      // Reset properties and metadata if schema is empty/reset
+      setProperties([{ id: nanoid(), name: 'newProperty', type: 'string', required: true, showOptions: false, showChildren: false }]);
+      setSchemaUrl('');
+      setSchemaTitle('');
+      setSchemaDescription('');
     }
   }, [$schema, parseSchema]);
 
@@ -158,13 +174,26 @@ const AiSchemaGenerator: React.FC = () => {
       if (prop.required) rootRequired.push(prop.name);
     });
 
-    const schema = {
+    const schema: any = {
       type: 'object',
       properties: rootProperties,
-      required: rootRequired,
     };
+
+    if (rootRequired.length > 0) {
+      schema.required = rootRequired;
+    }
+    if (schemaUrl) {
+      schema.$id = schemaUrl;
+    }
+    if (schemaTitle) {
+      schema.title = schemaTitle;
+    }
+    if (schemaDescription) {
+      schema.description = schemaDescription;
+    }
+
     schemaStore.set(schema);
-  }, [properties, convertSchemaPropertyToJsonSchemaRecursive]);
+  }, [properties, schemaUrl, schemaTitle, schemaDescription, convertSchemaPropertyToJsonSchemaRecursive]);
 
   // Function to generate schema from instruction using AI
   const generateSchemaFromInstruction = useCallback(async () => {
@@ -220,6 +249,12 @@ const AiSchemaGenerator: React.FC = () => {
           properties={properties}
           onPropertiesChange={setProperties}
           onGenerateSchema={generateSchemaFromProperties}
+          schemaUrl={schemaUrl}
+          onSchemaUrlChange={setSchemaUrl}
+          schemaTitle={schemaTitle}
+          onSchemaTitleChange={setSchemaTitle}
+          schemaDescription={schemaDescription}
+          onSchemaDescriptionChange={setSchemaDescription}
         />
       )}
 
