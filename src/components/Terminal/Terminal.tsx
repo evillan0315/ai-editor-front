@@ -114,6 +114,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
       cursorBlink: true,
       theme: xtermTheme, // Use initial theme from memoized value
       allowTransparency: true,
+      disableStdin: true, // Disable xterm.js's local input processing/echoing
     });
 
     const fitAddon = new FitAddon();
@@ -148,8 +149,12 @@ export const XTerminal: React.FC<XTerminalProps> = ({
     fitAddon.fit();
 
     // Handle terminal input (e.g., user types command)
-    term.onData((input: string) => {
-      socketService.sendInput(input);
+    // With disableStdin: true, term.onData will no longer fire for keyboard input.
+    // We use term.onKey instead to send input to the backend.
+    term.onKey((e: { key: string; domEvent: KeyboardEvent }) => {
+      if (isConnected) {
+        socketService.sendInput(e.key);
+      }
     });
 
     // Handle terminal resize (when xterm detects a change in its dimensions)
@@ -173,7 +178,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
       registerTerminalClearHandler(null);
       registerTerminalFitHandler(null);
     };
-  }, [xtermTheme]); // Re-run if initial xtermTheme changes, mainly for HMR or if memoized theme changes for initial setup
+  }, [isConnected, xtermTheme]); // Re-run if initial xtermTheme changes or connection status affects onKey binding
 
   /** Update theme of existing terminal when xtermTheme object itself changes (via useMemo dependencies) */
   useEffect(() => {
