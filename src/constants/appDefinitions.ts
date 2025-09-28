@@ -14,6 +14,7 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import GitHubIcon from '@mui/icons-material/GitHub'; // for Simple Git
 import ForumIcon from '@mui/icons-material/Forum';
+import DataObjectIcon from '@mui/icons-material/DataObject'; // For Schema Generator
 
 
 export const appDefinitions: AppDefinition[] = [
@@ -33,6 +34,15 @@ export const appDefinitions: AppDefinition[] = [
     link: '/apps/ai-chat',
     linkText: 'Open AI Chat',
     icon: ForumIcon,
+    category: 'AI Tools',
+  },
+  {
+    id: 'schema-generator',
+    title: 'AI Schema Generator',
+    description: 'Generate and manage JSON schemas with AI assistance.',
+    link: '/apps/schema-generator',
+    linkText: 'Open Schema Generator',
+    icon: DataObjectIcon,
     category: 'AI Tools',
   },
   {

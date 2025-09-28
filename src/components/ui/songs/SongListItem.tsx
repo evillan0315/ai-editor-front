@@ -29,7 +29,7 @@ interface MenuItemType {
 
 interface SongListItemProps {
   song: MediaFileResponseDto;
-  onPlay: (song: MediaFileResponseDto) => void;
+  onPlay: (song: MediaFileResponseDto) => void; // onPlay now directly triggers playback
   onFavorite: (songId: string) => void;
   onAction: (action: string, song: MediaFileResponseDto) => void;
 }
@@ -123,7 +123,7 @@ export const SongListItem: React.FC<SongListItemProps> = ({ song, onPlay, onFavo
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText>{item.label}</ListItemText>
             </MenuItem>
-            {item.divider && <Divider />}
+            {item.divider && <Divider />} 
           </Box>
         ))}
       </Menu>

@@ -1,8 +1,8 @@
 import React from 'react';
-import { Box, Button, useTheme, ButtonProps } from '@mui/material';
+import { Box, Button, useTheme } from '@mui/material';
 import { ButtonColor, ButtonVariant } from '@mui/material/Button';
 
-interface GlobalAction {
+export interface GlobalAction {
   label: string;
   action: () => void;
   icon?: React.ElementType;

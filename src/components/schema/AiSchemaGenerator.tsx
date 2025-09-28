@@ -25,8 +25,9 @@ const AiSchemaGenerator: React.FC = () => {
   const [applyInstruction, setApplyInstruction] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // New state for top-level schema metadata
-  const [schemaUrl, setSchemaUrl] = useState('');
+  // State for top-level schema metadata
+  const [schemaId, setSchemaId] = useState(''); // Corresponds to JSON Schema $id
+  const [metaSchemaUrl, setMetaSchemaUrl] = useState('http://json-schema.org/draft-07/schema#'); // Corresponds to JSON Schema $schema
   const [schemaTitle, setSchemaTitle] = useState('');
   const [schemaDescription, setSchemaDescription] = useState('');
 
@@ -84,7 +85,8 @@ const AiSchemaGenerator: React.FC = () => {
   // Function to parse JSON schema and update properties and top-level metadata
   const parseSchema = useCallback((schema: any) => {
     // Update top-level schema metadata
-    setSchemaUrl(schema.$id || '');
+    setSchemaId(schema.$id || ''); // Extract $id
+    setMetaSchemaUrl(schema.$schema || 'http://json-schema.org/draft-07/schema#'); // Extract $schema, set default if missing
     setSchemaTitle(schema.title || '');
     setSchemaDescription(schema.description || '');
 
@@ -110,7 +112,8 @@ const AiSchemaGenerator: React.FC = () => {
     } else {
       // Reset properties and metadata if schema is empty/reset
       setProperties([{ id: nanoid(), name: 'newProperty', type: 'string', required: true, showOptions: false, showChildren: false }]);
-      setSchemaUrl('');
+      setSchemaId(''); // Reset schemaId
+      setMetaSchemaUrl('http://json-schema.org/draft-07/schema#'); // Reset metaSchemaUrl to default
       setSchemaTitle('');
       setSchemaDescription('');
     }
@@ -182,8 +185,11 @@ const AiSchemaGenerator: React.FC = () => {
     if (rootRequired.length > 0) {
       schema.required = rootRequired;
     }
-    if (schemaUrl) {
-      schema.$id = schemaUrl;
+    if (schemaId) { // Use schemaId for $id
+      schema.$id = schemaId;
+    }
+    if (metaSchemaUrl) { // Add metaSchemaUrl for $schema
+      schema.$schema = metaSchemaUrl;
     }
     if (schemaTitle) {
       schema.title = schemaTitle;
@@ -193,7 +199,7 @@ const AiSchemaGenerator: React.FC = () => {
     }
 
     schemaStore.set(schema);
-  }, [properties, schemaUrl, schemaTitle, schemaDescription, convertSchemaPropertyToJsonSchemaRecursive]);
+  }, [properties, schemaId, metaSchemaUrl, schemaTitle, schemaDescription, convertSchemaPropertyToJsonSchemaRecursive]);
 
   // Function to generate schema from instruction using AI
   const generateSchemaFromInstruction = useCallback(async () => {
@@ -249,8 +255,10 @@ const AiSchemaGenerator: React.FC = () => {
           properties={properties}
           onPropertiesChange={setProperties}
           onGenerateSchema={generateSchemaFromProperties}
-          schemaUrl={schemaUrl}
-          onSchemaUrlChange={setSchemaUrl}
+          schemaId={schemaId}
+          onSchemaIdChange={setSchemaId}
+          metaSchemaUrl={metaSchemaUrl}
+          onMetaSchemaUrlChange={setMetaSchemaUrl}
           schemaTitle={schemaTitle}
           onSchemaTitleChange={setSchemaTitle}
           schemaDescription={schemaDescription}

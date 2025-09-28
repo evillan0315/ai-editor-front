@@ -8,7 +8,7 @@ import { useStore } from '@nanostores/react';
 import {
   isPlayingAtom,
   currentTrackAtom,
-  setPlaying,
+  // setPlaying, // Removed, handled by store now
   nextTrack,
   previousTrack,
 } from '@/stores/mediaStore';
@@ -23,10 +23,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType, mediaElementRef })
   const isPlaying = useStore(isPlayingAtom);
   const currentTrack = useStore(currentTrackAtom);
 
-  const handlePlayPause = () => {
-    setPlaying(!isPlaying);
-  };
-
+  // handlePlayPause is now handled by MediaPlayerControls directly calling setPlaying in mediaStore
   const handleNext = () => {
     nextTrack();
   };

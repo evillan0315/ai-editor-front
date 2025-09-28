@@ -44,29 +44,29 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
 
   // Helper function to update a property deeply nested in the state
   const updatePropertyByPath = useCallback((
-    currentProps: SchemaProperty[],
-    path: string[], // e.g., ['id1', 'properties', 'id2', 'items', 'id3']
+    currentProps: SchemaProperty[], // This array could be root properties, or properties of an object, or a single-element array containing an item's schema
+    path: string[], // Sequence of IDs from the root down to the target property
     field: keyof SchemaProperty,
     value: any
   ): SchemaProperty[] => {
-    if (path.length === 0) return currentProps;
+    if (!currentProps || path.length === 0) return currentProps;
 
-    const [segment, ...restPath] = path;
+    const [targetId, ...restPath] = path;
 
     return currentProps.map(prop => {
-      if (prop.id === segment) { // Match current property by ID
+      if (prop.id === targetId) {
         if (restPath.length === 0) {
-          // This is the target property
+          // This is the direct target property to update
           return { ...prop, [field]: value };
         } else {
-          // Traverse deeper. The next segment should be a keyword ('items' or 'properties')
-          const keyword = restPath[0];
-          if (keyword === 'items' && prop.items) {
-            const updatedItems = updatePropertyByPath([prop.items], restPath.slice(1), field, value)[0];
-            return { ...prop, items: updatedItems };
-          } else if (keyword === 'properties' && prop.properties) {
-            const updatedProperties = updatePropertyByPath(prop.properties, restPath.slice(1), field, value);
+          // This prop is an ancestor, continue traversing down
+          if (prop.type === 'object' && prop.properties) {
+            const updatedProperties = updatePropertyByPath(prop.properties, restPath, field, value);
             return { ...prop, properties: updatedProperties };
+          } else if (prop.type === 'array' && prop.items) {
+            // The next ID in restPath must be the ID of `prop.items` if we're going into it
+            const updatedItems = updatePropertyByPath([prop.items], restPath, field, value)[0];
+            return { ...prop, items: updatedItems };
           }
         }
       }
@@ -77,22 +77,22 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   // Helper to add a nested property or array item schema
   const addNestedPropertyByPath = useCallback((
     currentProps: SchemaProperty[],
-    path: string[], // e.g., ['id1', 'properties', 'id2']
+    path: string[], // e.g., ['id1'], ['id1', 'id2'] - path to the PARENT property
     type: 'item' | 'property'
   ): SchemaProperty[] => {
-    if (path.length === 0) return currentProps;
+    if (!currentProps || path.length === 0) return currentProps;
 
-    const [segment, ...restPath] = path;
+    const [targetId, ...restPath] = path;
 
     return currentProps.map(prop => {
-      if (prop.id === segment) {
+      if (prop.id === targetId) {
         if (restPath.length === 0) {
           // This is the parent property where we add
           const newId = nanoid();
           const newProp: SchemaProperty = {
             id: newId,
-            name: type === 'item' ? 'newItemSchema' : 'newProperty', // Consistent naming
-            type: 'string', // Default type
+            name: type === 'item' ? 'newItemSchema' : 'newProperty',
+            type: 'string',
             required: false,
             showOptions: false,
             showChildren: false,
@@ -105,14 +105,13 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
           }
           return prop;
         } else {
-          // Traverse deeper
-          const keyword = restPath[0];
-          if (keyword === 'items' && prop.items) {
-            const updatedItems = addNestedPropertyByPath([prop.items], restPath.slice(1), type);
-            return { ...prop, items: updatedItems[0] };
-          } else if (keyword === 'properties' && prop.properties) {
-            const updatedProperties = addNestedPropertyByPath(prop.properties, restPath.slice(1), type);
+          // Traverse deeper to find the actual parent for the add operation
+          if (prop.type === 'object' && prop.properties) {
+            const updatedProperties = addNestedPropertyByPath(prop.properties, restPath, type);
             return { ...prop, properties: updatedProperties };
+          } else if (prop.type === 'array' && prop.items) {
+            const updatedItems = addNestedPropertyByPath([prop.items], restPath, type)[0];
+            return { ...prop, items: updatedItems };
           }
         }
       }
@@ -123,48 +122,36 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   // Helper to delete a property deeply nested in the state
   const deletePropertyByPath = useCallback((
     currentProps: SchemaProperty[],
-    path: string[] // e.g., ['id1', 'properties', 'id2'] or ['id1', 'items']
+    path: string[] // Path to the property to be deleted, e.g., ['top_level_id'], ['parent_id', 'target_id']
   ): SchemaProperty[] => {
-    if (path.length === 0) return currentProps;
+    if (!currentProps || path.length === 0) return currentProps;
 
-    const [segment, ...restPath] = path;
+    const [segmentId, ...restPath] = path;
 
-    return currentProps.reduce((acc, prop) => {
-      if (prop.id === segment) {
-        if (restPath.length === 0) {
-          // This is the target property to delete, so skip it
-          return acc;
-        } else {
-          // Traverse deeper. The next segment should be a keyword
-          const keyword = restPath[0];
-          if (keyword === 'items' && prop.items) {
-            if (restPath.length === 1) { // Path is ['propId', 'items'], delete the items schema
-              acc.push({ ...prop, items: undefined });
+    if (restPath.length === 0) {
+      // This is the direct target to delete from currentProps
+      return currentProps.filter(prop => prop.id !== segmentId);
+    } else {
+      // Find the parent and recurse to delete the child
+      return currentProps.map(prop => {
+        if (prop.id === segmentId) { // Found the parent
+          if (prop.type === 'object' && prop.properties) {
+            const updatedProperties = deletePropertyByPath(prop.properties, restPath);
+            return { ...prop, properties: updatedProperties };
+          } else if (prop.type === 'array' && prop.items) {
+            // The next segment should be the ID of the item schema to delete or an item within it.
+            if (restPath.length === 1 && prop.items.id === restPath[0]) {
+              return { ...prop, items: undefined }; // Delete the whole items schema
             } else {
-              // Path is ['propId', 'items', 'properties', 'nestedItemId']
-              // This handles deleting a property within an object that is an array item
-              const updatedItemsProperties = deletePropertyByPath(
-                prop.items.properties || [],
-                restPath.slice(2) // Path from here should be just the ID of the property to delete
-              );
-              const updatedItems = { ...prop.items, properties: updatedItemsProperties };
-              acc.push({ ...prop, items: updatedItems });
+              // If there's more path, it's a property within the item's object schema
+              const updatedItems = deletePropertyByPath([prop.items], restPath)[0]; // Recurse into array item
+              return { ...prop, items: updatedItems };
             }
-          } else if (keyword === 'properties' && prop.properties) {
-            const updatedProperties = deletePropertyByPath(
-              prop.properties,
-              restPath.slice(1) // Pass from nested property ID onward
-            );
-            acc.push({ ...prop, properties: updatedProperties });
-          } else {
-            acc.push(prop); // Unhandled path segment, keep property as is
           }
         }
-      } else {
-        acc.push(prop);
-      }
-      return acc;
-    }, [] as SchemaProperty[]);
+        return prop; // Not the parent, keep as is
+      });
+    }
   }, []);
 
   // Main handlers for the SchemaPropertyField callbacks

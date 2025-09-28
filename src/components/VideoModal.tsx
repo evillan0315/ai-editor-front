@@ -1,47 +1,88 @@
 import React from 'react';
-import { Dialog, DialogContent, Box, IconButton } from '@mui/material';
+import { Dialog, DialogContent, Box, IconButton, SxProps, Theme } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import VideoPlayer from '@/pages/spotify/VideoPlayer'; // Assuming this is how it imports the player
+import VideoPlayer from '@/pages/spotify/VideoPlayer';
 
+// Define the size type
+type VideoModalSize = 'normal' | 'medium' | 'large' | 'fullscreen';
+
+// Interface for VideoModalProps
 interface VideoModalProps {
   open: boolean;
   onClose: () => void;
   src: string;
-  mediaElementRef?: React.MutableRefObject<HTMLVideoElement | HTMLImageElement | null>; // Make optional and accept HTMLImageElement
-  autoplay: boolean;
-  controls: boolean;
-  muted: boolean;
-  onPlayerReady?: (htmlMediaElement: HTMLVideoElement) => void; // Make optional as it's video-specific
+  mediaElementRef?: React.MutableRefObject<HTMLVideoElement | HTMLImageElement | null>;
+  autoplay?: boolean; // Make optional, usually true for videos in modals
+  controls?: boolean; // Make optional, usually true for videos in modals
+  muted?: boolean; // Make optional, usually true for autoplay
+  onPlayerReady?: (htmlMediaElement: HTMLVideoElement) => void;
   mediaType: 'video' | 'gif';
+  size?: VideoModalSize; // Add the new size prop, make it optional
 }
+
+// Helper function to get the modal width based on size
+const getModalWidthSx = (size: VideoModalSize): SxProps<Theme> => {
+  let width: string;
+  let height: string = 'auto';
+  let maxWidth: string = 'none'; // Override default maxWidth from Dialog
+  let maxHeight: string = '90vh'; // Max height to ensure it fits on screen, leaving some margin
+
+  switch (size) {
+    case 'normal':
+      width = '25vw';
+      break;
+    case 'medium':
+      width = '50vw';
+      break;
+    case 'large':
+      width = '75vw';
+      break;
+    case 'fullscreen':
+      width = '100vw';
+      height = '100vh';
+      maxHeight = '100vh';
+      break;
+    default:
+      // Fallback or default behavior, should not be hit with good typing
+      width = '75vw'; // Equivalent to 'large'
+      break;
+  }
+
+  return {
+    width,
+    height,
+    maxWidth,
+    maxHeight,
+    bgcolor: 'transparent',
+    boxShadow: 'none',
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+};
 
 const VideoModal: React.FC<VideoModalProps> = ({
   open,
   onClose,
   src,
   mediaElementRef,
-  autoplay,
-  controls,
-  muted,
+  autoplay = true, // Default to true for modal videos
+  controls = true, // Default to true for modal videos
+  muted = true, // Default to true for modal videos
   onPlayerReady,
   mediaType,
+  size = 'large', // Default size to 'large'
 }) => (
   <Dialog
     open={open}
     onClose={onClose}
     onBackdropClick={() => {}} // Disable closing on outside click
     disableEscapeKeyDown={true} // Disable closing on Escape key press
-    maxWidth="lg"
-    fullWidth
+    fullWidth={false} // Disable MUI's fullWidth behavior
+    maxWidth={false} // Disable MUI's maxWidth breakpoints
     PaperProps={{
-      sx: {
-        bgcolor: 'transparent',
-        boxShadow: 'none',
-        overflow: 'hidden',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
+      sx: getModalWidthSx(size), // Apply dynamic width styles here
     }}
     sx={{
       '& .MuiDialog-container': {

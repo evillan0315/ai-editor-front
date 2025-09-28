@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Box, LinearProgress } from '@mui/material';
 import { RecordingControls } from './RecordingControls';
 import { RecordingStatus } from './RecordingStatus';
-import { RecordingsTable, RecordingItem } from './RecordingsTable';
+import { RecordingsTable } from './RecordingsTable';
 import { RecordingsPagination } from './RecordingsPagination';
 import { RecordingSearchBar } from './RecordingSearchBar';
 import { RecordingInfoDrawer } from './RecordingInfoDrawer';
@@ -21,6 +21,24 @@ import { recordingApi } from '@/api/recording';
 import { setLoading, isLoading } from '@/stores/loadingStore';
 import { StartCameraRecordingDto } from '@/types';
 import VideoModal from '@/components/VideoModal'; // Import VideoModal
+import path from 'path-browserify';
+
+export interface RecordingItem {
+  id: string;
+  name: string;
+  createdAt: string;
+  sizeBytes: number;
+  type: string;
+  status: string;
+  path: string;
+  createdById: string;
+  data: {
+    duration?: number;
+    fileSize?: number;
+    animatedGif?: string; // Added animatedGif property
+    [key: string]: any; // Allow other properties
+  };
+}
 
 type SortOrder = 'asc' | 'desc';
 type SortField = 'name' | 'createdAt' | 'type' | 'status';
@@ -52,10 +70,11 @@ export function Recording() {
   >({});
   const [typeFilter, setTypeFilter] = useState<string>('');
 
-  // State for VideoModal
+  // State for VideoModal / MediaModal
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [currentPlayingVideoSrc, setCurrentPlayingVideoSrc] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [currentPlayingMediaType, setCurrentPlayingMediaType] = useState<'video' | 'gif'>('video');
+  const mediaElementRef = useRef<HTMLVideoElement | HTMLImageElement>(null); // Ref can be either
 
   // Fetch recordings from API
   const fetchRecordings = useCallback(async () => {
@@ -126,7 +145,8 @@ export function Recording() {
     setLoading('startCameraRecording', true);
     try {
       const dto: StartCameraRecordingDto = {
-        cameraDevice: 'default',
+        cameraDevice: ['/dev/video0'],
+        audioDevice: ['alsa_input.pci-0000_00_1b.0.analog-stereo'],
         resolution: '1280x720',
         framerate: 30,
         name: `camera-record-${Date.now()}`,
@@ -163,19 +183,44 @@ export function Recording() {
     }
   };
 
+  const handleConvertToGif = async (recording: RecordingItem) => {
+    setLoading('convertToGif', true);
+    try {
+      const transcodeDto = {
+        inputFilename: path.basename(recording.path),
+        fps: 15, // Default frames per second
+        width: 720, // Default width
+        loop: 0, // Loop indefinitely
+      };
+      const result = await recordingApi.convertToGif(transcodeDto);
+
+      // Update recording data with animatedGif path
+      await recordingApi.updateRecording(recording.id, {
+        data: { ...recording.data, animatedGif: result.fullPath },
+      });
+      fetchRecordings(); // Reload recordings to show the new GIF
+    } finally {
+      setLoading('convertToGif', false);
+    }
+  };
+
   const handlePlay = (recording: RecordingItem) => {
-    console.log(recording, 'recording');
-    const mediaUrl = getFileStreamUrl(recording.path);
+    const mediaPath = recording.data?.animatedGif || recording.path;
+    const mediaType = recording.data?.animatedGif ? 'gif' : 'video';
+    const mediaUrl = getFileStreamUrl(mediaPath);
+
     setCurrentPlayingVideoSrc(mediaUrl);
+    setCurrentPlayingMediaType(mediaType);
     setIsVideoModalOpen(true);
   };
 
   const handleCloseVideoModal = () => {
     setIsVideoModalOpen(false);
     setCurrentPlayingVideoSrc(null);
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
+    setCurrentPlayingMediaType('video'); // Reset to default
+    if (mediaElementRef.current && currentPlayingMediaType === 'video') {
+      (mediaElementRef.current as HTMLVideoElement).pause();
+      (mediaElementRef.current as HTMLVideoElement).currentTime = 0;
     }
   };
 
@@ -233,14 +278,15 @@ export function Recording() {
   };
 
   return (
-    <Box className="flex flex-col gap-6">
+    <Box className="flex flex-col gap-6 p-6">
       {(isLoading('recordingsList') ||
         isLoading('deleteRecording') ||
         isLoading('startRecording') ||
         isLoading('stopRecording') ||
         isLoading('startCameraRecording') ||
         isLoading('stopCameraRecording') ||
-        isLoading('updateRecording')) && <LinearProgress />}
+        isLoading('updateRecording') ||
+        isLoading('convertToGif')) && <LinearProgress />}
 
       <Box className="flex items-center justify-between">
         <RecordingControls
@@ -274,6 +320,7 @@ export function Recording() {
         onSort={handleSort}
         sortBy={sortBy}
         sortOrder={sortOrder}
+        onConvertToGif={handleConvertToGif} // Pass the new handler
       />
 
       <RecordingsPagination
@@ -295,11 +342,12 @@ export function Recording() {
           open={isVideoModalOpen}
           onClose={handleCloseVideoModal}
           src={currentPlayingVideoSrc}
-          mediaElementRef={videoRef}
+          mediaElementRef={mediaElementRef} // Pass ref
           autoplay={true}
           controls={true}
           muted={false}
           onPlayerReady={handlePlayerReady}
+          mediaType={currentPlayingMediaType} // Pass media type
         />
       )}
     </Box>

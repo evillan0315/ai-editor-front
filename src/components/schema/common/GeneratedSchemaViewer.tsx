@@ -26,6 +26,10 @@ interface GeneratedSchemaViewerProps {
 // Sample JSON Schema for demonstration
 const SAMPLE_JSON_SCHEMA: JsonSchema = {
   "type": "object",
+  "$id": "https://example.com/project-metadata.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Software Project Metadata",
+  "description": "A schema defining the structure for a software project's metadata.",
   "properties": {
     "projectName": {
       "type": "string",
@@ -61,9 +65,18 @@ const SAMPLE_JSON_SCHEMA: JsonSchema = {
     "manager": {
       "type": "object",
       "title": "Project Manager",
+      "description": "Details about the project manager.",
       "properties": {
         "name": { "type": "string", "title": "Manager Name", "default": "John Doe" },
-        "email": { "type": "string", "title": "Manager Email", "format": "email" }
+        "email": { "type": "string", "title": "Manager Email", "format": "email" },
+        "contact": {
+          "type": "object",
+          "title": "Contact Info",
+          "properties": {
+            "phone": { "type": "string", "title": "Phone Number" },
+            "slackId": { "type": "string", "title": "Slack ID" }
+          }
+        }
       },
       "required": ["name"]
     },
@@ -77,11 +90,32 @@ const SAMPLE_JSON_SCHEMA: JsonSchema = {
       "title": "Project Status",
       "enum": ["Planning", "In Progress", "Completed", "On Hold"],
       "default": "Planning"
+    },
+    "projects": {
+      "type": "array",
+      "title": "Related Projects",
+      "description": "List of related sub-projects or modules.",
+      "items": {
+        "type": "object",
+        "title": "Sub-Project",
+        "properties": {
+          "id": { "type": "string", "title": "Sub-Project ID", "format": "uuid" },
+          "name": { "type": "string", "title": "Sub-Project Name" },
+          "budget": { "type": "number", "title": "Budget (USD)", "minimum": 0 },
+          "lead": { "type": "string", "title": "Project Lead" },
+          "tasks": {
+            "type": "array",
+            "title": "Tasks",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["id", "name"]
+      }
     }
   },
   "required": ["projectName", "teamSize"],
-  "title": "Software Project Schema",
-  "description": "A schema defining the structure for a software project's metadata."
 };
 
 const GeneratedSchemaViewer: React.FC<GeneratedSchemaViewerProps> = () => {

@@ -54,6 +54,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       <CodeMirror
         value={value}
         height={height ? height : '100%'}
+        width={width ? width : '100%'}
         theme={mode}
         extensions={extensions}
         onChange={handleChange}

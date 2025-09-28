@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
 import Loading from '@/components/Loading';
+import PageHeader from '@/components/layouts/PageHeader'; // Import PageHeader
 
 const AiSchemaGenerator = lazy(() => import('@/components/schema/AiSchemaGenerator'));
 
@@ -12,7 +13,7 @@ const AiSchemaGenerator = lazy(() => import('@/components/schema/AiSchemaGenerat
 const SchemeGeneratorPage: React.FC = () => {
   return (
     <PageLayout
-      header={"AI Schema Generator"}
+      header={<PageHeader title="AI Schema Generator" sticky={true} />} // Use PageHeader component
       body={
         <Suspense fallback={<Loading message="Loading Schema Generator..." />}>
           <AiSchemaGenerator />

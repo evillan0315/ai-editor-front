@@ -4,15 +4,19 @@ import { Box, Typography, CircularProgress, Alert, useTheme } from '@mui/materia
 interface FileTreeStatusProps {
   isFetchingTree: boolean;
   fetchTreeError: string | null;
-  treeFilesCount: number;
+  treeFilesCount: number; // Original total files in the tree
+  filteredFilesCount: number; // Count after applying search filter
   projectRoot: string;
+  searchTerm: string; // The active search term
 }
 
 const FileTreeStatus: React.FC<FileTreeStatusProps> = ({
   isFetchingTree,
   fetchTreeError,
   treeFilesCount,
+  filteredFilesCount,
   projectRoot,
+  searchTerm,
 }) => {
   const theme = useTheme();
 
@@ -34,6 +38,14 @@ const FileTreeStatus: React.FC<FileTreeStatusProps> = ({
     return (
       <Alert severity="error" sx={{ mt: 2 }}>
         {fetchTreeError}
+      </Alert>
+    );
+  }
+
+  if (searchTerm && filteredFilesCount === 0) {
+    return (
+      <Alert severity="info" sx={{ mt: 2 }}>
+        No results found for "{searchTerm}".
       </Alert>
     );
   }

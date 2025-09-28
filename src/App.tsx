@@ -5,7 +5,7 @@ import Loading from './components/Loading';
 import CustomSnackbar from '@/components/Snackbar';
 import { useStore } from '@nanostores/react';
 import { snackbarState, hideGlobalSnackbar } from '@/stores/snackbarStore';
-import { authStore } from '@/stores/authStore'; // ✅ import auth state
+import { authStore } from '@/stores/authStore';
 
 import '@xterm/xterm/css/xterm.css';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -45,6 +45,7 @@ const RecordingPage = lazy(() => import('./pages/RecordingPage'));
 const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage'));
 const SimpleGitPage = lazy(() => import('./pages/SimpleGitPage'));
 const AIChatPage = lazy(() => import('./pages/AIChatPage'));
+const SchemeGeneratorPage = lazy(() => import('./pages/SchemeGeneratorPage')); // New: Lazy load SchemeGeneratorPage
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -234,6 +235,19 @@ const router = createBrowserRouter(
                  <ErrorBoundary>
                    <SimpleGitPage/>
                  </ErrorBoundary>
+                </Suspense>
+              </RequireAuth>
+            }
+          />
+          {/* New: Route for Schema Generator Page */}
+          <Route
+            path="/apps/schema-generator"
+            element={
+              <RequireAuth>
+                <Suspense fallback={<Loading />}>
+                  <ErrorBoundary>
+                    <SchemeGeneratorPage />
+                  </ErrorBoundary>
                 </Suspense>
               </RequireAuth>
             }

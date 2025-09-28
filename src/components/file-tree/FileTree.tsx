@@ -96,6 +96,36 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
   // State for search
   const [searchTerm, setSearchTerm] = useState('');
+  const [filteredTreeFiles, setFilteredTreeFiles] = useState<FileEntry[]>([]);
+
+  // Recursive filtering function for the file tree
+  const filterTree = useCallback(
+    (nodes: FileEntry[], term: string): FileEntry[] => {
+      if (!term) return nodes; // If no search term, return all nodes
+
+      const lowerCaseTerm = term.toLowerCase();
+      const results: FileEntry[] = [];
+
+      for (const node of nodes) {
+        const nameMatches = node.name.toLowerCase().includes(lowerCaseTerm);
+        let childrenMatches: FileEntry[] = [];
+
+        if (node.type === 'folder' && node.children) {
+          childrenMatches = filterTree(node.children, term);
+        }
+
+        if (nameMatches || childrenMatches.length > 0) {
+          results.push({
+            ...node,
+            collapsed: false, // Ensure path to match is expanded
+            children: childrenMatches, // Only include filtered children
+          });
+        }
+      }
+      return results;
+    },
+    [],
+  );
 
   useEffect(() => {
     if (projectRoot) {
@@ -105,6 +135,11 @@ const FileTree: React.FC<FileTreeProps> = () => {
       clearFileTree();
     };
   }, [projectRoot]);
+
+  // Effect to apply search filter whenever treeFiles or searchTerm changes
+  useEffect(() => {
+    setFilteredTreeFiles(filterTree(treeFiles, searchTerm));
+  }, [treeFiles, searchTerm, filterTree]);
 
   const refreshPath = useCallback(
     async (targetPath: string) => {
@@ -335,9 +370,6 @@ const FileTree: React.FC<FileTreeProps> = () => {
   // Function to handle search term changes
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
-    // Search logic will be implemented here, potentially by filtering treeFiles
-    // or triggering a new API call if search needs to be server-side.
-    // For now, it's a controlled input.
   };
 
   // Function to handle going up a directory
@@ -382,13 +414,15 @@ const FileTree: React.FC<FileTreeProps> = () => {
       <FileTreeStatus
         isFetchingTree={isFetchingTree}
         fetchTreeError={fetchTreeError}
-        treeFilesCount={treeFiles.length}
+        treeFilesCount={treeFiles.length} // Original count
+        filteredFilesCount={filteredTreeFiles.length} // New count for search
         projectRoot={projectRoot}
+        searchTerm={searchTerm} // Pass search term
       />
 
-      {!isFetchingTree && !fetchTreeError && treeFiles.length > 0 && (
+      {!isFetchingTree && !fetchTreeError && filteredTreeFiles.length > 0 && (
         <FileTreeList
-          treeFiles={treeFiles}
+          treeFiles={filteredTreeFiles} // Pass filtered files
           projectRoot={projectRoot}
           onNodeContextMenu={handleNodeContextMenu}
         />

@@ -24,7 +24,7 @@ import {
   durationAtom,
   setTrackProgress,
   setTrackDuration,
-  setLoading,
+  // setLoading, // Removed, handled by store
   nextTrack,
   previousTrack,
   toggleShuffle,
@@ -53,27 +53,11 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
   const repeatMode = useStore(repeatModeAtom);
   const [isSeeking, setIsSeeking] = useState(false);
 
-  useEffect(() => {
-    if (mediaElementRef.current && isPlaying && trackProgress > 0 && !loading) {
-      mediaElementRef.current.play().catch(e => {
-        console.error("Autoplay failed:", e);
-        setPlaying(false); // Reflect actual playback state if autoplay is blocked
-      });
-    } else if (mediaElementRef.current && !isPlaying) {
-      mediaElementRef.current.pause();
-    }
-  }, [isPlaying, mediaElementRef, trackProgress, loading, setPlaying]); // Added loading and setPlaying to dependencies
+  // Removed useEffect attempting to play/pause reactively, now handled by setPlaying in mediaStore
 
   const handlePlayPause = () => {
-    if (mediaElementRef.current) {
-      if (isPlaying) {
-        mediaElementRef.current.pause();
-        setPlaying(false)
-      } else {
-        mediaElementRef.current.play();
-        setPlaying(true)
-      }
-    }
+    // This will now call setPlaying in mediaStore, which directly interacts with the mediaElement
+    setPlaying(!isPlaying);
   };
 
   const handleNext = () => {

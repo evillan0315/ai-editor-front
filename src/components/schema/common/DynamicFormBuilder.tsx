@@ -13,8 +13,12 @@ import {
   MenuItem,
   InputLabel,
   Grid,
+  Button,
+  IconButton,
 } from '@mui/material';
 import { JsonSchema } from '@/types/schema';
+import { nanoid } from 'nanoid';
+import { Add as AddIcon, RemoveCircleOutline as RemoveIcon } from '@mui/icons-material';
 
 interface DynamicFormBuilderProps {
   schema: JsonSchema;
@@ -38,19 +42,82 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
     if (schema.properties) {
       Object.keys(schema.properties).forEach((key) => {
         const prop = schema.properties![key];
-        initial[key] = initialData[key] !== undefined ? initialData[key] : prop.default;
+        if (initialData[key] !== undefined) {
+          initial[key] = initialData[key];
+        } else if (prop.default !== undefined) {
+          initial[key] = prop.default;
+        } else if (prop.type === 'array' && prop.items?.type === 'object') {
+          initial[key] = []; // Initialize array of objects as empty array
+        } else if (prop.type === 'object') {
+          initial[key] = {}; // Initialize object as empty object
+        }
       });
     }
     setFormData(initial);
   }, [schema, initialData]);
 
-  const handleChange = useCallback((key: string, value: any) => {
-    setFormData((prev) => {
-      const newFormData = { ...prev, [key]: value };
-      onFormChange?.(newFormData);
-      return newFormData;
-    });
-  }, [onFormChange]);
+  const handleChange = useCallback(
+    (key: string, value: any, itemIndex?: number) => {
+      setFormData((prev) => {
+        const newFormData = { ...prev };
+
+        if (itemIndex !== undefined) {
+          // Handling array item change
+          const currentArray = [...(newFormData[key] || [])];
+          currentArray[itemIndex] = value; // Replace the specific item
+          newFormData[key] = currentArray;
+        } else {
+          // Handling top-level or object property change
+          newFormData[key] = value;
+        }
+
+        onFormChange?.(newFormData);
+        return newFormData;
+      });
+    },
+    [onFormChange],
+  );
+
+  const handleAddItemToArray = useCallback(
+    (key: string, itemSchema: JsonSchema) => {
+      setFormData((prev) => {
+        const currentArray = [...(prev[key] || [])];
+        const newItem: Record<string, any> = { _id: nanoid() }; // Add a unique id for keying in React
+        if (itemSchema.properties) {
+          Object.keys(itemSchema.properties).forEach((propKey) => {
+            const prop = itemSchema.properties![propKey];
+            if (prop.default !== undefined) {
+              newItem[propKey] = prop.default;
+            } else if (prop.type === 'array' && prop.items?.type === 'object') {
+              newItem[propKey] = [];
+            } else if (prop.type === 'object') {
+              newItem[propKey] = {};
+            }
+          });
+        }
+        currentArray.push(newItem);
+        const newFormData = { ...prev, [key]: currentArray };
+        onFormChange?.(newFormData);
+        return newFormData;
+      });
+    },
+    [onFormChange],
+  );
+
+  const handleRemoveItemFromArray = useCallback(
+    (key: string, indexToRemove: number) => {
+      setFormData((prev) => {
+        const currentArray = [...(prev[key] || [])];
+        const newArray = currentArray.filter(
+          (_, index) => index !== indexToRemove,
+        );
+        const newFormData = { ...prev, [key]: newArray };
+        onFormChange?.(newFormData);
+        return newFormData;
+      });
+    },
+    [onFormChange],
+  );
 
   if (!schema || !schema.properties || Object.keys(schema.properties).length === 0) {
     return (
@@ -69,10 +136,10 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
     // Base styles for form elements for consistent spacing and width within the grid
     const baseFieldProps = {
       fullWidth: true,
-      margin: "normal" as "normal", // Ensure correct type
+      margin: 'normal' as 'normal', // Ensure correct type
       helperText: description,
       required: isRequired,
-      className: "col-span-12", // Tailwind class for full width in a 12-column grid
+      className: 'col-span-12',
     };
 
     switch (prop.type) {
@@ -87,12 +154,13 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
               onChange={(e) => handleChange(key, e.target.value)}
               InputLabelProps={{ shrink: true }}
               {...baseFieldProps}
+              sx={{ ml: level * 2 }}
             />
           );
         }
         if (prop.enum) {
           return (
-            <FormControl key={key} {...baseFieldProps} className="col-span-12">
+            <FormControl key={key} {...baseFieldProps} sx={{ ml: level * 2 }}>
               <InputLabel id={`${key}-select-label`} required={isRequired}>
                 {label}
               </InputLabel>
@@ -125,6 +193,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             value={value}
             onChange={(e) => handleChange(key, e.target.value)}
             {...baseFieldProps}
+            sx={{ ml: level * 2 }}
           />
         );
       case 'number':
@@ -137,6 +206,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             value={value}
             onChange={(e) => handleChange(key, Number(e.target.value))}
             {...baseFieldProps}
+            sx={{ ml: level * 2 }}
           />
         );
       case 'boolean':
@@ -156,26 +226,97 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
           />
         );
       case 'array':
-        // For simplicity, treat arrays of strings as comma-separated values in a TextField.
-        // A more advanced implementation would involve dynamically adding/removing items.
-        // If prop.items defines a complex schema, this would need a more sophisticated sub-form.
-        return (
-          <TextField
-            key={key}
-            label={`${label} (comma-separated)`}
-            value={Array.isArray(value) ? value.join(', ') : value}
-            onChange={(e) =>
-              handleChange(
-                key,
-                e.target.value
-                  .split(',')
-                  .map((s: string) => s.trim())
-                  .filter((s: string) => s !== '')
-              )
-            }
-            {...baseFieldProps}
-          />
-        );
+        if (prop.items && typeof prop.items === 'object') {
+          // Array of objects or complex types
+          const currentArray = Array.isArray(formData[key]) ? formData[key] : [];
+          const itemSchema = prop.items;
+
+          return (
+            <Box
+              key={key}
+              sx={{
+                mt: 2,
+                mb: 2,
+                pl: 2,
+                borderLeft: 1,
+                borderColor: 'divider',
+                ml: level * 2,
+              }}
+              className="col-span-12"
+            >
+              <Typography variant="subtitle2" gutterBottom className="mb-2">
+                {label} (List)
+              </Typography>
+              {currentArray.map((item: Record<string, any>, index: number) => (
+                <Box
+                  key={item._id || index} // Use unique id if available, otherwise index
+                  sx={{
+                    mt: 1,
+                    mb: 1,
+                    p: 1.5,
+                    border: '1px solid',
+                    borderColor: 'grey.300',
+                    borderRadius: 1,
+                    position: 'relative',
+                    bgcolor: 'background.paper',
+                  }}
+                >
+                  <IconButton
+                    aria-label="remove item"
+                    onClick={() => handleRemoveItemFromArray(key, index)}
+                    size="small"
+                    sx={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      zIndex: 1,
+                    }}
+                  >
+                    <RemoveIcon fontSize="small" />
+                  </IconButton>
+                  <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>
+                    Item {index + 1}
+                  </Typography>
+                  <DynamicFormBuilder
+                    schema={itemSchema}
+                    initialData={item}
+                    onFormChange={(nestedData) => handleChange(key, nestedData, index)}
+                    level={level + 1}
+                  />
+                </Box>
+              ))}
+              <Button
+                startIcon={<AddIcon />}
+                onClick={() => handleAddItemToArray(key, itemSchema)}
+                sx={{ mt: 2, textTransform: 'none' }}
+                variant="outlined"
+                size="small"
+              >
+                Add {label} Item
+              </Button>
+            </Box>
+          );
+        } else {
+          // Array of primitive types, handled as comma-separated string
+          return (
+            <TextField
+              key={key}
+              label={`${label} (comma-separated)`}
+              value={Array.isArray(value) ? value.join(', ') : value}
+              onChange={(e) =>
+                handleChange(
+                  key,
+                  e.target.value
+                    .split(',')
+                    .map((s: string) => s.trim())
+                    .filter((s: string) => s !== ''),
+                )
+              }
+              {...baseFieldProps}
+              sx={{ ml: level * 2 }}
+            />
+          );
+        }
       case 'object':
         return (
           <Box
@@ -186,6 +327,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
               pl: 2,
               borderLeft: 1,
               borderColor: 'divider',
+              ml: level * 2,
             }}
             className="col-span-12"
           >
@@ -202,7 +344,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
         );
       default:
         return (
-          <Typography key={key} variant="body2" color="error" className="col-span-12">
+          <Typography key={key} variant="body2" color="error" className="col-span-12" sx={{ ml: level * 2 }}>
             Unsupported type for {label}: {prop.type}
           </Typography>
         );

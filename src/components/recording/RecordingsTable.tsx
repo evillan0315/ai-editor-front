@@ -9,7 +9,10 @@ import {
   Paper,
   IconButton,
   Box,
+  SxProps,
+  Theme,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -30,6 +33,38 @@ interface RecordingsTableProps {
   onConvertToGif: (recording: RecordingItem) => void; // New prop
 }
 
+const tableContainerSx: SxProps<Theme> = (theme) => ({
+  borderRadius: '8px',
+  boxShadow: theme.shadows[3],
+  backgroundColor: theme.palette.background.paper,
+});
+
+const tableHeadSx: SxProps<Theme> = (theme) => ({
+  backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.primary.light,
+});
+
+const tableHeaderCellSx: SxProps<Theme> = (theme) => ({
+  color: theme.palette.primary.contrastText,
+  fontWeight: 'bold',
+  padding: theme.spacing(2),
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+});
+
+const tableBodyRowSx: SxProps<Theme> = (theme) => ({
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+});
+
+const tableBodyCellSx: SxProps<Theme> = (theme) => ({
+  color: theme.palette.text.primary,
+  padding: theme.spacing(2),
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+});
+
 const RecordingsTable: React.FC<RecordingsTableProps> = ({
   recordings,
   onPlay,
@@ -41,6 +76,8 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   sortOrder,
   onConvertToGif,
 }) => {
+  const theme = useTheme();
+
   const formatBytes = (bytes: number, decimals = 2) => {
     if (!+bytes) return '0 Bytes';
     const k = 1024;
@@ -51,46 +88,56 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   };
 
   return (
-    <TableContainer component={Paper} className="rounded-lg shadow-lg">
+    <TableContainer component={Paper} sx={tableContainerSx(theme)}>
       <Table className="min-w-full">
-        <TableHead className="bg-gray-800">
+        <TableHead sx={tableHeadSx(theme)}>
           <TableRow>
-            <TableCell className="cursor-pointer text-gray-300 font-semibold p-4"
-              onClick={() => onSort('name')}>
+            <TableCell
+              sx={tableHeaderCellSx(theme)}
+              onClick={() => onSort('name')}
+            >
               Name {sortBy === 'name' && (sortOrder === 'asc' ? '▲' : '▼')}
             </TableCell>
-            <TableCell className="cursor-pointer text-gray-300 font-semibold p-4"
-              onClick={() => onSort('type')}>
+            <TableCell
+              sx={tableHeaderCellSx(theme)}
+              onClick={() => onSort('type')}
+            >
               Type {sortBy === 'type' && (sortOrder === 'asc' ? '▲' : '▼')}
             </TableCell>
-            <TableCell className="cursor-pointer text-gray-300 font-semibold p-4"
-              onClick={() => onSort('status')}>
+            <TableCell
+              sx={tableHeaderCellSx(theme)}
+              onClick={() => onSort('status')}
+            >
               Status {sortBy === 'status' && (sortOrder === 'asc' ? '▲' : '▼')}
             </TableCell>
-            <TableCell className="cursor-pointer text-gray-300 font-semibold p-4"
-              onClick={() => onSort('sizeBytes')}>
+            <TableCell
+              sx={tableHeaderCellSx(theme)}
+              onClick={() => onSort('sizeBytes')}
+            >
               Size {sortBy === 'sizeBytes' && (sortOrder === 'asc' ? '▲' : '▼')}
             </TableCell>
-            <TableCell className="cursor-pointer text-gray-300 font-semibold p-4"
-              onClick={() => onSort('createdAt')}>
+            <TableCell
+              sx={tableHeaderCellSx(theme)}
+              onClick={() => onSort('createdAt')}
+            >
               Created At {sortBy === 'createdAt' && (sortOrder === 'asc' ? '▲' : '▼')}
             </TableCell>
-            <TableCell className="text-gray-300 font-semibold p-4 text-right">Actions</TableCell>
+            <TableCell sx={{ ...tableHeaderCellSx(theme), textAlign: 'right' }}>Actions</TableCell>
           </TableRow>
         </TableHead>
-        <TableBody className="bg-gray-900">
+        <TableBody sx={{ backgroundColor: theme.palette.background.default }}>
           {recordings.map((recording) => (
-            <TableRow key={recording.id} className="hover:bg-gray-800">
-              <TableCell className="text-white p-4">{recording.name}</TableCell>
-              <TableCell className="text-white p-4">{recording.type}</TableCell>
-              <TableCell className="text-white p-4">{recording.status}</TableCell>
-              <TableCell className="text-white p-4">
+            <TableRow key={recording.id} sx={tableBodyRowSx(theme)}>
+              <TableCell sx={tableBodyCellSx(theme)}>{recording.name}</TableCell>
+              <TableCell sx={tableBodyCellSx(theme)}>{recording.type}</TableCell>
+              <TableCell sx={tableBodyCellSx(theme)}>{recording.status}</TableCell>
+              <TableCell sx={tableBodyCellSx(theme)}>
                 {formatBytes(recording.sizeBytes)}
               </TableCell>
-              <TableCell className="text-white p-4">
+              <TableCell sx={tableBodyCellSx(theme)}>
                 {new Date(recording.createdAt).toLocaleString()}
               </TableCell>
-              <TableCell className="text-right p-4">
+              <TableCell sx={{ ...tableBodyCellSx(theme), textAlign: 'right' }}>
                 <Box className="flex justify-end space-x-2">
                   {recording.type === 'screenRecord' && !recording.data?.animatedGif && (
                     <IconButton

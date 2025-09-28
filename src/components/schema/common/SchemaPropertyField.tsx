@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Box, TextField, Select, MenuItem, FormControl, InputLabel, Switch, FormGroup, FormControlLabel, IconButton, useTheme, Typography, Paper, Button, Tooltip, Collapse } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, VisibilityOff as VisibilityOffIcon } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, VisibilityOff as VisibilityOffIcon, KeyboardArrowDown as KeyboardArrowDownIcon, KeyboardArrowUp as KeyboardArrowUpIcon } from '@mui/icons-material';
 import { SchemaProperty } from './SchemaPropertyTypes';
 
 /**
@@ -14,7 +14,7 @@ import { SchemaProperty } from './SchemaPropertyTypes';
  */
 interface SchemaPropertyFieldProps {
   property: SchemaProperty;
-  path: string[]; // Path to this property, e.g., ['id1', 'properties', 'id2']
+  path: string[]; // Path to this property, e.g., ['id1'], ['id1', 'id2']
   onPropertyChange: (path: string[], field: keyof SchemaProperty, value: any) => void;
   onAddNestedProperty: (path: string[], type: 'item' | 'property') => void;
   onDeleteProperty: (path: string[]) => void; // Path to the property to delete
@@ -125,7 +125,7 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
         {(property.type === 'array' || property.type === 'object') && (
           <Tooltip title={property.showChildren ? "Hide Nested Fields" : "Show Nested Fields"}>
             <IconButton onClick={handleToggleChildren} size="small">
-              {property.showChildren ? <VisibilityOffIcon /> : <VisibilityIcon />}
+              {property.showChildren ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
             </IconButton>
           </Tooltip>
         )}
@@ -161,7 +161,7 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
                 <SchemaPropertyField
                   key={nestedProperty.id}
                   property={nestedProperty}
-                  path={path.concat(['properties', nestedProperty.id])}
+                  path={path.concat([nestedProperty.id])} // Corrected path to use ID
                   onPropertyChange={onPropertyChange}
                   onAddNestedProperty={onAddNestedProperty}
                   onDeleteProperty={onDeleteProperty}
@@ -187,7 +187,7 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
                 <SchemaPropertyField
                   key={property.items.id}
                   property={property.items}
-                  path={path.concat(['items'])}
+                  path={path.concat([property.items.id])} // Corrected path to use ID of items schema
                   onPropertyChange={onPropertyChange}
                   onAddNestedProperty={onAddNestedProperty}
                   onDeleteProperty={onDeleteProperty}

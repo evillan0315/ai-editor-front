@@ -45,12 +45,9 @@ const PageLayout: React.FC<PageLayoutProps> = ({
       sx={{ backgroundColor: theme.palette.background.default }}
     >
       {header && 
-      <AppBar sx={{ position: 'relative', p: 0, '& .MuiToolbar-root': { p:0, minHeight: 10 } }}>
+      <AppBar sx={{ position: 'relative', p: 0, '& .MuiToolbar-root': { p:0, minHeight: 20 } }}>
             <Toolbar >
-              
-              <Typography sx={{ p: 0, flex: 1 }} variant="h6" component="div">
-                {header}
-              </Typography>
+              {header}
             </Toolbar>
           </AppBar>
 

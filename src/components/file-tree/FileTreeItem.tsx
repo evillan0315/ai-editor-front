@@ -8,7 +8,7 @@ import {
 } from '@mui/material'; // Import CircularProgress
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { FileEntry } from '@/types'; // Fixed import
+import { FileEntry } from '@/types/refactored/fileTree'; // Updated import path
 import type { IconifyIconPrefix } from '@iconify/types';
 import {
   toggleDirExpansion,
@@ -20,7 +20,7 @@ import { getFileTypeIcon } from '@/constants/fileIcons'; // Import the new utili
 import { NamePrefixSvgIcon } from '@/components/NamePrefixSvgIcon';
 import { getCodeMirrorLanguage } from '@/utils/index';
 interface FileTreeItemProps {
-  fileEntry: FileEntry; // This is now correctly typed as FileEntry
+  fileEntry: FileEntry;
   projectRoot: string;
   onContextMenu: (event: React.MouseEvent, node: FileEntry) => void; // Add context menu prop
 }
@@ -30,8 +30,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
   projectRoot,
   onContextMenu,
 }) => {
-  const { expandedDirs, selectedFile, loadingChildren } =
-    useStore(fileTreeStore);
+  const { expandedDirs, selectedFile, loadingChildren } = useStore(fileTreeStore);
   const theme = useTheme();
   const isExpanded = expandedDirs.has(fileEntry.path);
   const isSelected = selectedFile === fileEntry.path;

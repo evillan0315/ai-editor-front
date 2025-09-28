@@ -19,6 +19,7 @@ import {
 // Generic folder icon
 import { truncateFilePath } from '@/utils/fileUtils';
 import { getFileTypeIcon } from '@/constants/fileIcons'; // For specific file icons
+import { FileEntry } from '@/types/refactored/fileTree'; // Updated import path
 
 export interface FileTreeContextMenuRendererProps {
   // Removed snackbar props, now handled globally via aiEditorStore
@@ -180,7 +181,7 @@ export const FileTreeContextMenuRenderer: React.FC<
                   onClick={(e) => {
                     e.stopPropagation(); // Prevent issues with parent handlers
                     if (item.action && state.targetFile) {
-                      item.action(state.targetFile);
+                      item.action(state.targetFile as FileEntry);
                     }
                     hideFileTreeContextMenu();
                   }}

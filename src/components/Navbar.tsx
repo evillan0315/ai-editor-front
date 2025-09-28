@@ -56,7 +56,7 @@ import {
 } from '@/components/icons/CodiconLayoutPanelRight';
 import { CodiconLayoutSidebarRightOff } from '@/components/icons/CodiconLayoutPanelRight';
 
-import { isCurrentRecording } from '@/stores/recordingStore';
+import { isScreenRecordingStore } from '@/stores/recordingStore';
 
 interface ScriptExecutionState {
   status: ScriptStatus;
@@ -86,7 +86,7 @@ const Navbar: React.FC = () => {
   );
   const [profileMenuAnchorEl, setProfileMenuAnchorEl] =
     useState<null | HTMLElement>(null);
-  const isRecording = useStore(isCurrentRecording);
+  const isRecording = useStore(isScreenRecordingStore);
 
   const isScriptMenuOpen = Boolean(scriptMenuAnchorEl);
   const isAppsMenuOpen = Boolean(appsMenuAnchorEl);

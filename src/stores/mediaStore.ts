@@ -77,9 +77,18 @@ export const $mediaStore = map({
   currentPlaylist: null as Playlist | null,
   playlists: [] as Playlist[],
   allAvailableMediaFiles: [] as MediaFileResponseDto[],
+  mediaElement: null as HTMLMediaElement | null, // Added to store direct media element reference
 });
 
 // --- Global Actions (Stateless logic) ---
+
+/**
+ * Registers the actual HTMLMediaElement (audio/video) with the store.
+ * This allows store actions to directly control playback.
+ */
+export const setMediaElement = (element: HTMLMediaElement | null) => {
+  $mediaStore.setKey('mediaElement', element);
+};
 
 /**
  * Resets playback state to initial values.  Useful when unmounting media players or logging out.
@@ -91,6 +100,7 @@ export function resetPlaybackState() {
   durationAtom.set(0);
   bufferedAtom.set([]);
   isVideoModalOpenAtom.set(false);
+  // Do not reset mediaElement here, it's managed by the component owning it.
 }
 
 export const setLoading = (isLoading: boolean) => {
@@ -103,6 +113,18 @@ export const setError = (message: string | null) => {
 
 export const setPlaying = (isPlaying: boolean) => {
   isPlayingAtom.set(isPlaying);
+  const mediaElement = $mediaStore.get().mediaElement;
+  if (mediaElement) {
+    if (isPlaying) {
+      // Attempt to play, catch potential autoplay errors
+      mediaElement.play().catch(e => {
+        console.error("Autoplay failed:", e);
+        isPlayingAtom.set(false); // Reflect actual playback state if autoplay is blocked
+      });
+    } else {
+      mediaElement.pause();
+    }
+  }
 };
 
 export const setTrackProgress = (progress: number) => {
@@ -145,7 +167,7 @@ export const toggleRepeat = () => {
       newMode = 'off';
       break;
   }
-n
+
   repeatModeAtom.set(newMode);
 };
 
@@ -181,6 +203,7 @@ export const nextTrack = async () => {
     const randomIndex = Math.floor(Math.random() * allAvailableMediaFiles.length);
     const nextTrack = allAvailableMediaFiles[randomIndex];
     setCurrentTrack(nextTrack);
+    setPlaying(true); // Automatically play next track
   } else {
     // Logic for sequential playback
     const currentIndex = allAvailableMediaFiles.findIndex(
@@ -195,6 +218,7 @@ export const nextTrack = async () => {
     const nextIndex = (currentIndex + 1) % allAvailableMediaFiles.length;
     const nextTrack = allAvailableMediaFiles[nextIndex];
     setCurrentTrack(nextTrack);
+    setPlaying(true); // Automatically play next track
   }
 };
 
@@ -218,6 +242,7 @@ export const previousTrack = async () => {
     const randomIndex = Math.floor(Math.random() * allAvailableMediaFiles.length);
     const previousTrack = allAvailableMediaFiles[randomIndex];
     setCurrentTrack(previousTrack);
+    setPlaying(true); // Automatically play previous track
   } else {
     // If shuffle is disabled, play the previous track in the sequence
     const currentIndex = allAvailableMediaFiles.findIndex(
@@ -232,6 +257,7 @@ export const previousTrack = async () => {
     const previousIndex = (currentIndex - 1 + allAvailableMediaFiles.length) % allAvailableMediaFiles.length;
     const previousTrack = allAvailableMediaFiles[previousIndex];
     setCurrentTrack(previousTrack);
+    setPlaying(true); // Automatically play previous track
   }
 };
 
@@ -312,14 +338,15 @@ export const fetchingMediaFiles = async (query?: PaginationMediaQueryDto) => {
 
     if (media && media.items) {
       // Update the media store with the fetched media files
-      $mediaStore.setKey('playlists', media.items as MediaFileResponseDto[]);
+      $mediaStore.setKey('playlists', media.items as MediaFileResponseDto[]); // This seems incorrect, should be allAvailableMediaFiles
+      $mediaStore.setKey('allAvailableMediaFiles', media.items);
       return media;
     } else {
       // If media or media.items is undefined, handle the case appropriately
       showGlobalSnackbar('Failed to fetch media files or empty media list', 'warning');
       $mediaStore.setKey('error', 'Failed to fetch media files or empty media list');
       return null;
-    } 
+    }
   } catch (error: any) {
     $mediaStore.setKey('loading', false);
     // Handle errors and display a snackbar

@@ -5,7 +5,7 @@ import {
   $mediaStore,
   setLoading,
   setError,
-  setPlaying,
+  setPlaying, // Now directly controls playback via mediaStore
   setCurrentTrack,
   isPlayingAtom,
   currentTrackAtom
@@ -97,16 +97,13 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
   }, [allAvailableMediaFilesState]);
 
   const handlePlayAudio = useCallback((song: MediaFileResponseDto) => {
-    if(!isPlaying){
-      isPlayingAtom.set(true);
-    }
-    setCurrentTrack(song);
-    //const track = mapMediaFileToTrack(song);
+    setCurrentTrack(song); // Set the track
+    setPlaying(true);     // Trigger playback via mediaStore (user gesture)
   }, []);
 
   const handlePlayVideo = useCallback((video: MediaFileResponseDto) => {
-    //const track = mapMediaFileToTrack(video);
-    setCurrentTrack(video);
+    setCurrentTrack(video); // Set the track
+    setPlaying(true);     // Trigger playback via mediaStore (user gesture)
   }, []);
 
   const toggleFavoriteSong = useCallback((songId: string) => {
@@ -128,7 +125,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
 
   const handleVideoAction = (action: string, video: MediaFileResponseDto) => {
     showGlobalSnackbar(`Action: ${action} on video ${video.name}`, 'info');
-    // Implement other actions like trailer, watchlist, download, etc.
+    // Implement other actions like trailer, watchlist, download, etc.l
   };
 
 

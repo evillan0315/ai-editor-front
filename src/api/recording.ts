@@ -9,6 +9,9 @@ import {
   RecordingResultDto,
   UpdateRecordingDto,
   TranscodeToGifResult,
+  RecordingStatusDto,
+  StartCameraRecordingDto,
+  CameraRecordingResponseDto,
 } from '@/types';
 
 export const recordingApi = {
@@ -60,6 +63,35 @@ export const recordingApi = {
       return handleResponse<RecordingStatusDto>(response);
     } catch (error) {
       console.error('Error getting recording status:', error);
+      throw error;
+    }
+  },
+  startCameraRecording: async (dto: StartCameraRecordingDto) => {
+    try {
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/recording/camera-record-start`,
+        {
+          method: 'POST',
+          body: JSON.stringify(dto),
+        },
+      );
+      return handleResponse<CameraRecordingResponseDto>(response);
+    } catch (error) {
+      console.error('Error starting camera recording:', error);
+      throw error;
+    }
+  },
+  stopCameraRecording: async (id: string) => {
+    try {
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/recording/camera-record-stop?id=${id}`,
+        {
+          method: 'POST',
+        },
+      );
+      return handleResponse<CameraRecordingResponseDto>(response);
+    } catch (error) {
+      console.error('Error stopping camera recording:', error);
       throw error;
     }
   },

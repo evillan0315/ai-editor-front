@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
-import { isCurrentRecording } from '@/stores/recordingStore';
+import { isScreenRecordingStore } from '@/stores/recordingStore';
 import { recordingApi } from '@/api/recording';
 import { snackbarState, setSnackbarState } from '@/stores/snackbarStore';
-import { currentRecordingIdStore, setIsRecording } from '@/stores/recordingStore';
+import { currentRecordingIdStore, setIsScreenRecording } from '@/stores/recordingStore';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -18,11 +18,12 @@ import {
   nextTrack,
   setLoading,
   $mediaStore,
+  setMediaElement, // New import
 } from '@/stores/mediaStore';
 
 const Footer = () => {
   const theme = useTheme();
-  const isRecording = useStore(isCurrentRecording);
+  const isRecording = useStore(isScreenRecordingStore);
   const currentTrack = useStore(currentTrackAtom);
   const isPlaying = useStore(isPlayingAtom);
   const { loading } = useStore($mediaStore);
@@ -40,7 +41,7 @@ const Footer = () => {
       const recordingData = await recordingApi.startRecording();
       if (recordingData?.id) {
         currentRecordingIdStore.set(recordingData.id);
-        setIsRecording(true);
+        setIsScreenRecording(true);
         notify('Recording started successfully!', 'success');
       }
     } catch (error) {
@@ -54,7 +55,7 @@ const Footer = () => {
       if (currentRecordingIdStore.get()) {
         await recordingApi.stopRecording(currentRecordingIdStore.get());
         currentRecordingIdStore.set(null);
-        setIsRecording(false);
+        setIsScreenRecording(false);
         notify('Recording stopped successfully!', 'success');
       }
     } catch (error) {
@@ -73,10 +74,13 @@ const Footer = () => {
     }
   };
 
-  // Effect to manage audio element source and loading state
+  // Effect to register the audio element with the store and manage source/loading
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    // Register the audio element with the store for global control
+    setMediaElement(audio);
 
     if (currentTrack?.mediaUrl) {
       if (audio.src !== currentTrack.mediaUrl) {
@@ -86,31 +90,22 @@ const Footer = () => {
       }
     } else {
       audio.src = ''; // Clear source if no track
-      setPlaying(false);
+      setPlaying(false); // Explicitly stop if track is cleared
       setTrackDuration(0);
       setTrackProgress(0);
       setLoading(false);
     }
-  }, [currentTrack, setPlaying, setTrackDuration, setTrackProgress, setLoading]);
 
-  // Effect to play/pause based on global isPlaying state, guarded by loading state
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !currentTrack) return;
+    // Cleanup: unregister the element
+    return () => {
+      setMediaElement(null);
+    };
+  }, [currentTrack, setMediaElement, setLoading, setPlaying, setTrackDuration, setTrackProgress]);
 
-    // Only attempt to play if not currently loading AND isPlaying is true
-    if (isPlaying && audio.paused && !loading) {
-      audio.play().catch(e => {
-        console.error('Autoplay failed:', e);
-        // If autoplay fails (e.g., not initiated by user gesture), reflect actual state
-        setPlaying(false);
-      });
-    } else if (!isPlaying && !audio.paused) {
-      audio.pause();
-    }
-  }, [isPlaying, currentTrack, loading, setPlaying]); // Added 'loading' to dependencies
+  // Removed the useEffect that previously handled play/pause based on isPlaying
+  // This is now handled by the setPlaying action directly in mediaStore.ts
 
-  // Event listeners for audio element to update nanostores
+  // Event listeners for audio element to update nanostores (progress, duration, ended)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -118,14 +113,7 @@ const Footer = () => {
     const handleLoadedMetadata = () => {
       setTrackDuration(audio.duration);
       setLoading(false); // Finished loading metadata
-      if (isPlaying && audio.paused) {
-        // This `play()` call might still fail due to autoplay policies if no user gesture has occurred.
-        // The `catch` block correctly handles this by setting `isPlaying` to `false`.
-        audio.play().catch(e => {
-          console.error('Autoplay on metadata load failed:', e);
-          setPlaying(false);
-        });
-      }
+      // IMPORTANT: Do NOT call audio.play() here. Playback is initiated by setPlaying from a user gesture.
     };
 
     const handleTimeUpdate = () => {
@@ -147,7 +135,7 @@ const Footer = () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [isPlaying, loading, nextTrack, setPlaying, setTrackDuration, setTrackProgress, setLoading]);
+  }, [loading, nextTrack, setTrackDuration, setTrackProgress]);
 
   return (
     <Box
@@ -188,14 +176,8 @@ const Footer = () => {
 
       <Box sx={{ minWidth: 100 }} />
       {/* Center Section: Mini Media Player Controls */}
-      <Box className="flex justify-center items-center">
-        <MiniMediaPlayerControls mediaElementRef={audioRef} />
-      </Box>
 
-      
 
-      {/* Hidden Audio Element for Playback Control */}
-      <audio ref={audioRef} style={{ display: 'none' }} />
     </Box>
   );
 };

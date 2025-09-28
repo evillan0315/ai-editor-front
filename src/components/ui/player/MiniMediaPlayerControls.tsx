@@ -48,18 +48,8 @@ const MiniMediaPlayerControls: React.FC<MiniMediaPlayerControlsProps> = ({
   const currentTrack = useStore(currentTrackAtom);
 
   const handlePlayPause = () => {
-    if (mediaElementRef.current) {
-      if (isPlaying) {
-        mediaElementRef.current.pause();
-        setPlaying(false);
-      } else {
-        mediaElementRef.current.play().catch(e => {
-          console.error('Playback failed:', e);
-          setPlaying(false);
-        });
-        setPlaying(true);
-      }
-    }
+    // This will now call setPlaying in mediaStore, which directly interacts with the mediaElement
+    setPlaying(!isPlaying);
   };
 
   const handleNext = () => {
