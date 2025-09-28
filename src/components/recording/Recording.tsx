@@ -1,37 +1,38 @@
 // src/components/recording/Recording.tsx
 import { useEffect, useState, useCallback } from 'react';
-import {
-  Box,
-  LinearProgress,
-  TextField,
-  Button,
-  MenuItem,
-} from '@mui/material';
+import { Box, LinearProgress } from '@mui/material'; // Removed unused imports: TextField, Button, MenuItem
 import { RecordingControls } from './RecordingControls';
 import { RecordingStatus } from './RecordingStatus';
 import { RecordingsTable, RecordingItem } from './RecordingsTable';
 import { RecordingsPagination } from './RecordingsPagination';
 import { RecordingSearchBar } from './RecordingSearchBar';
 import { RecordingInfoDrawer } from './RecordingInfoDrawer';
-//import CustomDrawer from '../Drawer/CustomDrawer';
 import {
-  isCurrentRecording,
-  setIsRecording,
+  isScreenRecordingStore,
   currentRecordingIdStore,
+  setIsScreenRecording,
+  isCameraRecordingStore,
+  currentCameraRecordingIdStore,
+  setIsCameraRecording,
 } from '@/stores/recordingStore';
 import { useStore } from '@nanostores/react';
 
+import { getFileStreamUrl } from '@/api/media';
 import { recordingApi } from '@/api/recording';
 import { setLoading, isLoading } from '@/stores/loadingStore';
+import { StartCameraRecordingDto } from '@/types';
 
 type SortOrder = 'asc' | 'desc';
 type SortField = 'name' | 'createdAt' | 'type' | 'status';
 
-const RECORDING_TYPES = ['screenRecord', 'screenShot'];
+const RECORDING_TYPES = ['screenRecord', 'screenShot', 'cameraRecord']; // Updated with cameraRecord
 
 export function Recording() {
-  const isRecording = useStore(isCurrentRecording);
+  const isScreenRecording = useStore(isScreenRecordingStore); // Use renamed store
   const currentRecordingId = useStore(currentRecordingIdStore);
+
+  const isCameraRecording = useStore(isCameraRecordingStore); // Use new camera store
+  const currentCameraRecordingId = useStore(currentCameraRecordingIdStore);
 
   const [recordings, setRecordings] = useState<RecordingItem[]>([]);
   const [totalRecordings, setTotalRecordings] = useState(0);
@@ -61,6 +62,7 @@ export function Recording() {
         sortBy,
         sortOrder,
         search: searchQuery || undefined,
+        type: typeFilter || undefined,
       });
 
       const items: RecordingItem[] = data.items.map((r) => ({
@@ -82,18 +84,18 @@ export function Recording() {
     } finally {
       setLoading('recordingsList', false);
     }
-  }, [page, rowsPerPage, sortBy, sortOrder, searchQuery]);
+  }, [page, rowsPerPage, sortBy, sortOrder, searchQuery, typeFilter]); // Add typeFilter to dependencies
 
   useEffect(() => {
     fetchRecordings();
-  }, [fetchRecordings, isRecording, currentRecordingId]);
+  }, [fetchRecordings, isScreenRecording, currentRecordingId, isCameraRecording, currentCameraRecordingId]); // Add camera recording states
 
-  // Recording actions
-  const handleStartRecording = async () => {
+  // Screen Recording actions
+  const handleStartScreenRecording = async () => {
     setLoading('startRecording', true);
     try {
       const res = await recordingApi.startRecording();
-      setIsRecording(true);
+      setIsScreenRecording(true);
       currentRecordingIdStore.set(res.id);
       fetchRecordings();
     } finally {
@@ -101,16 +103,48 @@ export function Recording() {
     }
   };
 
-  const handleStopRecording = async () => {
+  const handleStopScreenRecording = async () => {
     if (!currentRecordingId) return;
     setLoading('stopRecording', true);
     try {
       await recordingApi.stopRecording(currentRecordingId);
-      setIsRecording(false);
+      setIsScreenRecording(false);
       currentRecordingIdStore.set(null);
       fetchRecordings();
     } finally {
       setLoading('stopRecording', false);
+    }
+  };
+
+  // Camera Recording actions
+  const handleStartCameraRecording = async () => {
+    setLoading('startCameraRecording', true);
+    try {
+      const dto: StartCameraRecordingDto = {
+        cameraDevice: 'default',
+        resolution: '1280x720',
+        framerate: 30,
+        name: `camera-record-${Date.now()}`,
+      };
+      const res = await recordingApi.startCameraRecording(dto);
+      setIsCameraRecording(true);
+      currentCameraRecordingIdStore.set(res.id);
+      fetchRecordings();
+    } finally {
+      setLoading('startCameraRecording', false);
+    }
+  };
+
+  const handleStopCameraRecording = async () => {
+    if (!currentCameraRecordingId) return;
+    setLoading('stopCameraRecording', true);
+    try {
+      await recordingApi.stopCameraRecording(currentCameraRecordingId);
+      setIsCameraRecording(false);
+      currentCameraRecordingIdStore.set(null);
+      fetchRecordings();
+    } finally {
+      setLoading('stopCameraRecording', false);
     }
   };
 
@@ -124,7 +158,9 @@ export function Recording() {
     }
   };
 
-  const handlePlay = (id: string) => recordingApi.playRecording?.(id);
+  const handlePlay = (recording: RecordingItem) => {
+    console.log(recording, 'recording');
+  }
   const handleEdit = (id: string) => recordingApi.editRecording?.(id);
 
   // Pagination
@@ -180,14 +216,19 @@ export function Recording() {
         isLoading('deleteRecording') ||
         isLoading('startRecording') ||
         isLoading('stopRecording') ||
+        isLoading('startCameraRecording') ||
+        isLoading('stopCameraRecording') ||
         isLoading('updateRecording')) && <LinearProgress />}
 
       <Box className="flex items-center justify-between">
         <RecordingControls
-          isRecording={isRecording}
+          isScreenRecording={isScreenRecording}
+          isCameraRecording={isCameraRecording}
           isCapturing={false}
-          onStart={handleStartRecording}
-          onStop={handleStopRecording}
+          onStartScreenRecording={handleStartScreenRecording}
+          onStopScreenRecording={handleStopScreenRecording}
+          onStartCameraRecording={handleStartCameraRecording}
+          onStopCameraRecording={handleStopCameraRecording}
           onCapture={() => {}}
         />
         <RecordingStatus />
