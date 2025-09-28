@@ -11,6 +11,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SchemaIcon from '@mui/icons-material/Schema';
 import ExampleIcon from '@mui/icons-material/Code';
 import DescriptionIcon from '@mui/icons-material/Description';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useStore } from '@nanostores/react';
 import {
   INSTRUCTION_SCHEMA_OUTPUT,
@@ -90,7 +91,7 @@ ${localInstructionExample}
           <Tab label="General Instruction" />
           <Tab label={<span>Instruction Schema <SchemaIcon /></span>} />
           <Tab label={<span>Example Output <ExampleIcon /></span>} />
-          <Tab label={<span>AI Schema Generator <DescriptionIcon /></span>} />
+          <Tab label={<span>AI Schema Generator <AutoAwesomeIcon /></span>} />
         </Tabs>
 
         {/* ---------- General Instruction (Markdown Editor) ---------- */}
