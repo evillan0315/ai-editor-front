@@ -15,7 +15,7 @@ import { RecordingItem } from './Recording';
 
 export interface RecordingsTableProps {
   recordings: RecordingItem[];
-  onPlay: (id: string) => void;
+  onPlay: (record: RecordingItem) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onView: (recording: RecordingItem) => void; // New
@@ -73,7 +73,7 @@ export function RecordingsTable({
                 {(rec.sizeBytes / 1024).toFixed(1)} KB
               </TableCell>
               <TableCell align="right">
-                <IconButton aria-label="play" onClick={() => onPlay(rec.id)}>
+                <IconButton aria-label="play" onClick={() => onPlay(rec)}>
                   <PlayArrow />
                 </IconButton>
                 <IconButton aria-label="edit" onClick={() => onEdit(rec.id)}>

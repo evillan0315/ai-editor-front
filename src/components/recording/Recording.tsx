@@ -1,6 +1,5 @@
-// src/components/recording/Recording.tsx
-import { useEffect, useState, useCallback } from 'react';
-import { Box, LinearProgress } from '@mui/material'; // Removed unused imports: TextField, Button, MenuItem
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { Box, LinearProgress } from '@mui/material';
 import { RecordingControls } from './RecordingControls';
 import { RecordingStatus } from './RecordingStatus';
 import { RecordingsTable, RecordingItem } from './RecordingsTable';
@@ -21,6 +20,7 @@ import { getFileStreamUrl } from '@/api/media';
 import { recordingApi } from '@/api/recording';
 import { setLoading, isLoading } from '@/stores/loadingStore';
 import { StartCameraRecordingDto } from '@/types';
+import VideoModal from '@/components/VideoModal'; // Import VideoModal
 
 type SortOrder = 'asc' | 'desc';
 type SortField = 'name' | 'createdAt' | 'type' | 'status';
@@ -46,12 +46,17 @@ export function Recording() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedRecording, setSelectedRecording] =
-    useState<RecordingItem | null>(null);
+  const [selectedRecording, setSelectedRecording] = useState<RecordingItem | null>(null);
   const [editableRecording, setEditableRecording] = useState<
     Partial<RecordingItem>
   >({});
   const [typeFilter, setTypeFilter] = useState<string>('');
+
+  // State for VideoModal
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [currentPlayingVideoSrc, setCurrentPlayingVideoSrc] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   // Fetch recordings from API
   const fetchRecordings = useCallback(async () => {
     setLoading('recordingsList', true);
@@ -160,7 +165,24 @@ export function Recording() {
 
   const handlePlay = (recording: RecordingItem) => {
     console.log(recording, 'recording');
-  }
+    const mediaUrl = getFileStreamUrl(recording.path);
+    setCurrentPlayingVideoSrc(mediaUrl);
+    setIsVideoModalOpen(true);
+  };
+
+  const handleCloseVideoModal = () => {
+    setIsVideoModalOpen(false);
+    setCurrentPlayingVideoSrc(null);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  const handlePlayerReady = useCallback((_htmlMediaElement: HTMLVideoElement) => {
+    // Can be used to perform actions when the video player is ready
+  }, []);
+
   const handleEdit = (id: string) => recordingApi.editRecording?.(id);
 
   // Pagination
@@ -267,6 +289,19 @@ export function Recording() {
         recording={selectedRecording}
         onUpdate={handleUpdateRecording}
       />
+
+      {currentPlayingVideoSrc && (
+        <VideoModal
+          open={isVideoModalOpen}
+          onClose={handleCloseVideoModal}
+          src={currentPlayingVideoSrc}
+          mediaElementRef={videoRef}
+          autoplay={true}
+          controls={true}
+          muted={false}
+          onPlayerReady={handlePlayerReady}
+        />
+      )}
     </Box>
   );
 }
