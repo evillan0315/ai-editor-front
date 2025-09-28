@@ -5,18 +5,32 @@ import { SystemInfo, PromptData } from '@/types/terminal';
 import stripAnsi from 'strip-ansi';
 import { projectRootDirectoryStore } from './fileTreeStore';
 import { getToken } from './authStore';
+
+// Type definitions for handlers provided by the Xterm.js component
+type TerminalWriteFunction = (data: string) => void;
+type TerminalClearFunction = () => void;
+type TerminalFitFunction = () => void;
+
+// Global references for xterm.js instance interactions
+// These will be set by the XTerminal component when it mounts/unmounts
+let terminalWriteHandler: TerminalWriteFunction | null = null;
+let terminalClearHandler: TerminalClearFunction | null = null;
+let terminalFitHandler: TerminalFitFunction | null = null;
+
 export interface TerminalState {
   currentPath: string;
   systemInfo: string | null;
   isConnected: boolean;
   commandHistory: string[];
   historyIndex: number;
-  output: string[]; // Stores terminal output
+  output: string[]; // Still keep for compatibility with TerminalDialog.tsx
 }
+
 export const isTerminalVisible = persistentAtom<boolean>('showTerminal', false);
 export const setShowTerminal = (show: boolean) => {
   isTerminalVisible.set(show);
 };
+
 // Initialize with default values
 export const terminalStore = map<TerminalState>({
   currentPath: '~',
@@ -24,8 +38,21 @@ export const terminalStore = map<TerminalState>({
   isConnected: false,
   commandHistory: [],
   historyIndex: -1,
-  output: [],
+  output: [], // Initialize output array
 });
+
+// Actions to allow XTerminal component to register/unregister its xterm.js instance handlers
+export const registerTerminalWriteHandler = (handler: TerminalWriteFunction | null) => {
+  terminalWriteHandler = handler;
+};
+
+export const registerTerminalClearHandler = (handler: TerminalClearFunction | null) => {
+  terminalClearHandler = handler;
+};
+
+export const registerTerminalFitHandler = (handler: TerminalFitFunction | null) => {
+  terminalFitHandler = handler;
+};
 
 // Actions
 export const setCurrentPath = (path: string) => {
@@ -46,7 +73,7 @@ export const addCommandToHistory = (command: string) => {
   terminalStore.set({
     ...current,
     commandHistory,
-    historyIndex: commandHistory.length,
+    historyIndex: commandHistory.length, // Set index to end for new command
   });
 };
 
@@ -58,7 +85,7 @@ export const browseHistory = (direction: 'up' | 'down') => {
     newIndex = Math.max(0, current.historyIndex - 1);
   } else {
     newIndex = Math.min(
-      current.commandHistory.length - 1,
+      current.commandHistory.length, // Allow index to be `length` to indicate "new command"
       current.historyIndex + 1,
     );
   }
@@ -70,19 +97,36 @@ export const resetHistoryIndex = () => {
   terminalStore.setKey('historyIndex', -1);
 };
 
+/**
+ * Appends output to both the internal store buffer (stripped ANSI) for compatibility
+ * and directly to the xterm.js instance (raw ANSI) if a handler is registered.
+ */
 export const appendOutput = (text: string) => {
-  const plainText = stripAnsi(text);
   const current = terminalStore.get();
-  if (current.output[current.output.length - 1] === plainText) return; // skip duplicate
-  terminalStore.set({
-    ...current,
-    output: [...current.output, plainText],
-  });
+  const plainText = stripAnsi(text); // Always store stripped text in the nanostore's output array
+
+  // Avoid duplicate lines in the internal buffer if it's identical to the last one
+  if (current.output.length === 0 || current.output[current.output.length - 1] !== plainText) {
+    terminalStore.set({
+      ...current,
+      output: [...current.output, plainText],
+    });
+  }
+
+  // If an xterm instance is registered, write the full (potentially ANSI) text to it
+  if (terminalWriteHandler) {
+    terminalWriteHandler(text);
+  }
 };
 
-// Clear output
+/**
+ * Clears output from both the internal store buffer and the xterm.js instance if a handler is registered.
+ */
 export const clearOutput = () => {
-  terminalStore.setKey('output', []);
+  if (terminalClearHandler) {
+    terminalClearHandler(); // Clear the xterm instance
+  }
+  terminalStore.setKey('output', []); // Clear the internal buffer
 };
 
 // Socket connection management
@@ -92,30 +136,28 @@ export const connectTerminal = async () => {
     throw 'No authentication token.';
   }
 
-  // Retrieve project root directory from store
   const projectRoot = projectRootDirectoryStore.get();
 
   try {
     await socketService.connect(token, projectRoot);
     setConnected(true);
-    clearOutput();
+    clearOutput(); // Clear existing output on new connection
 
-    // Listeners
+    // Register socket listeners once
     socketService.on('output', (data: string) => appendOutput(data));
     socketService.on('outputMessage', (data: string) => appendOutput(data));
     socketService.on('error', (data: string) => appendOutput(`Error: ${data}`));
-    /*socketService.on('outputPath', (data: string) =>
-      setCurrentPath(`\x1b[31m${data}\x1b[0m`)
-    );*/
     socketService.on('outputInfo', (data: SystemInfo) => {
       const infoStr = Object.entries(data)
         .map(([k, v]) => `${k}: ${v}`)
         .join('\n');
       setSystemInfo(`${infoStr}\n`);
+      appendOutput(`${infoStr}\n`); // Also append to terminal
     });
     socketService.on('prompt', (data: PromptData) => {
       setCurrentPath(data.cwd);
-      //appendOutput(`\x1b[32m${data.cwd}\x1b[0m $ `);
+      // Append the prompt to the terminal via write handler
+      appendOutput(`\x1b[32m${data.cwd}\x1b[0m $ `); // ANSI colored prompt
     });
 
     appendOutput('Connected to terminal server.\n');
@@ -136,11 +178,21 @@ export const executeCommand = (command: string) => {
 
   addCommandToHistory(command);
   socketService.execCommand(command);
-  //appendOutput(`$ ${command}\n`);
+  // No need to append command here, as the backend echoes it back to the terminal.
+  // If the backend does not echo, uncommenting appendOutput(`$ ${command}\n`); would be necessary.
 };
 
+/**
+ * Resizes the frontend xterm.js instance and sends the new dimensions to the backend.
+ * The `cols` and `rows` parameters are mainly for the backend to adjust PTY dimensions.
+ * The frontend `terminalFitHandler` handles the visual display size via FitAddon.
+ */
 export const resizeTerminal = (cols: number, rows: number) => {
+  if (terminalFitHandler) {
+    terminalFitHandler(); // Request xterm to fit its container, this also triggers onResize event on xterm itself.
+  }
   if (terminalStore.get().isConnected) {
-    socketService.resize(cols, rows);
+    // Only send the raw cols/rows to the backend, let xterm's onResize handle its own updates
+    socketService.resize(cols, rows); 
   }
 };

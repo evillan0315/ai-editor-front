@@ -1,8 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Paper, useTheme } from '@mui/material';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { useStore } from '@nanostores/react';
+
+// Xterm imports
+import { Terminal as XtermTerminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import { WebglAddon } from '@xterm/addon-webgl';
+import '@xterm/xterm/css/xterm.css'; // Import xterm.js default CSS
+
 import { TerminalToolbar } from './TerminalToolbar';
 import TerminalSettingsDialog from './TerminalSettingsDialog';
 
@@ -10,10 +16,10 @@ import {
   terminalStore,
   connectTerminal,
   disconnectTerminal,
-  executeCommand,
-  browseHistory,
   resizeTerminal,
-  appendOutput,
+  registerTerminalWriteHandler,
+  registerTerminalClearHandler,
+  registerTerminalFitHandler,
 } from '@/stores/terminalStore';
 import { socketService } from '@/services/socketService';
 import { handleLogout } from '@/services/authService';
@@ -24,21 +30,166 @@ interface XTerminalProps {
   terminalHeight: number;
 }
 
+// Styles for the xterm container
+const xtermContainerSx = {
+  flexGrow: 1,
+  // Ensure the xterm canvas/layers fill the parent Box
+  '& .xterm': {
+    width: '100%',
+    height: '100%',
+  },
+  '& .xterm-viewport': {
+    overflowY: 'auto !important', // xterm manages its own scrollbar
+  },
+  '& .xterm-screen': {
+    width: '100%',
+    height: '100%',
+  },
+};
+
 export const XTerminal: React.FC<XTerminalProps> = ({
   onLogout,
   terminalHeight,
 }) => {
-  const { output, currentPath, isConnected, commandHistory, historyIndex } =
-    useStore(terminalStore);
+  const { isConnected, currentPath } = useStore(terminalStore);
   const navigate = useNavigate();
   const { mode } = useStore(themeStore);
   const theme = useTheme();
 
-  const inputRef = useRef<HTMLInputElement>(null);
-  const settingsDialogRef = useRef<HTMLDialogElement>(null);
-  const outputContainerRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  // const [terminalHeight, setTerminalHeight] = useState('400px');
+  const xtermDivRef = useRef<HTMLDivElement>(null);
+  const xtermTerminalRef = useRef<XtermTerminal | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
+  const webglAddonRef = useRef<WebglAddon | null>(null);
+
+  const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
+
+  // Xterm theme based on MUI theme
+  const xtermTheme = {
+    background:
+      mode === 'dark'
+        ? theme.palette.background.default
+        : theme.palette.grey[50],
+    foreground:
+      mode === 'dark'
+        ? theme.palette.text.primary
+        : theme.palette.text.primary,
+    cursor:
+      mode === 'dark'
+        ? theme.palette.text.primary
+        : theme.palette.text.primary,
+    cursorAccent:
+      mode === 'dark'
+        ? theme.palette.background.default
+        : theme.palette.grey[50],
+    selectionBackground:
+      mode === 'dark'
+        ? 'rgba(255, 255, 255, 0.3)'
+        : 'rgba(0, 0, 0, 0.3)',
+    black: '#2E3436',
+    red: '#CC0000',
+    green: '#4E9A06',
+    yellow: '#C4A000',
+    blue: '#3465A4',
+    magenta: '#75507B',
+    cyan: '#06989A',
+    white: '#D3D7CF',
+    brightBlack: '#555753',
+    brightRed: '#EF2929',
+    brightGreen: '#8AE234',
+    brightYellow: '#FCE94F',
+    brightBlue: '#729FCF',
+    brightMagenta: '#AD7FA8',
+    brightCyan: '#34E2E2',
+    brightWhite: '#EEEEEC',
+  };
+
+  /** Initialize Xterm.js terminal and addons */
+  useEffect(() => {
+    if (xtermDivRef.current && !xtermTerminalRef.current) {
+      const term = new XtermTerminal({
+        fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
+        fontSize: 12,
+        cursorBlink: true,
+        theme: xtermTheme,
+        allowTransparency: true,
+      });
+
+      const fitAddon = new FitAddon();
+      const webglAddon = new WebglAddon();
+
+      term.loadAddon(fitAddon);
+      term.loadAddon(webglAddon);
+      term.open(xtermDivRef.current);
+
+      xtermTerminalRef.current = term;
+      fitAddonRef.current = fitAddon;
+      webglAddonRef.current = webglAddon;
+
+      // Register handlers with the store
+      registerTerminalWriteHandler((data: string) => term.write(data));
+      registerTerminalClearHandler(() => term.clear());
+      registerTerminalFitHandler(() => fitAddon.fit());
+
+      // Initial fit
+      fitAddon.fit();
+
+      // Handle terminal input (e.g., user types command)
+      term.onData((input: string) => {
+        socketService.sendInput(input);
+      });
+
+      // Handle terminal resize (when xterm detects a change in its dimensions)
+      term.onResize(({ cols, rows }) => {
+        resizeTerminal(cols, rows); // Send to backend
+      });
+
+      return () => {
+        // Cleanup on unmount
+        webglAddon.dispose();
+        fitAddon.dispose();
+        term.dispose();
+        xtermTerminalRef.current = null;
+        fitAddonRef.current = null;
+        webglAddonRef.current = null;
+        registerTerminalWriteHandler(null);
+        registerTerminalClearHandler(null);
+        registerTerminalFitHandler(null);
+      };
+    }
+    // Update theme if mode changes (or theme object changes)
+    if (xtermTerminalRef.current) {
+      xtermTerminalRef.current.options.theme = xtermTheme;
+    }
+  }, [mode, theme.palette.background.default, theme.palette.text.primary, xtermTheme]);
+
+  /** Auto-connect if token exists */
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) handleConnect();
+  }, []);
+
+  /**
+   * IMPORTANT: Socket listeners are registered ONCE in terminalStore.ts's connectTerminal,
+   * and they use the registered `terminalWriteHandler`. So, this component doesn't need to
+   * register its own `socketService.on` calls for output.
+   */
+
+  /** Handle window resize -> fit xterm */
+  useEffect(() => {
+    const handleWindowResize = () => {
+      fitAddonRef.current?.fit();
+    };
+
+    window.addEventListener('resize', handleWindowResize);
+    handleWindowResize(); // Initial fit based on current window size
+
+    return () => window.removeEventListener('resize', handleWindowResize);
+  }, []); // Run once on mount and clean up
+
+  /** Trigger fit when terminalHeight prop changes (e.g., parent container resized) */
+  useEffect(() => {
+    fitAddonRef.current?.fit();
+  }, [terminalHeight]);
 
   const handleConnect = async () => {
     try {
@@ -57,97 +208,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
   };
 
   const handleSettings = () => {
-    setOpen(true);
-  };
-
-  /** Command history navigation + execution */
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      browseHistory('up');
-      if (inputRef.current && historyIndex >= 0) {
-        inputRef.current.value = commandHistory[historyIndex] || '';
-      }
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      browseHistory('down');
-      if (inputRef.current) {
-        inputRef.current.value =
-          historyIndex < commandHistory.length - 1
-            ? commandHistory[historyIndex] || ''
-            : '';
-      }
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const command = inputRef.current?.value || '';
-      if (command.trim()) {
-        executeCommand(command);
-        if (inputRef.current) inputRef.current.value = '';
-      }
-    }
-  };
-
-  /** Auto-connect if token exists */
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) handleConnect();
-  }, []);
-
-  /** Register socket listeners once and clean up on unmount
-   *  to prevent double output when React.StrictMode mounts twice.
-   */
-  useEffect(() => {
-    const handleOutput = (data: string) => appendOutput(data);
-    const handleError = (data: string) => appendOutput(`Error: ${data}`);
-
-    socketService.on('output', handleOutput);
-    socketService.on('outputMessage', handleOutput);
-    socketService.on('error', handleError);
-
-    return () => {
-      socketService.off('output');
-      socketService.off('outputMessage');
-      socketService.off('error');
-    };
-  }, []);
-
-  /** Auto-scroll when output changes */
-  useEffect(() => {
-    const container = outputContainerRef.current;
-    if (container) container.scrollTop = container.scrollHeight;
-  }, [output]);
-
-  /** Handle window resize -> send size to backend */
-  useEffect(() => {
-    if (!isConnected) return;
-
-    const handleResize = () => {
-      const cols = Math.floor(window.innerWidth / 10);
-      const rows = Math.floor(terminalHeight / 20);
-      resizeTerminal(cols, rows);
-    };
-
-    handleResize(); // send initial size
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [isConnected, terminalHeight]);
-
-  /** Focus the input on initial load */
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  /** Clicking output container also focuses the input */
-  const handleOutputClick = () => {
-    inputRef.current?.focus();
-  };
-
-  const getTruncatedPath = (path: string) => {
-    const parts = path.split('/').filter((part) => part !== '');
-    if (parts.length <= 3) {
-      return path;
-    }
-    return '.../' + parts.slice(-3).join('/');
+    setOpenSettingsDialog(true);
   };
 
   return (
@@ -162,9 +223,8 @@ export const XTerminal: React.FC<XTerminalProps> = ({
           mode === 'dark'
             ? theme.palette.background.paper
             : theme.palette.background.default,
-
         overflow: 'hidden',
-        position: 'relative', // Make Paper a positioning context
+        position: 'relative',
       }}
     >
       <TerminalToolbar
@@ -182,78 +242,18 @@ export const XTerminal: React.FC<XTerminalProps> = ({
       />
 
       <Box
-        ref={outputContainerRef}
-        onClick={handleOutputClick}
+        ref={xtermDivRef}
         sx={{
-          flexGrow: 1,
-          padding: '8px',
-          overflow: 'auto',
-
-          fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
-          fontSize: '12px',
-          whiteSpace: 'pre-wrap',
-          cursor: 'text',
+          ...xtermContainerSx,
+          height: `calc(${terminalHeight}px - ${theme.spacing(5)})`, // Adjust height for toolbar
+          backgroundColor: xtermTheme.background,
         }}
-      >
-        {output.map((line, index) => (
-          <div key={index}>{line}</div>
-        ))}
-      </Box>
+      />
 
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '8px',
-          backgroundColor:
-            mode === 'dark'
-              ? theme.palette.background.paper
-              : theme.palette.background.paper,
-          position: 'sticky', // Stick to the bottom
-          bottom: 0,
-          left: 0,
-          right: 0,
-        }}
-      >
-        <Box
-          sx={{
-            color: '#4ec9b0',
-            marginRight: '8px',
-            fontFamily: 'monospace',
-            overflow: 'hidden', // Hide overflowing text
-            whiteSpace: 'nowrap', // Prevent wrapping
-            textOverflow: 'ellipsis', // Add ellipsis
-            maxWidth: 'calc(20vw - 16px)', // occupy maximum 30% of the viewport width to allow space for the input
-            '@media (max-width: 500px)': {
-              maxWidth: 'calc(10vw - 16px)', // Adjust the width for smaller screens
-            },
-          }}
-        >
-          <AttachMoneyIcon />
-        </Box>
-        <input
-          ref={inputRef}
-          type="text"
-          disabled={!isConnected}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a command..."
-          style={{
-            flexGrow: 1,
-
-            backgroundColor: 'transparent',
-            border: 'none',
-            color:
-              mode === 'dark'
-                ? theme.palette.text.primary
-                : theme.palette.text.secondary,
-            fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
-            fontSize: '12px',
-            outline: 'none',
-          }}
-        />
-      </Box>
-
-      <TerminalSettingsDialog open={open} onClose={() => setOpen(false)} />
+      <TerminalSettingsDialog
+        open={openSettingsDialog}
+        onClose={() => setOpenSettingsDialog(false)}
+      />
     </Paper>
   );
 };
