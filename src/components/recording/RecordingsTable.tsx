@@ -1,4 +1,4 @@
-// src/components/recording/RecordingsTable.tsx
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -8,23 +8,29 @@ import {
   TableRow,
   Paper,
   IconButton,
-  TableSortLabel,
+  Box,
 } from '@mui/material';
-import { Delete, Edit, PlayArrow, Info } from '@mui/icons-material';
-import { RecordingItem } from './Recording';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import InfoIcon from '@mui/icons-material/Info';
+import GifIcon from '@mui/icons-material/Gif';
 
-export interface RecordingsTableProps {
+import { RecordingItem } from './Recording'; // Re-exporting RecordingItem as RecordingItem
+
+interface RecordingsTableProps {
   recordings: RecordingItem[];
-  onPlay: (record: RecordingItem) => void;
+  onPlay: (recording: RecordingItem) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onView: (recording: RecordingItem) => void; // New
-  onSort: (field: 'name' | 'createdAt' | 'type' | 'status') => void;
-  sortBy: string;
+  onView: (recording: RecordingItem) => void;
+  onSort: (field: keyof RecordingItem) => void;
+  sortBy: keyof RecordingItem;
   sortOrder: 'asc' | 'desc';
+  onConvertToGif: (recording: RecordingItem) => void; // New prop
 }
 
-export function RecordingsTable({
+const RecordingsTable: React.FC<RecordingsTableProps> = ({
   recordings,
   onPlay,
   onEdit,
@@ -33,61 +39,117 @@ export function RecordingsTable({
   onSort,
   sortBy,
   sortOrder,
-}: RecordingsTableProps) {
-  const renderHeaderCell = (
-    label: string,
-    field: 'name' | 'createdAt' | 'type' | 'status',
-  ) => (
-    <TableCell sortDirection={sortBy === field ? sortOrder : false}>
-      <TableSortLabel
-        active={sortBy === field}
-        direction={sortBy === field ? sortOrder : 'asc'}
-        onClick={() => onSort(field)}
-      >
-        {label}
-      </TableSortLabel>
-    </TableCell>
-  );
+  onConvertToGif,
+}) => {
+  const formatBytes = (bytes: number, decimals = 2) => {
+    if (!+bytes) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  };
 
   return (
-    <TableContainer component={Paper}>
-      <Table size="small">
-        <TableHead>
+    <TableContainer component={Paper} className="rounded-lg shadow-lg">
+      <Table className="min-w-full">
+        <TableHead className="bg-gray-800">
           <TableRow>
-            {renderHeaderCell('Name', 'name')}
-            {renderHeaderCell('Created', 'createdAt')}
-            {renderHeaderCell('Type', 'type')}
-            {renderHeaderCell('Status', 'status')}
-            <TableCell align="right">Size</TableCell>
-            <TableCell align="right">Actions</TableCell>
+            <TableCell className="cursor-pointer text-gray-300 font-semibold p-4"
+              onClick={() => onSort('name')}>
+              Name {sortBy === 'name' && (sortOrder === 'asc' ? '▲' : '▼')}
+            </TableCell>
+            <TableCell className="cursor-pointer text-gray-300 font-semibold p-4"
+              onClick={() => onSort('type')}>
+              Type {sortBy === 'type' && (sortOrder === 'asc' ? '▲' : '▼')}
+            </TableCell>
+            <TableCell className="cursor-pointer text-gray-300 font-semibold p-4"
+              onClick={() => onSort('status')}>
+              Status {sortBy === 'status' && (sortOrder === 'asc' ? '▲' : '▼')}
+            </TableCell>
+            <TableCell className="cursor-pointer text-gray-300 font-semibold p-4"
+              onClick={() => onSort('sizeBytes')}>
+              Size {sortBy === 'sizeBytes' && (sortOrder === 'asc' ? '▲' : '▼')}
+            </TableCell>
+            <TableCell className="cursor-pointer text-gray-300 font-semibold p-4"
+              onClick={() => onSort('createdAt')}>
+              Created At {sortBy === 'createdAt' && (sortOrder === 'asc' ? '▲' : '▼')}
+            </TableCell>
+            <TableCell className="text-gray-300 font-semibold p-4 text-right">Actions</TableCell>
           </TableRow>
         </TableHead>
-        <TableBody>
-          {recordings.map((rec) => (
-            <TableRow key={rec.id} hover>
-              <TableCell>{rec.name}</TableCell>
-              <TableCell>{new Date(rec.createdAt).toLocaleString()}</TableCell>
-              <TableCell>{rec.type}</TableCell>
-              <TableCell>{rec.status}</TableCell>
-              <TableCell align="right">
-                {(rec.sizeBytes / 1024).toFixed(1)} KB
+        <TableBody className="bg-gray-900">
+          {recordings.map((recording) => (
+            <TableRow key={recording.id} className="hover:bg-gray-800">
+              <TableCell className="text-white p-4">{recording.name}</TableCell>
+              <TableCell className="text-white p-4">{recording.type}</TableCell>
+              <TableCell className="text-white p-4">{recording.status}</TableCell>
+              <TableCell className="text-white p-4">
+                {formatBytes(recording.sizeBytes)}
               </TableCell>
-              <TableCell align="right">
-                <IconButton aria-label="play" onClick={() => onPlay(rec)}>
-                  <PlayArrow />
-                </IconButton>
-                <IconButton aria-label="edit" onClick={() => onEdit(rec.id)}>
-                  <Edit />
-                </IconButton>
-                <IconButton
-                  aria-label="delete"
-                  onClick={() => onDelete(rec.id)}
-                >
-                  <Delete />
-                </IconButton>
-                <IconButton aria-label="view info" onClick={() => onView(rec)}>
-                  <Info />
-                </IconButton>
+              <TableCell className="text-white p-4">
+                {new Date(recording.createdAt).toLocaleString()}
+              </TableCell>
+              <TableCell className="text-right p-4">
+                <Box className="flex justify-end space-x-2">
+                  {recording.type === 'screenRecord' && !recording.data?.animatedGif && (
+                    <IconButton
+                      onClick={() => onConvertToGif(recording)}
+                      color="primary"
+                      title="Convert to GIF"
+                    >
+                      <GifIcon />
+                    </IconButton>
+                  )}
+                  {(recording.type === 'screenRecord' || recording.type === 'cameraRecord') && (
+                    <IconButton
+                      onClick={() => onPlay(recording)}
+                      color="primary"
+                      title="Play Recording"
+                    >
+                      <PlayArrowIcon />
+                    </IconButton>
+                  )}
+                  {recording.type === 'screenShot' && (
+                    <IconButton
+                      onClick={() => onPlay(recording)}
+                      color="primary"
+                      title="View Screenshot"
+                    >
+                      <PlayArrowIcon /> {/* Re-using PlayArrow for consistency, but means 'view' */}
+                    </IconButton>
+                  )}
+                  {recording.data?.animatedGif && (
+                    <IconButton
+                      onClick={() => onPlay({ ...recording, path: recording.data.animatedGif!, type: 'animatedGif' })} // Pass a modified recording item for GIF playback
+                      color="primary"
+                      title="View Animated GIF"
+                    >
+                      <GifIcon />
+                    </IconButton>
+                  )}
+                  <IconButton
+                    onClick={() => onView(recording)}
+                    color="info"
+                    title="View Details"
+                  >
+                    <InfoIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => onEdit(recording.id)}
+                    color="secondary"
+                    title="Edit"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => onDelete(recording.id)}
+                    color="error"
+                    title="Delete"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
               </TableCell>
             </TableRow>
           ))}
@@ -95,4 +157,6 @@ export function RecordingsTable({
       </Table>
     </TableContainer>
   );
-}
+};
+
+export { RecordingsTable };
