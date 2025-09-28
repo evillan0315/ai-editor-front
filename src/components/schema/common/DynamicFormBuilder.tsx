@@ -18,7 +18,10 @@ import {
 } from '@mui/material';
 import { JsonSchema } from '@/types/schema';
 import { nanoid } from 'nanoid';
-import { Add as AddIcon, RemoveCircleOutline as RemoveIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  RemoveCircleOutline as RemoveIcon,
+} from '@mui/icons-material';
 
 interface DynamicFormBuilderProps {
   schema: JsonSchema;
@@ -119,10 +122,20 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
     [onFormChange],
   );
 
-  if (!schema || !schema.properties || Object.keys(schema.properties).length === 0) {
+  if (
+    !schema ||
+    !schema.properties ||
+    Object.keys(schema.properties).length === 0
+  ) {
     return (
-      <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic', ml: level * 2 }}>
-        {level === 0 ? 'No schema properties to display a form.' : 'No properties for this object.'}
+      <Typography
+        variant="body2"
+        color="textSecondary"
+        sx={{ fontStyle: 'italic', ml: level * 2 }}
+      >
+        {level === 0
+          ? 'No schema properties to display a form.'
+          : 'No properties for this object.'}
       </Typography>
     );
   }
@@ -136,7 +149,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
     // Base styles for form elements for consistent spacing and width within the grid
     const baseFieldProps = {
       fullWidth: true,
-      margin: 'normal' as 'normal', // Ensure correct type
+      margin: 'normal' as const, // Ensure correct type
       helperText: description,
       required: isRequired,
       className: 'col-span-12',
@@ -179,7 +192,11 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
                 ))}
               </Select>
               {description && (
-                <Typography variant="caption" color="textSecondary" sx={{ mt: 1 }}>
+                <Typography
+                  variant="caption"
+                  color="textSecondary"
+                  sx={{ mt: 1 }}
+                >
                   {description}
                 </Typography>
               )}
@@ -228,7 +245,9 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
       case 'array':
         if (prop.items && typeof prop.items === 'object') {
           // Array of objects or complex types
-          const currentArray = Array.isArray(formData[key]) ? formData[key] : [];
+          const currentArray = Array.isArray(formData[key])
+            ? formData[key]
+            : [];
           const itemSchema = prop.items;
 
           return (
@@ -274,13 +293,18 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
                   >
                     <RemoveIcon fontSize="small" />
                   </IconButton>
-                  <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ mb: 1, display: 'block' }}
+                  >
                     Item {index + 1}
                   </Typography>
                   <DynamicFormBuilder
                     schema={itemSchema}
                     initialData={item}
-                    onFormChange={(nestedData) => handleChange(key, nestedData, index)}
+                    onFormChange={(nestedData) =>
+                      handleChange(key, nestedData, index)
+                    }
                     level={level + 1}
                   />
                 </Box>
@@ -344,7 +368,13 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
         );
       default:
         return (
-          <Typography key={key} variant="body2" color="error" className="col-span-12" sx={{ ml: level * 2 }}>
+          <Typography
+            key={key}
+            variant="body2"
+            color="error"
+            className="col-span-12"
+            sx={{ ml: level * 2 }}
+          >
             Unsupported type for {label}: {prop.type}
           </Typography>
         );
@@ -359,7 +389,12 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
         </Typography>
       )}
       {schema.description && level === 0 && (
-        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }} className="col-span-12">
+        <Typography
+          variant="body2"
+          color="textSecondary"
+          sx={{ mb: 2 }}
+          className="col-span-12"
+        >
           {schema.description}
         </Typography>
       )}
