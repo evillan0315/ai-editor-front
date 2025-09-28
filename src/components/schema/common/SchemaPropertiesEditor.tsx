@@ -18,8 +18,10 @@ interface SchemaPropertiesEditorProps {
   properties: SchemaProperty[];
   onPropertiesChange: (newProperties: SchemaProperty[]) => void;
   onGenerateSchema: () => void;
-  schemaUrl: string;
-  onSchemaUrlChange: (url: string) => void;
+  schemaId: string;
+  onSchemaIdChange: (id: string) => void;
+  metaSchemaUrl: string;
+  onMetaSchemaUrlChange: (url: string) => void;
   schemaTitle: string;
   onSchemaTitleChange: (title: string) => void;
   schemaDescription: string;
@@ -30,8 +32,10 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   properties,
   onPropertiesChange,
   onGenerateSchema,
-  schemaUrl,
-  onSchemaUrlChange,
+  schemaId,
+  onSchemaIdChange,
+  metaSchemaUrl,
+  onMetaSchemaUrlChange,
   schemaTitle,
   onSchemaTitleChange,
   schemaDescription,
@@ -189,9 +193,17 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
 
       {/* Top-level Schema Metadata Fields */}
       <TextField
-        label="Schema URL ($id)"
-        value={schemaUrl}
-        onChange={(e) => onSchemaUrlChange(e.target.value)}
+        label="Schema ID ($id)" // Changed label for clarity
+        value={schemaId}
+        onChange={(e) => onSchemaIdChange(e.target.value)}
+        fullWidth
+        margin="normal"
+        size="small"
+      />
+      <TextField
+        label="Meta-Schema URL ($schema)" // New field for $schema
+        value={metaSchemaUrl}
+        onChange={(e) => onMetaSchemaUrlChange(e.target.value)}
         fullWidth
         margin="normal"
         size="small"
