@@ -20,17 +20,17 @@ interface SchemaProperty {
   minLength?: number;
   maxLength?: number;
   items?: SchemaProperty[]; // For array type, allow nested properties
+  showOptions?: boolean; // New property to control visibility of other options
 }
 
 const AiSchemaGenerator: React.FC = () => {
   const theme = useTheme();
-  const [properties, setProperties] = useState<SchemaProperty[]>([{ id: '1', name: 'propertyName', type: 'string', required: true }]);
+  const [properties, setProperties] = useState<SchemaProperty[]>([{ id: '1', name: 'propertyName', type: 'string', required: true, showOptions: false }]);
   const [useInstruction, setUseInstruction] = useState(false);
   const [instruction, setInstruction] = useState('');
   const $schema = useStore(schemaStore);
   const [loading, setLoading] = useState(false);
   const [applyInstruction, setApplyInstruction] = useState('');
-  const [showOtherOptions, setShowOtherOptions] = useState(false);
 
   // Function to parse JSON schema and update properties
   const parseSchema = useCallback((schema: any) => {
@@ -41,6 +41,7 @@ const AiSchemaGenerator: React.FC = () => {
           name: name,
           type: details.type || 'string', // Default to string if type is missing
           required: schema.required ? schema.required.includes(name) : false,
+          showOptions: false, // Initialize as hidden
         };
 
         // Add additional properties if they exist
@@ -68,6 +69,7 @@ const AiSchemaGenerator: React.FC = () => {
               maximum: itemDetails.maximum,
               minLength: itemDetails.minLength,
               maxLength: itemDetails.maxLength,
+              showOptions: false, // Initialize as hidden
             }));
             baseProperty.items = itemProperties;
           }
@@ -89,7 +91,7 @@ const AiSchemaGenerator: React.FC = () => {
   }, [$schema, parseSchema]);
 
   const handleAddProperty = () => {
-    setProperties([...properties, { id: String(Date.now()), name: '', type: 'string', required: false }]);
+    setProperties([...properties, { id: String(Date.now()), name: '', type: 'string', required: false, showOptions: false }]);
   };
 
   const handleDeleteProperty = (id: string) => {
@@ -180,10 +182,6 @@ const AiSchemaGenerator: React.FC = () => {
     }
   };
 
-  const handleToggleOtherOptions = () => {
-    setShowOtherOptions(!showOtherOptions);
-  };
-
   return (
     <Box sx={{ padding: 3 }}>
       <Typography variant="h6" gutterBottom>
@@ -249,17 +247,25 @@ const AiSchemaGenerator: React.FC = () => {
                     label="Required"
                   />
                 </FormGroup>
-                 <IconButton aria-label="toggle other options" onClick={handleToggleOtherOptions}>
-                    {showOtherOptions ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                 <IconButton 
+                   aria-label="toggle other options" 
+                   onClick={() => handlePropertyChange(property.id, 'showOptions', !property.showOptions)} // Toggle only for this property
+                 >
+                    {property.showOptions ? <VisibilityOffIcon /> : <VisibilityIcon />}
                 </IconButton>
-                <Collapse in={showOtherOptions} timeout="auto" unmountOnExit>
+                <IconButton aria-label="delete" onClick={() => handleDeleteProperty(property.id)}>
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+              <Collapse in={property.showOptions} timeout="auto" unmountOnExit> {/* Use property.showOptions here */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
                   <Tooltip title="Description">
                     <TextField
                       label="Description"
                       value={property.description || ''}
                       onChange={e => handlePropertyChange(property.id, 'description', e.target.value)}
                       size="small"
-                      sx={{ flexGrow: 1 }}
+                      fullWidth
                     />
                   </Tooltip>
                   <Tooltip title="Format">
@@ -268,7 +274,7 @@ const AiSchemaGenerator: React.FC = () => {
                       value={property.format || ''}
                       onChange={e => handlePropertyChange(property.id, 'format', e.target.value)}
                       size="small"
-                      sx={{ flexGrow: 1 }}
+                      fullWidth
                     />
                   </Tooltip>
                   <Tooltip title="Enum">
@@ -280,7 +286,7 @@ const AiSchemaGenerator: React.FC = () => {
                         handlePropertyChange(property.id, 'enum', enumValues);
                       }}
                       size="small"
-                      sx={{ flexGrow: 1 }}
+                      fullWidth
                     />
                   </Tooltip>
 
@@ -291,7 +297,7 @@ const AiSchemaGenerator: React.FC = () => {
                       value={property.minimum !== undefined ? property.minimum : ''}
                       onChange={e => handlePropertyChange(property.id, 'minimum', Number(e.target.value))}
                       size="small"
-                      sx={{ flexGrow: 1 }}
+                      fullWidth
                     />
                   </Tooltip>
                   <Tooltip title="Maximum">
@@ -301,7 +307,7 @@ const AiSchemaGenerator: React.FC = () => {
                       value={property.maximum !== undefined ? property.maximum : ''}
                       onChange={e => handlePropertyChange(property.id, 'maximum', Number(e.target.value))}
                       size="small"
-                      sx={{ flexGrow: 1 }}
+                      fullWidth
                     />
                   </Tooltip>
                   <Tooltip title="Min Length">
@@ -311,7 +317,7 @@ const AiSchemaGenerator: React.FC = () => {
                       value={property.minLength !== undefined ? property.minLength : ''}
                       onChange={e => handlePropertyChange(property.id, 'minLength', Number(e.target.value))}
                       size="small"
-                      sx={{ flexGrow: 1 }}
+                      fullWidth
                     />
                   </Tooltip>
                   <Tooltip title="Max Length">
@@ -321,15 +327,11 @@ const AiSchemaGenerator: React.FC = () => {
                       value={property.maxLength !== undefined ? property.maxLength : ''}
                       onChange={e => handlePropertyChange(property.id, 'maxLength', Number(e.target.value))}
                       size="small"
-                      sx={{ flexGrow: 1 }}
+                      fullWidth
                     />
                   </Tooltip>
-                </Collapse>
-
-                <IconButton aria-label="delete" onClick={() => handleDeleteProperty(property.id)}>
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
+                </Box>
+              </Collapse>
             </Paper>
           ))}
           <IconButton aria-label="add" onClick={handleAddProperty}>
