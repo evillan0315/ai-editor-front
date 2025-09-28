@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Box, TextField, Select, MenuItem, FormControl, InputLabel, Switch, FormGroup, FormControlLabel, IconButton, useTheme, Typography, Paper, Button, CircularProgress } from '@mui/material';
+import { Box, TextField, Select, MenuItem, FormControl, InputLabel, Switch, FormGroup, FormControlLabel, IconButton, useTheme, Typography, Paper, Button, CircularProgress, Tooltip } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { generateSchema } from '@/api/llm';
@@ -12,6 +12,14 @@ interface SchemaProperty {
   name: string;
   type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'null';
   required: boolean;
+  description?: string;
+  format?: string;
+  enum?: string[];
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  items?: SchemaProperty[]; // For array type, allow nested properties
 }
 
 const AiSchemaGenerator: React.FC = () => {
@@ -21,16 +29,50 @@ const AiSchemaGenerator: React.FC = () => {
   const [instruction, setInstruction] = useState('');
   const $schema = useStore(schemaStore);
   const [loading, setLoading] = useState(false);
+  const [applyInstruction, setApplyInstruction] = useState('');
 
   // Function to parse JSON schema and update properties
   const parseSchema = useCallback((schema: any) => {
     if (typeof schema === 'object' && schema !== null && schema.properties) {
-      const newProperties: SchemaProperty[] = Object.entries(schema.properties).map(([name, details]: [string, any], index) => ({
-        id: String(Date.now() + index), // Generate unique ID
-        name: name,
-        type: details.type || 'string', // Default to string if type is missing
-        required: schema.required ? schema.required.includes(name) : false,
-      }));
+      const newProperties: SchemaProperty[] = Object.entries(schema.properties).map(([name, details]: [string, any], index) => {
+        const baseProperty: SchemaProperty = {
+          id: String(Date.now() + index), // Generate unique ID
+          name: name,
+          type: details.type || 'string', // Default to string if type is missing
+          required: schema.required ? schema.required.includes(name) : false,
+        };
+
+        // Add additional properties if they exist
+        if (details.description) baseProperty.description = details.description;
+        if (details.format) baseProperty.format = details.format;
+        if (details.enum) baseProperty.enum = details.enum;
+        if (details.minimum) baseProperty.minimum = details.minimum;
+        if (details.maximum) baseProperty.maximum = details.maximum;
+        if (details.minLength) baseProperty.minLength = details.minLength;
+        if (details.maxLength) baseProperty.maxLength = details.maxLength;
+
+        // Handle nested items (for arrays)
+        if (details.type === 'array' && details.items) {
+          // Assuming items is an object with properties
+          if (details.items.properties) {
+            const itemProperties = Object.entries(details.items.properties).map(([itemName, itemDetails]: [string, any], itemIndex) => ({
+              id: String(Date.now() + index + itemIndex), // Generate unique ID
+              name: itemName,
+              type: itemDetails.type || 'string',
+              required: details.items.required ? details.items.required.includes(itemName) : false,
+              description: itemDetails.description,
+              format: itemDetails.format,
+              enum: itemDetails.enum,
+              minimum: itemDetails.minimum,
+              maximum: itemDetails.maximum,
+              minLength: itemDetails.minLength,
+              maxLength: itemDetails.maxLength,
+            }));
+            baseProperty.items = itemProperties;
+          }
+        }
+        return baseProperty;
+      });
       setProperties(newProperties);
     } else {
       console.error('Invalid schema format: properties field missing or schema is not an object.');
@@ -63,6 +105,33 @@ const AiSchemaGenerator: React.FC = () => {
 
     const propertiesSchema = properties.reduce((acc: any, property) => {
       acc[property.name] = { type: property.type };
+
+      if (property.description) acc[property.name].description = property.description;
+      if (property.format) acc[property.name].format = property.format;
+      if (property.enum) acc[property.name].enum = property.enum;
+      if (property.minimum) acc[property.name].minimum = property.minimum;
+      if (property.maximum) acc[property.name].maximum = property.maximum;
+      if (property.minLength) acc[property.name].minLength = property.minLength;
+      if (property.maxLength) acc[property.name].maxLength = property.maxLength;
+
+      // Handle nested items for arrays
+      if (property.type === 'array' && property.items) {
+        acc[property.name].items = {
+          type: 'object',
+          properties: property.items.reduce((itemAcc: any, item) => {
+            itemAcc[item.name] = { type: item.type };
+            if (item.description) itemAcc[item.name].description = item.description;
+            if (item.format) itemAcc[item.name].format = item.format;
+            if (item.enum) itemAcc[item.name].enum = item.enum;
+            if (item.minimum) itemAcc[item.name].minimum = item.minimum;
+            if (item.maximum) itemAcc[item.name].maximum = item.maximum;
+            if (item.minLength) itemAcc[item.name].minLength = item.minLength;
+            if (item.maxLength) itemAcc[item.name].maxLength = item.maxLength;
+            return itemAcc;
+          }, {})
+        };
+      }
+
       return acc;
     }, {});
 
@@ -82,17 +151,17 @@ const AiSchemaGenerator: React.FC = () => {
       const aiResponse = await generateSchema(`Generate a JSON schema based on the following instruction: ${instruction}`);
       console.log(aiResponse, 'aiResponse');
 
-        if (aiResponse) {
-          try {
-            const parsedSchema = JSON.parse(aiResponse);
-            schemaStore.set(parsedSchema);
-          } catch (error) {
-            console.error('Failed to parse generated schema:', error);
-            schemaStore.set('Error: Invalid JSON generated.');
-          }
-        } else {
-          schemaStore.set('Error: No schema content found in the response.');
+      if (aiResponse) {
+        try {
+          const parsedSchema = JSON.parse(aiResponse);
+          schemaStore.set(parsedSchema);
+        } catch (error) {
+          console.error('Failed to parse generated schema:', error);
+          schemaStore.set('Error: Invalid JSON generated.');
         }
+      } else {
+        schemaStore.set('Error: No schema content found in the response.');
+      }
     } catch (error) {
       console.error('Error generating schema from instruction:', error);
       schemaStore.set('Error: Failed to generate schema.');
@@ -171,11 +240,81 @@ const AiSchemaGenerator: React.FC = () => {
                 </FormControl>
                 <FormGroup>
                   <FormControlLabel
-                    control={<Switch checked={property.required} />}
+                    control={<Switch checked={property.required} onChange={e => handlePropertyChange(property.id, 'required', e.target.checked)} />}
                     label="Required"
-                    onChange={e => handlePropertyChange(property.id, 'required', e.target.checked)}
                   />
                 </FormGroup>
+                <Tooltip title="Description">
+                  <TextField
+                    label="Description"
+                    value={property.description || ''}
+                    onChange={e => handlePropertyChange(property.id, 'description', e.target.value)}
+                    size="small"
+                    sx={{ flexGrow: 1 }}
+                  />
+                </Tooltip>
+                <Tooltip title="Format">
+                  <TextField
+                    label="Format"
+                    value={property.format || ''}
+                    onChange={e => handlePropertyChange(property.id, 'format', e.target.value)}
+                    size="small"
+                    sx={{ flexGrow: 1 }}
+                  />
+                </Tooltip>
+                <Tooltip title="Enum">
+                  <TextField
+                    label="Enum (comma separated)"
+                    value={(property.enum || []).join(', ')}
+                    onChange={e => {
+                      const enumValues = e.target.value.split(',').map(item => item.trim());
+                      handlePropertyChange(property.id, 'enum', enumValues);
+                    }}
+                    size="small"
+                    sx={{ flexGrow: 1 }}
+                  />
+                </Tooltip>
+
+                <Tooltip title="Minimum">
+                  <TextField
+                    label="Minimum"
+                    type="number"
+                    value={property.minimum !== undefined ? property.minimum : ''}
+                    onChange={e => handlePropertyChange(property.id, 'minimum', Number(e.target.value))}
+                    size="small"
+                    sx={{ flexGrow: 1 }}
+                  />
+                </Tooltip>
+                <Tooltip title="Maximum">
+                  <TextField
+                    label="Maximum"
+                    type="number"
+                    value={property.maximum !== undefined ? property.maximum : ''}
+                    onChange={e => handlePropertyChange(property.id, 'maximum', Number(e.target.value))}
+                    size="small"
+                    sx={{ flexGrow: 1 }}
+                  />
+                </Tooltip>
+                <Tooltip title="Min Length">
+                  <TextField
+                    label="Min Length"
+                    type="number"
+                    value={property.minLength !== undefined ? property.minLength : ''}
+                    onChange={e => handlePropertyChange(property.id, 'minLength', Number(e.target.value))}
+                    size="small"
+                    sx={{ flexGrow: 1 }}
+                  />
+                </Tooltip>
+                <Tooltip title="Max Length">
+                  <TextField
+                    label="Max Length"
+                    type="number"
+                    value={property.maxLength !== undefined ? property.maxLength : ''}
+                    onChange={e => handlePropertyChange(property.id, 'maxLength', Number(e.target.value))}
+                    size="small"
+                    sx={{ flexGrow: 1 }}
+                  />
+                </Tooltip>
                 <IconButton aria-label="delete" onClick={() => handleDeleteProperty(property.id)}>
                   <DeleteIcon />
                 </IconButton>
@@ -201,6 +340,23 @@ const AiSchemaGenerator: React.FC = () => {
           Generated Schema:
         </Typography>
         <CodeMirrorEditor value={JSON.stringify($schema, null, 2)} language="json" readOnly filePath="schema.json" />
+      </Box>
+      <Box mt={3}>
+        <Typography variant="subtitle1" gutterBottom>
+          Apply Schema To Instruction:
+        </Typography>
+          <TextField
+            label="Apply Schema To Instruction"
+            fullWidth
+            multiline
+            rows={4}
+            value={applyInstruction}
+            onChange={(e) => setApplyInstruction(e.target.value)}
+            margin="normal"
+          />
+        <Button variant="contained" color="primary" onClick={() => setInstruction(applyInstruction +  JSON.stringify($schema, null, 2))}>
+          Apply Schema To Instruction
+        </Button>
       </Box>
     </Box>
   );
