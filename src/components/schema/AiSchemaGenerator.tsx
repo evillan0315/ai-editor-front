@@ -4,6 +4,8 @@ import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { generateSchema } from '@/api/llm';
 import { LLM_ENDPOINT, RequestType } from '@/types/llm';
+import { useStore } from '@nanostores/react';
+import { schemaStore } from '@/stores/schemaStore';
 
 interface SchemaProperty {
   id: string;
@@ -17,7 +19,7 @@ const AiSchemaGenerator: React.FC = () => {
   const [properties, setProperties] = useState<SchemaProperty[]>([{ id: '1', name: 'propertyName', type: 'string', required: true }]);
   const [useInstruction, setUseInstruction] = useState(false);
   const [instruction, setInstruction] = useState('');
-  const [generatedSchema, setGeneratedSchema] = useState('{}');
+  const $schema = useStore(schemaStore);
   const [loading, setLoading] = useState(false);
 
   // Function to parse JSON schema and update properties
@@ -42,12 +44,12 @@ const AiSchemaGenerator: React.FC = () => {
     }
   }, []);
 
-  // Use useEffect to call parseSchema whenever generatedSchema changes
+  // Use useEffect to call parseSchema whenever $schema changes
   useEffect(() => {
-    if (generatedSchema) {
-      parseSchema(generatedSchema);
+    if ($schema.generatedSchema) {
+      parseSchema($schema.generatedSchema);
     }
-  }, [generatedSchema, parseSchema]);
+  }, [$schema.generatedSchema, parseSchema]);
 
   const handleAddProperty = () => {
     setProperties([...properties, { id: String(Date.now()), name: '', type: 'string', required: false }]);
@@ -76,7 +78,7 @@ const AiSchemaGenerator: React.FC = () => {
       required: requiredProperties,
     };
 
-    setGeneratedSchema(JSON.stringify(schema, null, 2));
+    schemaStore.setKey('generatedSchema', JSON.stringify(schema, null, 2));
   }, [properties]);
 
   // Function to generate schema from instruction
@@ -89,17 +91,17 @@ const AiSchemaGenerator: React.FC = () => {
         if (aiResponse) {
           try {
             JSON.parse(aiResponse);
-            setGeneratedSchema(aiResponse);
+            schemaStore.setKey('generatedSchema', JSON.parse(aiResponse));
           } catch (error) {
             console.error('Failed to parse generated schema:', error);
-            setGeneratedSchema('Error: Invalid JSON generated.');
+            schemaStore.setKey('generatedSchema', 'Error: Invalid JSON generated.');
           }
         } else {
-          setGeneratedSchema('Error: No schema content found in the response.');
+          schemaStore.setKey('generatedSchema', 'Error: No schema content found in the response.');
         }
     } catch (error) {
       console.error('Error generating schema from instruction:', error);
-      setGeneratedSchema('Error: Failed to generate schema.');
+      schemaStore.setKey('generatedSchema', 'Error: Failed to generate schema.');
     } finally {
       setLoading(false);
     }
@@ -201,7 +203,7 @@ const AiSchemaGenerator: React.FC = () => {
         <Typography variant="subtitle1" gutterBottom>
           Generated Schema:
         </Typography>
-        <CodeMirrorEditor value={generatedSchema} language="json" readOnly filePath="schema.json" />
+        <CodeMirrorEditor value={$schema.generatedSchema} language="json" readOnly filePath="schema.json" />
       </Box>
     </Box>
   );
