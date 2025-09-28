@@ -140,19 +140,18 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
     );
   }
 
-  const renderField = (key: string, prop: JsonSchema) => {
+  const renderField = (key: string, prop: JsonSchema, fieldClassNames: string) => {
     const value = formData[key] ?? '';
     const label = prop.title || key;
     const description = prop.description;
     const isRequired = schema.required?.includes(key);
 
-    // Base styles for form elements for consistent spacing and width within the grid
+    // Base props, className will be explicitly applied below per component type
     const baseFieldProps = {
       fullWidth: true,
-      margin: 'normal' as const, // Ensure correct type
+      margin: 'normal' as const,
       helperText: description,
       required: isRequired,
-      className: 'col-span-12',
     };
 
     switch (prop.type) {
@@ -167,13 +166,14 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
               onChange={(e) => handleChange(key, e.target.value)}
               InputLabelProps={{ shrink: true }}
               {...baseFieldProps}
+              className={fieldClassNames}
               sx={{ ml: level * 2 }}
             />
           );
         }
         if (prop.enum) {
           return (
-            <FormControl key={key} {...baseFieldProps} sx={{ ml: level * 2 }}>
+            <FormControl key={key} {...baseFieldProps} className={fieldClassNames} sx={{ ml: level * 2 }}>
               <InputLabel id={`${key}-select-label`} required={isRequired}>
                 {label}
               </InputLabel>
@@ -210,6 +210,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             value={value}
             onChange={(e) => handleChange(key, e.target.value)}
             {...baseFieldProps}
+            className={fieldClassNames}
             sx={{ ml: level * 2 }}
           />
         );
@@ -223,6 +224,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             value={value}
             onChange={(e) => handleChange(key, Number(e.target.value))}
             {...baseFieldProps}
+            className={fieldClassNames}
             sx={{ ml: level * 2 }}
           />
         );
@@ -239,7 +241,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             }
             label={label}
             sx={{ mt: 2, mb: 1, ml: level * 2 }}
-            className="col-span-12"
+            className={fieldClassNames}
           />
         );
       case 'array':
@@ -249,10 +251,14 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             ? formData[key]
             : [];
           const itemSchema = prop.items;
+          // Get x-layout for individual array items, if defined in the item schema
+          const itemLayoutClasses = (itemSchema as any)['x-layout'] || '';
 
           return (
             <Box
               key={key}
+              // Apply fieldClassNames to the container for the entire array field
+              className={fieldClassNames}
               sx={{
                 mt: 2,
                 mb: 2,
@@ -261,7 +267,6 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
                 borderColor: 'divider',
                 ml: level * 2,
               }}
-              className="col-span-12"
             >
               <Typography variant="subtitle2" gutterBottom className="mb-2">
                 {label} (List)
@@ -269,6 +274,8 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
               {currentArray.map((item: Record<string, any>, index: number) => (
                 <Box
                   key={item._id || index} // Use unique id if available, otherwise index
+                  // Apply itemLayoutClasses to the individual item's container
+                  className={itemLayoutClasses}
                   sx={{
                     mt: 1,
                     mb: 1,
@@ -337,14 +344,18 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
                 )
               }
               {...baseFieldProps}
+              className={fieldClassNames}
               sx={{ ml: level * 2 }}
             />
           );
         }
       case 'object':
+        // The prop itself defines the schema for the nested object
         return (
           <Box
             key={key}
+            // Apply fieldClassNames to the container for the entire object field
+            className={fieldClassNames}
             sx={{
               mt: 2,
               mb: 2,
@@ -353,7 +364,6 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
               borderColor: 'divider',
               ml: level * 2,
             }}
-            className="col-span-12"
           >
             <Typography variant="subtitle2" gutterBottom className="mb-2">
               {label}
@@ -372,7 +382,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             key={key}
             variant="body2"
             color="error"
-            className="col-span-12"
+            className={fieldClassNames}
             sx={{ ml: level * 2 }}
           >
             Unsupported type for {label}: {prop.type}
@@ -381,8 +391,23 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
     }
   };
 
+  // Determine the root layout classes, defaulting if x-layout is not present
+  const rootLayoutClasses = (schema as any)['x-layout'] || 'grid grid-cols-12 gap-4';
+
+  // Prepare properties for sorting by x-order
+  const sortedProperties = schema.properties
+    ? Object.entries(schema.properties)
+        .map(([key, prop]) => ({
+          key,
+          prop,
+          order: (prop as any)['x-order'] ?? Infinity, // Assign Infinity if x-order is missing
+          classNames: (prop as any)['x-classNames'] ?? '', // Capture x-classNames
+        }))
+        .sort((a, b) => a.order - b.order)
+    : [];
+
   return (
-    <Box className="grid grid-cols-12 gap-4">
+    <Box className={rootLayoutClasses}>
       {level === 0 && schema.title && (
         <Typography variant="h6" gutterBottom className="col-span-12">
           {schema.title}
@@ -399,9 +424,9 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
         </Typography>
       )}
 
-      {Object.keys(schema.properties).map((key) => (
+      {sortedProperties.map(({ key, prop, classNames }) => (
         <React.Fragment key={key}>
-          {renderField(key, schema.properties![key])}
+          {renderField(key, prop, classNames)}
         </React.Fragment>
       ))}
     </Box>

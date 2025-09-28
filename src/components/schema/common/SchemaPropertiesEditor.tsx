@@ -5,7 +5,13 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { Box, Button, Typography, TextField, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Button,
+  Typography,
+  TextField,
+  CircularProgress,
+} from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { nanoid } from 'nanoid';
 import { SchemaProperty } from './SchemaPropertyTypes';
@@ -49,136 +55,192 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   const [creatingSchema, setCreatingSchema] = useState(false);
 
   // Helper function to update a property deeply nested in the state
-  const updatePropertyByPath = useCallback((
-    currentProps: SchemaProperty[],
-    path: string[],
-    field: keyof SchemaProperty,
-    value: any
-  ): SchemaProperty[] => {
-    if (!currentProps || path.length === 0) return currentProps;
+  const updatePropertyByPath = useCallback(
+    (
+      currentProps: SchemaProperty[],
+      path: string[],
+      field: keyof SchemaProperty,
+      value: any,
+    ): SchemaProperty[] => {
+      if (!currentProps || path.length === 0) return currentProps;
 
-    const [targetId, ...restPath] = path;
+      const [targetId, ...restPath] = path;
 
-    return currentProps.map(prop => {
-      if (prop.id === targetId) {
-        if (restPath.length === 0) {
-          // This is the direct target property to update
-          return { ...prop, [field]: value };
-        } else {
-          // This prop is an ancestor, continue traversing down
-          if (prop.type === 'object' && prop.properties) {
-            const updatedProperties = updatePropertyByPath(prop.properties, restPath, field, value);
-            return { ...prop, properties: updatedProperties };
-          } else if (prop.type === 'array' && prop.items) {
-            // The next ID in restPath must be the ID of `prop.items` if we're going into it
-            const updatedItems = updatePropertyByPath([prop.items], restPath, field, value)[0];
-            return { ...prop, items: updatedItems };
-          }
-        }
-      }
-      return prop;
-    });
-  }, []);
-
-  // Helper to add a nested property or array item schema
-  const addNestedPropertyByPath = useCallback((
-    currentProps: SchemaProperty[],
-    path: string[],
-    type: 'item' | 'property'
-  ): SchemaProperty[] => {
-    if (!currentProps || path.length === 0) return currentProps;
-
-    const [targetId, ...restPath] = path;
-
-    return currentProps.map(prop => {
-      if (prop.id === targetId) {
-        if (restPath.length === 0) {
-          // This is the parent property where we add
-          const newId = nanoid();
-          const newProp: SchemaProperty = {
-            id: newId,
-            name: type === 'item' ? 'newItemSchema' : 'newProperty',
-            type: 'string',
-            required: false,
-            showOptions: false,
-            showChildren: false,
-          };
-
-          if (type === 'item' && prop.type === 'array') {
-            return { ...prop, items: newProp, showChildren: true };
-          } else if (type === 'property' && prop.type === 'object') {
-            return { ...prop, properties: [...(prop.properties || []), newProp], showChildren: true };
-          }
-          return prop;
-        } else {
-          // Traverse deeper to find the actual parent for the add operation
-          if (prop.type === 'object' && prop.properties) {
-            const updatedProperties = addNestedPropertyByPath(prop.properties, restPath, type);
-            return { ...prop, properties: updatedProperties };
-          } else if (prop.type === 'array' && prop.items) {
-            const updatedItems = addNestedPropertyByPath([prop.items], restPath, type)[0];
-            return { ...prop, items: updatedItems };
-          }
-        }
-      }
-      return prop;
-    });
-  }, []);
-
-  // Helper to delete a property deeply nested in the state
-  const deletePropertyByPath = useCallback((
-    currentProps: SchemaProperty[],
-    path: string[]
-  ): SchemaProperty[] => {
-    if (!currentProps || path.length === 0) return currentProps;
-
-    const [segmentId, ...restPath] = path;
-
-    if (restPath.length === 0) {
-      // This is the direct target to delete from currentProps
-      return currentProps.filter(prop => prop.id !== segmentId);
-    } else {
-      // Find the parent and recurse to delete the child
-      return currentProps.map(prop => {
-        if (prop.id === segmentId) {
-          if (prop.type === 'object' && prop.properties) {
-            const updatedProperties = deletePropertyByPath(prop.properties, restPath);
-            return { ...prop, properties: updatedProperties };
-          } else if (prop.type === 'array' && prop.items) {
-            // The next segment should be the ID of the item schema to delete or an item within it.
-            if (restPath.length === 1 && prop.items.id === restPath[0]) {
-              return { ...prop, items: undefined }; // Delete the whole items schema
-            } else {
-              // If there's more path, it's a property within the item's object schema
-              const updatedItems = deletePropertyByPath([prop.items], restPath)[0]; // Recurse into array item
+      return currentProps.map((prop) => {
+        if (prop.id === targetId) {
+          if (restPath.length === 0) {
+            // This is the direct target property to update
+            return { ...prop, [field]: value };
+          } else {
+            // This prop is an ancestor, continue traversing down
+            if (prop.type === 'object' && prop.properties) {
+              const updatedProperties = updatePropertyByPath(
+                prop.properties,
+                restPath,
+                field,
+                value,
+              );
+              return { ...prop, properties: updatedProperties };
+            } else if (prop.type === 'array' && prop.items) {
+              // The next ID in restPath must be the ID of `prop.items` if we're going into it
+              const updatedItems = updatePropertyByPath(
+                [prop.items],
+                restPath,
+                field,
+                value,
+              )[0];
               return { ...prop, items: updatedItems };
             }
           }
         }
         return prop;
       });
-    }
-  }, []);
+    },
+    [],
+  );
+
+  // Helper to add a nested property or array item schema
+  const addNestedPropertyByPath = useCallback(
+    (
+      currentProps: SchemaProperty[],
+      path: string[],
+      type: 'item' | 'property',
+    ): SchemaProperty[] => {
+      if (!currentProps || path.length === 0) return currentProps;
+
+      const [targetId, ...restPath] = path;
+
+      return currentProps.map((prop) => {
+        if (prop.id === targetId) {
+          if (restPath.length === 0) {
+            // This is the parent property where we add
+            const newId = nanoid();
+            const newProp: SchemaProperty = {
+              id: newId,
+              name: type === 'item' ? 'newItemSchema' : 'newProperty',
+              type: 'string',
+              required: false,
+              showOptions: false,
+              showChildren: false,
+            };
+
+            if (type === 'item' && prop.type === 'array') {
+              return { ...prop, items: newProp, showChildren: true };
+            } else if (type === 'property' && prop.type === 'object') {
+              return {
+                ...prop,
+                properties: [...(prop.properties || []), newProp],
+                showChildren: true,
+              };
+            }
+            return prop;
+          } else {
+            // Traverse deeper to find the actual parent for the add operation
+            if (prop.type === 'object' && prop.properties) {
+              const updatedProperties = addNestedPropertyByPath(
+                prop.properties,
+                restPath,
+                type,
+              );
+              return { ...prop, properties: updatedProperties };
+            } else if (prop.type === 'array' && prop.items) {
+              const updatedItems = addNestedPropertyByPath(
+                [prop.items],
+                restPath,
+                type,
+              )[0];
+              return { ...prop, items: updatedItems };
+            }
+          }
+        }
+        return prop;
+      });
+    },
+    [],
+  );
+
+  // Helper to delete a property deeply nested in the state
+  const deletePropertyByPath = useCallback(
+    (currentProps: SchemaProperty[], path: string[]): SchemaProperty[] => {
+      if (!currentProps || path.length === 0) return currentProps;
+
+      const [segmentId, ...restPath] = path;
+
+      if (restPath.length === 0) {
+        // This is the direct target to delete from currentProps
+        return currentProps.filter((prop) => prop.id !== segmentId);
+      } else {
+        // Find the parent and recurse to delete the child
+        return currentProps.map((prop) => {
+          if (prop.id === segmentId) {
+            if (prop.type === 'object' && prop.properties) {
+              const updatedProperties = deletePropertyByPath(
+                prop.properties,
+                restPath,
+              );
+              return { ...prop, properties: updatedProperties };
+            } else if (prop.type === 'array' && prop.items) {
+              // The next segment should be the ID of the item schema to delete or an item within it.
+              if (restPath.length === 1 && prop.items.id === restPath[0]) {
+                return { ...prop, items: undefined }; // Delete the whole items schema
+              } else {
+                // If there's more path, it's a property within the item's object schema
+                const updatedItems = deletePropertyByPath(
+                  [prop.items],
+                  restPath,
+                )[0]; // Recurse into array item
+                return { ...prop, items: updatedItems };
+              }
+            }
+          }
+          return prop;
+        });
+      }
+    },
+    [],
+  );
 
   // Main handlers for the SchemaPropertyField callbacks
-  const handlePropertyChange = useCallback((path: string[], field: keyof SchemaProperty, value: any) => {
-    onPropertiesChange(prev => updatePropertyByPath(prev as SchemaProperty[], path, field, value));
-  }, [onPropertiesChange, updatePropertyByPath]);
+  const handlePropertyChange = useCallback(
+    (path: string[], field: keyof SchemaProperty, value: any) => {
+      onPropertiesChange((prev) =>
+        updatePropertyByPath(prev as SchemaProperty[], path, field, value),
+      );
+    },
+    [onPropertiesChange, updatePropertyByPath],
+  );
 
   const handleAddProperty = useCallback(() => {
-    onPropertiesChange(prev => [
+    onPropertiesChange((prev) => [
       ...prev,
-      { id: nanoid(), name: 'newProperty', type: 'string', required: false, showOptions: false, showChildren: false }
+      {
+        id: nanoid(),
+        name: 'newProperty',
+        type: 'string',
+        required: false,
+        showOptions: false,
+        showChildren: false,
+      },
     ]);
   }, [onPropertiesChange]);
 
-  const handleAddNestedProperty = useCallback((path: string[], type: 'item' | 'property') => {
-    onPropertiesChange(prev => addNestedPropertyByPath(prev as SchemaProperty[], path, type));
-  }, [onPropertiesChange, addNestedPropertyByPath]);
+  const handleAddNestedProperty = useCallback(
+    (path: string[], type: 'item' | 'property') => {
+      onPropertiesChange((prev) =>
+        addNestedPropertyByPath(prev as SchemaProperty[], path, type),
+      );
+    },
+    [onPropertiesChange, addNestedPropertyByPath],
+  );
 
-  const handleDeleteProperty = useCallback((path: string[]) => {
-    onPropertiesChange(prev => deletePropertyByPath(prev as SchemaProperty[], path));
-  }, [onPropertiesChange, deletePropertyByPath]);
+  const handleDeleteProperty = useCallback(
+    (path: string[]) => {
+      onPropertiesChange((prev) =>
+        deletePropertyByPath(prev as SchemaProperty[], path),
+      );
+    },
+    [onPropertiesChange, deletePropertyByPath],
+  );
 
   // Handle creating schema in the backend
   const handleCreateSchema = useCallback(async () => {
@@ -206,7 +268,9 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
 
   return (
     <Box>
-      <Typography variant="subtitle1" gutterBottom>Manual Schema Definition:</Typography>
+      <Typography variant="subtitle1" gutterBottom>
+        Manual Schema Definition:
+      </Typography>
 
       {/* Top-level Schema Metadata Fields */}
       <TextField
@@ -244,7 +308,7 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
         size="small"
       />
 
-      {properties.map(property => (
+      {properties.map((property) => (
         <SchemaPropertyField
           key={property.id}
           property={property}
@@ -255,21 +319,31 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
           nestingLevel={0}
         />
       ))}
-      <Button startIcon={<AddIcon />} onClick={handleAddProperty} sx={{ mt: 2, textTransform: 'none' }} variant="contained" color="secondary">
+      <Button
+        startIcon={<AddIcon />}
+        onClick={handleAddProperty}
+        sx={{ mt: 2, textTransform: 'none' }}
+        variant="contained"
+        color="secondary"
+      >
         Add Top-Level Property
       </Button>
 
-      <Box mt={3} className='flex gap-2'>
+      <Box mt={3} className="flex gap-2">
         <Button variant="contained" color="primary" onClick={onGenerateSchema}>
           Generate Schema from Manual Input
         </Button>
-        {($schema && Object.keys($schema).length > 0) && (
+        {$schema && Object.keys($schema).length > 0 && (
           <Button
             variant="outlined"
             color="success"
             onClick={handleCreateSchema}
             disabled={creatingSchema}
-            startIcon={creatingSchema ? <CircularProgress size={20} color="inherit" /> : null}
+            startIcon={
+              creatingSchema ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : null
+            }
           >
             {creatingSchema ? 'Creating...' : 'Create Schema'}
           </Button>

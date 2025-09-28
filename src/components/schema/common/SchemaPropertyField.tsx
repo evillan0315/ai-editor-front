@@ -5,8 +5,32 @@
  */
 
 import React from 'react';
-import { Box, TextField, Select, MenuItem, FormControl, InputLabel, Switch, FormGroup, FormControlLabel, IconButton, useTheme, Typography, Paper, Button, Tooltip, Collapse } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, VisibilityOff as VisibilityOffIcon, KeyboardArrowDown as KeyboardArrowDownIcon, KeyboardArrowUp as KeyboardArrowUpIcon } from '@mui/icons-material';
+import {
+  Box,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Switch,
+  FormGroup,
+  FormControlLabel,
+  IconButton,
+  useTheme,
+  Typography,
+  Paper,
+  Button,
+  Tooltip,
+  Collapse,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+} from '@mui/icons-material';
 import { SchemaProperty } from './SchemaPropertyTypes';
 
 /**
@@ -15,7 +39,11 @@ import { SchemaProperty } from './SchemaPropertyTypes';
 interface SchemaPropertyFieldProps {
   property: SchemaProperty;
   path: string[]; // Path to this property, e.g., ['id1'], ['id1', 'id2']
-  onPropertyChange: (path: string[], field: keyof SchemaProperty, value: any) => void;
+  onPropertyChange: (
+    path: string[],
+    field: keyof SchemaProperty,
+    value: any,
+  ) => void;
   onAddNestedProperty: (path: string[], type: 'item' | 'property') => void;
   onDeleteProperty: (path: string[]) => void; // Path to the property to delete
   nestingLevel: number;
@@ -52,7 +80,10 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
   };
 
   const handleEnumChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const enumValues = e.target.value.split(',').map(item => item.trim()).filter(Boolean);
+    const enumValues = e.target.value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
     handleFieldChange('enum', enumValues);
   };
 
@@ -78,7 +109,10 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
     border: `1px solid ${theme.palette.divider}`,
     borderRadius: 1,
     ml: `${indent}px`, // Apply indentation
-    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)', // Subtle background for nesting
+    bgcolor:
+      theme.palette.mode === 'dark'
+        ? 'rgba(255, 255, 255, 0.05)'
+        : 'rgba(0, 0, 0, 0.03)', // Subtle background for nesting
   };
 
   return (
@@ -87,7 +121,7 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
         <TextField
           label="Property Name"
           value={property.name}
-          onChange={e => handleFieldChange('name', e.target.value)}
+          onChange={(e) => handleFieldChange('name', e.target.value)}
           size="small"
           sx={{ flexGrow: 1 }}
         />
@@ -97,7 +131,12 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
             labelId={`type-label-${property.id}`}
             value={property.type}
             label="Type"
-            onChange={e => handleFieldChange('type', e.target.value as SchemaProperty['type'])}
+            onChange={(e) =>
+              handleFieldChange(
+                'type',
+                e.target.value as SchemaProperty['type'],
+              )
+            }
           >
             <MenuItem value="string">String</MenuItem>
             <MenuItem value="number">Number</MenuItem>
@@ -109,13 +148,27 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
         </FormControl>
         <FormGroup>
           <FormControlLabel
-            control={<Switch checked={property.required} onChange={e => handleFieldChange('required', e.target.checked)} size="small" />}
+            control={
+              <Switch
+                checked={property.required}
+                onChange={(e) =>
+                  handleFieldChange('required', e.target.checked)
+                }
+                size="small"
+              />
+            }
             label="Required"
           />
         </FormGroup>
 
         {/* Toggle Advanced Options */}
-        <Tooltip title={property.showOptions ? "Hide Advanced Options" : "Show Advanced Options"}>
+        <Tooltip
+          title={
+            property.showOptions
+              ? 'Hide Advanced Options'
+              : 'Show Advanced Options'
+          }
+        >
           <IconButton onClick={handleToggleOptions} size="small">
             {property.showOptions ? <VisibilityOffIcon /> : <VisibilityIcon />}
           </IconButton>
@@ -123,9 +176,19 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
 
         {/* Toggle Children (for object/array) */}
         {(property.type === 'array' || property.type === 'object') && (
-          <Tooltip title={property.showChildren ? "Hide Nested Fields" : "Show Nested Fields"}>
+          <Tooltip
+            title={
+              property.showChildren
+                ? 'Hide Nested Fields'
+                : 'Show Nested Fields'
+            }
+          >
             <IconButton onClick={handleToggleChildren} size="small">
-              {property.showChildren ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+              {property.showChildren ? (
+                <KeyboardArrowUpIcon />
+              ) : (
+                <KeyboardArrowDownIcon />
+              )}
             </IconButton>
           </Tooltip>
         )}
@@ -141,13 +204,79 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
       {/* Advanced Options */}
       <Collapse in={property.showOptions} timeout="auto" unmountOnExit>
         <Box sx={{ ...sxNestedSection, borderColor: theme.palette.divider }}>
-          <TextField label="Description" value={property.description || ''} onChange={e => handleFieldChange('description', e.target.value)} size="small" fullWidth />
-          <TextField label="Format" value={property.format || ''} onChange={e => handleFieldChange('format', e.target.value)} size="small" fullWidth />
-          <TextField label="Enum (comma separated)" value={(property.enum || []).join(', ')} onChange={handleEnumChange} size="small" fullWidth />
-          <TextField label="Minimum" type="number" value={property.minimum !== undefined ? property.minimum : ''} onChange={e => handleFieldChange('minimum', e.target.value === '' ? undefined : Number(e.target.value))} size="small" fullWidth />
-          <TextField label="Maximum" type="number" value={property.maximum !== undefined ? property.maximum : ''} onChange={e => handleFieldChange('maximum', e.target.value === '' ? undefined : Number(e.target.value))} size="small" fullWidth />
-          <TextField label="Min Length" type="number" value={property.minLength !== undefined ? property.minLength : ''} onChange={e => handleFieldChange('minLength', e.target.value === '' ? undefined : Number(e.target.value))} size="small" fullWidth />
-          <TextField label="Max Length" type="number" value={property.maxLength !== undefined ? property.maxLength : ''} onChange={e => handleFieldChange('maxLength', e.target.value === '' ? undefined : Number(e.target.value))} size="small" fullWidth />
+          <TextField
+            label="Description"
+            value={property.description || ''}
+            onChange={(e) => handleFieldChange('description', e.target.value)}
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Format"
+            value={property.format || ''}
+            onChange={(e) => handleFieldChange('format', e.target.value)}
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Enum (comma separated)"
+            value={(property.enum || []).join(', ')}
+            onChange={handleEnumChange}
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Minimum"
+            type="number"
+            value={property.minimum !== undefined ? property.minimum : ''}
+            onChange={(e) =>
+              handleFieldChange(
+                'minimum',
+                e.target.value === '' ? undefined : Number(e.target.value),
+              )
+            }
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Maximum"
+            type="number"
+            value={property.maximum !== undefined ? property.maximum : ''}
+            onChange={(e) =>
+              handleFieldChange(
+                'maximum',
+                e.target.value === '' ? undefined : Number(e.target.value),
+              )
+            }
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Min Length"
+            type="number"
+            value={property.minLength !== undefined ? property.minLength : ''}
+            onChange={(e) =>
+              handleFieldChange(
+                'minLength',
+                e.target.value === '' ? undefined : Number(e.target.value),
+              )
+            }
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Max Length"
+            type="number"
+            value={property.maxLength !== undefined ? property.maxLength : ''}
+            onChange={(e) =>
+              handleFieldChange(
+                'maxLength',
+                e.target.value === '' ? undefined : Number(e.target.value),
+              )
+            }
+            size="small"
+            fullWidth
+          />
         </Box>
       </Collapse>
 
@@ -156,8 +285,13 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
         <Box sx={{ mt: 2 }}>
           {property.type === 'object' && (
             <>
-              <Typography variant="body2" sx={{ ml: `${indent + 2}px`, mb: 1, fontWeight: 'bold' }}>Object Properties:</Typography>
-              {property.properties?.map(nestedProperty => (
+              <Typography
+                variant="body2"
+                sx={{ ml: `${indent + 2}px`, mb: 1, fontWeight: 'bold' }}
+              >
+                Object Properties:
+              </Typography>
+              {property.properties?.map((nestedProperty) => (
                 <SchemaPropertyField
                   key={nestedProperty.id}
                   property={nestedProperty}
@@ -182,7 +316,12 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
 
           {property.type === 'array' && (
             <>
-              <Typography variant="body2" sx={{ ml: `${indent + 2}px`, mb: 1, fontWeight: 'bold' }}>Array Items Schema:</Typography>
+              <Typography
+                variant="body2"
+                sx={{ ml: `${indent + 2}px`, mb: 1, fontWeight: 'bold' }}
+              >
+                Array Items Schema:
+              </Typography>
               {property.items ? (
                 <SchemaPropertyField
                   key={property.items.id}
