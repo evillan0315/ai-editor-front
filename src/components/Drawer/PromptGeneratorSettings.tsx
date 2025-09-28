@@ -24,6 +24,7 @@ import {
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import MarkdownEditor from '@/components/MarkdownEditor'; // ✅ New rich editor
 import { GlobalAction } from '@/types';
+import AiSchemaGenerator from '@/components/schema/AiSchemaGenerator';
 
 interface PromptGeneratorSettingsProps {
   open: boolean;
@@ -158,7 +159,7 @@ ${localInstructionExample}
         {/* ---------- AI Schema Generator  ---------- */}
         {tab === 3 && (
           <Box>
-          AI Schema Generator Content
+            <AiSchemaGenerator />
           </Box>
         )}
       </Box>
