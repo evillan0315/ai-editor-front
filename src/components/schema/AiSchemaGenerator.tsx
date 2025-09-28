@@ -23,33 +23,27 @@ const AiSchemaGenerator: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // Function to parse JSON schema and update properties
-  const parseSchema = useCallback((schemaString: string) => {
-    try {
-      const schema = JSON.parse(schemaString);
-      if (typeof schema === 'object' && schema !== null && schema.properties) {
-        const newProperties: SchemaProperty[] = Object.entries(schema.properties).map(([name, details]: [string, any], index) => ({
-          id: String(Date.now() + index), // Generate unique ID
-          name: name,
-          type: details.type || 'string', // Default to string if type is missing
-          required: schema.required ? schema.required.includes(name) : false,
-        }));
-        setProperties(newProperties);
-      } else {
-        console.error('Invalid schema format: properties field missing or schema is not an object.');
-        setProperties([]); // Reset properties on invalid schema
-      }
-    } catch (error) {
-      console.error('Failed to parse schema:', error);
-      setProperties([]); // Reset properties on parse failure
+  const parseSchema = useCallback((schema: any) => {
+    if (typeof schema === 'object' && schema !== null && schema.properties) {
+      const newProperties: SchemaProperty[] = Object.entries(schema.properties).map(([name, details]: [string, any], index) => ({
+        id: String(Date.now() + index), // Generate unique ID
+        name: name,
+        type: details.type || 'string', // Default to string if type is missing
+        required: schema.required ? schema.required.includes(name) : false,
+      }));
+      setProperties(newProperties);
+    } else {
+      console.error('Invalid schema format: properties field missing or schema is not an object.');
+      setProperties([]); // Reset properties on invalid schema
     }
   }, []);
 
   // Use useEffect to call parseSchema whenever $schema changes
   useEffect(() => {
-    if ($schema.generatedSchema) {
-      parseSchema($schema.generatedSchema);
+    if ($schema) {
+      parseSchema($schema);
     }
-  }, [$schema.generatedSchema, parseSchema]);
+  }, [$schema, parseSchema]);
 
   const handleAddProperty = () => {
     setProperties([...properties, { id: String(Date.now()), name: '', type: 'string', required: false }]);
@@ -78,7 +72,7 @@ const AiSchemaGenerator: React.FC = () => {
       required: requiredProperties,
     };
 
-    schemaStore.setKey('generatedSchema', JSON.stringify(schema, null, 2));
+    schemaStore.set(schema);
   }, [properties]);
 
   // Function to generate schema from instruction
@@ -90,18 +84,18 @@ const AiSchemaGenerator: React.FC = () => {
 
         if (aiResponse) {
           try {
-            JSON.parse(aiResponse);
-            schemaStore.setKey('generatedSchema', JSON.parse(aiResponse));
+            const parsedSchema = JSON.parse(aiResponse);
+            schemaStore.set(parsedSchema);
           } catch (error) {
             console.error('Failed to parse generated schema:', error);
-            schemaStore.setKey('generatedSchema', 'Error: Invalid JSON generated.');
+            schemaStore.set('Error: Invalid JSON generated.');
           }
         } else {
-          schemaStore.setKey('generatedSchema', 'Error: No schema content found in the response.');
+          schemaStore.set('Error: No schema content found in the response.');
         }
     } catch (error) {
       console.error('Error generating schema from instruction:', error);
-      schemaStore.setKey('generatedSchema', 'Error: Failed to generate schema.');
+      schemaStore.set('Error: Failed to generate schema.');
     } finally {
       setLoading(false);
     }
@@ -203,7 +197,7 @@ const AiSchemaGenerator: React.FC = () => {
         <Typography variant="subtitle1" gutterBottom>
           Generated Schema:
         </Typography>
-        <CodeMirrorEditor value={$schema.generatedSchema} language="json" readOnly filePath="schema.json" />
+        <CodeMirrorEditor value={JSON.stringify($schema, null, 2)} language="json" readOnly filePath="schema.json" />
       </Box>
     </Box>
   );
