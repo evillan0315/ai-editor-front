@@ -36,17 +36,15 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType, mediaElementRef })
   };
 
   return (
-  <Paper className='flex flex-col'>
+
     <Box
       sx={{
         bgcolor: theme.palette.background.paper,
         borderTop: `1px solid ${theme.palette.divider}`,
         height: '80px',
-        width: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        px: 2,
         color: theme.palette.text.primary,
         flexShrink: 0,
         zIndex: 11,
@@ -58,7 +56,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType, mediaElementRef })
       />
       <MediaPlayerVolumeControl mediaRef={mediaElementRef}/>
     </Box>
-    </Paper>
+
   );
 };
 

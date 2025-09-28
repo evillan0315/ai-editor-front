@@ -27,6 +27,7 @@ const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({ mediaType }
         display: 'flex',
         alignItems: 'center',
         minWidth: '180px',
+        width: '30%'
       }}
     >
       {currentTrack?.fileType === 'VIDEO' ? (

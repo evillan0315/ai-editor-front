@@ -268,12 +268,12 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
 
   // useEffect to trigger play when isPlayingAtom becomes true and a track is loaded
   useEffect(() => {
-    if (isPlaying && currentTrack && mediaElementRef.current) {
+    if (isPlaying && currentTrack && progress > 0 && mediaElementRef.current) {
       mediaElementRef.current.play().catch((e) => {
         console.error("Autoplay failed:", e);
       });
     }
-  }, [isPlaying, currentTrack, mediaElementRef]);
+  }, [isPlaying, currentTrack, mediaElementRef, progress]);
 
   return (
     <Box
@@ -292,17 +292,24 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
     >
       <SpotifySidebar currentView={currentView} onSelectView={setCurrentView} />
 
-      {/* Main Content, always visible, modal will overlay it */}
+      <Box sx={{
+          gridArea: 'main',
+          bgcolor: theme.palette.background.default,
+          overflowY: 'auto',
+        }}>
       <Box
         sx={{
           gridArea: 'main',
           bgcolor: theme.palette.background.default,
           overflowY: 'auto',
-          p: 3,
         }}
       >
         <SpotifyMainContent currentView={currentView} />
       </Box>
+     
+    
+      </Box>
+     <Box className=''>
       {currentTrack?.fileType === FileType.AUDIO ? (
         <audio
           ref={mediaElementRef}
@@ -323,6 +330,7 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
         mediaType={currentTrack?.fileType || FileType.AUDIO}
         mediaElementRef={mediaElementRef}
       />
+      </Box>
     </Box>
   );
 };

@@ -18,6 +18,7 @@ import {
 } from '@/stores/uiStore';
 import Navbar from './Navbar';
 import { fileStore } from '@/stores/fileStore';
+import { $mediaStore } from '@/stores/mediaStore';
 import FileTree from '@/components/file-tree/FileTree';
 
 import OpenedFileViewer from './OpenedFileViewer';
@@ -43,6 +44,8 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const { loading: authLoading } = useStore(authStore);
   const { loading: llmLoading, isBuilding } = useStore(llmStore);
+  const { loading: mediaLoading } = useStore($mediaStore);
+  
   const { openedFile } = useStore(fileStore);
 
   // ✅ subscribe to global loading store
@@ -54,7 +57,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const isAnyGlobalRequestLoading =
     Object.values(globalLoadingState).some(Boolean);
   const layoutLoader =
-    authLoading || llmLoading || isBuilding || isAnyGlobalRequestLoading;
+    authLoading || llmLoading || isBuilding || isAnyGlobalRequestLoading || mediaLoading;
 
   const $isRightSidebarVisible = useStore(isRightSidebarVisible);
   const $isLeftSidebarVisible = useStore(isLeftSidebarVisible);

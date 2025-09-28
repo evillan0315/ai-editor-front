@@ -66,6 +66,7 @@ const MediaPlayerVolumeControl: React.FC<MediaPlayerVolumeControlProps> = ({ med
         alignItems: 'center',
         justifyContent: 'flex-end',
         minWidth: '180px',
+        width: '30%'
       }}
     >
       <IconButton

@@ -166,19 +166,7 @@ const SpotifyHomePage: React.FC<SpotifyHomePageProps> = () => {
     });
   }, [playableVideoTracks, favoriteVideos]);
 
-  if (isFetchingMedia) {
-    return (
-      <Box className='flex justify-center items-center h-full'>
-        <CircularProgress size={40} />
-        <Typography
-          variant='h6'
-          sx={{ ml: 2, color: theme.palette.text.secondary }}
-        >
-          Loading media files...
-        </Typography>
-      </Box>
-    );
-  }
+
 
   const noPlayableMedia = playableAudioTracks.length === 0 && playableVideoTracks.length === 0;
 
