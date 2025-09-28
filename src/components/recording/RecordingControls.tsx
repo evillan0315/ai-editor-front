@@ -1,4 +1,6 @@
-import { Box, CircularProgress, IconButton } from '@mui/material';
+import { Box, CircularProgress, IconButton, SxProps, Theme } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+
 import {
   PhotoCamera,
   Stop,
@@ -18,6 +20,30 @@ export interface RecordingControlsProps {
   onCapture: () => void;
 }
 
+// Define SX styles using theme
+const commonIconButtonSx: SxProps<Theme> = (theme) => ({
+  fontSize: '2rem', // Slightly larger icons for better visibility and touch targets
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover, // Use theme's generic hover color for consistency
+  },
+});
+
+const primaryIconColorSx: SxProps<Theme> = (theme) => ({
+  color: theme.palette.primary.main,
+});
+
+const errorIconColorSx: SxProps<Theme> = (theme) => ({
+  color: theme.palette.error.main,
+});
+
+const secondaryIconColorSx: SxProps<Theme> = (theme) => ({
+  color: theme.palette.secondary.main,
+});
+
+const circularProgressColorSx: SxProps<Theme> = (theme) => ({
+  color: theme.palette.secondary.main, // Keep consistent with capture button color
+});
+
 export function RecordingControls({
   isScreenRecording,
   isCameraRecording,
@@ -28,54 +54,58 @@ export function RecordingControls({
   onStopCameraRecording,
   onCapture,
 }: RecordingControlsProps) {
+  const theme = useTheme();
+
   return (
     <Box className="flex items-center gap-4">
-
       {!isScreenRecording && (
         <IconButton
           aria-label="start screen recording"
           onClick={onStartScreenRecording}
-          color="primary"
+          sx={{ ...commonIconButtonSx(theme), ...primaryIconColorSx(theme) }}
         >
-          <Videocam />
+          <Videocam fontSize="inherit" />
         </IconButton>
       )}
       {isScreenRecording && (
         <IconButton
           aria-label="stop screen recording"
           onClick={onStopScreenRecording}
-          color="error"
+          sx={{ ...commonIconButtonSx(theme), ...errorIconColorSx(theme) }}
         >
-          <Stop />
+          <Stop fontSize="inherit" />
         </IconButton>
       )}
       {!isCameraRecording && (
         <IconButton
           aria-label="start camera recording"
           onClick={onStartCameraRecording}
-          color="primary"
+          sx={{ ...commonIconButtonSx(theme), ...primaryIconColorSx(theme) }}
         >
-          <CameraAlt />
+          <CameraAlt fontSize="inherit" />
         </IconButton>
       )}
       {isCameraRecording && (
         <IconButton
           aria-label="stop camera recording"
           onClick={onStopCameraRecording}
-          color="error"
+          sx={{ ...commonIconButtonSx(theme), ...errorIconColorSx(theme) }}
         >
-          <StopCircle />
+          <StopCircle fontSize="inherit" />
         </IconButton>
       )}
-
 
       <IconButton
         aria-label="capture screenshot"
         disabled={isCapturing}
         onClick={onCapture}
-        color="secondary"
+        sx={{ ...commonIconButtonSx(theme), ...secondaryIconColorSx(theme) }}
       >
-        {isCapturing ? <CircularProgress size={24} /> : <PhotoCamera />}
+        {isCapturing ? (
+          <CircularProgress size={24} sx={circularProgressColorSx(theme)} />
+        ) : (
+          <PhotoCamera fontSize="inherit" />
+        )}
       </IconButton>
     </Box>
   );
