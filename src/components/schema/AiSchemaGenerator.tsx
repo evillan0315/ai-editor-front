@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Box, TextField, Select, MenuItem, FormControl, InputLabel, Switch, FormGroup, FormControlLabel, IconButton, useTheme, Typography, Paper, Button, CircularProgress } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
@@ -19,6 +19,35 @@ const AiSchemaGenerator: React.FC = () => {
   const [instruction, setInstruction] = useState('');
   const [generatedSchema, setGeneratedSchema] = useState('{}');
   const [loading, setLoading] = useState(false);
+
+  // Function to parse JSON schema and update properties
+  const parseSchema = useCallback((schemaString: string) => {
+    try {
+      const schema = JSON.parse(schemaString);
+      if (typeof schema === 'object' && schema !== null && schema.properties) {
+        const newProperties: SchemaProperty[] = Object.entries(schema.properties).map(([name, details]: [string, any], index) => ({
+          id: String(Date.now() + index), // Generate unique ID
+          name: name,
+          type: details.type || 'string', // Default to string if type is missing
+          required: schema.required ? schema.required.includes(name) : false,
+        }));
+        setProperties(newProperties);
+      } else {
+        console.error('Invalid schema format: properties field missing or schema is not an object.');
+        setProperties([]); // Reset properties on invalid schema
+      }
+    } catch (error) {
+      console.error('Failed to parse schema:', error);
+      setProperties([]); // Reset properties on parse failure
+    }
+  }, []);
+
+  // Use useEffect to call parseSchema whenever generatedSchema changes
+  useEffect(() => {
+    if (generatedSchema) {
+      parseSchema(generatedSchema);
+    }
+  }, [generatedSchema, parseSchema]);
 
   const handleAddProperty = () => {
     setProperties([...properties, { id: String(Date.now()), name: '', type: 'string', required: false }]);
