@@ -2,7 +2,13 @@ import { TerminalCommandResponse } from './terminal';
 // =========================================================================
 // AI/LLM Related Types
 // =========================================================================
+export enum LLM_ENDPOINT {
+  SCHEMA_GENERATOR = '/schema/generator'
+}
 
+export interface SchemaResponse {
+   schema: string;
+}
 // Request Types
 export enum RequestType {
   TEXT_ONLY = 'TEXT_ONLY',

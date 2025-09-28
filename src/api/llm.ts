@@ -1,10 +1,13 @@
 import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
-
+import { generateText } from './ai'
 import {
   ModelResponse,
   FileChange,
   LlmGeneratePayload,
   LlmReportErrorApiPayload,
+  LLM_ENDPOINT,
+  SchemaResponse,
+  RequestType
 } from '@/types'; // Import new LLM types and FileChange, RequestType, LlmOutputFormat, LlmGeneratePayload, LlmReportErrorApiPayload
 
 
@@ -60,7 +63,26 @@ function parseJSONSafe(jsonString: string): ModelResponse {
 // ────────────────────────────
 // Safe LLM code generation
 // ────────────────────────────
-
+export const generateSchema = async (
+  prompt: string,
+): Promise<string> => {
+  let rawText: string | null = null;
+  console.log(prompt, 'prompt');
+  try {
+    const response = await generateText({prompt});
+    return extractCodeFromMarkdown(response);
+   
+    //return extractCodeFromMarkdown(res);
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return {
+      rawResponse: rawText,
+      summary: null,
+      changes: [],
+      error: errorMsg,
+    };
+  }
+}
 export const generateCode = async (
   data: LlmGeneratePayload,
 ): Promise<ModelResponse> => {
