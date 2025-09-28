@@ -7,11 +7,12 @@ interface VideoModalProps {
   open: boolean;
   onClose: () => void;
   src: string;
-  mediaElementRef: React.MutableRefObject<HTMLMediaElement | null>;
+  mediaElementRef?: React.MutableRefObject<HTMLVideoElement | HTMLImageElement | null>; // Make optional and accept HTMLImageElement
   autoplay: boolean;
   controls: boolean;
   muted: boolean;
-  onPlayerReady: (htmlMediaElement: HTMLVideoElement) => void;
+  onPlayerReady?: (htmlMediaElement: HTMLVideoElement) => void; // Make optional as it's video-specific
+  mediaType: 'video' | 'gif';
 }
 
 const VideoModal: React.FC<VideoModalProps> = ({
@@ -23,6 +24,7 @@ const VideoModal: React.FC<VideoModalProps> = ({
   controls,
   muted,
   onPlayerReady,
+  mediaType,
 }) => (
   <Dialog
     open={open}
@@ -64,16 +66,27 @@ const VideoModal: React.FC<VideoModalProps> = ({
           justifyContent: 'center',
         }}
       >
-        <VideoPlayer
-          src={src}
-          mediaElementRef={mediaElementRef}
-          autoplay={autoplay}
-          controls={controls}
-          loop={false}
-          muted={muted}
-          className="w-full h-full object-contain"
-          onPlayerReady={onPlayerReady}
-        />
+        {mediaType === 'video' ? (
+          <VideoPlayer
+            src={src}
+            mediaElementRef={mediaElementRef as React.MutableRefObject<HTMLVideoElement | null>}
+            autoplay={autoplay}
+            controls={controls}
+            loop={false}
+            muted={muted}
+            className="w-full h-full object-contain"
+            onPlayerReady={onPlayerReady}
+          />
+        ) : (
+          <img
+            src={src}
+            alt="Animated GIF"
+            className="w-full h-full object-contain"
+            ref={mediaElementRef as React.MutableRefObject<HTMLImageElement | null>}
+            // GIFs autoplay by default, controls/muted are not applicable
+          />
+        )}
+
         <IconButton
           aria-label="close"
           onClick={onClose}
