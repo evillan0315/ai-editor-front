@@ -118,6 +118,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
         alignItems: 'center',
         flexGrow: 1,
         maxWidth: '600px',
+        width: '38%'
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>

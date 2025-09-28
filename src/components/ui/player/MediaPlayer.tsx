@@ -38,6 +38,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType, mediaElementRef })
   return (
 
     <Box
+
       sx={{
         bgcolor: theme.palette.background.paper,
         borderTop: `1px solid ${theme.palette.divider}`,
@@ -48,6 +49,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({ mediaType, mediaElementRef })
         color: theme.palette.text.primary,
         flexShrink: 0,
         zIndex: 11,
+        width: '100%',
+        px: 4
       }}
     >
       <MediaPlayerTrackInfo mediaType={mediaType} />

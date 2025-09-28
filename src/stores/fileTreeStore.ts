@@ -149,7 +149,7 @@ export const loadInitialTree = async (projectRoot: string) => {
 
     // Additionally, fetch *all* relevant files for AI context using scan API
     // This uses llmStore.scanPathsInput
-    const { scanPathsInput } = llmStore.get();
+    /*const { scanPathsInput } = llmStore.get();
     const parsedScanPaths = scanPathsInput
       .split(',')
       .map((s) => s.trim())
@@ -159,7 +159,7 @@ export const loadInitialTree = async (projectRoot: string) => {
       parsedScanPaths,
     );
     fileTreeStore.setKey('flatFileList', scannedFiles); // This is now correctly typed as ApiFileScanResult[]
-    fileTreeStore.setKey('lastFetchedScanPaths', parsedScanPaths);
+    fileTreeStore.setKey('lastFetchedScanPaths', parsedScanPaths);*/
   } catch (err) {
     console.error('Error loading initial tree or scanned files:', err);
     fileTreeStore.setKey(

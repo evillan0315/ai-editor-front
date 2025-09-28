@@ -13,7 +13,7 @@ export const fetchScannedFilesForAI = async (
   scanPaths: string[],
 ): Promise<ApiFileScanResult[]> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/file/scan`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/file/list?directory=${projectRoot}&recursive=false`, {
       method: 'POST',
       body: JSON.stringify({
         scanPaths: scanPaths,

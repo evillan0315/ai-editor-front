@@ -276,8 +276,9 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
   }, [isPlaying, currentTrack, mediaElementRef, progress]);
 
   return (
+  <>
     <Box
-      sx={{
+      sx={{ // Outer container, the parent.
         display: 'grid',
         gridTemplateAreas: `'sidebar main'
                           'player player'`,
@@ -292,11 +293,7 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
     >
       <SpotifySidebar currentView={currentView} onSelectView={setCurrentView} />
 
-      <Box sx={{
-          gridArea: 'main',
-          bgcolor: theme.palette.background.default,
-          overflowY: 'auto',
-        }}>
+
       <Box
         sx={{
           gridArea: 'main',
@@ -307,9 +304,10 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
         <SpotifyMainContent currentView={currentView} />
       </Box>
      
-    
-      </Box>
-     <Box className=''>
+  
+     
+    </Box>
+    <Box className='flex sticky bottom-0 justify-center items-center'>
       {currentTrack?.fileType === FileType.AUDIO ? (
         <audio
           ref={mediaElementRef}
@@ -331,7 +329,7 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
         mediaElementRef={mediaElementRef}
       />
       </Box>
-    </Box>
+      </>
   );
 };
 
