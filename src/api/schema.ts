@@ -1,42 +1,11 @@
 import { API_BASE_URL, fetchWithAuth, handleResponse } from './fetch';
-
-// ──────────────────────────────────────────────────────────────────
-// Interfaces & Types based on NestJS DTOs
-// ──────────────────────────────────────────────────────────────────
-
-interface Schema {
-  id: string;
-  name: string;
-  schema: object;
-  createdAt: string;
-  updatedAt: string;
-  createdById?: string;
-}
-
-interface CreateSchemaPayload {
-  name: string;
-  schema: object;
-}
-
-interface UpdateSchemaPayload {
-  name?: string;
-  schema?: object;
-}
-
-interface PaginationSchemaQuery {
-  page?: number;
-  pageSize?: number;
-  name?: string;
-  schema?: object; // Note: Filtering by object directly might not be supported by NestJS query parsing depending on implementation.
-}
-
-interface PaginationSchemaResult {
-  items: Schema[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+import {
+  Schema,
+  CreateSchemaPayload,
+  UpdateSchemaPayload,
+  PaginationSchemaQuery,
+  PaginationSchemaResult,
+} from '@/types/schema';
 
 // ──────────────────────────────────────────────────────────────────
 // Schema API Client

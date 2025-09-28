@@ -4,12 +4,16 @@
  * Provides functionality to add, update, and delete schema properties, including nested ones.
  */
 
-import React, { useCallback } from 'react';
-import { Box, Button, Typography, TextField } from '@mui/material';
+import React, { useCallback, useState } from 'react';
+import { Box, Button, Typography, TextField, CircularProgress } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { nanoid } from 'nanoid';
 import { SchemaProperty } from './SchemaPropertyTypes';
 import SchemaPropertyField from './SchemaPropertyField';
+import { useStore } from '@nanostores/react';
+import { schemaStore } from '@/stores/schemaStore';
+import { schemaApi } from '@/api/schema';
+import { CreateSchemaPayload } from '@/types/schema';
 
 /**
  * Props for the SchemaPropertiesEditor component.
@@ -41,11 +45,13 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   schemaDescription,
   onSchemaDescriptionChange,
 }) => {
+  const $schema = useStore(schemaStore);
+  const [creatingSchema, setCreatingSchema] = useState(false);
 
   // Helper function to update a property deeply nested in the state
   const updatePropertyByPath = useCallback((
-    currentProps: SchemaProperty[], // This array could be root properties, or properties of an object, or a single-element array containing an item's schema
-    path: string[], // Sequence of IDs from the root down to the target property
+    currentProps: SchemaProperty[],
+    path: string[],
     field: keyof SchemaProperty,
     value: any
   ): SchemaProperty[] => {
@@ -77,7 +83,7 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   // Helper to add a nested property or array item schema
   const addNestedPropertyByPath = useCallback((
     currentProps: SchemaProperty[],
-    path: string[], // e.g., ['id1'], ['id1', 'id2'] - path to the PARENT property
+    path: string[],
     type: 'item' | 'property'
   ): SchemaProperty[] => {
     if (!currentProps || path.length === 0) return currentProps;
@@ -122,7 +128,7 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   // Helper to delete a property deeply nested in the state
   const deletePropertyByPath = useCallback((
     currentProps: SchemaProperty[],
-    path: string[] // Path to the property to be deleted, e.g., ['top_level_id'], ['parent_id', 'target_id']
+    path: string[]
   ): SchemaProperty[] => {
     if (!currentProps || path.length === 0) return currentProps;
 
@@ -134,7 +140,7 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
     } else {
       // Find the parent and recurse to delete the child
       return currentProps.map(prop => {
-        if (prop.id === segmentId) { // Found the parent
+        if (prop.id === segmentId) {
           if (prop.type === 'object' && prop.properties) {
             const updatedProperties = deletePropertyByPath(prop.properties, restPath);
             return { ...prop, properties: updatedProperties };
@@ -149,7 +155,7 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
             }
           }
         }
-        return prop; // Not the parent, keep as is
+        return prop;
       });
     }
   }, []);
@@ -174,13 +180,37 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
     onPropertiesChange(prev => deletePropertyByPath(prev as SchemaProperty[], path));
   }, [onPropertiesChange, deletePropertyByPath]);
 
+  // Handle creating schema in the backend
+  const handleCreateSchema = useCallback(async () => {
+    if (!$schema || Object.keys($schema).length === 0) {
+      console.warn('No schema generated to create.');
+      return;
+    }
+
+    setCreatingSchema(true);
+    try {
+      const payload: CreateSchemaPayload = {
+        name: schemaTitle || 'Untitled Schema',
+        schema: $schema,
+      };
+      const createdSchema = await schemaApi.createSchema(payload);
+      console.log('Schema created successfully:', createdSchema);
+      // Optionally, clear the current schema or show a success message
+    } catch (error) {
+      console.error('Failed to create schema:', error);
+      // Optionally, show an error message
+    } finally {
+      setCreatingSchema(false);
+    }
+  }, [$schema, schemaTitle]);
+
   return (
     <Box>
       <Typography variant="subtitle1" gutterBottom>Manual Schema Definition:</Typography>
 
       {/* Top-level Schema Metadata Fields */}
       <TextField
-        label="Schema ID ($id)" // Changed label for clarity
+        label="Schema ID ($id)"
         value={schemaId}
         onChange={(e) => onSchemaIdChange(e.target.value)}
         fullWidth
@@ -188,7 +218,7 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
         size="small"
       />
       <TextField
-        label="Meta-Schema URL ($schema)" // New field for $schema
+        label="Meta-Schema URL ($schema)"
         value={metaSchemaUrl}
         onChange={(e) => onMetaSchemaUrlChange(e.target.value)}
         fullWidth
@@ -218,21 +248,32 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
         <SchemaPropertyField
           key={property.id}
           property={property}
-          path={[property.id]} // Root properties have a path of just their ID
+          path={[property.id]}
           onPropertyChange={handlePropertyChange}
           onAddNestedProperty={handleAddNestedProperty}
           onDeleteProperty={handleDeleteProperty}
-          nestingLevel={0} // Top level
+          nestingLevel={0}
         />
       ))}
       <Button startIcon={<AddIcon />} onClick={handleAddProperty} sx={{ mt: 2, textTransform: 'none' }} variant="contained" color="secondary">
         Add Top-Level Property
       </Button>
 
-      <Box mt={3}>
+      <Box mt={3} className='flex gap-2'>
         <Button variant="contained" color="primary" onClick={onGenerateSchema}>
           Generate Schema from Manual Input
         </Button>
+        {($schema && Object.keys($schema).length > 0) && (
+          <Button
+            variant="outlined"
+            color="success"
+            onClick={handleCreateSchema}
+            disabled={creatingSchema}
+            startIcon={creatingSchema ? <CircularProgress size={20} color="inherit" /> : null}
+          >
+            {creatingSchema ? 'Creating...' : 'Create Schema'}
+          </Button>
+        )}
       </Box>
     </Box>
   );
