@@ -109,7 +109,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
     if (!xtermDivRef.current) return;
 
     const term = new XtermTerminal({
-      fontFamily: '\"Fira Code\", \"Monaco\", \"Consolas\", monospace',
+      fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
       fontSize: 12,
       cursorBlink: true,
       theme: xtermTheme, // Use initial theme from memoized value
@@ -168,9 +168,16 @@ export const XTerminal: React.FC<XTerminalProps> = ({
 
     return () => {
       // Cleanup on unmount
-      if (webglAddonRef.current) webglAddonRef.current.dispose();
-      if (fitAddonRef.current) fitAddonRef.current.dispose();
-      if (xtermTerminalRef.current) xtermTerminalRef.current.dispose();
+      // Ensure addons/terminal are not already disposed before attempting to dispose
+      if (webglAddonRef.current && !webglAddonRef.current.isDisposed) {
+        webglAddonRef.current.dispose();
+      }
+      if (fitAddonRef.current && !fitAddonRef.current.isDisposed) {
+        fitAddonRef.current.dispose();
+      }
+      if (xtermTerminalRef.current && !xtermTerminalRef.current.isDisposed) {
+        xtermTerminalRef.current.dispose();
+      }
 
       xtermTerminalRef.current = null;
       fitAddonRef.current = null;
