@@ -40,19 +40,21 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
   const [formData, setFormData] = useState<Record<string, any>>(initialData);
 
   useEffect(() => {
-    // Initialize formData with defaults from schema and provided initialData
-    const initial: Record<string, any> = {};
+    // Initialize formData with all properties from initialData first to preserve non-schema properties like '_id'
+    const initial: Record<string, any> = { ...initialData };
+
+    // Then apply defaults and recursively initialize for object/array types from schema
     if (schema.properties) {
       Object.keys(schema.properties).forEach((key) => {
         const prop = schema.properties![key];
-        if (initialData[key] !== undefined) {
-          initial[key] = initialData[key];
-        } else if (prop.default !== undefined) {
-          initial[key] = prop.default;
-        } else if (prop.type === 'array' && prop.items?.type === 'object') {
-          initial[key] = []; // Initialize array of objects as empty array
-        } else if (prop.type === 'object') {
-          initial[key] = {}; // Initialize object as empty object
+        if (initial[key] === undefined) { // Only set default if not already in initialData
+          if (prop.default !== undefined) {
+            initial[key] = prop.default;
+          } else if (prop.type === 'array' && prop.items?.type === 'object') {
+            initial[key] = []; // Initialize array of objects as empty array
+          } else if (prop.type === 'object') {
+            initial[key] = {}; // Initialize object as empty object
+          }
         }
       });
     }
@@ -67,7 +69,8 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
         if (itemIndex !== undefined) {
           // Handling array item change
           const currentArray = [...(newFormData[key] || [])];
-          currentArray[itemIndex] = value; // Replace the specific item
+          // For nested forms, `value` is the full formData of the child, including `_id` if preserved.
+          currentArray[itemIndex] = value; // Replace the specific item with its updated value
           newFormData[key] = currentArray;
         } else {
           // Handling top-level or object property change
@@ -89,12 +92,14 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
         if (itemSchema.properties) {
           Object.keys(itemSchema.properties).forEach((propKey) => {
             const prop = itemSchema.properties![propKey];
-            if (prop.default !== undefined) {
-              newItem[propKey] = prop.default;
-            } else if (prop.type === 'array' && prop.items?.type === 'object') {
-              newItem[propKey] = [];
-            } else if (prop.type === 'object') {
-              newItem[propKey] = {};
+            if (newItem[propKey] === undefined) { // Only set default if not already in newItem
+              if (prop.default !== undefined) {
+                newItem[propKey] = prop.default;
+              } else if (prop.type === 'array' && prop.items?.type === 'object') {
+                newItem[propKey] = [];
+              } else if (prop.type === 'object') {
+                newItem[propKey] = {};
+              }
             }
           });
         }
@@ -320,7 +325,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
                 startIcon={<AddIcon />}
                 onClick={() => handleAddItemToArray(key, itemSchema)}
                 sx={{ mt: 2, textTransform: 'none' }}
-                variant="outlined"
+                variant="outlined"              
                 size="small"
               >
                 Add {label} Item
