@@ -212,6 +212,15 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
             fullWidth
           />
           <TextField
+            label="Default Value"
+            // Value can be of any type, so display it as a string
+            value={property.default !== undefined ? String(property.default) : ''}
+            onChange={(e) => handleFieldChange('default', e.target.value)}
+            size="small"
+            fullWidth
+            helperText="Default value for this property. Type inference is applied based on schema type."
+          />
+          <TextField
             label="Format"
             value={property.format || ''}
             onChange={(e) => handleFieldChange('format', e.target.value)}
@@ -251,32 +260,44 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
             size="small"
             fullWidth
           />
-          <TextField
-            label="Min Length"
-            type="number"
-            value={property.minLength !== undefined ? property.minLength : ''}
-            onChange={(e) =>
-              handleFieldChange(
-                'minLength',
-                e.target.value === '' ? undefined : Number(e.target.value),
-              )
-            }
-            size="small"
-            fullWidth
-          />
-          <TextField
-            label="Max Length"
-            type="number"
-            value={property.maxLength !== undefined ? property.maxLength : ''}
-            onChange={(e) =>
-              handleFieldChange(
-                'maxLength',
-                e.target.value === '' ? undefined : Number(e.target.value),
-              )
-            }
-            size="small"
-            fullWidth
-          />
+          {property.type === 'string' && (
+            <> {/* Use a fragment to group string-specific fields */}
+              <TextField
+                label="Min Length"
+                type="number"
+                value={property.minLength !== undefined ? property.minLength : ''}
+                onChange={(e) =>
+                  handleFieldChange(
+                    'minLength',
+                    e.target.value === '' ? undefined : Number(e.target.value),
+                  )
+                }
+                size="small"
+                fullWidth
+              />
+              <TextField
+                label="Max Length"
+                type="number"
+                value={property.maxLength !== undefined ? property.maxLength : ''}
+                onChange={(e) =>
+                  handleFieldChange(
+                    'maxLength',
+                    e.target.value === '' ? undefined : Number(e.target.value),
+                  )
+                }
+                size="small"
+                fullWidth
+              />
+              <TextField
+                label="Pattern (RegEx)"
+                value={property.pattern || ''}
+                onChange={(e) => handleFieldChange('pattern', e.target.value)}
+                size="small"
+                fullWidth
+                helperText="Regular expression for string validation"
+              />
+            </>
+          )}
 
           <TextField
             label="x-order (for UI sorting)"
@@ -290,7 +311,7 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
             }
             size="small"
             fullWidth
-            helperText="Order hint for UI display (e.g., in DynamicFormBuilder)"
+            helperText="Order hint for UI display (e.g., in DynamicFormBuilder). Lower numbers appear first."
           />
           <TextField
             label="x-classNames (Tailwind)"
@@ -298,7 +319,7 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
             onChange={(e) => handleFieldChange('xClassNames', e.target.value)}
             size="small"
             fullWidth
-            helperText="Tailwind classes for UI styling (e.g., col-span-6)"
+            helperText="Tailwind classes for UI styling of this specific field (e.g., col-span-6)."
           />
           <TextField
             label="x-layout (Tailwind) (for object/array children)"
@@ -306,7 +327,7 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
             onChange={(e) => handleFieldChange('xLayout', e.target.value)}
             size="small"
             fullWidth
-            helperText="Tailwind classes for layout of children (e.g., grid grid-cols-2)"
+            helperText="Tailwind classes for layout of immediate children (e.g., grid grid-cols-2 gap-4). Only applies to 'object' or 'array' types."
           />
         </Box>
       </Collapse>

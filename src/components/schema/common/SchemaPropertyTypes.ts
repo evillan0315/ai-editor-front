@@ -19,6 +19,8 @@ export interface SchemaProperty {
   maximum?: number;
   minLength?: number;
   maxLength?: number;
+  default?: any; // Default value for the property (can be any type)
+  pattern?: string; // Regex pattern for string validation
   items?: SchemaProperty; // For array type, defines the schema for elements within the array (a single SchemaProperty)
   properties?: SchemaProperty[]; // For object type, defines the properties of the object (an array of SchemaProperty)
   showOptions?: boolean; // Controls visibility of advanced options for THIS property

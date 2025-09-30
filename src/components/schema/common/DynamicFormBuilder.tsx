@@ -56,6 +56,9 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             initial[key] = []; // Initialize array of objects as empty array
           } else if (prop.type === 'object') {
             initial[key] = {}; // Initialize object as empty object
+          } else if (prop.type === 'string' && prop.default !== undefined) {
+            // Handle default specifically for string types if they are not objects
+            initial[key] = prop.default;
           }
         }
       });
@@ -105,6 +108,8 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
                 newItem[propKey] = [];
               } else if (prop.type === 'object') {
                 newItem[propKey] = {};
+              } else if (prop.type === 'string' && prop.default !== undefined) {
+                newItem[propKey] = prop.default;
               }
             }
           });

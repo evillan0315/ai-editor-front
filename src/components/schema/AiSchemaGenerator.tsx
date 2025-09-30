@@ -45,11 +45,7 @@ const AiSchemaGenerator: React.FC = () => {
 
   // Helper function to convert JSON schema to SchemaProperty structure recursively
   const convertJsonSchemaToSchemaPropertyRecursive = useCallback(
-    (
-      name: string,
-      details: any,
-      requiredFields: string[] = [],
-    ): SchemaProperty => {
+    (name: string, details: any, requiredFields: string[] = []): SchemaProperty => {
       const propertyId = nanoid();
       const baseProperty: SchemaProperty = {
         id: propertyId,
@@ -63,6 +59,8 @@ const AiSchemaGenerator: React.FC = () => {
         maximum: details.maximum,
         minLength: details.minLength,
         maxLength: details.maxLength,
+        default: details.default, // Extract default value
+        pattern: details.pattern, // Extract pattern
         showOptions: false, // Start collapsed
         showChildren: false, // Start collapsed
         xOrder: details['x-order'],
@@ -171,6 +169,8 @@ const AiSchemaGenerator: React.FC = () => {
         jsonSchema.minLength = property.minLength;
       if (property.maxLength !== undefined)
         jsonSchema.maxLength = property.maxLength;
+      if (property.default !== undefined) jsonSchema.default = property.default; // Add default
+      if (property.pattern) jsonSchema.pattern = property.pattern; // Add pattern
 
       // Add custom 'x-' properties if they exist
       if (property.xOrder !== undefined) jsonSchema['x-order'] = property.xOrder;
