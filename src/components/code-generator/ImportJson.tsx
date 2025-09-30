@@ -37,6 +37,15 @@ const selectContainerSx = {
   mb: 2,
 };
 
+/**
+ * Truncates a string to a specified maximum length, appending '...' if truncated.
+ */
+const truncate = (text: string | null | undefined, maxLength: number): string => {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return `${text.substring(0, maxLength)}...`;
+};
+
 export const ImportJson: React.FC<ImportJsonProps> = ({
   value,
   onChange,
@@ -111,15 +120,14 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
       const newResponseId = event.target.value as string;
       setSelectedResponseId(newResponseId);
       const selected = geminiResponses.find((r) => r.id === newResponseId);
-      if (selected && selected.responseJson) {
+      if (selected && selected.responseText) {
         try {
           // Attempt to pretty print the JSON if it's a string
-          const parsedJson = JSON.parse(selected.responseJson);
+          const parsedJson = JSON.parse(selected.responseText);
           onChange(JSON.stringify(parsedJson, null, 2));
         } catch (e) {
           // If parsing fails, just use the raw string
-          onChange(selected.responseJson);
-
+          onChange(selected.responseText);
           showGlobalSnackbar('Selected response is not valid JSON. Displaying raw content.', 'warning');
         }
       } else {
@@ -145,7 +153,9 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
             <MenuItem value="">-- Select a Request --</MenuItem>
             {geminiRequests.map((request) => (
               <MenuItem key={request.id} value={request.id}>
-                <Typography noWrap>{request.id} ({new Date(request.createdAt).toLocaleString()})</Typography>
+                <Typography noWrap>
+                  {truncate(request.prompt, 50)} ({new Date(request.createdAt).toLocaleString()})
+                </Typography>
               </MenuItem>
             ))}
           </Select>
@@ -167,7 +177,9 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
             <MenuItem value="">-- Select a Response --</MenuItem>
             {geminiResponses.map((response) => (
               <MenuItem key={response.id} value={response.id}>
-                 <Typography noWrap>{response.id} ({new Date(response.createdAt).toLocaleString()})</Typography>
+                 <Typography noWrap>
+                   {truncate(response.responseText, 50)} ({new Date(response.createdAt).toLocaleString()})
+                 </Typography>
               </MenuItem>
             ))}
           </Select>
