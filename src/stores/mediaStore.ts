@@ -213,7 +213,7 @@ export const fetchAndLoadTranscription = async (fileId: string) => {
   } catch (err: any) {
     console.error('Error fetching transcription:', err);
     transcriptionErrorAtom.set(
-      `Failed to load transcription: ${err.message || 'Unknown error'}`,
+      `Failed to load transcription: ${err.message || 'Unknown error'} `,
     );
     showGlobalSnackbar(
       `Failed to load transcription: ${err.message || 'Unknown error'}`, 'error'
@@ -239,7 +239,7 @@ export const transcribeCurrentAudio = async (fileId: string) => {
   } catch (err: any) {
     console.error('Error transcribing audio:', err);
     transcriptionErrorAtom.set(
-      `Failed to transcribe audio: ${err.message || 'Unknown error'}`,
+      `Failed to transcribe audio: ${err.message || 'Unknown error'} `,
     );
     showGlobalSnackbar(
       `Failed to transcribe audio: ${err.message || 'Unknown error'}`, 'error'
@@ -277,6 +277,18 @@ export const setCurrentTrack = (track: MediaFileResponseDto | null) => {
   durationAtom.set(0); // Reset duration for new track
   setBuffered([]); // Clear buffered ranges for new track
   clearTranscriptionData(); // Clear transcription for new track
+
+  // Check if transcription data exists in metadata and pre-load it
+  if (newTrack && newTrack.metadata) {
+    const transcriptionMetadata = newTrack.metadata.find(
+      (m) => m.type === FileType.TRANSCRIPT,
+    );
+    if (transcriptionMetadata && transcriptionMetadata.data) {
+      // The 'data' field of TRANSCRIPT metadata is expected to be a TranscriptionResult
+      transcriptionResultAtom.set(transcriptionMetadata.data as TranscriptionResult);
+      showGlobalSnackbar('Transcription pre-loaded from metadata', 'info');
+    }
+  }
 
   // Open VideoModal if the new track is a video
   if (newTrack?.fileType === FileType.VIDEO) {
