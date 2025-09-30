@@ -185,21 +185,23 @@ export const clearError = () => {
 };
 
 export const nextTrack = async () => {
-  const shuffle = shuffleAtom.get();
-  const allAvailableMediaFiles = $mediaStore.get().allAvailableMediaFiles;
+  let allAvailableMediaFiles = $mediaStore.get().allAvailableMediaFiles;
   const currentTrack = currentTrackAtom.get();
 
-  if (!currentTrack) {
-    console.warn('No current track to go to next.');
-    return;
-  }
-
+  // If media files are not loaded in the store, attempt to fetch them.
   if (allAvailableMediaFiles.length === 0) {
-    console.warn('No tracks available to play.');
-    return;
+    showGlobalSnackbar('Fetching available media files...', 'info');
+    await fetchingMediaFiles(); // This will update $mediaStore
+    allAvailableMediaFiles = $mediaStore.get().allAvailableMediaFiles; // Re-fetch from store
+    if (allAvailableMediaFiles.length === 0) {
+      showGlobalSnackbar('No tracks available to play after fetching.', 'info');
+      return;
+    }
   }
 
-  let nextMediaFile: MediaFileResponseDto;
+  // Determine the next track logic
+  let nextMediaFile: MediaFileResponseDto | undefined;
+  const shuffle = shuffleAtom.get();
 
   if (shuffle) {
     const randomIndex = Math.floor(
@@ -207,37 +209,57 @@ export const nextTrack = async () => {
     );
     nextMediaFile = allAvailableMediaFiles[randomIndex];
   } else {
-    const currentIndex = allAvailableMediaFiles.findIndex(
-      (track) => track.id === currentTrack.id,
-    );
-
-    if (currentIndex === -1) {
-      console.warn('Current track not found in allAvailableMediaFiles.');
-      return;
+    let currentIndex = -1;
+    if (currentTrack) {
+      currentIndex = allAvailableMediaFiles.findIndex(
+        (track) => track.id === currentTrack.id,
+      );
     }
 
-    const nextIndex = (currentIndex + 1) % allAvailableMediaFiles.length;
-    nextMediaFile = allAvailableMediaFiles[nextIndex];
+    if (currentIndex === -1) {
+      // If no current track or current track not found, play the first available
+      if (allAvailableMediaFiles.length > 0) {
+        nextMediaFile = allAvailableMediaFiles[0];
+        if (currentTrack) {
+          showGlobalSnackbar(
+            'Current track not found in list, playing first available.',
+            'warning',
+          );
+        }
+      }
+    } else {
+      // Normal next track logic
+      const nextIndex = (currentIndex + 1) % allAvailableMediaFiles.length;
+      nextMediaFile = allAvailableMediaFiles[nextIndex];
+    }
   }
-  setCurrentTrack(nextMediaFile);
+
+  if (nextMediaFile) {
+    setCurrentTrack(nextMediaFile);
+  } else {
+    showGlobalSnackbar('No tracks available to play.', 'info');
+    setPlaying(false); // Ensure player is paused if no track is available
+  }
 };
 
 export const previousTrack = async () => {
-  const shuffle = shuffleAtom.get();
-  const allAvailableMediaFiles = $mediaStore.get().allAvailableMediaFiles;
+  let allAvailableMediaFiles = $mediaStore.get().allAvailableMediaFiles;
   const currentTrack = currentTrackAtom.get();
 
-  if (!currentTrack) {
-    console.warn('No current track to go to previous.');
-    return;
-  }
-
+  // If media files are not loaded in the store, attempt to fetch them.
   if (allAvailableMediaFiles.length === 0) {
-    console.warn('No tracks available to play.');
-    return;
+    showGlobalSnackbar('Fetching available media files...', 'info');
+    await fetchingMediaFiles(); // This will update $mediaStore
+    allAvailableMediaFiles = $mediaStore.get().allAvailableMediaFiles; // Re-fetch from store
+    if (allAvailableMediaFiles.length === 0) {
+      showGlobalSnackbar('No tracks available to play after fetching.', 'info');
+      return;
+    }
   }
 
-  let previousMediaFile: MediaFileResponseDto;
+  // Determine the previous track logic
+  let previousMediaFile: MediaFileResponseDto | undefined;
+  const shuffle = shuffleAtom.get();
 
   if (shuffle) {
     const randomIndex = Math.floor(
@@ -245,21 +267,40 @@ export const previousTrack = async () => {
     );
     previousMediaFile = allAvailableMediaFiles[randomIndex];
   } else {
-    const currentIndex = allAvailableMediaFiles.findIndex(
-      (track) => track.id === currentTrack.id,
-    );
-
-    if (currentIndex === -1) {
-      console.warn('Current track not found in allAvailableMediaFiles.');
-      return;
+    let currentIndex = -1;
+    if (currentTrack) {
+      currentIndex = allAvailableMediaFiles.findIndex(
+        (track) => track.id === currentTrack.id,
+      );
     }
 
-    const previousIndex = (
-      currentIndex - 1 + allAvailableMediaFiles.length
-    ) % allAvailableMediaFiles.length;
-    previousMediaFile = allAvailableMediaFiles[previousIndex];
+    if (currentIndex === -1) {
+      // If no current track or current track not found, play the last available
+      if (allAvailableMediaFiles.length > 0) {
+        previousMediaFile =
+          allAvailableMediaFiles[allAvailableMediaFiles.length - 1];
+        if (currentTrack) {
+          showGlobalSnackbar(
+            'Current track not found in list, playing last available.',
+            'warning',
+          );
+        }
+      }
+    } else {
+      // Normal previous track logic
+      const previousIndex = (
+        currentIndex - 1 + allAvailableMediaFiles.length
+      ) % allAvailableMediaFiles.length;
+      previousMediaFile = allAvailableMediaFiles[previousIndex];
+    }
   }
-  setCurrentTrack(previousMediaFile);
+
+  if (previousMediaFile) {
+    setCurrentTrack(previousMediaFile);
+  } else {
+    showGlobalSnackbar('No tracks available to play.', 'info');
+    setPlaying(false); // Ensure player is paused if no track is available
+  }
 };
 
 export const addMediaToPlaylistAction = async (
