@@ -15,6 +15,7 @@ import {
   Grid,
   Button,
   IconButton,
+  FormHelperText, // Import FormHelperText
 } from '@mui/material';
 import { JsonSchema } from '@/types/schema';
 import { nanoid } from 'nanoid';
@@ -22,6 +23,7 @@ import {
   Add as AddIcon,
   RemoveCircleOutline as RemoveIcon,
 } from '@mui/icons-material';
+//import { deepEqual } from '@/utils'; // Import deepEqual
 
 interface DynamicFormBuilderProps {
   schema: JsonSchema;
@@ -58,8 +60,12 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
         }
       });
     }
-    setFormData(initial);
-  }, [schema, initialData]);
+    
+    // Only update formData if the new initial state is deeply different
+    //if (!deepEqual(formData, initial)) {
+      //setFormData(initial);
+    //}
+  }, [schema, initialData, formData]); // Add formData to dependencies to enable deep comparison against the latest state
 
   const handleChange = useCallback(
     (key: string, value: any, itemIndex?: number) => {
@@ -151,11 +157,10 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
     const description = prop.description;
     const isRequired = schema.required?.includes(key);
 
-    // Base props, className will be explicitly applied below per component type
-    const baseFieldProps = {
+    // Define common props for Material UI components, excluding `helperText` initially
+    const muiCommonProps = {
       fullWidth: true,
       margin: 'normal' as const,
-      helperText: description,
       required: isRequired,
     };
 
@@ -170,7 +175,8 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
               value={value}
               onChange={(e) => handleChange(key, e.target.value)}
               InputLabelProps={{ shrink: true }}
-              {...baseFieldProps}
+              helperText={description} // Explicitly add helperText for TextField
+              {...muiCommonProps}
               className={fieldClassNames}
               sx={{ ml: level * 2 }}
             />
@@ -178,17 +184,14 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
         }
         if (prop.enum) {
           return (
-            <FormControl key={key} {...baseFieldProps} className={fieldClassNames} sx={{ ml: level * 2 }}>
-              <InputLabel id={`${key}-select-label`} required={isRequired}>
-                {label}
-              </InputLabel>
+            <FormControl key={key} {...muiCommonProps} className={fieldClassNames} sx={{ ml: level * 2 }}>
+              <InputLabel id={`${key}-select-label`}>{label}</InputLabel>
               <Select
                 labelId={`${key}-select-label`}
                 id={`${key}-select`}
                 value={value}
                 label={label}
                 onChange={(e) => handleChange(key, e.target.value)}
-                required={isRequired}
               >
                 {prop.enum.map((option: string) => (
                   <MenuItem key={option} value={option}>
@@ -196,15 +199,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
                   </MenuItem>
                 ))}
               </Select>
-              {description && (
-                <Typography
-                  variant="caption"
-                  color="textSecondary"
-                  sx={{ mt: 1 }}
-                >
-                  {description}
-                </Typography>
-              )}
+              {description && <FormHelperText>{description}</FormHelperText>} {/* Use FormHelperText for description */}
             </FormControl>
           );
         }
@@ -214,7 +209,8 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             label={label}
             value={value}
             onChange={(e) => handleChange(key, e.target.value)}
-            {...baseFieldProps}
+            helperText={description} // Explicitly add helperText for TextField
+            {...muiCommonProps}
             className={fieldClassNames}
             sx={{ ml: level * 2 }}
           />
@@ -228,7 +224,8 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             type="number"
             value={value}
             onChange={(e) => handleChange(key, Number(e.target.value))}
-            {...baseFieldProps}
+            helperText={description} // Explicitly add helperText for TextField
+            {...muiCommonProps}
             className={fieldClassNames}
             sx={{ ml: level * 2 }}
           />
@@ -276,6 +273,9 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
               <Typography variant="subtitle2" gutterBottom className="mb-2">
                 {label} (List)
               </Typography>
+              {description && (
+                <FormHelperText sx={{ ml: 0 }}>{description}</FormHelperText>
+              )}
               {currentArray.map((item: Record<string, any>, index: number) => (
                 <Box
                   key={item._id || index} // Use unique id if available, otherwise index
@@ -348,7 +348,8 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
                     .filter((s: string) => s !== ''),
                 )
               }
-              {...baseFieldProps}
+              helperText={description} // Explicitly add helperText for TextField
+              {...muiCommonProps}
               className={fieldClassNames}
               sx={{ ml: level * 2 }}
             />
@@ -373,6 +374,9 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             <Typography variant="subtitle2" gutterBottom className="mb-2">
               {label}
             </Typography>
+            {description && (
+              <FormHelperText sx={{ ml: 0 }}>{description}</FormHelperText>
+            )}
             <DynamicFormBuilder
               schema={prop}
               initialData={formData[key] || {}}

@@ -36,6 +36,8 @@ interface SchemaPropertiesEditorProps {
   onSchemaTitleChange: (title: string) => void;
   schemaDescription: string;
   onSchemaDescriptionChange: (description: string) => void;
+  schemaLayout: string; // New prop for top-level x-layout
+  onSchemaLayoutChange: (layout: string) => void; // New handler for top-level x-layout
 }
 
 const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
@@ -50,6 +52,8 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   onSchemaTitleChange,
   schemaDescription,
   onSchemaDescriptionChange,
+  schemaLayout, // New prop
+  onSchemaLayoutChange, // New prop
 }) => {
   const $schema = useStore(schemaStore);
   const [creatingSchema, setCreatingSchema] = useState(false);
@@ -310,6 +314,15 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
         rows={2}
         margin="normal"
         size="small"
+      />
+      <TextField
+        label="x-layout (Tailwind) (Top-level container)"
+        value={schemaLayout}
+        onChange={(e) => onSchemaLayoutChange(e.target.value)}
+        fullWidth
+        margin="normal"
+        size="small"
+        helperText="Tailwind classes for the top-level form container (e.g., grid grid-cols-12 gap-4)"
       />
 
       {properties.map((property) => (

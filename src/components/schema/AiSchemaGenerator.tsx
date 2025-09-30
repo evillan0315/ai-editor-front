@@ -1,10 +1,3 @@
-/**
- * @module AiSchemaGenerator
- * @description Main component for AI-powered JSON schema generation. Users can define schema properties manually
- * or provide an AI instruction to generate a schema. The generated schema is displayed in an editable CodeMirror editor.
- * This component orchestrates between the manual property editor and the instruction-based generator.
- */
-
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box,
@@ -46,6 +39,7 @@ const AiSchemaGenerator: React.FC = () => {
   ); // Corresponds to JSON Schema $schema
   const [schemaTitle, setSchemaTitle] = useState('');
   const [schemaDescription, setSchemaDescription] = useState('');
+  const [schemaLayout, setSchemaLayout] = useState(''); // Corresponds to x-layout at the root
 
   const $schema = useStore(schemaStore);
 
@@ -54,7 +48,7 @@ const AiSchemaGenerator: React.FC = () => {
     (
       name: string,
       details: any,
-      requiredFields: string[] = [], // Default to empty array if not provided
+      requiredFields: string[] = [],
     ): SchemaProperty => {
       const propertyId = nanoid();
       const baseProperty: SchemaProperty = {
@@ -114,6 +108,7 @@ const AiSchemaGenerator: React.FC = () => {
       ); // Extract $schema, set default if missing
       setSchemaTitle(schema.title || '');
       setSchemaDescription(schema.description || '');
+      setSchemaLayout(schema['x-layout'] || ''); // Extract x-layout
 
       if (typeof schema === 'object' && schema !== null && schema.properties) {
         const newProperties: SchemaProperty[] = Object.entries(
@@ -157,6 +152,7 @@ const AiSchemaGenerator: React.FC = () => {
       setMetaSchemaUrl('http://json-schema.org/draft-07/schema#'); // Reset metaSchemaUrl to default
       setSchemaTitle('');
       setSchemaDescription('');
+      setSchemaLayout(''); // Reset schemaLayout
     }
   }, [$schema, parseSchema]);
 
@@ -256,6 +252,10 @@ const AiSchemaGenerator: React.FC = () => {
     if (schemaDescription) {
       schema.description = schemaDescription;
     }
+    if (schemaLayout) {
+      // Add top-level x-layout
+      schema['x-layout'] = schemaLayout;
+    }
 
     schemaStore.set(schema);
   }, [
@@ -264,6 +264,7 @@ const AiSchemaGenerator: React.FC = () => {
     metaSchemaUrl,
     schemaTitle,
     schemaDescription,
+    schemaLayout,
     convertSchemaPropertyToJsonSchemaRecursive,
   ]);
 
@@ -309,7 +310,7 @@ const AiSchemaGenerator: React.FC = () => {
               onChange={(e) => setUseInstruction(e.target.checked)}
             />
           }
-          label="Generate Schema from Instruction"
+          label='Generate Schema from Instruction'
         />
       </FormGroup>
 
@@ -336,6 +337,8 @@ const AiSchemaGenerator: React.FC = () => {
           onSchemaTitleChange={setSchemaTitle}
           schemaDescription={schemaDescription}
           onSchemaDescriptionChange={setSchemaDescription}
+          schemaLayout={schemaLayout} // Pass top-level x-layout
+          onSchemaLayoutChange={setSchemaLayout} // Pass top-level x-layout handler
         />
       )}
 
