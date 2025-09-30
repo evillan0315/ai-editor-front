@@ -50,7 +50,7 @@ import {
   INSTRUCTION,
   ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
 } from '@/constants/instruction';
-import { generateCode, applyProposedChanges } from '@/api/llm';
+import { generateCode, applyProposedChanges, extractCodeFromMarkdown } from '@/api/llm';
 import FilePickerDialog from '@/components/dialogs/FilePickerDialog';
 import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
 import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
@@ -305,8 +305,8 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
 
   // ---- render ----
   return (
-    <Box className="flex flex-col gap-2 w-full relative">
-      {editorContent && (
+    <Box className="flex flex-col gap-2 w-full relative p-4">
+      {/*editorContent && (
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography>Code Editor</Typography>
@@ -322,11 +322,11 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
             </Box>
           </AccordionDetails>
         </Accordion>
-      )}
+      )*/}
 
       <Box
         position="relative"
-        className="mt-2 px-2 pr-12 overflow-auto max-h-[100px] items-end h-full"
+        className="mt-2 px-2 pr-12 overflow-auto max-h-[80px] items-end h-full"
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
@@ -405,13 +405,13 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         open={isCodeRepairOpen}
         onClose={() => setIsCodeRepairOpen(false)}
         position="left"
-        size="normal"
+        size="large"
         title="Code Repair"
         hasBackdrop={false}
       >
         {/*error && <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='400px' />*/}
         <CodeRepair
-          value={editorContent}
+          value={extractCodeFromMarkdown(editorContent)}
           onChange={setEditorContent}
           filePath="temp.json"
           height="100%"
