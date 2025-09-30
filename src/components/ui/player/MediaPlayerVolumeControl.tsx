@@ -55,8 +55,8 @@ const MediaPlayerVolumeControl: React.FC<MediaPlayerVolumeControlProps> = ({
     }
   }, [isMutedLocally, mediaRef.current]);
 
-  const handleVolumeChange = (_event: Event, newValue: number | number[]) => {
-    const newVolume = typeof newValue === 'number' ? newVolume : 0;
+  const handleVolumeChange = useCallback((_event: Event, newValue: number | number[]) => {
+    const newVolume = typeof newValue === 'number' ? newValue : 0; // Fix: use newValue instead of self-referencing newVolume
     setVolume(newVolume); // Updates global store's volumeAtom and mediaElement.volume
 
     if (newVolume > 0 && isMutedLocally) {
@@ -66,7 +66,7 @@ const MediaPlayerVolumeControl: React.FC<MediaPlayerVolumeControlProps> = ({
     if (newVolume > 0) {
       setLastVolumeBeforeMute(newVolume); // Keep track of the last non-zero volume
     }
-  };
+  }, [isMutedLocally, setVolume]);
 
   const handleMuteToggle = () => {
     if (!mediaRef.current) return;
