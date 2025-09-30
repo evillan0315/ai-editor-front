@@ -190,7 +190,6 @@ export interface SyncTranscriptionResponse {
  * Convenience type for transcription API functions
  */
 export interface TranscriptionApi {
-  // Add 'export' here
   transcribe: (fileId: string) => Promise<TranscriptionResult>;
   getTranscription: (fileId: string) => Promise<TranscriptionResult>;
   getSyncTranscription: (

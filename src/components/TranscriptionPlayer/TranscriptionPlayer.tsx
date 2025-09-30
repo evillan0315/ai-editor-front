@@ -16,7 +16,7 @@ import {
   PlayArrow,
   Pause,
   VolumeUp,
-  Transcribe, // Fixed: Changed from Transcript to Transcribe
+  Transcribe,
 } from '@mui/icons-material';
 import { useStore } from '@nanostores/react';
 import {
@@ -170,7 +170,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={() => {
             if (audioRef.current) {
-              setTrackDuration(audioRef.current.duration); // Fixed: Changed from setDuration to setTrackDuration
+              setTrackDuration(audioRef.current.duration);
             }
           }}
           onEnded={() => setPlaying(false)}
@@ -222,7 +222,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
         {!transcriptionData && !isTranscribing && (
           <Button
             variant="contained"
-            startIcon={<Transcribe />} // Fixed: Changed from Transcript to Transcribe
+            startIcon={<Transcribe />}
             onClick={() => transcribeCurrentAudio(fileId)}
             disabled={isTranscribing}
           >

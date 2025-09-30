@@ -41,6 +41,23 @@ const MediaError = {
   MEDIA_ERR_SRC_NOT_SUPPORTED: 4,
 };
 
+// Styles for the fixed Transcription Highlights panel
+const transcriptionPanelSx = {
+  position: 'fixed',
+  bottom: 52, // Distance from the top of the viewport
+  left: '50%',
+  transform: 'translateX(-50%)', // Center horizontally
+  width: 'calc(100% - 32px)', // Full width minus some padding on smaller screens
+  maxWidth: 500, // Maximum width for larger screens
+  maxHeight: 200, // Keep max height for vertical scrolling
+  overflowY: 'auto',
+  p: 2,
+  zIndex: 1000, // Ensure it floats above most other content
+  bgcolor: 'background.paper', // Use theme background color
+  borderRadius: 2, // Slightly rounded corners
+  boxShadow: 6, // Add some shadow for floating effect
+};
+
 const MediaPlayerContainer: React.FC = () => {
   const internalMediaElementRef = useRef<HTMLMediaElement | null>(null);
 
@@ -299,17 +316,10 @@ const MediaPlayerContainer: React.FC = () => {
   return (
     <Box className="flex justify-center items-center flex-col w-full"> { /* Fixed height for consistency, removed sticky for parent control */ }
       {/* Transcription Highlights (conditionally rendered at the top) */}
-      {/*showTranscription && (
+      {showTranscription && (
         <Paper
-          elevation={3}
-          sx={{
-            width: '100%',
-            maxWidth: '300px',
-            maxHeight: 200,
-            overflowY: 'auto',
-            p: 2,
-            mb: 2, // Margin bottom to separate from media player controls
-          }}
+          elevation={6}
+          sx={transcriptionPanelSx}
         >
           {isTranscribing && (
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
@@ -352,7 +362,7 @@ const MediaPlayerContainer: React.FC = () => {
             <Alert severity="info">Transcription loaded, waiting for sync data.</Alert>
           )}
         </Paper>
-      )*/}
+      )}
 
       {/* Only render an audio element within this container. Video is handled by VideoModal. */}
       {currentTrack?.fileType === FileType.AUDIO && currentTrack?.streamUrl ? (
