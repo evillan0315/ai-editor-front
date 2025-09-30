@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import { isScreenRecordingStore } from '@/stores/recordingStore';
 import { recordingApi } from '@/api/recording';
-import { snackbarState, setSnackbarState } from '@/stores/snackbarStore';
+import { setSnackbarState } from '@/stores/snackbarStore';
 import {
   currentRecordingIdStore,
   setIsScreenRecording,
@@ -11,28 +11,13 @@ import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import DynamicIcon from './DynamicIcon';
-import MiniMediaPlayerControls from '@/components/ui/player/MiniMediaPlayerControls';
-import {
-  currentTrackAtom,
-  isPlayingAtom,
-  setPlaying,
-  setTrackDuration,
-  setTrackProgress,
-  nextTrack,
-  setLoading,
-  $mediaStore,
-  setMediaElement,
-} from '@/stores/mediaStore';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import OutputLogger from '@/components/OutputLogger';
+import MediaPlayerContainer from '@/components/media/MediaPlayerContainer'; // Import MediaPlayerContainer
 
 const Footer = () => {
   const theme = useTheme();
   const isRecording = useStore(isScreenRecordingStore);
-  const currentTrack = useStore(currentTrackAtom);
-  const isPlaying = useStore(isPlayingAtom);
-  const { loading } = useStore($mediaStore);
-  const audioRef = useRef<HTMLAudioElement>(null);
   const [logDrawerOpen, setLogDrawerOpen] = useState(false);
 
   const notify = (
@@ -88,78 +73,12 @@ const Footer = () => {
     setLogDrawerOpen(false);
   };
 
-  // Effect to register the audio element with the store and manage source/loading
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    // Register the audio element with the store for global control
-    setMediaElement(audio);
-
-    if (currentTrack?.mediaUrl) {
-      if (audio.src !== currentTrack.mediaUrl) {
-        setLoading(true);
-        audio.src = currentTrack.mediaUrl;
-        audio.load(); // Load the new source
-      }
-    } else {
-      audio.src = ''; // Clear source if no track
-      setPlaying(false); // Explicitly stop if track is cleared
-      setTrackDuration(0);
-      setTrackProgress(0);
-      setLoading(false);
-    }
-
-    // Cleanup: unregister the element
-    return () => {
-      setMediaElement(null);
-    };
-  }, [
-    currentTrack,
-    setMediaElement,
-    setLoading,
-    setPlaying,
-    setTrackDuration,
-    setTrackProgress,
-  ]);
-
-  // Removed the useEffect that previously handled play/pause based on isPlaying
-  // This is now handled by the setPlaying action directly in mediaStore.ts
-
-  // Event listeners for audio element to update nanostores (progress, duration, ended)
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handleLoadedMetadata = () => {
-      setTrackDuration(audio.duration);
-      setLoading(false); // Finished loading metadata
-      // IMPORTANT: Do NOT call audio.play() here. Playback is initiated by setPlaying from a user gesture.
-    };
-
-    const handleTimeUpdate = () => {
-      if (!audio.seeking && !loading) {
-        setTrackProgress(audio.currentTime);
-      }
-    };
-
-    const handleEnded = () => {
-      nextTrack();
-    };
-
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('ended', handleEnded);
-
-    return () => {
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('ended', handleEnded);
-    };
-  }, [loading, nextTrack, setTrackDuration, setTrackProgress]);
+  // Removed the useEffect that previously handled audioRef and media store updates
+  // This is now managed entirely by MediaPlayerContainer.
 
   return (
-    <>
+    <> {/* Using a fragment here to wrap both elements for consistent rendering inside Layout's Paper */}
+      {/* Top Section: Recording Controls & Output Logger Button */}
       <Box
         className="flex justify-between items-center w-full"
         sx={{
@@ -170,7 +89,7 @@ const Footer = () => {
         }}
       >
         {/* Left Section: Recording Controls */}
-        <Box className="flex justify-center items-center">
+        <Box className="flex justify-center items-center w-1/4">
           <IconButton
             color="inherit"
             aria-label="start recording"
@@ -195,14 +114,13 @@ const Footer = () => {
             <DynamicIcon iconName="ScreenshotIcon" />
           </IconButton>
         </Box>
+        <Box className="flex justify-center items-center w-1/2 max-w-[600px]">
+        <MediaPlayerContainer />
+          </Box>
 
-        {/* Center Section: Mini Media Player Controls */}
-        <Box className="flex justify-center items-center">
-          {currentTrack && <MiniMediaPlayerControls />}
-        </Box>
 
         {/* Right Section: Output Logger Button */}
-        <Box className="flex justify-center items-center">
+        <Box className="flex justify-center items-end  w-1/4">
           <IconButton
             color="inherit"
             aria-label="open output logger"
@@ -213,7 +131,9 @@ const Footer = () => {
         </Box>
       </Box>
 
-      {/* Output Logger Drawer */}
+      
+
+      {/* Output Logger Drawer (remains unchanged) */}
       <CustomDrawer
         open={logDrawerOpen}
         onClose={handleCloseLogDrawer}
