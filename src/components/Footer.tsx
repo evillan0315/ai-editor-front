@@ -1,23 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { isScreenRecordingStore } from '@/stores/recordingStore';
-import { recordingApi } from '@/api/recording';
-import { setSnackbarState } from '@/stores/snackbarStore';
 import {
+  isScreenRecordingStore,
   currentRecordingIdStore,
   setIsScreenRecording,
+  isCameraRecordingStore,
+  currentCameraRecordingIdStore,
+  setIsCameraRecording,
 } from '@/stores/recordingStore';
+import { recordingApi } from '@/api/recording';
+import { setSnackbarState } from '@/stores/snackbarStore';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import DynamicIcon from './DynamicIcon';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import OutputLogger from '@/components/OutputLogger';
-import MediaPlayerContainer from '@/components/media/MediaPlayerContainer'; // Import MediaPlayerContainer
+import MediaPlayerContainer from '@/components/media/MediaPlayerContainer';
+import { RecordingControls } from '@/components/recording/RecordingControls';
+import { StartCameraRecordingDto } from '@/types';
 
 const Footer = () => {
   const theme = useTheme();
-  const isRecording = useStore(isScreenRecordingStore);
+  const isScreenRecording = useStore(isScreenRecordingStore);
+  const currentScreenRecordingId = useStore(currentRecordingIdStore);
+
+  const isCameraRecording = useStore(isCameraRecordingStore);
+  const currentCameraRecordingId = useStore(currentCameraRecordingIdStore);
+
+  const [isCapturing, setIsCapturing] = useState(false);
   const [logDrawerOpen, setLogDrawerOpen] = useState(false);
 
   const notify = (
@@ -27,41 +38,79 @@ const Footer = () => {
     setSnackbarState({ open: true, message, severity });
   };
 
-  const handleStartRecording = async () => {
+  const handleStartScreenRecording = async () => {
     try {
       const recordingData = await recordingApi.startRecording();
       if (recordingData?.id) {
         currentRecordingIdStore.set(recordingData.id);
         setIsScreenRecording(true);
-        notify('Recording started successfully!', 'success');
+        notify('Screen recording started successfully!', 'success');
       }
     } catch (error) {
-      console.error('Error starting recording:', error);
-      notify(`Error starting recording: ${error}`, 'error');
+      console.error('Error starting screen recording:', error);
+      notify(`Error starting screen recording: ${error}`, 'error');
     }
   };
 
-  const handleStopRecording = async () => {
+  const handleStopScreenRecording = async () => {
     try {
-      if (currentRecordingIdStore.get()) {
-        await recordingApi.stopRecording(currentRecordingIdStore.get());
+      if (currentScreenRecordingId) {
+        await recordingApi.stopRecording(currentScreenRecordingId);
         currentRecordingIdStore.set(null);
         setIsScreenRecording(false);
-        notify('Recording stopped successfully!', 'success');
+        notify('Screen recording stopped successfully!', 'success');
       }
     } catch (error) {
-      console.error('Error stopping recording:', error);
-      notify(`Error stopping recording: ${error}`, 'error');
+      console.error('Error stopping screen recording:', error);
+      notify(`Error stopping screen recording: ${error}`, 'error');
+    }
+  };
+
+  const handleStartCameraRecording = async () => {
+    try {
+      const dto: StartCameraRecordingDto = {
+        cameraDevice: ['/dev/video0'],
+        audioDevice: ['alsa_input.pci-0000_00_1b.0.analog-stereo'],
+        resolution: '1280x720',
+        framerate: 30,
+        name: `camera-record-${Date.now()}`,
+      };
+      const recordingData = await recordingApi.startCameraRecording(dto);
+      if (recordingData?.id) {
+        currentCameraRecordingIdStore.set(recordingData.id);
+        setIsCameraRecording(true);
+        notify('Camera recording started successfully!', 'success');
+      }
+    } catch (error) {
+      console.error('Error starting camera recording:', error);
+      notify(`Error starting camera recording: ${error}`, 'error');
+    }
+  };
+
+  const handleStopCameraRecording = async () => {
+    try {
+      if (currentCameraRecordingId) {
+        await recordingApi.stopCameraRecording(currentCameraRecordingId);
+        currentCameraRecordingIdStore.set(null);
+        setIsCameraRecording(false);
+        notify('Camera recording stopped successfully!', 'success');
+      }
+    } catch (error) {
+      console.error('Error stopping camera recording:', error);
+      notify(`Error stopping camera recording: ${error}`, 'error');
     }
   };
 
   const handleCaptureScreenshot = async () => {
+    setIsCapturing(true);
     try {
       await recordingApi.capture();
       notify('Screenshot captured successfully!', 'success');
     } catch (error) {
       console.error('Error capturing screenshot:', error);
       notify(`Error capturing screenshot: ${error}`, 'error');
+    } finally {
+      setIsCapturing(false);
     }
   };
 
@@ -73,12 +122,8 @@ const Footer = () => {
     setLogDrawerOpen(false);
   };
 
-  // Removed the useEffect that previously handled audioRef and media store updates
-  // This is now managed entirely by MediaPlayerContainer.
-
   return (
-    <> {/* Using a fragment here to wrap both elements for consistent rendering inside Layout's Paper */}
-      {/* Top Section: Recording Controls & Output Logger Button */}
+    <>
       <Box
         className="flex justify-between items-center w-full"
         sx={{
@@ -89,38 +134,24 @@ const Footer = () => {
         }}
       >
         {/* Left Section: Recording Controls */}
-        <Box className="flex justify-center items-center w-1/4">
-          <IconButton
-            color="inherit"
-            aria-label="start recording"
-            disabled={isRecording}
-            onClick={handleStartRecording}
-          >
-            <DynamicIcon iconName="RecordIcon" />
-          </IconButton>
-          <IconButton
-            color="inherit"
-            aria-label="stop recording"
-            disabled={!isRecording}
-            onClick={handleStopRecording}
-          >
-            <DynamicIcon iconName="StopIcon" />
-          </IconButton>
-          <IconButton
-            color="inherit"
-            aria-label="capture screenshot"
-            onClick={handleCaptureScreenshot}
-          >
-            <DynamicIcon iconName="ScreenshotIcon" />
-          </IconButton>
+        <Box className="flex justify-start items-center w-1/4">
+          <RecordingControls
+            isScreenRecording={isScreenRecording}
+            isCameraRecording={isCameraRecording}
+            isCapturing={isCapturing}
+            onStartScreenRecording={handleStartScreenRecording}
+            onStopScreenRecording={handleStopScreenRecording}
+            onStartCameraRecording={handleStartCameraRecording}
+            onStopCameraRecording={handleStopCameraRecording}
+            onCapture={handleCaptureScreenshot}
+          />
         </Box>
         <Box className="flex justify-center items-center w-1/2 max-w-[600px]">
-        <MediaPlayerContainer />
-          </Box>
-
+          <MediaPlayerContainer />
+        </Box>
 
         {/* Right Section: Output Logger Button */}
-        <Box className="flex justify-center items-end  w-1/4">
+        <Box className="flex justify-end items-center w-1/4">
           <IconButton
             color="inherit"
             aria-label="open output logger"
@@ -131,9 +162,6 @@ const Footer = () => {
         </Box>
       </Box>
 
-      
-
-      {/* Output Logger Drawer (remains unchanged) */}
       <CustomDrawer
         open={logDrawerOpen}
         onClose={handleCloseLogDrawer}
