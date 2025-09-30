@@ -50,7 +50,7 @@ export const durationAtom = persistentAtom<number>('media:duration', 0);
 export const bufferedAtom = persistentAtom<BufferedRange[]>(
   'media:buffered',
   [],
-); // New: Buffered ranges atom
+);
 export const isVideoModalOpenAtom = persistentAtom<boolean>(
   'media:isVideoModalOpen',
   false,
@@ -95,6 +95,7 @@ export function resetPlaybackState() {
   bufferedAtom.set([]);
   isVideoModalOpenAtom.set(false);
   // Do not reset mediaElement here, it's managed by the component owning it.
+  // It's cleared by `setMediaElement(null)` in the component's unmount effect.
 }
 
 export const setLoading = (isLoading: boolean) => {
@@ -135,6 +136,10 @@ export const setBuffered = (buffered: BufferedRange[]) => {
 
 export const setVolume = (volume: number) => {
   volumeAtom.set(volume);
+  const mediaElement = $mediaStore.get().mediaElement;
+  if (mediaElement) {
+    mediaElement.volume = volume / 100;
+  }
 };
 
 export const setIsVideoModalOpen = (isOpen: boolean) => {
@@ -166,11 +171,17 @@ export const toggleRepeat = () => {
 };
 
 export const setCurrentTrack = (track: MediaFileResponseDto | null) => {
-  const newTrack: MediaFileResponseDtoUrl = {
-    ...track,
-    streamUrl: getFileStreamUrl(track.path),
-  };
+  const newTrack: MediaFileResponseDtoUrl | null = track
+    ? {
+        ...track,
+        streamUrl: getFileStreamUrl(track.path),
+      }
+    : null;
   currentTrackAtom.set(newTrack);
+  progressAtom.set(0); // Reset progress for new track
+  durationAtom.set(0); // Reset duration for new track
+  setBuffered([]); // Clear buffered ranges for new track
+  setPlaying(true); // Attempt to play new track automatically
 };
 
 export const clearError = () => {
@@ -187,21 +198,19 @@ export const nextTrack = async () => {
     return;
   }
 
-  if (shuffle) {
-    // Logic for shuffled playback (simple random selection)
-    if (allAvailableMediaFiles.length === 0) {
-      console.warn('No tracks available to shuffle.');
-      return;
-    }
+  if (allAvailableMediaFiles.length === 0) {
+    console.warn('No tracks available to play.');
+    return;
+  }
 
+  let nextMediaFile: MediaFileResponseDto;
+
+  if (shuffle) {
     const randomIndex = Math.floor(
       Math.random() * allAvailableMediaFiles.length,
     );
-    const nextTrack = allAvailableMediaFiles[randomIndex];
-    setCurrentTrack(nextTrack);
-    setPlaying(true); // Automatically play next track
+    nextMediaFile = allAvailableMediaFiles[randomIndex];
   } else {
-    // Logic for sequential playback
     const currentIndex = allAvailableMediaFiles.findIndex(
       (track) => track.id === currentTrack.id,
     );
@@ -212,10 +221,9 @@ export const nextTrack = async () => {
     }
 
     const nextIndex = (currentIndex + 1) % allAvailableMediaFiles.length;
-    const nextTrack = allAvailableMediaFiles[nextIndex];
-    setCurrentTrack(nextTrack);
-    setPlaying(true); // Automatically play next track
+    nextMediaFile = allAvailableMediaFiles[nextIndex];
   }
+  setCurrentTrack(nextMediaFile);
 };
 
 export const previousTrack = async () => {
@@ -228,21 +236,19 @@ export const previousTrack = async () => {
     return;
   }
 
-  if (shuffle) {
-    // If shuffle is enabled, play a random track
-    if (allAvailableMediaFiles.length === 0) {
-      console.warn('No tracks available to shuffle.');
-      return;
-    }
+  if (allAvailableMediaFiles.length === 0) {
+    console.warn('No tracks available to play.');
+    return;
+  }
 
+  let previousMediaFile: MediaFileResponseDto;
+
+  if (shuffle) {
     const randomIndex = Math.floor(
       Math.random() * allAvailableMediaFiles.length,
     );
-    const previousTrack = allAvailableMediaFiles[randomIndex];
-    setCurrentTrack(previousTrack);
-    setPlaying(true); // Automatically play previous track
+    previousMediaFile = allAvailableMediaFiles[randomIndex];
   } else {
-    // If shuffle is disabled, play the previous track in the sequence
     const currentIndex = allAvailableMediaFiles.findIndex(
       (track) => track.id === currentTrack.id,
     );
@@ -252,13 +258,12 @@ export const previousTrack = async () => {
       return;
     }
 
-    const previousIndex =
-      (currentIndex - 1 + allAvailableMediaFiles.length) %
-      allAvailableMediaFiles.length;
-    const previousTrack = allAvailableMediaFiles[previousIndex];
-    setCurrentTrack(previousTrack);
-    setPlaying(true); // Automatically play previous track
+    const previousIndex = (
+      currentIndex - 1 + allAvailableMediaFiles.length
+    ) % allAvailableMediaFiles.length;
+    previousMediaFile = allAvailableMediaFiles[previousIndex];
   }
+  setCurrentTrack(previousMediaFile);
 };
 
 export const addMediaToPlaylistAction = async (
@@ -338,7 +343,6 @@ export const fetchingMediaFiles = async (query?: PaginationMediaQueryDto) => {
 
     if (media && media.items) {
       // Update the media store with the fetched media files
-      $mediaStore.setKey('playlists', media.items as MediaFileResponseDto[]); // This seems incorrect, should be allAvailableMediaFiles
       $mediaStore.setKey('allAvailableMediaFiles', media.items);
       return media;
     } else {
