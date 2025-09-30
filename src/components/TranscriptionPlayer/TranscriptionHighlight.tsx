@@ -1,23 +1,24 @@
-// src/components/TranscriptionPlayer/TranscriptionHighlight.tsx
 import React from 'react';
 import { Box, Typography, Chip, Paper } from '@mui/material';
-import { SyncTranscriptionResponse } from '@/types';
+import { SyncTranscriptionResponse, TranscriptionResult } from '@/types';
 
 interface TranscriptionHighlightProps {
   syncData: SyncTranscriptionResponse;
   currentTime: number;
+  fullTranscription: TranscriptionResult | null; // Add this prop
   onSeek: (time: number) => void;
 }
 
 export const TranscriptionHighlight: React.FC<TranscriptionHighlightProps> = ({
   syncData,
   currentTime,
+  fullTranscription, // Destructure new prop
   onSeek,
 }) => {
   const { currentSegment, previousSegments, upcomingSegments } = syncData;
 
   return (
-    <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+    <Box >
       {/* Previous Segments */}
       {previousSegments.map((segment, index) => (
         <Typography
@@ -71,13 +72,15 @@ export const TranscriptionHighlight: React.FC<TranscriptionHighlightProps> = ({
       ))}
 
       {/* Progress Indicator */}
-      <Box sx={{ mt: 2, textAlign: 'center' }}>
-        <Chip
-          label={`Current: ${currentTime.toFixed(1)}s / Total: ${syncData.fullTranscription.duration.toFixed(1)}s`}
-          color="primary"
-          variant="outlined"
-        />
-      </Box>
+      {fullTranscription && ( // Conditionally render if fullTranscription is available
+        <Box sx={{ mt: 2, textAlign: 'center' }}>
+          <Chip
+            label={`Current: ${currentTime.toFixed(1)}s / Total: ${fullTranscription.duration.toFixed(1)}s`} // Use fullTranscription.duration
+            color="primary"
+            variant="outlined"
+          />
+        </Box>
+      )}
     </Box>
   );
 };
