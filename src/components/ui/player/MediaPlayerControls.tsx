@@ -14,6 +14,7 @@ import {
   Shuffle,
   Repeat,
   RepeatOne,
+  Transcribe,
 } from '@mui/icons-material';
 import { useStore } from '@nanostores/react';
 import {
@@ -26,6 +27,8 @@ import {
   shuffleAtom,
   $mediaStore,
   setPlaying,
+  showTranscriptionAtom,
+  toggleShowTranscription,
 } from '@/stores/mediaStore';
 
 interface MediaPlayerControlsProps {
@@ -39,6 +42,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
   const isPlaying = useStore(isPlayingAtom);
   const shuffle = useStore(shuffleAtom);
   const repeatMode = useStore(repeatModeAtom);
+  const showTranscription = useStore(showTranscriptionAtom);
 
   const handlePlayPause = () => {
     setPlaying(!isPlaying);
@@ -50,6 +54,10 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
 
   const handlePrevious = () => {
     previousTrack();
+  };
+
+  const handleToggleTranscription = () => {
+    //toggleShowTranscription();
   };
 
   const $isLoading = loading;
@@ -137,6 +145,19 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
                 color={repeatMode === 'context' ? 'primary' : 'inherit'}
               />
             )}
+          </IconButton>
+        </Tooltip>
+        {/* New Transcription Toggle Button */}
+        <Tooltip title="Toggle Transcription">
+          <IconButton
+            size="small"
+            sx={{ color: theme.palette.text.primary }}
+            onClick={handleToggleTranscription}
+          >
+            <Transcribe
+              fontSize="small"
+              color={showTranscription ? 'primary' : 'inherit'}
+            />
           </IconButton>
         </Tooltip>
       </Box>

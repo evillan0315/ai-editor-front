@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { Box } from '@mui/material';
+import { Box, Paper, Button, CircularProgress, Alert } from '@mui/material';
 import MediaPlayer from '@/components/ui/player/MediaPlayer';
 import {
   $mediaStore,
@@ -20,9 +20,19 @@ import {
   setLoading,
   nextTrack,
   isVideoModalOpenAtom,
+  showTranscriptionAtom,
+  transcriptionSyncDataAtom,
+  transcriptionResultAtom,
+  isTranscribingAtom,
+  transcriptionErrorAtom,
+  fetchAndLoadTranscription,
+  transcribeCurrentAudio,
+  updateCurrentTranscriptionSync,
+  clearTranscriptionData,
 } from '@/stores/mediaStore';
 import { useStore } from '@nanostores/react';
 import { FileType, BufferedRange } from '@/types/refactored/media';
+import { TranscriptionHighlight } from '@/components/TranscriptionPlayer/TranscriptionHighlight';
 
 const MediaError = {
   MEDIA_ERR_ABORTED: 1,
@@ -44,6 +54,14 @@ const MediaPlayerContainer: React.FC = () => {
   const buffered = useStore(bufferedAtom);
   const isVideoModalOpen = useStore(isVideoModalOpenAtom);
   const { loading, error } = useStore($mediaStore);
+
+  // Transcription State
+  const showTranscription = useStore(showTranscriptionAtom);
+  const transcriptionResult = useStore(transcriptionResultAtom);
+  const transcriptionSyncData = useStore(transcriptionSyncDataAtom);
+  const isTranscribing = useStore(isTranscribingAtom);
+  const transcriptionError = useStore(transcriptionErrorAtom);
+
   // Event handlers for the active media element, defined at the top level
   const handleTimeUpdate = useCallback(() => {
     const media = $mediaStore.get().mediaElement; // Use the globally registered media element
@@ -60,8 +78,13 @@ const MediaPlayerContainer: React.FC = () => {
       ) {
         setTrackDuration(Math.floor(media.duration));
       }
+
+      // Update transcription sync data if showing transcription and data is loaded
+      if (showTranscription && transcriptionResult) {
+        updateCurrentTranscriptionSync(currentTrack.id, newProgress);
+      }
     }
-  }, [currentTrack, progress, duration]);
+  }, [currentTrack, progress, duration, showTranscription, transcriptionResult]);
 
   // Handle 'progress' event to update buffered ranges
   const handleProgress = useCallback(() => {
@@ -171,6 +194,17 @@ const MediaPlayerContainer: React.FC = () => {
     setPlaying(false); // Ensure store reflects paused state on error
   }, []);
 
+  const handleTranscriptionSeek = useCallback(
+    (time: number) => {
+      const media = $mediaStore.get().mediaElement;
+      if (media) {
+        media.currentTime = time;
+        setTrackProgress(time);
+      }
+    },
+    [setTrackProgress],
+  );
+
   // Effect to manage the internal media element and register it with the global store
   useEffect(() => {
     const media = internalMediaElementRef.current;
@@ -239,8 +273,87 @@ const MediaPlayerContainer: React.FC = () => {
     }
   }, [isPlaying, $mediaStore.get().mediaElement, currentTrack, isVideoModalOpen]);
 
+  // Effect to manage transcription data based on currentTrack and showTranscription state
+  useEffect(() => {
+    if (currentTrack?.id && showTranscription) {
+      // Only fetch if no transcription is currently loaded for this track
+      if (!transcriptionResult || transcriptionResult.id !== currentTrack.id) {
+        fetchAndLoadTranscription(currentTrack.id);
+      }
+      // Also update sync data immediately if media is playing and transcription is present
+      const media = $mediaStore.get().mediaElement;
+      if (media && transcriptionResult) {
+        updateCurrentTranscriptionSync(currentTrack.id, media.currentTime);
+      }
+    } else {
+      clearTranscriptionData();
+    }
+
+    // Cleanup on unmount or when transcription is hidden
+    return () => {
+      clearTranscriptionData();
+    };
+  }, [currentTrack?.id, showTranscription, transcriptionResult]); // Depend on transcriptionResult to prevent re-fetching if already loaded
+
+
   return (
-    <Box className="flex justify-center items-center"> { /* Fixed height for consistency, removed sticky for parent control */ }
+    <Box className="flex justify-center items-center flex-col w-full"> { /* Fixed height for consistency, removed sticky for parent control */ }
+      {/* Transcription Highlights (conditionally rendered at the top) */}
+      {/*showTranscription && (
+        <Paper
+          elevation={3}
+          sx={{
+            width: '100%',
+            maxWidth: '300px',
+            maxHeight: 200,
+            overflowY: 'auto',
+            p: 2,
+            mb: 2, // Margin bottom to separate from media player controls
+          }}
+        >
+          {isTranscribing && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
+              <CircularProgress size={20} />
+            </Box>
+          )}
+          {transcriptionError && (
+            <Alert severity="error" sx={{ mb: 1 }}>
+              {transcriptionError}
+            </Alert>
+          )}
+          {currentTrack?.fileType !== FileType.AUDIO && (
+            <Alert severity="info" sx={{ mb: 1 }}>
+              Transcription is currently only supported for audio files.
+            </Alert>
+          )}
+          {currentTrack?.fileType === FileType.AUDIO &&
+            !transcriptionResult &&
+            !isTranscribing && (
+              <Button
+                variant="contained"
+                onClick={() =>
+                  currentTrack?.id && transcribeCurrentAudio(currentTrack.id)
+                }
+                disabled={!currentTrack?.id || isTranscribing}
+                sx={{ width: '100%' }}
+              >
+                Transcribe Audio
+              </Button>
+            )}
+
+          {transcriptionResult && transcriptionSyncData && (
+            <TranscriptionHighlight
+              syncData={transcriptionSyncData}
+              currentTime={progress}
+              onSeek={handleTranscriptionSeek}
+            />
+          )}
+          {transcriptionResult && !transcriptionSyncData && !isTranscribing && (
+            <Alert severity="info">Transcription loaded, waiting for sync data.</Alert>
+          )}
+        </Paper>
+      )*/}
+
       {/* Only render an audio element within this container. Video is handled by VideoModal. */}
       {currentTrack?.fileType === FileType.AUDIO && currentTrack?.streamUrl ? (
         <audio
