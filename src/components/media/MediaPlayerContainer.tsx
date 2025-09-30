@@ -70,7 +70,7 @@ const MediaPlayerContainer: React.FC = () => {
   const duration = useStore(durationAtom);
   const buffered = useStore(bufferedAtom);
   const isVideoModalOpen = useStore(isVideoModalOpenAtom);
-  const { loading, error } = useStore($mediaStore);
+  const { isFetchingMedia: loading, fetchMediaError: error } = useStore($mediaStore);
 
   // Transcription State
   const showTranscription = useStore(showTranscriptionAtom);
@@ -355,6 +355,7 @@ const MediaPlayerContainer: React.FC = () => {
             <TranscriptionHighlight
               syncData={transcriptionSyncData}
               currentTime={progress}
+              fullTranscription={transcriptionResult} // Pass full transcription here
               onSeek={handleTranscriptionSeek}
             />
           )}

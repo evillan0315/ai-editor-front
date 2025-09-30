@@ -243,6 +243,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
               <TranscriptionHighlight
                 syncData={transcriptionSyncData}
                 currentTime={currentTime}
+                fullTranscription={transcriptionData} // Pass full transcription here
                 onSeek={(time) => {
                   if (audioRef.current) {
                     audioRef.current.currentTime = time;

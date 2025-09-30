@@ -86,8 +86,8 @@ export const transcriptionErrorAtom = persistentAtom<string | null>(
 
 // --- Map Store (Non-persistent for shared playback state) ---
 export const $mediaStore = map({
-  loading: false,
-  error: null as string | null,
+  isFetchingMedia: false, // Renamed from 'loading'
+  fetchMediaError: null as string | null, // Renamed from 'error'
   currentPlaylist: null as Playlist | null,
   playlists: [] as Playlist[],
   allAvailableMediaFiles: [] as MediaFileResponseDto[],
@@ -120,11 +120,11 @@ export function resetPlaybackState() {
 }
 
 export const setLoading = (isLoading: boolean) => {
-  $mediaStore.setKey('loading', isLoading);
+  $mediaStore.setKey('isFetchingMedia', isLoading);
 };
 
 export const setError = (message: string | null) => {
-  $mediaStore.setKey('error', message);
+  $mediaStore.setKey('fetchMediaError', message);
 };
 
 export const setPlaying = (isPlaying: boolean) => {
@@ -292,7 +292,7 @@ export const setCurrentTrack = (track: MediaFileResponseDto | null) => {
 };
 
 export const clearError = () => {
-  $mediaStore.setKey('error', null);
+  $mediaStore.setKey('fetchMediaError', null);
 };
 
 export const nextTrack = async () => {
@@ -486,8 +486,8 @@ export const deletePlaylistAction = async (id: string) => {
 export const fetchingMediaFiles = async (
   query?: PaginationMediaQueryDto,
 ): Promise<PaginationMediaResultDto | null> => {
-  $mediaStore.setKey('loading', true);
-  $mediaStore.setKey('error', null);
+  $mediaStore.setKey('isFetchingMedia', true);
+  $mediaStore.setKey('fetchMediaError', null);
 
   let audioResult: PaginationMediaResultDto | null = null;
   let videoResult: PaginationMediaResultDto | null = null;
@@ -527,7 +527,7 @@ export const fetchingMediaFiles = async (
     );
   }
 
-  $mediaStore.setKey('loading', false);
+  $mediaStore.setKey('isFetchingMedia', false);
 
   const combinedItems: MediaFileResponseDto[] = [
     ...(audioResult?.items || []),
@@ -547,7 +547,7 @@ export const fetchingMediaFiles = async (
   } else {
     const errorMessage = 'No media files (audio or video) available.';
     showGlobalSnackbar(errorMessage, 'warning');
-    $mediaStore.setKey('error', errorMessage);
+    $mediaStore.setKey('fetchMediaError', errorMessage);
     return null;
   }
 };
