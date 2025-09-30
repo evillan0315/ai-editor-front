@@ -107,12 +107,12 @@ const MediaPlayerContainer: React.FC = () => {
 
   const handlePlaying = useCallback(() => {
     setLoading(false);
-    setPlaying(true); // Media is actually playing
+    // setPlaying(true); // This is now controlled by the useEffect below
     setError(null);
   }, []);
 
   const handlePause = useCallback(() => {
-    setPlaying(false); // Media is actually paused
+    // setPlaying(false); // This is now controlled by the useEffect below
   }, []);
 
   const handleWaiting = useCallback(() => {
@@ -146,8 +146,9 @@ const MediaPlayerContainer: React.FC = () => {
           errorMessage = 'Network error: Media file could not be downloaded.';
           break;
         case MediaError.MEDIA_ERR_DECODE:
-          errorMessage =
-            'Media decoding error: The media file is corrupted or unsupported.';
+          errorMessage = (
+            'Media decoding error: The media file is corrupted or unsupported.'
+          );
           break;
         case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
           errorMessage = 'Media format not supported by your browser.';
@@ -162,6 +163,7 @@ const MediaPlayerContainer: React.FC = () => {
     setLoading(false);
     setPlaying(false); // Ensure store reflects paused state on error
   }, []);
+
   // Effect to manage the internal media element and register it with the global store
   useEffect(() => {
     const media = internalMediaElementRef.current;
@@ -209,22 +211,26 @@ const MediaPlayerContainer: React.FC = () => {
       handlePause, handleWaiting, handleCanPlay, handleError, handleProgress,
   ]);
 
-  
-
-  
-
-  // Effect to trigger play when isPlayingAtom becomes true and a track is loaded
-  // This applies to whatever mediaElement is currently registered in the store.
+  // Effect to control play/pause based on the global isPlayingAtom state.
+  // This handles user-initiated play/pause toggles or initial state sync.
   useEffect(() => {
     const media = $mediaStore.get().mediaElement;
-    if (isPlaying && currentTrack && media) {
-      media.play().catch((e) => {
-        console.error('Autoplay failed (global media element):', e);
-      });
-    } else if (!isPlaying && media) {
-      media.pause();
+    if (!media || isVideoModalOpen) return; // Do not control if media element is not available or video modal is open
+
+    if (isPlaying) {
+      if (media.paused && currentTrack) { // Only attempt to play if currently paused and a track is loaded
+        media.play().catch((e) => {
+          console.error('Autoplay failed from isPlaying useEffect (MediaPlayerContainer):', e);
+          setError('Audio playback prevented. User interaction required.');
+          setPlaying(false); // Reflect actual playback state if autoplay is blocked
+        });
+      }
+    } else {
+      if (!media.paused) {
+        media.pause();
+      }
     }
-  }, [isPlaying, currentTrack, $mediaStore.get().mediaElement]);
+  }, [isPlaying, $mediaStore.get().mediaElement, currentTrack, isVideoModalOpen]);
 
   return (
     <Box className="flex justify-center items-center"> { /* Fixed height for consistency, removed sticky for parent control */ }
