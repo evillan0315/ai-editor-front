@@ -1,5 +1,3 @@
-// /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/src/stores/spotifyStore.ts
-
 import { map } from 'nanostores';
 import { showGlobalSnackbar } from './aiEditorStore';
 import { persistentAtom, mapMediaFileToTrack } from '@/utils';
@@ -181,6 +179,14 @@ export const setCurrentTrack = (track: MediaFileResponseDto | null) => {
   progressAtom.set(0); // Reset progress for new track
   durationAtom.set(0); // Reset duration for new track
   setBuffered([]); // Clear buffered ranges for new track
+
+  // Open VideoModal if the new track is a video
+  if (newTrack?.fileType === FileType.VIDEO) {
+    setIsVideoModalOpen(true);
+  } else {
+    setIsVideoModalOpen(false);
+  }
+
   setPlaying(true); // Attempt to play new track automatically
 };
 

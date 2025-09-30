@@ -22,7 +22,7 @@ import {
   isVideoModalOpenAtom,
 } from '@/stores/mediaStore';
 import { useStore } from '@nanostores/react';
-import { FileType, BufferedRange } from '@/types/refactored/media'; // Ensure correct import for BufferedRange
+import { FileType, BufferedRange } from '@/types/refactored/media';
 
 const MediaError = {
   MEDIA_ERR_ABORTED: 1,
@@ -101,7 +101,7 @@ const MediaPlayerContainer: React.FC = () => {
         setPlaying(true); // Update store
       } else {
         nextTrack(); // Go to next track in queue
-      }s
+      }
     }
   }, [repeatMode]);
 
@@ -227,7 +227,7 @@ const MediaPlayerContainer: React.FC = () => {
   }, [isPlaying, currentTrack, $mediaStore.get().mediaElement]);
 
   return (
-    <Box className="flex justify-center items-center"> {/* Fixed height for consistency, removed sticky for parent control */}
+    <Box className="flex justify-center items-center"> { /* Fixed height for consistency, removed sticky for parent control */ }
       {/* Only render an audio element within this container. Video is handled by VideoModal. */}
       {currentTrack?.fileType === FileType.AUDIO && currentTrack?.streamUrl ? (
         <audio
