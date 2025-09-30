@@ -5,117 +5,138 @@ import { useStore } from '@nanostores/react';
 import { currentTrackAtom } from '@/stores/mediaStore';
 import { FileType } from '@/types/refactored/media';
 
-interface MediaPlayerTrackInfoProps {
-  mediaType: 'AUDIO' | 'VIDEO';
-}
-
-// Define the container styles outside the component for memoization
+// Define styles outside the component for memoization and clean JSX
 const trackInfoWrapperStyles: SxProps = {
   display: 'flex',
   alignItems: 'center',
-  minWidth: 0, // Allow flex item to shrink
-  width: '30%', // Target width, will be adjusted by flexbox in parent
-  overflow: 'hidden', // Hide anything that completely overflows this section
-  flexShrink: 0, // Prevent it from shrinking less than its content would allow without overflow
+  minWidth: 0,
+  width: '30%',
+  overflow: 'hidden',
+  flexShrink: 0,
 };
 
-// Styles for the Box containing the title and artist
 const titleAndArtistColumnStyles: SxProps = {
   display: 'flex',
   flexDirection: 'column',
-  flexGrow: 1, // Allow it to take up available space
-  minWidth: 0, // Crucial for flex items with text overflow to behave correctly
-  mr: 1, // Margin to the right, before the favorite button
+  flexGrow: 1,
+  minWidth: 0,
+  mr: 1,
 };
 
-// Styles for the title wrapper (the viewport for marquee)
-const titleMarqueeViewportStyles: SxProps = {
+// Viewport for the marquee effect, hides overflowing content
+const marqueeViewportStyles: SxProps = {
   overflow: 'hidden',
-  whiteSpace: 'nowrap',
-  width: '100%', // Take full width of its parent (titleAndArtistColumn)
+  width: '100%',
+  position: 'relative',
 };
 
-const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({
-  mediaType,
-}) => {
+const MediaPlayerTrackInfo: React.FC = () => {
   const theme = useTheme();
   const currentTrack = useStore(currentTrackAtom);
-  const titleRef = useRef<HTMLParagraphElement>(null); // Ref for the Typography element
-  const [isTitleOverflowing, setIsTitleOverflowing] = useState(false);
-  const [marqueeOffset, setMarqueeOffset] = useState(0);
-  const [marqueeDuration, setMarqueeDuration] = useState('0s'); // Default duration, no animation
+
+  // Refs for measuring dimensions
+  const titleViewportRef = useRef<HTMLDivElement>(null); // Ref for the Box acting as the visible area
+  const titleMeasurementRef = useRef<HTMLSpanElement>(null); // Ref for a span to measure single title width
+
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const [marqueeDuration, setMarqueeDuration] = useState('0s');
+  const [scrollDistancePx, setScrollDistancePx] = useState(0);
+
+  const titleText = currentTrack?.song?.title || 'Unknown Title';
+  const artistText = currentTrack?.metadata?.[0]?.tags?.join(', ') || 'Unknown Artist';
 
   useEffect(() => {
     const checkOverflow = () => {
-      if (titleRef.current) {
-        const { scrollWidth, clientWidth } = titleRef.current;
-        const overflow = scrollWidth > clientWidth;
-        setIsTitleOverflowing(overflow);
+      if (titleViewportRef.current && titleMeasurementRef.current) {
+        const viewportWidth = titleViewportRef.current.clientWidth;
+
+        // Get the actual rendered width of the single title span
+        const contentNaturalWidth = titleMeasurementRef.current.offsetWidth;
+
+        const overflow = contentNaturalWidth > viewportWidth;
+        setIsOverflowing(overflow);
 
         if (overflow) {
-          // Calculate offset: how much it needs to scroll to show the end.
-          // This is a negative value to scroll left.
-          setMarqueeOffset(-(scrollWidth - clientWidth));
-          // Calculate duration based on distance, faster for longer text
-          const baseSpeed = 25; // pixels per second
-          const distanceAbs = Math.abs(scrollWidth - clientWidth);
-          // Minimum 8 seconds, max 40 seconds, adjust speed (distance / baseSpeed)
-          const calculatedDuration = Math.min(40, Math.max(8, distanceAbs / baseSpeed));
-          setMarqueeDuration(`${calculatedDuration}s`);
+          const speedFactor = 30; // Pixels per second for scrolling speed
+          const gapWidth = 32; // Equivalent to '2em' in px, for the space between duplicated titles
+
+          // The animation should scroll one full instance of the title + the gap,
+          // then the next instance starts from the right edge.
+          const distanceToScroll = contentNaturalWidth + gapWidth;
+          const duration = distanceToScroll / speedFactor;
+
+          setScrollDistancePx(-distanceToScroll); // Negative value for leftward scroll
+          setMarqueeDuration(`${duration}s`);
         } else {
-          // Reset if not overflowing
-          setMarqueeOffset(0);
-          setMarqueeDuration('0s'); // No animation
+          setScrollDistancePx(0);
+          setMarqueeDuration('0s');
         }
       }
     };
 
-    // Initial check and re-check on window resize and when currentTrack changes
+    // Use a ResizeObserver on the viewport to detect size changes
+    let resizeObserver: ResizeObserver | null = null;
+    if (titleViewportRef.current) {
+      resizeObserver = new ResizeObserver(checkOverflow);
+      resizeObserver.observe(titleViewportRef.current);
+    }
+    
+    // Initial check when component mounts or titleText changes
     checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-    return () => {
-      window.removeEventListener('resize', checkOverflow);
-    };
-  }, [currentTrack]); // Dependency on currentTrack to re-evaluate on track change
 
-  // Styles for the scrolling typography
-  const scrollingTitleStyles: SxProps = {
-    fontWeight: 'bold',
-    // whiteSpace: 'nowrap' is handled by the .track-title-text class
-  };
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, [titleText]); // Re-evaluate when title string changes
 
   return (
     <Box sx={trackInfoWrapperStyles}>
       {currentTrack?.fileType === FileType.VIDEO ? (
-        <Movie
-          sx={{ fontSize: 40, mr: 1, color: theme.palette.text.secondary }}
-        />
+        <Movie sx={{ fontSize: 40, mr: 1, color: theme.palette.text.secondary }} />
       ) : (
-        <Album
-          sx={{ fontSize: 40, mr: 1, color: theme.palette.text.secondary }}
-        />
+        <Album sx={{ fontSize: 40, mr: 1, color: theme.palette.text.secondary }} />
       )}
       <Box sx={titleAndArtistColumnStyles}>
-        {/* Title container that acts as the viewport */} 
-        <Box sx={titleMarqueeViewportStyles} className="track-title-wrapper">
+        {/* Viewport for the marquee effect */}
+        <Box ref={titleViewportRef} sx={marqueeViewportStyles}>
+          {/* The actual scrolling content, contains one or two titles */}
           <Typography
-            ref={titleRef}
             variant="body2"
-            sx={scrollingTitleStyles}
-            className={isTitleOverflowing ? 'track-title-text animate-marquee' : 'track-title-text'}
-            // Dynamically set CSS variable for marquee-scroll animation
-            style={{ '--marquee-offset': `${marqueeOffset}px`, animationDuration: marqueeDuration } as React.CSSProperties}
+            sx={{
+              fontWeight: 'bold',
+              whiteSpace: 'nowrap',
+              display: 'inline-block',
+              willChange: 'transform',
+              // Dynamic CSS variables for animation
+              '--marquee-scroll-distance': `${scrollDistancePx}px`,
+              animation: isOverflowing 
+                ? `marquee-seamless ${marqueeDuration} linear infinite` 
+                : 'none',
+              animationPlayState: isOverflowing ? 'running' : 'paused', // Pause when not overflowing
+            }}
+            key={currentTrack?.id || 'no-track'} // Force re-render/re-animation on track change
           >
-            {currentTrack?.song?.title || 'Unknown Title'}
+            {/* This span measures the natural width of a single title. It is part of the flow. */}
+            <span ref={titleMeasurementRef}>
+              {titleText}
+            </span>
+            {isOverflowing && (
+              // Duplicating text for a seamless loop, only if overflowing
+              <span style={{ marginLeft: '2em' }}>
+                {titleText}
+              </span>
+            )}
           </Typography>
         </Box>
         <Typography variant="caption" color="text.secondary" noWrap>
-          {currentTrack?.metadata?.[0]?.tags?.join(', ') || 'Unknown Artist'}
+          {artistText}
         </Typography>
       </Box>
       <IconButton
         size="small"
-        sx={{ ml: 0, color: theme.palette.text.secondary, flexShrink: 0 }} // ml:0 for tight spacing, flexShrink: 0 to not shrink
+        sx={{ ml: 0, color: theme.palette.text.secondary, flexShrink: 0 }}
         disabled
       >
         <FavoriteBorder fontSize="small" />
