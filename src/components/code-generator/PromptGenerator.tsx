@@ -380,7 +380,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         handleSave={handleSave}
         errorLlm={errorLlm}
         responseLlm={response}
-        editorContent={editorContent}
+        editorContent={extractCodeFromMarkdown(editorContent)}
         commonDisabled={commonDisabled}
       />
     </Box>

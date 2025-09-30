@@ -200,7 +200,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           <IconButton
             color="primary"
             onClick={toggleCodeRepair}
-            disabled={commonDisabled || !!editorContent}
+            disabled={commonDisabled }
           >
             <BugReportIcon />
           </IconButton>
