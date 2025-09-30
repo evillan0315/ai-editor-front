@@ -1,4 +1,4 @@
-import { map } from 'nanostores';
+import { map, atom } from 'nanostores';
 import { showGlobalSnackbar } from './aiEditorStore';
 import { persistentAtom, mapMediaFileToTrack } from '@/utils';
 import {
@@ -69,17 +69,12 @@ export const showTranscriptionAtom = persistentAtom<boolean>(
 ); // Persistent: Toggles transcription display
 
 // Transcription data (non-persistent, specific to current track)
-export const transcriptionResultAtom = persistentAtom<TranscriptionResult | null>(
-  'media:transcriptionResult',
+export const transcriptionResultAtom = atom<TranscriptionResult | null>(
   null,
-  { encode: JSON.stringify, decode: JSON.parse }, // Needed for objects
 );
-export const transcriptionSyncDataAtom = persistentAtom<
-  SyncTranscriptionResponse | null
->('media:transcriptionSyncData', null, {
-  encode: JSON.stringify,
-  decode: JSON.parse,
-}); // Needed for objects
+export const transcriptionSyncDataAtom = atom<SyncTranscriptionResponse | null>(
+  null,
+);
 export const isTranscribingAtom = persistentAtom<boolean>(
   'media:isTranscribing',
   false,
@@ -97,11 +92,6 @@ export const $mediaStore = map({
   playlists: [] as Playlist[],
   allAvailableMediaFiles: [] as MediaFileResponseDto[],
   mediaElement: null as HTMLMediaElement | null, // Added to store direct media element reference
-    // ADD THESE TRANSCRIPTION INITIAL STATES:
-  transcriptionData: null,
-  transcriptionSyncData: null,
-  isTranscribing: false,
-  transcriptionError: null,
 });
 
 // --- Global Actions (Stateless logic) ---
@@ -283,6 +273,7 @@ export const setCurrentTrack = (track: MediaFileResponseDto | null) => {
     const transcriptionMetadata = newTrack.metadata.find(
       (m) => m.type === FileType.TRANSCRIPT,
     );
+    console.log(transcriptionMetadata, 'transcriptionMetadata');
     if (transcriptionMetadata && transcriptionMetadata.data) {
       // The 'data' field of TRANSCRIPT metadata is expected to be a TranscriptionResult
       transcriptionResultAtom.set(transcriptionMetadata.data as TranscriptionResult);

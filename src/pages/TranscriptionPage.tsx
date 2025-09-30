@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import TranscribeIcon from '@mui/icons-material/Transcribe';
 import { useStore } from '@nanostores/react';
-import { $spotifyStore, fetchMediaForPurpose } from '@/stores/spotifyStore';
+import { $mediaStore, fetchingMediaFiles } from '@/stores/mediaStore';
 import { getFileStreamUrl } from '@/api/media';
 
 import { TranscriptionPlayer } from '@/components/TranscriptionPlayer/TranscriptionPlayer'; // Correct import path
@@ -26,7 +26,7 @@ interface TranscriptionPageProps {}
 const TranscriptionPage: React.FC<TranscriptionPageProps> = () => {
   const theme = useTheme();
   const { allAvailableMediaFiles, isFetchingMedia, fetchMediaError } =
-    useStore($spotifyStore);
+    useStore($mediaStore);
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
 
   useEffect(() => {
