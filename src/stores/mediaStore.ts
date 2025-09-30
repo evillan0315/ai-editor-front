@@ -334,7 +334,12 @@ export const deletePlaylistAction = async (id: string) => {
 export const fetchingMediaFiles = async (query?: PaginationMediaQueryDto) => {
   $mediaStore.setKey('loading', true);
   try {
-    const media = await fetchMediaFiles(query);
+    // Ensure that only AUDIO and VIDEO file types are fetched for the media player context
+    const mergedQuery: PaginationMediaQueryDto = {
+      ...query,
+      fileType: [FileType.AUDIO, FileType.VIDEO],
+    };
+    const media = await fetchMediaFiles(mergedQuery);
     $mediaStore.setKey('loading', false);
 
     if (media && media.items) {
