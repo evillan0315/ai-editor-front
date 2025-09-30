@@ -37,7 +37,7 @@ export interface LlmStoreState {
   isBuilding: boolean;
 }
 
-export const llmStore = map<LlmStoreState>({
+const INITIAL_LLM_STORE_STATE: LlmStoreState = {
   instruction: '',
   aiInstruction: INSTRUCTION,
   expectedOutputInstruction: ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
@@ -46,7 +46,7 @@ export const llmStore = map<LlmStoreState>({
 
   response: null,
   loading: false,
-  error: null,
+  errorLlm: null,
   scanPathsInput: 'eslint.config.ts, vite.config.ts, package.json,README.md',
   lastLlmResponse: null,
   lastLlmGeneratePayload: null,
@@ -57,7 +57,17 @@ export const llmStore = map<LlmStoreState>({
   applyingChanges: false,
   gitInstructions: null,
   isBuilding: false,
-});
+};
+
+export const llmStore = map<LlmStoreState>(INITIAL_LLM_STORE_STATE);
+
+/**
+ * Clears all LLM store state to its initial values.
+ */
+export const clearLlmStore = () => {
+  llmStore.set(INITIAL_LLM_STORE_STATE);
+  addLog('LLM Store', 'LLM store state cleared.', 'info');
+};
 
 /**
  * Set loading state for LLM generation
@@ -99,7 +109,11 @@ export const setLastLlmGeneratePayload = (
 ) => {
   llmStore.setKey('lastLlmGeneratePayload', payload);
 };
+export const setLlmError = (error: string) =>
+  llmStore.setKey('errorLlm', error);
 
+export const setLlmResponse = (response: string) =>
+  llmStore.setKey('response', response);
 // ────────────────────────────
 // Safe setter for last LLM response
 // ────────────────────────────

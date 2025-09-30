@@ -20,10 +20,9 @@ import {
 } from '@mui/material';
 import {
   Send as SendIcon,
-  ExpandMore as ExpandMoreIcon,
-  BugReport as BugReportIcon,
+  ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
-import { setError } from '@/stores/errorStore';
+import { setError, setErrorRaw } from '@/stores/errorStore';
 import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
 import {
   llmStore,
@@ -36,6 +35,8 @@ import {
   setCurrentDiff,
   setIsBuilding,
   setLoading,
+  setLlmError,
+  setLlmResponse
 } from '@/stores/llmStore';
 import { authStore } from '@/stores/authStore';
 import {
@@ -81,12 +82,14 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
     requestType,
     llmOutputFormat,
     scanPathsInput,
+    errorLlm,
+    response
   } = useStore(llmStore);
   // ---- local state ----
   const [projectInput, setProjectInput] = useState(
     currentProjectPath || import.meta.env.VITE_BASE_DIR || '',
   );
-  const [editorContent, setEditorContent] = useState('');
+  const [editorContent, setEditorContent] = useState(null);
   const [isPickerDialogOpen, setIsPickerDialogOpen] = useState(false);
   const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] =
     useState(false);
@@ -96,7 +99,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const [importedData, setImportedData] = useState<CodeGeneratorData | null>(
     null,
   );
-  const [isCodeRepairOpen, setIsCodeRepairOpen] = useState(false);
+
 
   const commonDisabled = !isLoggedIn || loading || isBuilding;
 
@@ -208,7 +211,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
       setLastLlmGeneratePayload(payload);
 
       const aiResponse: ModelResponse = await generateCode(payload);
-      console.log(aiResponse, 'aiResponse');
+   
 
       // Normalize errors to strings
       let errorMessage: string | null = null;
@@ -219,10 +222,14 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
             : typeof aiResponse.error === 'string'
               ? aiResponse.error
               : JSON.stringify(aiResponse.error);
+        setError(errorMessage);
+        setLlmError(errorMessage);
       }
 
       // If rawResponse is available, set it in the editor safely
       if (aiResponse.rawResponse) {
+        setErrorRaw(aiResponse.rawResponse);
+        setLlmResponse(aiResponse.rawResponse);
         try {
           setEditorContent(JSON.parse(aiResponse.rawResponse));
         } catch {
@@ -260,7 +267,6 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         setError(errorMessage);
         addLog('Prompt Generator', errorMessage, 'error');
         showGlobalSnackbar(errorMessage, 'error');
-        setIsCodeRepairOpen(true);
       }
     } catch (err) {
       const msg = `Failed to generate code: ${err instanceof Error ? err.message : String(err)}`;
@@ -299,31 +305,11 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
     onClose(); // Close the settings dialog
   }, [aiInstruction, expectedOutputInstruction]);
 
-  const toggleCodeRepair = useCallback(() => {
-    setIsCodeRepairOpen((open) => !open);
-  }, []);
+
 
   // ---- render ----
   return (
-    <Box className="flex flex-col gap-2 w-full relative p-4">
-      {/*editorContent && (
-        <Accordion defaultExpanded>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography>Code Editor</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box className="rounded-5 h-full">
-              <CodeRepair
-                value={editorContent}
-                onChange={setEditorContent}
-                filePath="temp.json"
-                height="160px"
-              />
-            </Box>
-          </AccordionDetails>
-        </Accordion>
-      )*/}
-
+    <Box className="flex flex-col gap-2 w-full relative ">
       <Box
         position="relative"
         className="mt-2 px-2 pr-12 overflow-auto max-h-[80px] items-end h-full"
@@ -366,15 +352,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
             {loading ? <CircularProgress size={16} /> : <SendIcon />}
           </IconButton>
         </Tooltip>
-        <Tooltip title="Toggle Code Repair Drawer">
-          <IconButton
-            color="primary"
-            onClick={toggleCodeRepair}
-            disabled={commonDisabled || !!error}
-          >
-            <BugReportIcon />
-          </IconButton>
-        </Tooltip>
+        
       </Box>
       {loading && (
         <Box className="mt-2 flex items-center">
@@ -400,23 +378,11 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         handleClear={handleClear}
         requestType={requestType}
         handleSave={handleSave}
+        errorLlm={errorLlm}
+        responseLlm={response}
+        editorContent={editorContent}
+        commonDisabled={commonDisabled}
       />
-      <CustomDrawer
-        open={isCodeRepairOpen}
-        onClose={() => setIsCodeRepairOpen(false)}
-        position="left"
-        size="large"
-        title="Code Repair"
-        hasBackdrop={false}
-      >
-        {/*error && <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='400px' />*/}
-        <CodeRepair
-          value={extractCodeFromMarkdown(editorContent)}
-          onChange={setEditorContent}
-          filePath="temp.json"
-          height="100%"
-        />
-      </CustomDrawer>
     </Box>
   );
 };

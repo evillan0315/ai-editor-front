@@ -1,8 +1,11 @@
 import React from 'react';
+import { useStore } from '@nanostores/react';
+import { errorStore } from '@/stores/errorStore';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { Box, IconButton, Tooltip } from '@mui/material';
-import { Undo as UndoIcon, Redo as RedoIcon } from '@mui/icons-material';
+import { Undo as UndoIcon, Redo as RedoIcon, TipsAndUpdates as TipsAndUpdatesIcon  } from '@mui/icons-material';
 import AutoFixIcon from '@mui/icons-material/DeveloperMode';
+
 interface CodeRepairProps {
   value: string;
   onChange: (value: string) => void;
@@ -29,6 +32,7 @@ export const CodeRepair: React.FC<CodeRepairProps> = ({
   height,
   width,
 }) => {
+  const { raw, message } = useStore(errorStore);
   const handleFix = () => {
     console.log('Fixing code...');
     // Implement your fix logic here
@@ -81,6 +85,12 @@ export const CodeRepair: React.FC<CodeRepairProps> = ({
     // Implement redo logic here
   };
 
+  const handleExportToLLM = () => {
+    console.log('Exporting code to LLM:', value);
+    // In a real scenario, you would send 'value' to an LLM API endpoint
+    // Example: sendCodeToLLMAPI(value);
+  };
+
   return (
     <Box
       sx={{
@@ -111,6 +121,11 @@ export const CodeRepair: React.FC<CodeRepairProps> = ({
           gap: (theme) => theme.spacing(1),
         }}
       >
+        <Tooltip title="Export to LLM">
+          <IconButton color="primary" onClick={handleExportToLLM}>
+            <TipsAndUpdatesIcon />
+          </IconButton>
+        </Tooltip>
         <Tooltip title="Fix">
           <IconButton color="primary" onClick={handleFix}>
             <AutoFixIcon />

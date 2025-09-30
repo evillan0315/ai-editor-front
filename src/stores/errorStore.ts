@@ -6,10 +6,12 @@ import { map } from 'nanostores';
  */
 export interface ErrorStoreState {
   /** Latest error message to display or log. */
+  raw: string | null;
   message: string | null;
 }
 
 export const errorStore = map<ErrorStoreState>({
+  raw: null,
   message: null,
 });
 
@@ -20,7 +22,9 @@ export const errorStore = map<ErrorStoreState>({
 export function setError(message: string): void {
   errorStore.setKey('message', message);
 }
-
+export function setErrorRaw(raw: string): void {
+  errorStore.setKey('raw', raw);
+}
 /**
  * Clear the current error message.
  * Useful after the UI shows a toast or alert.

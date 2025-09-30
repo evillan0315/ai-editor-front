@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   Box,
   Tooltip,
@@ -16,12 +16,17 @@ import {
   Clear as ClearIcon,
   Close as CloseIcon,
   Save as SaveIcon,
+  BugReport as BugReportIcon
 } from '@mui/icons-material';
 import {
   setScanPathsInput,
   setLastLlmResponse,
   setCurrentDiff,
   setIsBuilding,
+  llmStore,
+  setLlmResponse,
+  setLlmError,
+  clearLlmStore
 } from '@/stores/llmStore';
 import {
   loadInitialTree,
@@ -29,7 +34,8 @@ import {
   setCurrentProjectPath,
 } from '@/stores/fileTreeStore';
 import { addLog } from '@/stores/logStore';
-import { autoApplyChanges, setAutoApplyChanges } from '@/stores/aiEditorStore';
+import { errorStore, setErrorRaw } from '@/stores/errorStore';
+import { autoApplyChanges, setAutoApplyChanges, showGlobalSnackbar } from '@/stores/aiEditorStore';
 import { useStore } from '@nanostores/react';
 import FilePickerDialog from '@/components/dialogs/FilePickerDialog';
 import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
@@ -38,8 +44,10 @@ import PromptGeneratorSettings, {
   type GlobalAction,
 } from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
+import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import ImportData from './ImportData';
-import { ImportJsonDialog } from './ImportJsonDialog';
+import { ImportJsonDialog } from './ImportJson';
+import { CodeGeneratorData } from './CodeGeneratorMain';
 import { setOpenedFileContent } from '@/stores/fileStore';
 import { RequestType } from '@/types/llm';
 import { SvgIconComponent } from '@mui/material';
@@ -63,6 +71,8 @@ interface BottomToolbarProps {
   updateScanPaths: (paths: string[]) => void;
   requestType: RequestType;
   handleSave: () => void; // Add handleSave prop
+  editorContent?: string;
+  commonDisabled?: boolean;
 }
 
 const BottomToolbar: React.FC<BottomToolbarProps> = ({
@@ -84,11 +94,39 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   updateScanPaths,
   requestType,
   handleSave, // Receive handleSave
+  editorContent,
+  commonDisabled
 }) => {
   const theme = useTheme();
   const $autoApplyChanges = useStore(autoApplyChanges);
+  const [importContent, setImportContent] = useState<CodeGeneratorData>(null);
+  const [isCodeRepairOpen, setIsCodeRepairOpen] = useState(false);
+  const { lastLlmResponse, errorLlm, response } = useStore(llmStore);
+  const { raw, message } = useStore(errorStore);
 
-  const commonDisabled = false;
+  const toggleCodeRepair = useCallback(() => {
+    setIsCodeRepairOpen((open) => !open);
+  }, []);
+  const handleImport = () => {
+    try {
+      console.log(importContent, 'importContent');
+      const iData = JSON.parse(importContent);
+      setLastLlmResponse(iData);
+    } catch (err) {
+    console.log(err, 'err');
+      setLastLlmResponse(null);
+      const msg = `Invalid JSON: ${err instanceof Error ? err.message : String(err)}`;
+      showGlobalSnackbar(msg, 'error');
+    }
+  };
+  const handleImportJson = React.useCallback(
+    (value: CodeGeneratorData) => {
+      setImportContent(value);
+    },
+    [],
+  );
+
+ 
   const GlobalActionButtons: GlobalAction[] = [
     {
       label: 'Cancel',
@@ -97,13 +135,23 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
     },
     { label: 'Save', action: handleSave, icon: SaveIcon },
   ]; // Pass handleSave to the action
-
-  const handleImportJson = () => {
-    console.log('handleImportJson');
-  };
+  const ImportDataAction: GlobalAction[] = [
+    {
+      label: 'Cancel',
+      action: () => setIsImportDialogOpen(false),
+      icon: CloseIcon,
+    },
+    { label: 'Import', action: handleImport, icon: CloudUploadIcon },
+  ]; 
+  
   return (
     <Box className="flex items-center justify-between gap-2 ">
       <Box className="flex flex-wrap gap-2 ">
+        <Tooltip title="Prompt generator settings">
+          <IconButton color="primary" onClick={() => setIsSettingsOpen(true)}>
+            <SettingsIcon />
+          </IconButton>
+        </Tooltip>
         <Tooltip title="Load the selected project">
           <IconButton
             color="primary"
@@ -132,6 +180,9 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           </IconButton>
         </Tooltip>
 
+        
+
+        
         {requestType === RequestType.LLM_GENERATION && (
           <Tooltip title="Import prompt data from JSON file">
             <IconButton
@@ -142,17 +193,20 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
             </IconButton>
           </Tooltip>
         )}
-
-        <Tooltip title="Prompt generator settings">
-          <IconButton color="primary" onClick={() => setIsSettingsOpen(true)}>
-            <SettingsIcon />
-          </IconButton>
-        </Tooltip>
       </Box>
       {requestType === RequestType.LLM_GENERATION && (
-        <Box className="flex flex-wrap gap-2 ">
+        <Box className="flex flex-wrap gap-0 ">
+          <Tooltip title="Toggle Code Repair Drawer">
+          <IconButton
+            color="primary"
+            onClick={toggleCodeRepair}
+            disabled={commonDisabled || !!editorContent}
+          >
+            <BugReportIcon />
+          </IconButton>
+        </Tooltip>
           <Tooltip title="Clear editor and AI response">
-            <IconButton color="error" disabled={commonDisabled}>
+            <IconButton color="error" onClick={clearLlmStore} disabled={commonDisabled}>
               <ClearIcon />
             </IconButton>
           </Tooltip>
@@ -160,6 +214,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           <FormControlLabel
             control={
               <Switch
+                className='ml-2'
                 checked={$autoApplyChanges}
                 onChange={(e) => setAutoApplyChanges(e.target.checked)}
                 name="autoApply"
@@ -188,12 +243,20 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         initialPath={projectInput || '/'}
         allowExternalPaths
       />
-      <ImportJsonDialog
+      <CustomDrawer
         open={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
-        onImport={handleImportJson}
+        position="left"
+        size="medium"
+        title="Import Data"
+        hasBackdrop={true}
+        footerActionButton={ImportDataAction}
+      >
+      <ImportJsonDialog
+        value={importContent || ''}
+        onChange={handleImportJson}
       />
-
+      </CustomDrawer>
       {/*<CustomDrawer
         open={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
@@ -219,6 +282,22 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         <PromptGeneratorSettings
           open={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
+        />
+      </CustomDrawer>
+      <CustomDrawer
+        open={isCodeRepairOpen}
+        onClose={() => setIsCodeRepairOpen(false)}
+        position="left"
+        size="large"
+        title="Code Repair"
+        hasBackdrop={false}
+      >
+        {/*error && <CodeRepair value={editorContent} onChange={setEditorContent} filePath='temp.json' height='400px' />*/}
+        <CodeRepair
+          value={response || ''}
+          onChange={setLlmResponse}
+          filePath="temp.json"
+          height="100%"
         />
       </CustomDrawer>
     </Box>
