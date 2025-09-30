@@ -14,6 +14,7 @@ import {
   PaginationMediaQueryDto,
   FileType,
   BufferedRange,
+  PaginationMediaResultDto,
 } from '@/types/refactored/media';
 import {
   fetchPlaylists,
@@ -372,41 +373,73 @@ export const deletePlaylistAction = async (id: string) => {
   }
 };
 
-export const fetchingMediaFiles = async (query?: PaginationMediaQueryDto) => {
+export const fetchingMediaFiles = async (
+  query?: PaginationMediaQueryDto,
+): Promise<PaginationMediaResultDto | null> => {
   $mediaStore.setKey('loading', true);
-  try {
-    // Ensure that only AUDIO and VIDEO file types are fetched for the media player context
-    const mergedQuery: PaginationMediaQueryDto = {
-      ...query,
-      fileType: [FileType.AUDIO, FileType.VIDEO],
-    };
-    const media = await fetchMediaFiles(mergedQuery);
-    $mediaStore.setKey('loading', false);
+  $mediaStore.setKey('error', null);
 
-    if (media && media.items) {
-      // Update the media store with the fetched media files
-      $mediaStore.setKey('allAvailableMediaFiles', media.items);
-      return media;
-    } else {
-      // If media or media.items is undefined, handle the case appropriately
-      showGlobalSnackbar(
-        'Failed to fetch media files or empty media list',
-        'warning',
-      );
-      $mediaStore.setKey(
-        'error',
-        'Failed to fetch media files or empty media list',
-      );
-      return null;
-    }
-  } catch (error: any) {
-    $mediaStore.setKey('loading', false);
-    // Handle errors and display a snackbar
+  let audioResult: PaginationMediaResultDto | null = null;
+  let videoResult: PaginationMediaResultDto | null = null;
+
+  // Apply default pagination and merge any provided query parameters
+  const commonQuery: PaginationMediaQueryDto = {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  };
+
+  try {
+    // Fetch AUDIO files
+    const audioQuery: PaginationMediaQueryDto = {
+      ...commonQuery,
+      fileType: [FileType.AUDIO],
+    };
+    audioResult = await fetchMediaFiles(audioQuery);
+  } catch (err: any) {
+    console.error('Error fetching audio files:', err);
     showGlobalSnackbar(
-      `Failed to fetch media files: ${error.message}`,
+      `Failed to fetch audio files: ${err.message || 'Unknown error'}`,
       'error',
     );
-    $mediaStore.setKey('error', error.message);
+  }
+
+  try {
+    // Fetch VIDEO files
+    const videoQuery: PaginationMediaQueryDto = {
+      ...commonQuery,
+      fileType: [FileType.VIDEO],
+    };
+    videoResult = await fetchMediaFiles(videoQuery);
+  } catch (err: any) {
+    console.error('Error fetching video files:', err);
+    showGlobalSnackbar(
+      `Failed to fetch video files: ${err.message || 'Unknown error'}`,
+      'error',
+    );
+  }
+
+  $mediaStore.setKey('loading', false);
+
+  const combinedItems: MediaFileResponseDto[] = [
+    ...(audioResult?.items || []),
+    ...(videoResult?.items || []),
+  ];
+  const combinedTotal = (audioResult?.total || 0) + (videoResult?.total || 0);
+
+  if (combinedItems.length > 0) {
+    $mediaStore.setKey('allAvailableMediaFiles', combinedItems);
+    return {
+      items: combinedItems,
+      total: combinedTotal,
+      page: commonQuery.page || 1,
+      pageSize: commonQuery.pageSize || 100,
+      totalPages: Math.ceil(combinedTotal / (commonQuery.pageSize || 100)),
+    };
+  } else {
+    const errorMessage = 'No media files (audio or video) available.';
+    showGlobalSnackbar(errorMessage, 'warning');
+    $mediaStore.setKey('error', errorMessage);
     return null;
   }
 };

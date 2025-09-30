@@ -4,6 +4,7 @@ import {
   IconButton,
   useTheme,
   CircularProgress,
+  Tooltip,
 } from '@mui/material';
 import {
   PlayArrow,
@@ -64,63 +65,80 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0, mt: 0 }}>
-        <IconButton
-          size="small"
-          sx={{ color: theme.palette.text.primary }}
-          onClick={toggleShuffle}
+        <Tooltip title="Shuffle">
+          <IconButton
+            size="small"
+            sx={{ color: theme.palette.text.primary }}
+            onClick={toggleShuffle}
+          >
+            <Shuffle fontSize="small" color={shuffle ? 'primary' : 'inherit'} />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Previous Track">
+          <IconButton
+            size="small"
+            sx={{ color: theme.palette.text.primary }}
+            onClick={handlePrevious}
+          >
+            <SkipPrevious fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={isPlaying ? 'Pause' : 'Play'}>
+          <IconButton
+            size="small"
+            onClick={handlePlayPause}
+            disabled={$isLoading}
+            sx={{
+              color: theme.palette.text.primary,
+              bgcolor: theme.palette.primary.main,
+              '&:hover': {
+                bgcolor: theme.palette.primary.dark,
+              },
+              borderRadius: '50%',
+            }}
+          >
+            {$isLoading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : isPlaying ? (
+              <Pause fontSize="small" />
+            ) : (
+              <PlayArrow fontSize="small" />
+            )}
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Next Track">
+          <IconButton
+            size="small"
+            sx={{ color: theme.palette.text.primary }}
+            onClick={handleNext}
+          >
+            <SkipNext fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip
+          title={
+            repeatMode === 'off'
+              ? 'Repeat All'
+              : repeatMode === 'context'
+                ? 'Repeat One'
+                : 'Repeat Off'
+          }
         >
-          <Shuffle fontSize="small" color={shuffle ? 'primary' : 'inherit'} />
-        </IconButton>
-        <IconButton
-          size="small"
-          sx={{ color: theme.palette.text.primary }}
-          onClick={handlePrevious}
-        >
-          <SkipPrevious fontSize="small" />
-        </IconButton>
-        <IconButton
-          size="small"
-          onClick={handlePlayPause}
-          disabled={$isLoading}
-          sx={{
-            color: theme.palette.text.primary,
-            bgcolor: theme.palette.primary.main,
-            '&:hover': {
-              bgcolor: theme.palette.primary.dark,
-            },
-            borderRadius: '50%',
-
-          }}
-        >
-          {$isLoading ? (
-            <CircularProgress size={20} color="inherit" />
-          ) : isPlaying ? (
-            <Pause fontSize="small" />
-          ) : (
-            <PlayArrow fontSize="small" />
-          )}
-        </IconButton>
-        <IconButton
-          size="small"
-          sx={{ color: theme.palette.text.primary }}
-          onClick={handleNext}
-        >
-          <SkipNext fontSize="small" />
-        </IconButton>
-        <IconButton
-          size="small"
-          sx={{ color: theme.palette.text.primary }}
-          onClick={toggleRepeat}
-        >
-          {repeatMode === 'track' ? (
-            <RepeatOne fontSize="small" color="primary" />
-          ) : (
-            <Repeat
-              fontSize="small"
-              color={repeatMode === 'context' ? 'primary' : 'inherit'}
-            />
-          )}
-        </IconButton>
+          <IconButton
+            size="small"
+            sx={{ color: theme.palette.text.primary }}
+            onClick={toggleRepeat}
+          >
+            {repeatMode === 'track' ? (
+              <RepeatOne fontSize="small" color="primary" />
+            ) : (
+              <Repeat
+                fontSize="small"
+                color={repeatMode === 'context' ? 'primary' : 'inherit'}
+              />
+            )}
+          </IconButton>
+        </Tooltip>
       </Box>
     </Box>
   );

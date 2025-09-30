@@ -92,18 +92,25 @@ const MediaPlayerContainer: React.FC = () => {
   }, []);
 
   const handleEnded = useCallback(() => {
-    const media = $mediaStore.get().mediaElement; // Use the globally registered media element
+    const media = $mediaStore.get().mediaElement;
     if (media) {
-      setPlaying(false); // Ensure UI reflects paused state
       if (repeatMode === 'track') {
         media.currentTime = 0;
-        media.play(); // Restart current track
-        setPlaying(true); // Update store
+        // Attempt to play, catch potential errors like autoplay policy blocking
+        media.play().catch((e) => {
+          console.error('Playback failed on repeat track (MediaPlayerContainer):', e);
+          setError('Failed to repeat track. User interaction might be required.');
+          setPlaying(false); // Explicitly pause in store if repeat play fails
+        });
+        // Note: isPlayingAtom does not need to be explicitly set to true here.
+        // If it was playing before, it should remain true. If `media.play()` fails,
+        // the catch block handles setting it to false.
       } else {
-        nextTrack(); // Go to next track in queue
+        setPlaying(false); // Only set to false if NOT repeating (e.g., for 'off' or 'context' modes)
+        nextTrack(); // Go to next track or stop if queue ends
       }
     }
-  }, [repeatMode]);
+  }, [repeatMode, nextTrack, setError, setPlaying]); // Added setPlaying, setError to deps
 
   const handlePlaying = useCallback(() => {
     setLoading(false);
