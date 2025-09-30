@@ -60,8 +60,7 @@ const MediaPlayerTrackInfo: React.FC = () => {
           const speedFactor = 30; // Pixels per second for scrolling speed
           const gapWidth = 32; // Equivalent to '2em' in px, for the space between duplicated titles
 
-          // The animation should scroll one full instance of the title + the gap,
-          // then the next instance starts from the right edge.
+          // The animation should scroll one full instance of the title + the gap, meaning the total distance the 'container' of the duplicated text needs to move.
           const distanceToScroll = contentNaturalWidth + gapWidth;
           const duration = distanceToScroll / speedFactor;
 

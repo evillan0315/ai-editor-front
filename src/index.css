@@ -62,34 +62,12 @@ code {
   box-sizing: border-box;
 }
 
-/* Keyframes for horizontal marquee effect */
-@keyframes marquee-scroll {
+/* Keyframes for horizontal seamless marquee effect */
+@keyframes marquee-seamless {
   0% {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(var(--marquee-offset));
+    transform: translateX(var(--marquee-scroll-distance)); /* Scrolls to the left by this negative distance */
   }
-}
-
-/* Classes for the marquee effect, used in MediaPlayerTrackInfo.tsx */
-.track-title-wrapper {
-  overflow: hidden;
-  white-space: nowrap;
-  /* Flex properties can be applied via MUI's sx prop on the Box component */
-}
-
-.track-title-text {
-  display: inline-block;
-  white-space: nowrap; /* Ensures text stays on one line for measurement and scrolling */
-}
-
-.track-title-text.animate-marquee {
-  animation: marquee-scroll linear infinite alternate;
-  animation-play-state: running;
-  /* --marquee-offset and animation-duration are set via inline style for dynamic calculation */
-}
-
-.track-title-text.animate-marquee:hover {
-  animation-play-state: paused;
 }
