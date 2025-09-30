@@ -1,8 +1,3 @@
-// /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/src/types/refactored/media.ts
-/**
- * Defines the various types of files supported in the application.
- * Mirrors the backend's FileType enum from schema.prisma.
- */
 export enum FileType {
   AUDIO = 'AUDIO',
   VIDEO = 'VIDEO',
@@ -112,7 +107,7 @@ export interface PaginationMediaQueryDto {
   page?: number;
   pageSize?: number;
   name?: string;
-  fileType?: FileType;
+  fileType?: FileType[]; // Changed to array of FileType
   provider?: string;
   url?: string;
   folderId?: string;
