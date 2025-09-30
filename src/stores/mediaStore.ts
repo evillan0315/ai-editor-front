@@ -15,6 +15,8 @@ import {
   FileType,
   BufferedRange,
   PaginationMediaResultDto,
+  TranscriptionResult,
+  SyncTranscriptionResponse,
 } from '@/types/refactored/media';
 import {
   fetchPlaylists,
@@ -34,7 +36,6 @@ import {
   getFileStreamUrl,
 } from '@/api/media';
 import { authStore } from './authStore'; // Import authStore for login check
-import { TranscriptionResult, SyncTranscriptionResponse } from '@/types';
 
 // --- Atoms (Non-persistent for transient playback state, persistent for user preferences) ---
 // Playback state should NOT be persistent to avoid browser autoplay issues on refresh.
@@ -62,6 +63,31 @@ export const repeatModeAtom = persistentAtom<RepeatMode>(
   'off',
 ); // Persistent
 export const shuffleAtom = persistentAtom<boolean>('media:shuffle', false); // Persistent
+export const showTranscriptionAtom = persistentAtom<boolean>(
+  'media:showTranscription',
+  false,
+); // Persistent: Toggles transcription display
+
+// Transcription data (non-persistent, specific to current track)
+export const transcriptionResultAtom = persistentAtom<TranscriptionResult | null>(
+  'media:transcriptionResult',
+  null,
+  { encode: JSON.stringify, decode: JSON.parse }, // Needed for objects
+);
+export const transcriptionSyncDataAtom = persistentAtom<
+  SyncTranscriptionResponse | null
+>('media:transcriptionSyncData', null, {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+}); // Needed for objects
+export const isTranscribingAtom = persistentAtom<boolean>(
+  'media:isTranscribing',
+  false,
+);
+export const transcriptionErrorAtom = persistentAtom<string | null>(
+  'media:transcriptionError',
+  null,
+);
 
 // --- Map Store (Non-persistent for shared playback state) ---
 export const $mediaStore = map({
@@ -71,6 +97,11 @@ export const $mediaStore = map({
   playlists: [] as Playlist[],
   allAvailableMediaFiles: [] as MediaFileResponseDto[],
   mediaElement: null as HTMLMediaElement | null, // Added to store direct media element reference
+    // ADD THESE TRANSCRIPTION INITIAL STATES:
+  transcriptionData: null,
+  transcriptionSyncData: null,
+  isTranscribing: false,
+  transcriptionError: null,
 });
 
 // --- Global Actions (Stateless logic) ---
@@ -93,6 +124,7 @@ export function resetPlaybackState() {
   durationAtom.set(0);
   bufferedAtom.set([]);
   isVideoModalOpenAtom.set(false);
+  clearTranscriptionData(); // Also clear transcription state
   // Do not reset mediaElement here, it's managed by the component owning it.
   // It's cleared by `setMediaElement(null)` in the component's unmount effect.
 }
@@ -159,6 +191,80 @@ export const toggleRepeat = () => {
   repeatModeAtom.set(newMode);
 };
 
+export const toggleShowTranscription = () => {
+  showTranscriptionAtom.set(!showTranscriptionAtom.get());
+};
+
+export const clearTranscriptionData = () => {
+  transcriptionResultAtom.set(null);
+  transcriptionSyncDataAtom.set(null);
+  isTranscribingAtom.set(false);
+  transcriptionErrorAtom.set(null);
+};
+
+export const fetchAndLoadTranscription = async (fileId: string) => {
+  if (!fileId) return;
+  isTranscribingAtom.set(true);
+  transcriptionErrorAtom.set(null);
+  try {
+    const result = await getTranscription(fileId);
+    transcriptionResultAtom.set(result);
+    //showGlobalSnackbar('Transcription loaded successfully', 'success');
+  } catch (err: any) {
+    console.error('Error fetching transcription:', err);
+    transcriptionErrorAtom.set(
+      `Failed to load transcription: ${err.message || 'Unknown error'}`,
+    );
+    showGlobalSnackbar(
+      `Failed to load transcription: ${err.message || 'Unknown error'}`, 'error'
+    );
+  } finally {
+    isTranscribingAtom.set(false);
+  }
+};
+
+export const transcribeCurrentAudio = async (fileId: string) => {
+  if (!fileId) return;
+  isTranscribingAtom.set(true);
+  transcriptionErrorAtom.set(null);
+  try {
+    //showGlobalSnackbar('Starting transcription...', 'info');
+   const result = await transcribeAudio(fileId);
+    transcriptionResultAtom.set(result);
+    //showGlobalSnackbar('Audio transcribed successfully!', 'success');
+    // After transcribing, also update sync data to show first segment
+    if ($mediaStore.get().mediaElement) {
+      updateCurrentTranscriptionSync(fileId, $mediaStore.get().mediaElement!.currentTime);
+    }
+  } catch (err: any) {
+    console.error('Error transcribing audio:', err);
+    transcriptionErrorAtom.set(
+      `Failed to transcribe audio: ${err.message || 'Unknown error'}`,
+    );
+    showGlobalSnackbar(
+      `Failed to transcribe audio: ${err.message || 'Unknown error'}`, 'error'
+    );
+  } finally {
+    isTranscribingAtom.set(false);
+  }
+};
+
+export const updateCurrentTranscriptionSync = async (
+  fileId: string,
+  currentTime: number,
+) => {
+  if (!fileId || !transcriptionResultAtom.get()) return; // Only sync if transcription exists
+
+  try {
+    const result = await getSyncTranscription(fileId, currentTime);
+    transcriptionSyncDataAtom.set(result);
+  } catch (err: any) {
+    // Often occurs if transcription is not yet complete on backend or network issues
+    console.warn('Could not sync transcription, may not be available yet or API error:', err);
+    // transcriptionErrorAtom.set("Failed to sync transcription"); // Avoid constant error toasts
+  }
+};
+
 export const setCurrentTrack = (track: MediaFileResponseDto | null) => {
   const newTrack: MediaFileResponseDtoUrl | null = track
     ? {
@@ -170,6 +276,7 @@ export const setCurrentTrack = (track: MediaFileResponseDto | null) => {
   progressAtom.set(0); // Reset progress for new track
   durationAtom.set(0); // Reset duration for new track
   setBuffered([]); // Clear buffered ranges for new track
+  clearTranscriptionData(); // Clear transcription for new track
 
   // Open VideoModal if the new track is a video
   if (newTrack?.fileType === FileType.VIDEO) {
@@ -399,8 +506,7 @@ export const fetchingMediaFiles = async (
   } catch (err: any) {
     console.error('Error fetching audio files:', err);
     showGlobalSnackbar(
-      `Failed to fetch audio files: ${err.message || 'Unknown error'}`,
-      'error',
+      `Failed to fetch audio files: ${err.message || 'Unknown error'}`, 'error'
     );
   }
 
@@ -414,8 +520,7 @@ export const fetchingMediaFiles = async (
   } catch (err: any) {
     console.error('Error fetching video files:', err);
     showGlobalSnackbar(
-      `Failed to fetch video files: ${err.message || 'Unknown error'}`,
-      'error',
+      `Failed to fetch video files: ${err.message || 'Unknown error'}`, 'error'
     );
   }
 
