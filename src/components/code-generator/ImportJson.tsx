@@ -12,7 +12,9 @@ import {
   getPaginatedGeminiRequests,
   getPaginatedGeminiResponses,
 } from '@/api/gemini';
-
+import {
+  extractCodeFromMarkdown
+} from '@/api/llm';
 import { GeminiRequest, GeminiResponse } from '@/types/gemini';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { loadingStore } from '@/stores/loadingStore';
@@ -34,6 +36,7 @@ const selectContainerSx = {
   display: 'flex',
   flexDirection: { xs: 'column', sm: 'row' },
   gap: 2,
+  px: 2,
   mb: 2,
 };
 
@@ -44,6 +47,36 @@ const truncate = (text: string | null | undefined, maxLength: number): string =>
   if (!text) return '';
   if (text.length <= maxLength) return text;
   return `${text.substring(0, maxLength)}...`;
+};
+
+/**
+ * Determines the best title to display for a Gemini response.
+ * It prioritizes response.title, then tries to extract a 'title' from JSON responseText,
+ * and finally falls back to responseText.
+ */
+const getDisplayTitleForResponse = (response: GeminiResponse): string => {
+  // Prefer the explicit title field if available
+  if (response.title) {
+    return response.title;
+  }
+
+  // If no explicit title, try to parse from responseText as JSON
+  if (response.responseText) {
+    try {
+      const parsed = JSON.parse(extractCodeFromMarkdown(response.responseText));
+      
+      // Check if it's an object and has a 'title' property that is a string
+      if (typeof parsed === 'object' && parsed !== null && 'title' in parsed && typeof parsed.title === 'string') {
+        return parsed.title;
+      }
+    } catch (e) {
+      // JSON parsing failed, or it's not an object with a title. Fall through.
+    }
+    // If not JSON or doesn't have a title, use the raw responseText
+    return response.responseText;
+  }
+
+  return ''; // No title or responseText available
 };
 
 export const ImportJson: React.FC<ImportJsonProps> = ({
@@ -57,6 +90,9 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
   const [geminiResponses, setGeminiResponses] = useState<GeminiResponse[]>([]
   );
   const [selectedResponseId, setSelectedResponseId] = useState<string | null>(
+    null,
+  );
+  const [selectedResponseText, setSelectedResponseText] = useState<string | null>(
     null,
   );
   const isLoading = useStore(loadingStore);
@@ -91,6 +127,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
             requestId: selectedRequestId,
             limit: 100, // Fetch a reasonable number of responses
           });
+          
           setGeminiResponses(result.items);
         } catch (error) {
           console.error('Failed to fetch Gemini responses:', error);
@@ -123,7 +160,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
       if (selected && selected.responseText) {
         try {
           // Attempt to pretty print the JSON if it's a string
-          const parsedJson = JSON.parse(selected.responseText);
+          const parsedJson = JSON.parse(extractCodeFromMarkdown(selected.responseText));
           onChange(JSON.stringify(parsedJson, null, 2));
         } catch (e) {
           // If parsing fails, just use the raw string
@@ -138,7 +175,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
   );
 
   return (
-    <Box className="flex flex-col h-full">
+    <Box className="flex flex-col h-full py-4">
       <Box sx={selectContainerSx}>
         <FormControl fullWidth sx={formControlSx}>
           <InputLabel id="gemini-request-select-label">Gemini Request</InputLabel>
@@ -178,7 +215,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
             {geminiResponses.map((response) => (
               <MenuItem key={response.id} value={response.id}>
                  <Typography noWrap>
-                   {truncate(response.title || response.responseText, 50)} ({new Date(response.createdAt).toLocaleString()})
+                   {getDisplayTitleForResponse(response)} ({new Date(response.createdAt).toLocaleString()})
                  </Typography>
               </MenuItem>
             ))}
