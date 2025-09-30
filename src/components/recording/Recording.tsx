@@ -323,6 +323,7 @@ export function Recording() {
         typeFilter={typeFilter}
         onTypeFilterChange={setTypeFilter}
         typeOptions={RECORDING_TYPES}
+        onRefresh={fetchRecordings} // Pass fetchRecordings to the search bar
       />
 
       <RecordingsTable
