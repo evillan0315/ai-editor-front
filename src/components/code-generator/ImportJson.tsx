@@ -7,6 +7,8 @@ import {
   MenuItem,
   CircularProgress,
   Typography,
+  Autocomplete,
+  TextField,
 } from '@mui/material';
 import {
   getPaginatedGeminiRequests,
@@ -143,8 +145,8 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
   }, [selectedRequestId]);
 
   const handleRequestChange = useCallback(
-    (event: any) => {
-      const newRequestId = event.target.value as string;
+    (event: React.SyntheticEvent, value: GeminiRequest | null) => {
+      const newRequestId = value ? value.id : null;
       setSelectedRequestId(newRequestId);
       setSelectedResponseId(null); // Clear selected response when request changes
       onChange(''); // Clear editor content
@@ -177,29 +179,31 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
   return (
     <Box className="flex flex-col h-full py-4">
       <Box sx={selectContainerSx}>
-        <FormControl fullWidth sx={formControlSx}>
-          <InputLabel id="gemini-request-select-label">Gemini Request</InputLabel>
-          <Select
-            labelId="gemini-request-select-label"
-            id="gemini-request-select"
-            value={selectedRequestId || ''}
-            label="Gemini Request"
-            onChange={handleRequestChange}
-            disabled={isLoading.isLoading}
-          >
-            <MenuItem value="">-- Select a Request --</MenuItem>
-            {geminiRequests.map((request) => (
-              <MenuItem key={request.id} value={request.id}>
-                <Typography noWrap>
-                  {truncate(request.prompt, 50)} ({new Date(request.createdAt).toLocaleString()})
-                </Typography>
-              </MenuItem>
-            ))}
-          </Select>
-          {isLoading.isLoading && (
-            <CircularProgress size={20} className="absolute right-4 top-1/2 -translate-y-1/2" />
+        <Autocomplete
+          fullWidth
+          sx={formControlSx}
+          options={geminiRequests}
+          getOptionLabel={(option) => truncate(option.prompt, 50)}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          value={geminiRequests.find(req => req.id === selectedRequestId) || null}
+          onChange={handleRequestChange}
+          disabled={isLoading.isLoading}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Gemini Request"
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {isLoading.isLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+            />
           )}
-        </FormControl>
+        />
 
         <FormControl fullWidth sx={formControlSx}>
           <InputLabel id="gemini-response-select-label">Gemini Response</InputLabel>
