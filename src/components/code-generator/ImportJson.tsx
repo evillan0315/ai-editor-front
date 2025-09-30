@@ -178,7 +178,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
             {geminiResponses.map((response) => (
               <MenuItem key={response.id} value={response.id}>
                  <Typography noWrap>
-                   {truncate(response.responseText, 50)} ({new Date(response.createdAt).toLocaleString()})
+                   {truncate(response.title || response.responseText, 50)} ({new Date(response.createdAt).toLocaleString()})
                  </Typography>
               </MenuItem>
             ))}
