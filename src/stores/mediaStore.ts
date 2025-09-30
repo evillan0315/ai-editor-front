@@ -106,18 +106,8 @@ export const setError = (message: string | null) => {
 
 export const setPlaying = (isPlaying: boolean) => {
   isPlayingAtom.set(isPlaying);
-  const mediaElement = $mediaStore.get().mediaElement;
-  if (mediaElement) {
-    if (isPlaying) {
-      // Attempt to play, catch potential autoplay errors
-      mediaElement.play().catch((e) => {
-        console.error('Autoplay failed:', e);
-        isPlayingAtom.set(false); // Reflect actual playback state if autoplay is blocked
-      });
-    } else {
-      mediaElement.pause();
-    }
-  }
+  // Direct control of mediaElement.play()/pause() moved to MediaPlayerContainer
+  // to better manage when playback is initiated (e.g., after 'canplay' event)
 };
 
 export const setTrackProgress = (progress: number) => {
