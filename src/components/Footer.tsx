@@ -18,6 +18,7 @@ import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import OutputLogger from '@/components/OutputLogger';
 import MediaPlayerContainer from '@/components/media/MediaPlayerContainer';
 import { RecordingControls } from '@/components/recording/RecordingControls';
+import { RecordingStatus } from '@/components/recording/RecordingStatus'; // Import RecordingStatus
 import { StartCameraRecordingDto } from '@/types';
 
 const Footer = () => {
@@ -133,8 +134,8 @@ const Footer = () => {
           zIndex: theme.zIndex.appBar + 1,
         }}
       >
-        {/* Left Section: Recording Controls */}
-        <Box className="flex justify-start items-center w-1/4">
+        {/* Left Section: Recording Controls and Status */}
+        <Box className="flex justify-start items-center gap-4 w-1/4 pl-4">
           <RecordingControls
             isScreenRecording={isScreenRecording}
             isCameraRecording={isCameraRecording}
@@ -145,13 +146,14 @@ const Footer = () => {
             onStopCameraRecording={handleStopCameraRecording}
             onCapture={handleCaptureScreenshot}
           />
+          <RecordingStatus /> { /* Added RecordingStatus */}
         </Box>
         <Box className="flex justify-center items-center w-1/2 max-w-[600px]">
           <MediaPlayerContainer />
         </Box>
 
         {/* Right Section: Output Logger Button */}
-        <Box className="flex justify-end items-center w-1/4">
+        <Box className="flex justify-end items-center w-1/4 pr-4">
           <IconButton
             color="inherit"
             aria-label="open output logger"
