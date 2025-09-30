@@ -103,11 +103,10 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
         flexDirection: 'column',
         alignItems: 'center',
         flexGrow: 1,
-        maxWidth: '600px',
         width: '38%',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0, mt: 0.5 }}>
         <IconButton
           size="small"
           sx={{ color: theme.palette.text.primary }}
@@ -133,16 +132,16 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = ({
               bgcolor: theme.palette.primary.dark,
             },
             borderRadius: '50%',
-            width: 48,
-            height: 48,
+            width: 36,
+            height: 36,
           }}
         >
           {$isLoading ? (
             <CircularProgress size={24} color="inherit" />
           ) : isPlaying ? (
-            <Pause fontSize="large" />
+            <Pause fontSize="small" />
           ) : (
-            <PlayArrow fontSize="large" />
+            <PlayArrow fontSize="small" />
           )}
         </IconButton>
         <IconButton
