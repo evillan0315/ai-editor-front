@@ -203,6 +203,28 @@ export const getPaginatedGeminiResponses = async (
 };
 
 /**
+ * Retrieves Gemini Response records filtered by a specific request ID.
+ * @param requestId The ID of the Gemini Request to filter responses by.
+ * @returns A promise that resolves to an array of GeminiResponse.
+ */
+export const getGeminiResponsesByRequestId = async (
+  requestId: string,
+  requestType?: string,
+): Promise<GeminiResponse[]> => {
+  try {
+    const query: PaginationGeminiResponseQueryDto = { requestId, requestType };
+    const result = await getPaginatedGeminiResponses(query);
+    return result.items;
+  } catch (error) {
+    console.error(
+      `Error fetching Gemini responses for request ID ${requestId}:`,
+      error,
+    );
+    throw error;
+  }
+};
+
+/**
  * Retrieves a Gemini Response by its ID.
  * @param id The ID of the Gemini Response to retrieve.
  * @returns A promise that resolves to the GeminiResponse, or null if not found.

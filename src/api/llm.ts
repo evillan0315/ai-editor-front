@@ -106,6 +106,7 @@ export const generateCode = async (
         error: null, // Ensure error is null
       };
     } catch (jsonErr) {
+      console.log(JSON.parse(rawText), 'rawText');
       // If parsing fails, return raw content safely
       return {
         rawResponse: rawText,

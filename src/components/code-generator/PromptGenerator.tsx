@@ -22,7 +22,7 @@ import {
   Send as SendIcon,
   ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
-import { setError, setErrorRaw } from '@/stores/errorStore';
+import { setError } from '@/stores/errorStore';
 import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
 import {
   llmStore,
@@ -36,7 +36,8 @@ import {
   setIsBuilding,
   setLoading,
   setLlmError,
-  setLlmResponse
+  setLlmResponse,
+  clearLlmStore
 } from '@/stores/llmStore';
 import { authStore } from '@/stores/authStore';
 import {
@@ -45,23 +46,16 @@ import {
   projectRootDirectoryStore,
   setCurrentProjectPath,
 } from '@/stores/fileTreeStore';
-import { setOpenedFileContent } from '@/stores/fileStore';
 import { addLog } from '@/stores/logStore';
 import {
   INSTRUCTION,
   ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
 } from '@/constants/instruction';
-import { generateCode, applyProposedChanges, extractCodeFromMarkdown } from '@/api/llm';
-import FilePickerDialog from '@/components/dialogs/FilePickerDialog';
-import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
-import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
-import PromptGeneratorSettingsDialog from '@/components/dialogs/PromptGeneratorSettingsDialog';
-import { ImportJsonDialog } from './ImportJsonDialog';
-import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
+import { generateCode, applyProposedChanges } from '@/api/llm';
+import PromptGeneratorSettings from '@/components/Drawer/PromptGeneratorSettings';
 import { LlmOutputFormat, LlmGeneratePayload, ModelResponse } from '@/types';
 import { CodeGeneratorData } from './CodeGeneratorMain';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
-import ImportData from './ImportData';
 import BottomToolbar from './BottomToolbar';
 
 interface PromptGeneratorProps {}
@@ -70,7 +64,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const theme = useTheme();
 
   const currentProjectPath = useStore(projectRootDirectoryStore);
-  const { loading, isBuilding, lastLlmResponse, error } = useStore(llmStore);
+  const { loading, isBuilding, lastLlmResponse } = useStore(llmStore);
   const { isLoggedIn } = useStore(authStore);
   const { flatFileList } = useStore(fileTreeStore);
 
@@ -82,24 +76,16 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
     requestType,
     llmOutputFormat,
     scanPathsInput,
-    errorLlm,
-    response
   } = useStore(llmStore);
   // ---- local state ----
   const [projectInput, setProjectInput] = useState(
     currentProjectPath || import.meta.env.VITE_BASE_DIR || '',
   );
-  const [editorContent, setEditorContent] = useState(null);
-  const [isPickerDialogOpen, setIsPickerDialogOpen] = useState(false);
-  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] =
-    useState(false);
+  const [isPickerDialogOpen, setIsPickerDialogOpen] = useState(false); // Unused
+  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] = useState(false);
   const [isScanPathsDialogOpen, setIsScanPathsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [importedData, setImportedData] = useState<CodeGeneratorData | null>(
-    null,
-  );
-
 
   const commonDisabled = !isLoggedIn || loading || isBuilding;
 
@@ -128,11 +114,6 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   }, [flatFileList]);
 
   // ---- effects ----
-  useEffect(() => {
-    if (lastLlmResponse?.rawResponse)
-      setEditorContent(lastLlmResponse.rawResponse);
-  }, [lastLlmResponse]);
-
   useEffect(() => {
     // keep local project input in sync with store
     if (currentProjectPath && projectInput !== currentProjectPath) {
@@ -228,13 +209,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
 
       // If rawResponse is available, set it in the editor safely
       if (aiResponse.rawResponse) {
-        setErrorRaw(aiResponse.rawResponse);
         setLlmResponse(aiResponse.rawResponse);
-        try {
-          setEditorContent(JSON.parse(aiResponse.rawResponse));
-        } catch {
-          setEditorContent(String(aiResponse.rawResponse));
-        }
       }
 
       // Only update store if there’s no error to avoid rendering [object Error]
@@ -288,24 +263,11 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
     uploadedFileMimeType,
   ]);
 
-  const handleClear = useCallback(() => {
-    setEditorContent('');
-    setLastLlmResponse(null);
-  }, []);
-
   const handleSave = useCallback(() => {
-    // Implement save logic here (e.g., save to a file, update settings)
-    console.log('Save action triggered!');
-
-    setAiInstruction(aiInstruction);
-    setExpectedOutputInstruction(expectedOutputInstruction);
-
+    // Settings are saved directly by PromptGeneratorSettings, just close the drawer
     setIsSettingsOpen(false);
-
-    onClose(); // Close the settings dialog
-  }, [aiInstruction, expectedOutputInstruction]);
-
-
+    addLog('Prompt Generator', 'Prompt Generator settings saved.', 'info');
+  }, []);
 
   // ---- render ----
   return (
@@ -375,12 +337,8 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         isScanPathsDialogOpen={isScanPathsDialogOpen}
         setIsScanPathsDialogOpen={setIsScanPathsDialogOpen}
         updateScanPaths={updateScanPaths}
-        handleClear={handleClear}
         requestType={requestType}
         handleSave={handleSave}
-        errorLlm={errorLlm}
-        responseLlm={response}
-        editorContent={extractCodeFromMarkdown(editorContent)}
         commonDisabled={commonDisabled}
       />
     </Box>

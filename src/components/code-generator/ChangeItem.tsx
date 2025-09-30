@@ -5,17 +5,15 @@ import {
   setCurrentDiff,
   updateProposedChangeContent,
   updateProposedChangePath,
-  LlmStoreState,
 } from '@/stores/llmStore';
-import { addLog } from '@/stores/logStore'; // NEW: Import addLog
+import { addLog } from '@/stores/logStore';
 import { setError } from '@/stores/errorStore';
 import { getGitDiff } from '@/api/llm';
-import { FileChange, FileAction } from '@/types';
+import { FileChange } from '@/types';
 import { truncateFilePath } from '@/utils/fileUtils';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import { GitDiffViewer } from '@/components/GitDiffViewer';
 
-import CodeMirror from '@uiw/react-codemirror';
 import {
   Box,
   Typography,
@@ -35,7 +33,7 @@ import {
 } from '@mui/material';
 import { type SvgIconProps } from '@mui/material/SvgIcon';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import EditIcon from '@mui/icons-material/Edit';
+import EditIcon from '@mui/icons-material/Edit'; // Explicitly import EditIcon for editing
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -46,10 +44,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import * as path from 'path-browserify';
 import {
   getRelativePath,
-  getCodeMirrorLanguage,
-  createCodeMirrorTheme,
-} from '@/utils/index'; // Import createCodeMirrorTheme
-import { themeStore } from '@/stores/themeStore';
+} from '@/utils/index';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
 
 interface ChangeItemProps {
@@ -81,15 +76,13 @@ const ACTION_ICON: Record<
   delete: DeleteOutlineIcon,
 };
 
-const CODE_MIRROR_MAX_HEIGHT = '200px';
-
 export const ChangeItem: React.FC<ChangeItemProps> = ({
   change,
   selected,
   onToggle,
 }) => {
   const muiTheme = useTheme();
-  const IconComponent = ACTION_ICON[change.action];
+  const ActionIconComponent = ACTION_ICON[change.action]; // Renamed to avoid conflict
 
   const [isEditingFilePath, setIsEditingFilePath] = useState(false);
   const [editedFilePath, setEditedFilePath] = useState(change.filePath);
@@ -98,9 +91,7 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
   );
   const [isCodeExpanded, setIsCodeExpanded] = useState(false);
 
-  const { loading, currentDiff, diffFilePath, applyingChanges } =
-    useStore(llmStore);
-
+  const { loading, currentDiff, diffFilePath, applyingChanges } = useStore(llmStore);
   const currentProjectPath = useStore(projectRootDirectoryStore);
 
   // Update editedFilePath if the actual change.filePath from store changes
@@ -260,15 +251,16 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
               );
             }}
             disabled={commonDisabled}
-            sx={{ color: muiTheme.palette.text.secondary }}
+            sx={{ color: muiTheme.palette.text.secondary }} // This icon is for editing the path
           >
-            <IconComponent color={ACTION_COLOR[change.action]} />
+            <EditIcon color="action" /> 
           </IconButton>
         )}
         <Chip
           label={change.action.toUpperCase()}
           color={ACTION_COLOR[change.action]}
           size="small"
+          icon={<ActionIconComponent fontSize="small" />} // Use the specific action icon for the chip
         />
       </Box>
 

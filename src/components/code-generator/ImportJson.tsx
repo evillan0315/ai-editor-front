@@ -222,7 +222,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
           getOptionLabel={(option) => truncate(option.prompt, 50)}
           isOptionEqualToValue={(option, value) => option.id === value.id}
           value={geminiRequests.find(req => req.id === selectedRequestId) || null}
-          key={geminiRequests.find(req => req.id === selectedRequestId)}
+          key={(option, value) => option.id === value.id}
           onChange={handleRequestChange}
           disabled={isLoading.isLoading}
           renderInput={(params) => (
