@@ -93,7 +93,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
           }}
         >
           {$isLoading ? (
-            <CircularProgress size={24} color="inherit" />
+            <CircularProgress size={20} color="inherit" />
           ) : isPlaying ? (
             <Pause fontSize="small" />
           ) : (
