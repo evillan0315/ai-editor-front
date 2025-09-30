@@ -25,7 +25,7 @@ interface VideoModalProps {
   controls?: boolean; // Make optional, usually true for videos in modals
   muted?: boolean; // Make optional, usually true for autoplay
   onPlayerReady?: (htmlMediaElement: HTMLVideoElement) => void;
-  mediaType: 'video' | 'gif';
+  mediaType: 'video' | 'gif' | 'image'; // MODIFIED: Added 'image' to mediaType
   size?: VideoModalSize; // Add the new size prop, make it optional
 }
 
@@ -129,7 +129,7 @@ const VideoModal: React.FC<VideoModalProps> = ({
             className="w-full h-full object-contain"
             onPlayerReady={onPlayerReady}
           />
-        ) : (
+        ) : mediaType === 'gif' ? ( // MODIFIED: Explicitly check for gif
           <img
             src={src}
             alt="Animated GIF"
@@ -138,6 +138,15 @@ const VideoModal: React.FC<VideoModalProps> = ({
               mediaElementRef as React.MutableRefObject<HTMLImageElement | null>
             }
             // GIFs autoplay by default, controls/muted are not applicable
+          />
+        ) : ( // MODIFIED: Treat as 'image' if not video or gif
+          <img
+            src={src}
+            alt="Captured Screenshot"
+            className="w-full h-full object-contain"
+            ref={
+              mediaElementRef as React.MutableRefObject<HTMLImageElement | null>
+            }
           />
         )}
 
