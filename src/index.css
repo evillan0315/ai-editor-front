@@ -2,13 +2,16 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 /* Optional: Basic global styles or font settings */
-body {
-  font-family: 'Inter', sans-serif; /* Example font */
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
+
+body {
+  font-family: 'Roboto', 'Helvetica', 'Arial', 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+  padding: 0;
+    box-sizing: border-box;
+}
 .markdown-body {
   /* apply the GitHub dark theme */
   background: none !important;
@@ -20,4 +23,73 @@ body {
 }
 .cm-scroller {
   height: '100%' !important;
+}
+
+
+
+code {
+  font-family: source-code-pro,
+    Menlo,
+    Monaco,
+    Consolas,
+    'Courier New',
+    monospace;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px; /* For horizontal scrollbars */
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mui-palette-background-default);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mui-palette-primary-light);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mui-palette-primary-main);
+}
+
+/* Global box-sizing */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Keyframes for horizontal marquee effect */
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(var(--marquee-offset));
+  }
+}
+
+/* Classes for the marquee effect, used in MediaPlayerTrackInfo.tsx */
+.track-title-wrapper {
+  overflow: hidden;
+  white-space: nowrap;
+  /* Flex properties can be applied via MUI's sx prop on the Box component */
+}
+
+.track-title-text {
+  display: inline-block;
+  white-space: nowrap; /* Ensures text stays on one line for measurement and scrolling */
+}
+
+.track-title-text.animate-marquee {
+  animation: marquee-scroll linear infinite alternate;
+  animation-play-state: running;
+  /* --marquee-offset and animation-duration are set via inline style for dynamic calculation */
+}
+
+.track-title-text.animate-marquee:hover {
+  animation-play-state: paused;
 }
