@@ -19,6 +19,7 @@ import {
   setError,
   setLoading,
   nextTrack,
+  isVideoModalOpenAtom,
 } from '@/stores/mediaStore';
 import { useStore } from '@nanostores/react';
 import { FileType, BufferedRange } from '@/types/refactored/media'; // Ensure correct import for BufferedRange
@@ -41,17 +42,11 @@ const MediaPlayerContainer: React.FC = () => {
   const progress = useStore(progressAtom);
   const duration = useStore(durationAtom);
   const buffered = useStore(bufferedAtom);
+  const isVideoModalOpen = useStore(isVideoModalOpenAtom);
   const { loading, error } = useStore($mediaStore);
-
-  // Register/unregister the media element with the global store
-  useEffect(() => {
-    setMediaElement(internalMediaElementRef.current);
-    return () => setMediaElement(null);
-  }, []); // Run once on mount/unmount
-
   // Event handlers for the active media element, defined at the top level
   const handleTimeUpdate = useCallback(() => {
-    const media = internalMediaElementRef.current;
+    const media = $mediaStore.get().mediaElement; // Use the globally registered media element
     if (media && currentTrack) {
       const newProgress = Math.floor(media.currentTime);
       if (Math.abs(newProgress - progress) > 0) {
@@ -70,7 +65,7 @@ const MediaPlayerContainer: React.FC = () => {
 
   // Handle 'progress' event to update buffered ranges
   const handleProgress = useCallback(() => {
-    const media = internalMediaElementRef.current;
+    const media = $mediaStore.get().mediaElement; // Use the globally registered media element
     if (media && media.buffered.length > 0) {
       const newBufferedRanges: BufferedRange[] = [];
       for (let i = 0; i < media.buffered.length; i++) {
@@ -90,14 +85,14 @@ const MediaPlayerContainer: React.FC = () => {
   }, [buffered]);
 
   const handleVolumeChange = useCallback(() => {
-    const media = internalMediaElementRef.current;
+    const media = $mediaStore.get().mediaElement; // Use the globally registered media element
     if (media) {
       setVolume(Math.round(media.volume * 100));
     }
   }, []);
 
   const handleEnded = useCallback(() => {
-    const media = internalMediaElementRef.current;
+    const media = $mediaStore.get().mediaElement; // Use the globally registered media element
     if (media) {
       setPlaying(false); // Ensure UI reflects paused state
       if (repeatMode === 'track') {
@@ -126,7 +121,7 @@ const MediaPlayerContainer: React.FC = () => {
 
   // Crucial for starting playback after media is ready
   const handleCanPlay = useCallback(() => {
-    const media = internalMediaElementRef.current;
+    const media = $mediaStore.get().mediaElement; // Use the globally registered media element
     // If the store intends to play, and media is ready, call play()
     if (media && isPlaying && currentTrack) {
       media.play().catch((e) => {
@@ -167,70 +162,75 @@ const MediaPlayerContainer: React.FC = () => {
     setLoading(false);
     setPlaying(false); // Ensure store reflects paused state on error
   }, []);
-
-  // Effect to attach and detach event listeners for the active media element
+  // Effect to manage the internal media element and register it with the global store
   useEffect(() => {
     const media = internalMediaElementRef.current;
-    if (!media) return;
+    // Only manage this internal element if a track is present and it's an AUDIO file.
+    // Video files are managed by VideoModal when it's open, which sets the global mediaElement.
+    if (currentTrack?.fileType === FileType.AUDIO && media) {
+      setMediaElement(media);
+      // Ensure volume is synced initially
+      media.volume = volume / 100;
+    } else if (media && $mediaStore.get().mediaElement === media) {
+      // If this internal element was previously registered but is no longer the active one (e.g., video modal opened),
+      // or if currentTrack became null, clear it from the store.
+      setMediaElement(null);
+    }
 
-    // Ensure volume is synced initially
-    media.volume = volume / 100; // Use volume from the atom
-
-    media.addEventListener('timeupdate', handleTimeUpdate);
-    media.addEventListener('volumechange', handleVolumeChange);
-    media.addEventListener('ended', handleEnded);
-    media.addEventListener('playing', handlePlaying);
-    media.addEventListener('pause', handlePause); // Listen for explicit pause
-    media.addEventListener('waiting', handleWaiting);
-    media.addEventListener('canplay', handleCanPlay); // This is key!
-    media.addEventListener('error', handleError);
-    media.addEventListener('progress', handleProgress); // Attach progress listener
+    // Event listeners are attached/detached based on whether this component's element is deemed active.
+    // This ensures listeners only apply to the currently controlled media element.
+    if (media && currentTrack?.fileType === FileType.AUDIO) {
+      media.addEventListener('timeupdate', handleTimeUpdate);
+      media.addEventListener('volumechange', handleVolumeChange);
+      media.addEventListener('ended', handleEnded);
+      media.addEventListener('playing', handlePlaying);
+      media.addEventListener('pause', handlePause);
+      media.addEventListener('waiting', handleWaiting);
+      media.addEventListener('canplay', handleCanPlay);
+      media.addEventListener('error', handleError);
+      media.addEventListener('progress', handleProgress);
+    }
 
     return () => {
-      media.removeEventListener('timeupdate', handleTimeUpdate);
-      media.removeEventListener('volumechange', handleVolumeChange);
-      media.removeEventListener('ended', handleEnded);
-      media.removeEventListener('playing', handlePlaying);
-      media.removeEventListener('pause', handlePause);
-      media.removeEventListener('waiting', handleWaiting);
-      media.removeEventListener('canplay', handleCanPlay);
-      media.removeEventListener('error', handleError);
-      media.removeEventListener('progress', handleProgress); // Detach progress listener
+      if (media) {
+        media.removeEventListener('timeupdate', handleTimeUpdate);
+        media.removeEventListener('volumechange', handleVolumeChange);
+        media.removeEventListener('ended', handleEnded);
+        media.removeEventListener('playing', handlePlaying);
+        media.removeEventListener('pause', handlePause);
+        media.removeEventListener('waiting', handleWaiting);
+        media.removeEventListener('canplay', handleCanPlay);
+        media.removeEventListener('error', handleError);
+        media.removeEventListener('progress', handleProgress);
+      }
     };
-  }, [
-    internalMediaElementRef.current,
-    handleTimeUpdate,
-    handleVolumeChange,
-    handleEnded,
-    handlePlaying,
-    handlePause,
-    handleWaiting,
-    handleCanPlay,
-    handleError,
-    handleProgress,
-    volume,
-  ]); // Re-attach listeners if active media element or any callback changes
+  }, [currentTrack?.fileType, internalMediaElementRef.current, volume,
+      handleTimeUpdate, handleVolumeChange, handleEnded, handlePlaying,
+      handlePause, handleWaiting, handleCanPlay, handleError, handleProgress,
+  ]);
 
-  // useEffect to trigger play when isPlayingAtom becomes true and a track is loaded
+  
+
+  
+
+  // Effect to trigger play when isPlayingAtom becomes true and a track is loaded
+  // This applies to whatever mediaElement is currently registered in the store.
   useEffect(() => {
-    if (isPlaying && currentTrack && progress > 0 && internalMediaElementRef.current) {
-      internalMediaElementRef.current.play().catch((e) => {
-        console.error('Autoplay failed (MediaPlayerContainer):', e);
+    const media = $mediaStore.get().mediaElement;
+    if (isPlaying && currentTrack && media) {
+      media.play().catch((e) => {
+        console.error('Autoplay failed (global media element):', e);
       });
+    } else if (!isPlaying && media) {
+      media.pause();
     }
-  }, [isPlaying, currentTrack, progress]);
+  }, [isPlaying, currentTrack, $mediaStore.get().mediaElement]);
 
   return (
     <Box className="flex sticky bottom-0 justify-center items-center">
+      {/* Only render an audio element within this container. Video is handled by VideoModal. */}
       {currentTrack?.fileType === FileType.AUDIO && currentTrack?.streamUrl ? (
         <audio
-          ref={internalMediaElementRef}
-          src={currentTrack.streamUrl}
-          style={{ display: 'none' }}
-          preload="metadata"
-        />
-      ) : currentTrack?.fileType === FileType.VIDEO && currentTrack?.streamUrl ? (
-        <video
           ref={internalMediaElementRef}
           src={currentTrack.streamUrl}
           style={{ display: 'none' }}
@@ -240,7 +240,7 @@ const MediaPlayerContainer: React.FC = () => {
 
       <MediaPlayer
         mediaType={currentTrack?.fileType || FileType.AUDIO}
-        mediaElementRef={internalMediaElementRef}
+        mediaElementRef={internalMediaElementRef} // Still pass this, but MediaPlayer uses $mediaStore.get().mediaElement
       />
     </Box>
   );

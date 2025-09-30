@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { isScreenRecordingStore } from '@/stores/recordingStore';
 import { recordingApi } from '@/api/recording';
@@ -21,8 +21,10 @@ import {
   nextTrack,
   setLoading,
   $mediaStore,
-  setMediaElement, // New import
+  setMediaElement,
 } from '@/stores/mediaStore';
+import CustomDrawer from '@/components/Drawer/CustomDrawer';
+import OutputLogger from '@/components/OutputLogger';
 
 const Footer = () => {
   const theme = useTheme();
@@ -31,6 +33,7 @@ const Footer = () => {
   const isPlaying = useStore(isPlayingAtom);
   const { loading } = useStore($mediaStore);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [logDrawerOpen, setLogDrawerOpen] = useState(false);
 
   const notify = (
     message: string,
@@ -75,6 +78,14 @@ const Footer = () => {
       console.error('Error capturing screenshot:', error);
       notify(`Error capturing screenshot: ${error}`, 'error');
     }
+  };
+
+  const handleOpenLogDrawer = () => {
+    setLogDrawerOpen(true);
+  };
+
+  const handleCloseLogDrawer = () => {
+    setLogDrawerOpen(false);
   };
 
   // Effect to register the audio element with the store and manage source/loading
@@ -148,45 +159,71 @@ const Footer = () => {
   }, [loading, nextTrack, setTrackDuration, setTrackProgress]);
 
   return (
-    <Box
-      className="flex justify-between items-center w-full"
-      sx={{
-        bgcolor: theme.palette.background.paper,
-        borderTop: `1px solid ${theme.palette.divider}`,
-        minHeight: 40,
-        zIndex: theme.zIndex.appBar + 1, // Ensure footer is above other content
-      }}
-    >
-      {/* Left Section: Recording Controls */}
-      <Box className="flex justify-center items-center">
-        <IconButton
-          color="inherit"
-          aria-label="start recording"
-          disabled={isRecording}
-          onClick={handleStartRecording}
-        >
-          <DynamicIcon iconName="RecordIcon" />
-        </IconButton>
-        <IconButton
-          color="inherit"
-          aria-label="stop recording"
-          disabled={!isRecording}
-          onClick={handleStopRecording}
-        >
-          <DynamicIcon iconName="StopIcon" />
-        </IconButton>
-        <IconButton
-          color="inherit"
-          aria-label="capture screenshot"
-          onClick={handleCaptureScreenshot}
-        >
-          <DynamicIcon iconName="ScreenshotIcon" />
-        </IconButton>
+    <>
+      <Box
+        className="flex justify-between items-center w-full"
+        sx={{
+          bgcolor: theme.palette.background.paper,
+          borderTop: `1px solid ${theme.palette.divider}`,
+          minHeight: 40,
+          zIndex: theme.zIndex.appBar + 1,
+        }}
+      >
+        {/* Left Section: Recording Controls */}
+        <Box className="flex justify-center items-center">
+          <IconButton
+            color="inherit"
+            aria-label="start recording"
+            disabled={isRecording}
+            onClick={handleStartRecording}
+          >
+            <DynamicIcon iconName="RecordIcon" />
+          </IconButton>
+          <IconButton
+            color="inherit"
+            aria-label="stop recording"
+            disabled={!isRecording}
+            onClick={handleStopRecording}
+          >
+            <DynamicIcon iconName="StopIcon" />
+          </IconButton>
+          <IconButton
+            color="inherit"
+            aria-label="capture screenshot"
+            onClick={handleCaptureScreenshot}
+          >
+            <DynamicIcon iconName="ScreenshotIcon" />
+          </IconButton>
+        </Box>
+
+        {/* Center Section: Mini Media Player Controls */}
+        <Box className="flex justify-center items-center">
+          {currentTrack && <MiniMediaPlayerControls />}
+        </Box>
+
+        {/* Right Section: Output Logger Button */}
+        <Box className="flex justify-center items-center">
+          <IconButton
+            color="inherit"
+            aria-label="open output logger"
+            onClick={handleOpenLogDrawer}
+          >
+            <DynamicIcon iconName="CarbonTerminal" />
+          </IconButton>
+        </Box>
       </Box>
 
-      <Box sx={{ minWidth: 100 }} />
-      {/* Center Section: Mini Media Player Controls */}
-    </Box>
+      {/* Output Logger Drawer */}
+      <CustomDrawer
+        open={logDrawerOpen}
+        onClose={handleCloseLogDrawer}
+        position="bottom"
+        size="medium"
+        title="Output Logger"
+      >
+        <OutputLogger />
+      </CustomDrawer>
+    </>
   );
 };
 
