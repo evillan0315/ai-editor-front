@@ -15,32 +15,38 @@ import {
 } from '@mui/material';
 import TranscribeIcon from '@mui/icons-material/Transcribe';
 import { useStore } from '@nanostores/react';
-import { $mediaStore, fetchingMediaFiles } from '@/stores/mediaStore';
+import {
+  $mediaStore,
+  fetchingMediaFiles,
+  setCurrentTrack,
+} from '@/stores/mediaStore';
 import { getFileStreamUrl } from '@/api/media';
 
-import { TranscriptionPlayer } from '@/components/TranscriptionPlayer/TranscriptionPlayer'; // Correct import path
-import { FileType } from '@/types'; // Import MediaFileResponseDto and FileType
+import { TranscriptionPlayer } from '@/components/TranscriptionPlayer/TranscriptionPlayer';
+import { FileType } from '@/types/refactored/media'; // Corrected import path for FileType
 
 interface TranscriptionPageProps {}
 
 const TranscriptionPage: React.FC<TranscriptionPageProps> = () => {
   const theme = useTheme();
-  const { allAvailableMediaFiles, isFetchingMedia, fetchMediaError } =
-    useStore($mediaStore);
+  const { allAvailableMediaFiles, isFetchingMedia, fetchMediaError } = useStore(
+    $mediaStore,
+  ); // Use updated keys
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
 
   useEffect(() => {
     // Fetch all media files when the component mounts if not already fetched
     if (
       allAvailableMediaFiles.length === 0 &&
-      !isFetchingMedia &&
-      !fetchMediaError
+      !isFetchingMedia && // Use correct key
+      !fetchMediaError // Use correct key
     ) {
-      fetchMediaForPurpose(
-        { page: 1, pageSize: 200, fileType: FileType.AUDIO },
-        'general',
-        true,
-      );
+      // Call the correct function from mediaStore, with appropriate query
+      fetchingMediaFiles({
+        page: 1,
+        pageSize: 200,
+        fileType: [FileType.AUDIO], // Pass FileType as an array
+      });
     }
   }, [allAvailableMediaFiles.length, isFetchingMedia, fetchMediaError]);
 
@@ -51,7 +57,13 @@ const TranscriptionPage: React.FC<TranscriptionPageProps> = () => {
   );
 
   const handleFileChange = (event: SelectChangeEvent<string>) => {
-    setSelectedFileId(event.target.value);
+    const newFileId = event.target.value;
+    setSelectedFileId(newFileId);
+    // When a file is selected, set it as the current track in the mediaStore
+    const fileToPlay = audioFiles.find((file) => file.id === newFileId);
+    if (fileToPlay) {
+      setCurrentTrack(fileToPlay); // Update the global media store
+    }
   };
 
   const selectedAudioFile = useMemo(

@@ -20,21 +20,25 @@ import {
 } from '@mui/icons-material';
 import { useStore } from '@nanostores/react';
 import {
-  $spotifyStore,
+  $mediaStore,
   currentTrackAtom,
   isPlayingAtom,
   progressAtom,
   durationAtom,
   volumeAtom,
-  loadTranscription,
-  transcribeAudioAction,
-  updateTranscriptionSync,
-  clearTranscription,
+  fetchAndLoadTranscription,
+  transcribeCurrentAudio,
+  updateCurrentTranscriptionSync,
+  clearTranscriptionData,
   setPlaying,
   setTrackProgress,
-  setTrackDuration, // Added: This was missing
+  setTrackDuration,
   setVolume,
-} from '@/stores/spotifyStore';
+  transcriptionResultAtom,
+  transcriptionSyncDataAtom,
+  isTranscribingAtom,
+  transcriptionErrorAtom
+} from '@/stores/mediaStore';
 import { TranscriptionHighlight } from './TranscriptionHighlight';
 
 interface TranscriptionPlayerProps {
@@ -51,20 +55,18 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
 
-  // Get state from spotifyStore
-  const spotifyState = useStore($spotifyStore);
+  // Get state from mediaStore
+  const mediaStore = useStore($mediaStore);
   const isPlaying = useStore(isPlayingAtom);
   const currentTrack = useStore(currentTrackAtom);
   const progress = useStore(progressAtom);
   const duration = useStore(durationAtom);
   const volume = useStore(volumeAtom);
+  const transcriptionData = useStore(transcriptionResultAtom);
+  const transcriptionSyncData = useStore(transcriptionSyncDataAtom);
+  const isTranscribing = useStore(isTranscribingAtom);
+  const transcriptionError = useStore(transcriptionErrorAtom);
 
-  const {
-    transcriptionData,
-    transcriptionSyncData,
-    isTranscribing,
-    transcriptionError,
-  } = spotifyState;
 
   // Audio event handlers
   const handlePlayPause = () => {
@@ -86,7 +88,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
 
       // Update transcription sync data if we have transcription
       if (transcriptionData) {
-        updateTranscriptionSync(fileId, newTime);
+        updateCurrentTranscriptionSync(fileId, newTime);
       }
     }
   };
@@ -99,7 +101,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
 
       // Update transcription sync data immediately after seeking
       if (transcriptionData) {
-        updateTranscriptionSync(fileId, newValue as number);
+        updateCurrentTranscriptionSync(fileId, newValue as number);
       }
     }
   };
@@ -120,11 +122,11 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
 
   // Load transcription when component mounts or fileId changes
   useEffect(() => {
-    loadTranscription(fileId);
+    fetchAndLoadTranscription(fileId);
 
     // Clean up transcription data when component unmounts
     return () => {
-      clearTranscription();
+      clearTranscriptionData();
     };
   }, [fileId]);
 
@@ -221,7 +223,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
           <Button
             variant="contained"
             startIcon={<Transcribe />} // Fixed: Changed from Transcript to Transcribe
-            onClick={() => transcribeAudioAction(fileId)}
+            onClick={() => transcribeCurrentAudio(fileId)}
             disabled={isTranscribing}
           >
             Transcribe Audio

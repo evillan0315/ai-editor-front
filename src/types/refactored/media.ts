@@ -20,6 +20,7 @@ export enum FileType {
   PYTHON = 'PYTHON',
   JAVA = 'JAVA',
   XML = 'XML',
+  TRANSCRIPT = 'TRANSCRIPT',
   OTHER = 'OTHER',
 }
 
