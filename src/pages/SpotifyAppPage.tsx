@@ -5,6 +5,7 @@ import SpotifyMainContent from '@/pages/spotify/SpotifyMainContent';
 import MediaPlayer from '@/components/ui/player/MediaPlayer';
 import VideoModal from '@/components/VideoModal';
 import { useStore } from '@nanostores/react';
+import MediaPlayerContainer from '@/components/media/MediaPlayerContainer'; // New: Import MediaPlayerContainer
 
 import {
   $mediaStore,
@@ -304,28 +305,10 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
           <SpotifyMainContent currentView={currentView} />
         </Box>
       </Box>
-      <Box className="flex sticky bottom-0 justify-center items-center">
-        {currentTrack?.fileType === FileType.AUDIO ? (
-          <audio
-            ref={mediaElementRef}
-            src={currentTrack?.streamUrl}
-            style={{ display: 'none' }}
-            preload="metadata"
-          />
-        ) : currentTrack?.fileType === FileType.VIDEO ? (
-          <video
-            ref={mediaElementRef}
-            src={currentTrack?.streamUrl}
-            style={{ display: 'none' }}
-            preload="metadata"
-          />
-        ) : null}
-
-        <MediaPlayer
-          mediaType={currentTrack?.fileType || FileType.AUDIO}
-          mediaElementRef={mediaElementRef}
-        />
-      </Box>
+      <MediaPlayerContainer
+        mediaElementRef={mediaElementRef}
+        currentTrack={currentTrack}
+      />
     </>
   );
 };
