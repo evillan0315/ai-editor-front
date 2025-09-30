@@ -208,6 +208,22 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             </FormControl>
           );
         }
+        if ((prop as any)['x-multiline']) {
+          return (
+            <TextField
+              key={key}
+              label={label}
+              value={value}
+              onChange={(e) => handleChange(key, e.target.value)}
+              helperText={description}
+              multiline
+              rows={4}
+              {...muiCommonProps}
+              className={fieldClassNames}
+              sx={{ ml: level * 2 }}
+            />
+          );
+        }
         return (
           <TextField
             key={key}

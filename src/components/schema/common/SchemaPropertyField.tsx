@@ -296,6 +296,21 @@ const SchemaPropertyField: React.FC<SchemaPropertyFieldProps> = ({
                 fullWidth
                 helperText="Regular expression for string validation"
               />
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={!!property.xMultiline}
+                      onChange={(e) =>
+                        handleFieldChange('xMultiline', e.target.checked)
+                      }
+                      size="small"
+                    />
+                  }
+                  label="Render as Multiline Textarea"
+                  sx={{ mt: 1 }}
+                />
+              </FormGroup>
             </>
           )}
 
