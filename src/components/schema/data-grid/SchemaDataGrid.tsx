@@ -36,8 +36,16 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { schemaApi } from '@/api/schema';
 import { Schema, CreateSchemaPayload, UpdateSchemaPayload, JsonSchema } from '@/types/schema';
+import { getCodeMirrorLanguage } from '@/utils'; // Import getCodeMirrorLanguage
 
-// --- Interfaces & Types ---
+// --- Module Augmentation for custom toolbar props ---
+declare module '@mui/x-data-grid' {
+  interface ToolbarPropsOverrides {
+    onOpenCreateDialog: () => void;
+  }
+}
+
+// --- Interfaces & Types --- (Updated to reflect module augmentation)
 interface EditToolbarProps extends GridToolbarProps {
   onOpenCreateDialog: () => void;
 }
@@ -470,7 +478,7 @@ const SchemaDataGrid: React.FC = () => {
           <Typography variant="body2" sx={{ mb: 1 }}>Schema Content (JSON)</Typography>
           <CodeMirrorEditor
             value={newSchemaContent}
-            language="json"
+            extensions={getCodeMirrorLanguage('new-schema.json', false)}
             filePath="new-schema.json"
             onChange={setNewSchemaContent}
             height="300px"
@@ -500,7 +508,7 @@ const SchemaDataGrid: React.FC = () => {
           {error && <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>}
           <CodeMirrorEditor
             value={editedSchemaContent}
-            language="json"
+            extensions={getCodeMirrorLanguage(`${currentViewSchema?.name || 'schema'}.json`, false)}
             filePath={`${currentViewSchema?.name || 'schema'}.json`}
             onChange={setEditedSchemaContent}
             height="400px"

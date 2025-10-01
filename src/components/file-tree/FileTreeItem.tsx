@@ -16,7 +16,7 @@ import {
 } from '@/stores/fileTreeStore';
 import { useStore } from '@nanostores/react';
 import { getFileTypeIcon } from '@/constants/fileIcons'; // Import the new utility
-import { NamePrefixSvgIcon } from '@/components/NamePrefixSvgIcon';
+import NamePrefixSvgIcon from '@/components/NamePrefixSvgIcon'; // Corrected import to default
 import { getCodeMirrorLanguage } from '@/utils/index';
 interface FileTreeItemProps {
   fileEntry: FileEntry;
@@ -49,7 +49,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
       toggleDirExpansion(fileEntry.path);
     } else {
       setSelectedFile(fileEntry.path);
-    }D
+    }
   }, [fileEntry.type, fileEntry.path]);
 
   const handleContextMenu = useCallback(
@@ -164,7 +164,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
           <Box sx={{ pl: 0 }}>
             {' '}
             {/* Children handle their own paddingLeft */}
-            {fileEntry.children?.map((child) => (  // Added optional chaining for 'children'
+            {fileEntry.children?.map((child) => (
               <FileTreeItem
                 key={child.path}
                 fileEntry={child}
