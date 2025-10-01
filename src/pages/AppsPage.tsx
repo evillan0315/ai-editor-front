@@ -10,17 +10,17 @@ import {
   CardContent,
   Button,
   CardActions,
-  IconButton, // NEW
-  Tooltip, // NEW
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import AppsIcon from '@mui/icons-material/Apps';
 import { Link } from 'react-router-dom';
-import { AppDefinition } from '@/types'; // Import AppDefinition
-import { appDefinitions } from '@/constants/appDefinitions'; // New: Import appDefinitions
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'; // NEW
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'; // NEW
-import { useStore } from '@nanostores/react'; // NEW
-import { addNavbarApp, removeNavbarApp, $navbarApps } from '@/stores/navbarAppsStore'; // NEW
+import { AppDefinition } from '@/types';
+import { appDefinitions } from '@/constants/appDefinitions';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { useStore } from '@nanostores/react';
+import { addNavbarApp, removeNavbarApp, $navbarApps } from '@/stores/navbarAppsStore';
 
 interface AppCardProps {
   app: AppDefinition;
@@ -28,13 +28,12 @@ interface AppCardProps {
 
 const AppCard: React.FC<AppCardProps> = ({ app }) => {
   const theme = useTheme();
-  const Icon = app.icon; // Access icon directly from app object
+  const Icon = app.icon;
 
-  // Use the nanostore to check if the app is in the navbar
-  const { appIds: currentNavbarAppIds } = useStore($navbarApps); // NEW
-  const isInNavbar = currentNavbarAppIds.includes(app.id); // NEW
+  const { appIds: currentNavbarAppIds } = useStore($navbarApps);
+  const isInNavbar = currentNavbarAppIds.includes(app.id);
 
-  const handleToggleNavbar = () => { // NEW
+  const handleToggleNavbar = () => {
     if (isInNavbar) {
       removeNavbarApp(app.id);
     } else {
@@ -72,11 +71,11 @@ const AppCard: React.FC<AppCardProps> = ({ app }) => {
           {app.description}
         </Typography>
       </CardContent>
-      <CardActions sx={{ mt: 'auto', p: 2, display: 'flex', justifyContent: 'space-between' }}> {/* NEW: Added display flex and justify-content */}
+      <CardActions sx={{ mt: 'auto', p: 2, display: 'flex', justifyContent: 'space-between' }}>
         <Button size="small" component={Link} to={app.link} variant="outlined">
           {app.linkText}
         </Button>
-        <Tooltip title={isInNavbar ? 'Remove from Navbar Apps' : 'Add to Navbar Apps'}> {/* NEW */}
+        <Tooltip title={isInNavbar ? 'Remove from Navbar Apps' : 'Add to Navbar Apps'}>
           <IconButton
             onClick={handleToggleNavbar}
             color={isInNavbar ? 'primary' : 'default'}
@@ -93,7 +92,6 @@ const AppCard: React.FC<AppCardProps> = ({ app }) => {
 const AppsPage: React.FC = () => {
   const theme = useTheme();
 
-  // Group apps by category
   const categorizedApps = appDefinitions.reduce(
     (acc: { [key: string]: AppDefinition[] }, app) => {
       if (!acc[app.category]) {
@@ -111,7 +109,7 @@ const AppsPage: React.FC = () => {
       <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
         Applications
       </Typography>
-      <Typography variant="body1" color="text.secondary" align="center">
+      <Typography variant="body1" color="text.secondary">
         Discover and launch various AI-powered tools and features to enhance
         your development workflow.
       </Typography>
@@ -124,7 +122,6 @@ const AppsPage: React.FC = () => {
           color: theme.palette.text.primary,
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
           gap: 3,
         }}
       >
@@ -134,7 +131,7 @@ const AppsPage: React.FC = () => {
               <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
                 {category}
               </Typography>
-              <Grid container spacing={3} justifyContent="center">
+              <Grid container spacing={3}>
                 {apps.map((app) => (
                   <Grid item xs={12} sm={6} md={4} key={app.id} component="div">
                     <AppCard app={app} />
