@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { EditorView } from '@codemirror/view';
+import { EditorView, keymap } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
 import { getCodeMirrorLanguage, createCodeMirrorTheme, getLanguageNameFromPath } from '@/utils/index';
@@ -19,6 +19,7 @@ interface CodeMirrorEditorProps {
   height?: string;
   width?: string;
   onEditorViewChange?: (view: EditorView) => void;
+  onSave?: () => void; // New prop for save functionality
 }
 
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
@@ -31,6 +32,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   height,
   width,
   onEditorViewChange,
+  onSave, // Destructure new prop
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
@@ -46,6 +48,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       ? getLanguageNameFromPath(filePath)
       : language === 'typescript'
         ? 'TypeScript'
+        : language === 'json'
+          ? 'Json'
         : language === 'javascript'
           ? 'JavaScript'
           : 'Plain Text'; // Fallback for explicit language prop or no path
@@ -104,12 +108,28 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     // If no specific language is determined by 'language' prop or 'filePath',
     // CodeMirror will treat it as plain text.
 
-    return [
+    const baseExtensions = [
       ...langExtensions,
       createCodeMirrorTheme(muiTheme),
       EditorView.lineWrapping,
     ];
-  }, [language, filePath, muiTheme]); // Added filePath to dependencies for language detection
+
+    if (onSave) {
+      baseExtensions.push(
+        keymap.of([
+          {
+            key: 'Mod-s',
+            run: () => {
+              onSave();
+              return true;
+            },
+          },
+        ]),
+      );
+    }
+
+    return baseExtensions;
+  }, [language, filePath, muiTheme, onSave]); // Added onSave to dependencies
 
   return (
     <Box
