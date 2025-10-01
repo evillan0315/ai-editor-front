@@ -3,31 +3,35 @@ import { Box, Button, TextField, Typography, Link as MuiLink } from '@mui/materi
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { loginUser } from '@/api/auth';
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
-import { snackbarStore } from '@/stores/snackbarStore';
+import { authStore, setLoading, loginSuccess } from '@/stores/authStore'; // Import from authStore
+import { showGlobalSnackbar } from '@/stores/snackbarStore'; // Import showGlobalSnackbar
 import PageLayout from '@/components/layouts/PageLayout';
+import { useStore } from '@nanostores/react';
 
 function LoginPage() {
   useAuthRedirect();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  // Use loading state from authStore
+  const { loading: authLoading } = useStore(authStore);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
-    setLoading(true);
+    setLoading(true); // Use setLoading from authStore
     try {
-      await loginUser({ email, password });
-      snackbarStore.setSnackbar({ message: 'Login successful!', severity: 'success' });
+      const authResponse = await loginUser({ email, password });
+      loginSuccess(authResponse.user, authResponse.accessToken); // Update authStore on success
+      showGlobalSnackbar('Login successful!', 'success');
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Login failed:', error);
-      snackbarStore.setSnackbar({
-        message: error.response?.data?.message || 'Login failed. Please check your credentials.',
-        severity: 'error',
-      });
+      showGlobalSnackbar(
+        error.response?.data?.message || 'Login failed. Please check your credentials.',
+        'error',
+      );
     } finally {
-      setLoading(false);
+      setLoading(false); // Use setLoading from authStore
     }
   };
 
@@ -68,10 +72,10 @@ function LoginPage() {
               variant="contained"
               color="primary"
               fullWidth
-              disabled={loading}
+              disabled={authLoading} // Use authLoading from authStore
               className="mb-4"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {authLoading ? 'Logging in...' : 'Login'} {/* Use authLoading */}
             </Button>
             <Typography variant="body2" className="text-center text-gray-700 dark:text-gray-300">
               Don't have an account?{' '}

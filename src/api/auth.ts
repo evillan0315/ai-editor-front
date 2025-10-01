@@ -1,5 +1,5 @@
 import { loginSuccess, logout, setLoading, setError, getToken } from '@/stores/authStore';
-import { API_BASE_URL, type ApiError, handleResponse, fetchWithAuth } from '@/api/fetch';
+import { API_BASE_URL, type ApiError, handleResponse, fetchWithAuth } from '@/api';
 import { LoginRequest, RegisterRequest } from '@/types/auth';
 import { UserProfile } from '@/types/user'; // Corrected import path
 

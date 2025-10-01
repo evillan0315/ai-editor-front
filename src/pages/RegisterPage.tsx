@@ -3,36 +3,40 @@ import { Box, Button, TextField, Typography, Link as MuiLink } from '@mui/materi
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { registerUser } from '@/api/auth';
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
-import { snackbarStore } from '@/stores/snackbarStore';
+import { setLoading, authStore } from '@/stores/authStore'; // Import setLoading and authStore
+import { showGlobalSnackbar } from '@/stores/snackbarStore'; // Import showGlobalSnackbar
 import PageLayout from '@/components/layouts/PageLayout';
+import { useStore } from '@nanostores/react';
 
 function RegisterPage() {
   useAuthRedirect();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState(''); // Add username state
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  // Use loading state from authStore
+  const { loading: authLoading } = useStore(authStore);
 
   const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault();
     if (password !== confirmPassword) {
-      snackbarStore.setSnackbar({ message: 'Passwords do not match!', severity: 'error' });
+      showGlobalSnackbar('Passwords do not match!', 'error');
       return;
     }
-    setLoading(true);
+    setLoading(true); // Use setLoading from authStore
     try {
-      await registerUser({ email, password });
-      snackbarStore.setSnackbar({ message: 'Registration successful! Please log in.', severity: 'success' });
+      await registerUser({ email, password, username }); // Pass username
+      showGlobalSnackbar('Registration successful! Please log in.', 'success');
       navigate('/login');
     } catch (error: any) {
       console.error('Registration failed:', error);
-      snackbarStore.setSnackbar({
-        message: error.response?.data?.message || 'Registration failed. Please try again.',
-        severity: 'error',
-      });
+      showGlobalSnackbar(
+        error.response?.data?.message || 'Registration failed. Please try again.',
+        'error',
+      );
     } finally {
-      setLoading(false);
+      setLoading(false); // Use setLoading from authStore
     }
   };
 
@@ -55,6 +59,16 @@ function RegisterPage() {
               margin="normal"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+              className="mb-4"
+            />
+            <TextField
+              label="Username"
+              type="text"
+              fullWidth
+              margin="normal"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               className="mb-4"
             />
@@ -83,10 +97,10 @@ function RegisterPage() {
               variant="contained"
               color="primary"
               fullWidth
-              disabled={loading}
+              disabled={authLoading} // Use authLoading from authStore
               className="mb-4"
             >
-              {loading ? 'Registering...' : 'Register'}
+              {authLoading ? 'Registering...' : 'Register'} {/* Use authLoading */}
             </Button>
             <Typography variant="body2" className="text-center text-gray-700 dark:text-gray-300">
               Already have an account?{' '}
