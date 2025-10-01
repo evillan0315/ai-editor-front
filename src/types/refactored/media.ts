@@ -42,26 +42,40 @@ export const allowedMediaFormats = [
 export type AllowedMediaFormat = (typeof allowedMediaFormats)[number];
 
 /**
- * Interface for audio or video metadata.
+ * Interface for generic audio or video metadata (e.g., for AUDIO, VIDEO, IMAGE).
  */
-export interface MediaMetadataData {
+export interface GenericMediaMetadataData {
   title?: string;
-  duration?: string;
+  duration?: string; // Duration as string for general media
   thumbnail?: string | null;
 }
+
 export type MediaPlayerType = 'AUDIO' | 'VIDEO';
+
 /**
- * Interface for generic metadata associated with a media file.
+ * Base interface for common metadata properties.
  */
-export interface MediaMetadata {
+export interface BaseMediaMetadata {
   id: string;
-  type: FileType;
-  data: MediaMetadataData;
   tags: string[];
   createdAt: string;
   fileId: string;
   createdById: string | null;
 }
+
+/**
+ * Discriminated union for MediaMetadata, allowing different `data` types
+ * based on the `type` of the metadata.
+ */
+export type MediaMetadata =
+  | (BaseMediaMetadata & {
+      type: Exclude<FileType, FileType.TRANSCRIPT>;
+      data: GenericMediaMetadataData; // For all types except TRANSCRIPT
+    })
+  | (BaseMediaMetadata & {
+      type: FileType.TRANSCRIPT;
+      data: TranscriptionResult; // Specifically TranscriptionResult for TRANSCRIPT type
+    });
 
 /**
  * DTO for creating a new media file entry in the backend.
@@ -94,7 +108,7 @@ export interface MediaFileResponseDto {
   videoId?: string | null;
   createdById: string;
   folderId?: string | null;
-  metadata?: MediaMetadata[] | null; // Changed to array of MediaMetadata
+  metadata?: MediaMetadata[] | null; // Now using the discriminated union type
   song?: Song | null;
   video?: Video | null;
 }
@@ -162,7 +176,7 @@ export interface TranscriptionSegment {
 export interface TranscriptionResult {
   segments: TranscriptionSegment[];
   fullText: string;
-  duration: number;
+  duration: number; // Duration as number for transcription
   language?: string;
   languageProbability?: number;
   model?: string;
