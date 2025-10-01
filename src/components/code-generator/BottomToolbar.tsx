@@ -34,18 +34,18 @@ import {
 } from '@/stores/fileTreeStore';
 import { addLog } from '@/stores/logStore';
 import { errorStore, setErrorRaw } from '@/stores/errorStore';
-import { autoApplyChanges, setAutoApplyChanges, showGlobalSnackbar } from '@/stores/aiEditorStore';
+import { autoApplyChanges, setAutoApplyChanges } from '@/stores/llmStore';
+import { showGlobalSnackbar } from '@/stores/snackbarStore';
 import { useStore } from '@nanostores/react';
 import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
 import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
-import PromptGeneratorSettings, {
-  type GlobalAction,
-} from '@/components/Drawer/PromptGeneratorSettings';
+import PromptGeneratorSettings from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import { ImportJson } from './ImportJson';
 import { CodeGeneratorData } from './CodeGeneratorMain';
 import { RequestType } from '@/types/llm';
+import { GlobalAction } from '@/components/ui/GlobalActionButton'; // Corrected import path for GlobalAction
 
 interface BottomToolbarProps {
   scanPathAutocompleteOptions: string[];
