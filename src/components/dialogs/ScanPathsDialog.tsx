@@ -16,6 +16,7 @@ import {
   InputAdornment,
   useTheme,
   Tooltip,
+  ListItemButton
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
@@ -173,11 +174,14 @@ const ScanPathsDialog: React.FC<ScanPathsDialogProps> = ({
             {filteredOptions.map((option, index) => (
               <ListItem
                 key={index}
-                button
+                disablePadding
+              >
+                <ListItemButton
                 selected={selectedPaths.includes(option)}
                 onClick={() => addPath(option)}
               >
                 <ListItemText primary={option} />
+                  </ListItemButton>
               </ListItem>
             ))}
           </List>
