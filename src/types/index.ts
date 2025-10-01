@@ -1,6 +1,5 @@
 export * from './auth';
 export * from './app';
-export * from './conversation';
 export * from './file';
 export * from './git';
 export * from './llm';
@@ -13,5 +12,4 @@ export * from './terminal';
 export * from './user';
 export * from './refactored/fileTree';
 export * from './refactored/media';
-export * from './refactored/spotify';
 export * from './gemini';

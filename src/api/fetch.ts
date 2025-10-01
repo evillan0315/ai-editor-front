@@ -1,4 +1,5 @@
 import { getToken } from '@/stores/authStore';
+
 export const API_BASE_URL = `/api`; // Changed to relative path for Vite proxy consistency
 
 export interface ApiError extends Error {

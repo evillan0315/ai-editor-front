@@ -11,6 +11,7 @@ import {
   INSTRUCTION,
   ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
 } from '@/constants/instruction';
+import { persistentAtom } from '@/utils/persistentAtom';
 import { applyProposedChanges } from '@/api/llm';
 import { addLog } from '@/stores/logStore';
 import { ErrorStoreState, errorStore, setError } from '@/stores/errorStore';
@@ -130,7 +131,9 @@ export const setLastLlmResponse = (response: ModelResponse | null) => {
     error:
       typeof response.error === 'string'
         ? response.error
-        : (response.error?.message ?? null),
+        : (response.error && typeof response.error === 'object' && 'message' in response.error
+            ? response.error.message
+            : null),
     changes: Array.isArray(response.changes) ? response.changes : [],
     gitInstructions: Array.isArray(response.gitInstructions)
       ? response.gitInstructions
@@ -274,8 +277,7 @@ export const performPostApplyActions = async (
   if (llmResponse?.gitInstructions?.length) {
     addLog(
       'Git Automation',
-      'Executing AI-suggested git instructions...',
-      'info',
+      'Executing AI-suggested git instructions...', 'info',
     );
     let gitCommandsSuccessful = true;
     for (const command of llmResponse.gitInstructions) {
@@ -328,4 +330,13 @@ export const performPostApplyActions = async (
     setError(errMsg);
   }
 };
+export const autoApplyChanges = persistentAtom<boolean>(
+  'autoApplyChanges',
+  false,
+);
+export const setAutoApplyChanges = (value: boolean) => {
+  autoApplyChanges.set(value);
+};
+
+
 export * from './snackbarStore';

@@ -1,8 +1,7 @@
 import { map, atom } from 'nanostores';
-import { showGlobalSnackbar } from './aiEditorStore';
+import { showGlobalSnackbar } from './snackbarStore';
 import { persistentAtom } from '@/utils';
 import {
-  Track,
   MediaFileResponseDto,
   MediaFileResponseDtoUrl,
   RepeatMode,
@@ -181,10 +180,20 @@ export const fetchAndLoadTranscription = async (fileId: string) => {
   transcriptionErrorAtom.set(null);
   let result: TranscriptionResult;
   try {
-    const transcriptionMetadata = currentTrackAtom
-      .get()
-      .metadata.find((m) => m.type === FileType.TRANSCRIPT);
-    if (transcriptionMetadata && transcriptionMetadata.data) {
+    const currentTrack = currentTrackAtom.get();
+    // Ensure currentTrack and its metadata are available
+    if (!currentTrack || !currentTrack.metadata) {
+      console.warn('No current track or metadata available to load transcription.');
+      return;
+    }
+
+    const transcriptionMetadata = currentTrack.metadata.find(
+      (m) => m.type === FileType.TRANSCRIPT,
+    );
+
+    // Check if transcriptionMetadata exists and is of the TRANSCRIPT type
+    if (transcriptionMetadata && transcriptionMetadata.type === FileType.TRANSCRIPT && transcriptionMetadata.data) {
+      // TypeScript now correctly infers transcriptionMetadata.data as TranscriptionResult
       result = transcriptionMetadata.data;
     } else {
       result = await getTranscription(fileId);
@@ -271,11 +280,9 @@ export const setCurrentTrack = (track: MediaFileResponseDto | null) => {
     const transcriptionMetadata = newTrack.metadata.find(
       (m) => m.type === FileType.TRANSCRIPT,
     );
-    if (transcriptionMetadata && transcriptionMetadata.data) {
-      // The 'data' field of TRANSCRIPT metadata is expected to be a TranscriptionResult
-      transcriptionResultAtom.set(
-        transcriptionMetadata.data as TranscriptionResult,
-      );
+    if (transcriptionMetadata && transcriptionMetadata.type === FileType.TRANSCRIPT && transcriptionMetadata.data) {
+      // The 'data' field of TRANSCRIPT metadata is now correctly typed as TranscriptionResult
+      transcriptionResultAtom.set(transcriptionMetadata.data);
       showGlobalSnackbar('Transcription pre-loaded from metadata', 'info');
     }
   }
@@ -407,7 +414,8 @@ export const previousTrack = async () => {
 
   if (previousMediaFile) {
     setCurrentTrack(previousMediaFile);
-  } else {
+  }
+  else {
     showGlobalSnackbar('No tracks available to play.', 'info');
     setPlaying(false); // Ensure player is paused if no track is available
   }
@@ -441,7 +449,7 @@ export const fetchingMediaFiles = async (
   } catch (err: any) {
     console.error('Error fetching audio files:', err);
     showGlobalSnackbar(
-      `Failed to fetch audio files: ${err.message || 'Unknown error'}`,
+      `Failed to fetch audio files: ${err.message || 'Unknown error'} `,
       'error',
     );
   }
@@ -456,7 +464,7 @@ export const fetchingMediaFiles = async (
   } catch (err: any) {
     console.error('Error fetching video files:', err);
     showGlobalSnackbar(
-      `Failed to fetch video files: ${err.message || 'Unknown error'}`,
+      `Failed to fetch video files: ${err.message || 'Unknown error'} `,
       'error',
     );
   }
