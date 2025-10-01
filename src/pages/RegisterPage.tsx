@@ -4,8 +4,8 @@ import { Box, Button, TextField, Typography, Alert } from '@mui/material';
 import { registerLocal } from '@/api/auth';
 import { useStore } from '@nanostores/react';
 import { authStore, setError } from '@/stores/authStore';
-import { PageLayout } from '@/components/layouts/PageLayout';
-import { PageHeader } from '@/components/layouts/PageHeader';
+import PageLayout from '@/components/layouts/PageLayout';
+import PageHeader from '@/components/layouts/PageHeader';
 
 const RegisterPage: React.FC = () => {
   const [name, setName] = useState('');

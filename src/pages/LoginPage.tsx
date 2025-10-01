@@ -4,9 +4,10 @@ import { Box, Button, TextField, Typography, Alert } from '@mui/material';
 import { loginLocal } from '@/api/auth';
 import { useStore } from '@nanostores/react';
 import { authStore, setError } from '@/stores/authStore';
-import type { UserProfile } from '@/types/user'; // Corrected import path
-import { PageLayout } from '@/components/layouts/PageLayout';
-import { PageHeader } from '@/components/layouts/PageHeader';
+import { API_BASE_URL } from '@/api/fetch'; // Import API_BASE_URL
+import type { UserProfile } from '@/types/user';
+import PageLayout from '@/components/layouts/PageLayout'; // Corrected to default import
+import PageHeader from '@/components/layouts/PageHeader'; // Corrected to default import
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
