@@ -24,6 +24,8 @@ import {
   GridToolbarDensitySelector,
   GridToolbarFilterButton,
   GridPreProcessEditCellProps,
+  GridToolbarProps,
+  GridRowId,
 } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
@@ -36,9 +38,7 @@ import { schemaApi } from '@/api/schema';
 import { Schema, CreateSchemaPayload, UpdateSchemaPayload, JsonSchema } from '@/types/schema';
 
 // --- Interfaces & Types ---
-interface EditToolbarProps {
-  setRows: (newRows: (oldRows: Schema[]) => Schema[]) => void;
-  setRowModesModel: (newModel: (oldModel: GridRowModesModel) => GridRowModesModel) => void;
+interface EditToolbarProps extends GridToolbarProps {
   onOpenCreateDialog: () => void;
 }
 
@@ -56,10 +56,10 @@ const dataGridContainerSx = {
 
 // --- Custom Toolbar Component ---
 function EditToolbar(props: EditToolbarProps) {
-  const { onOpenCreateDialog } = props;
+  const { onOpenCreateDialog, ...other } = props;
 
   return (
-    <GridToolbarContainer className="flex justify-between items-center p-2">
+    <GridToolbarContainer className="flex justify-between items-center p-2" {...other}> {/* Pass GridToolbarProps down */}
       <Stack direction="row" spacing={1}>
         <GridToolbarColumnsButton />
         <GridToolbarFilterButton />
@@ -132,7 +132,7 @@ const SchemaDataGrid: React.FC = () => {
   );
 
   const handleEditClick = useCallback(
-    (id: string) => () => {
+    (id: GridRowId) => () => {
       setRowModesModel((prev) => ({
         ...prev,
         [id]: { mode: GridRowModes.Edit },
@@ -142,7 +142,7 @@ const SchemaDataGrid: React.FC = () => {
   );
 
   const handleSaveClick = useCallback(
-    (id: string) => () => {
+    (id: GridRowId) => () => {
       setRowModesModel((prev) => ({
         ...prev,
         [id]: { mode: GridRowModes.View, ignoreModifications: true },
@@ -152,12 +152,13 @@ const SchemaDataGrid: React.FC = () => {
   );
 
   const handleDeleteClick = useCallback(
-    (id: string) => async () => {
+    (id: GridRowId) => async () => {
       if (!confirm('Are you sure you want to delete this schema?')) {
         return;
       }
       try {
-        await schemaApi.deleteSchema(id);
+        // Ensure id is treated as string for API call if necessary, or update API type
+        await schemaApi.deleteSchema(id.toString());
         setRows((oldRows) => oldRows.filter((row) => row.id !== id));
       } catch (err) {
         console.error('Failed to delete schema:', err);
@@ -168,7 +169,7 @@ const SchemaDataGrid: React.FC = () => {
   );
 
   const handleCancelClick = useCallback(
-    (id: string) => () => {
+    (id: GridRowId) => () => {
       setRowModesModel((prev) => ({
         ...prev,
         [id]: { mode: GridRowModes.View, ignoreModifications: true },
@@ -211,7 +212,7 @@ const SchemaDataGrid: React.FC = () => {
 
   const handleProcessRowUpdateError = useCallback((error: Error) => {
     console.error('Error during row update:', error);
-    // Optionally display an error message to the user
+    // Optionally display an message to the user
   }, []);
 
   // --- Create Schema Dialog Handlers ---
@@ -439,7 +440,7 @@ const SchemaDataGrid: React.FC = () => {
           toolbar: EditToolbar,
         }}
         slotProps={{
-          toolbar: { setRows, setRowModesModel, onOpenCreateDialog: handleOpenCreateDialog },
+          toolbar: { onOpenCreateDialog: handleOpenCreateDialog },
         }}
         paginationModel={{ page: 0, pageSize: 10 }} // Default pagination
         pageSizeOptions={[5, 10, 25]}

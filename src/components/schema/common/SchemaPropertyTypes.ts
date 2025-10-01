@@ -10,7 +10,7 @@
 export interface SchemaProperty {
   id: string; // Unique ID for React keying and manipulation
   name: string; // Property name
-  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'null';
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'null' | 'integer';
   required: boolean;
   description?: string;
   format?: string;
