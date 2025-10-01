@@ -66,6 +66,7 @@ interface BottomToolbarProps {
   updateScanPaths: (paths: string[]) => void;
   requestType: RequestType;
   handleSave: () => void; // Add handleSave prop
+  handleClear: () => void; // Add handleClear prop
   commonDisabled?: boolean;
 }
 
@@ -88,6 +89,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   updateScanPaths,
   requestType,
   handleSave, // Receive handleSave
+  handleClear, // Receive handleClear
   commonDisabled
 }) => {
   const theme = useTheme();
@@ -199,7 +201,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           </IconButton>
         </Tooltip>
           <Tooltip title="Clear editor and AI response">
-            <IconButton color="error" onClick={clearLlmStore} disabled={commonDisabled}>
+            <IconButton color="error" onClick={handleClear} disabled={commonDisabled}>
               <ClearIcon />
             </IconButton>
           </Tooltip>

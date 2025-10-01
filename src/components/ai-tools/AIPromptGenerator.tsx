@@ -67,12 +67,25 @@ const AIPromptGenerator: React.FC = () => {
   const [projectInput, setProjectInput] = useState('');
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] =
+  const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] = 
     useState(false);
   const [isScanPathsDialogOpen, setIsScanPathsDialogOpen] = useState(false);
   const updateScanPaths = () => {};
   const handleLoadProject = () => {};
-  const handleClear = () => {};
+  
+  // Implement handleClear for AIPromptGenerator
+  const handleClear = () => {
+    setInstruction('');
+    aiChatStore.setKey('messages', []); // Clear AI chat messages
+    aiChatStore.setKey('error', null); // Clear any chat errors
+  };
+
+  // Stub handleSave for AIPromptGenerator, as it's primarily used in PromptGenerator's settings drawer
+  const handleSave = () => {
+    // No specific save action for this component's settings drawer as settings are handled by inner components
+    setIsSettingsOpen(false);
+  };
+
   const commonDisabled = false;
 
   const handleSendMessage = async () => {
@@ -186,7 +199,8 @@ const AIPromptGenerator: React.FC = () => {
         isScanPathsDialogOpen={isScanPathsDialogOpen}
         setIsScanPathsDialogOpen={setIsScanPathsDialogOpen}
         updateScanPaths={updateScanPaths}
-        handleClear={handleClear}
+        handleClear={handleClear} // Pass the implemented handleClear
+        handleSave={handleSave}   // Pass the stubbed handleSave
         requestType={RequestType.TEXT_ONLY}
       />
     </Box>
