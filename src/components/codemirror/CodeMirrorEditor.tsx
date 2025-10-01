@@ -1,181 +1,119 @@
-import React, { useState } from 'react';
+import React from 'react';
+import CodeMirror, { BasicSetupOptions } from '@uiw/react-codemirror';
+import { createTheme } from '@uiw/codemirror-theme-one-dark'; // Use one-dark as a fallback
+import { tags as t } from '@lezer/highlight';
 import { useStore } from '@nanostores/react';
-import { EditorView, keymap } from '@codemirror/view';
-import { javascript } from '@codemirror/lang-javascript';
-import CodeMirror from '@uiw/react-codemirror';
-import { getCodeMirrorLanguage, createCodeMirrorTheme, getLanguageNameFromPath } from '@/utils/index';
-import { Box, useTheme } from '@mui/material';
 import { themeStore } from '@/stores/themeStore';
-import { LanguageSupport } from '@codemirror/language';
-import CodeMirrorStatus from './CodeMirrorStatus';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
+import { createCodeMirrorTheme, getCodeMirrorLanguage } from '@/utils'; // Import custom theme creator
+import { EditorView } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
+import { indentWithTab } from '@codemirror/commands';
+import { keymap } from '@codemirror/view';
+import { defaultKeymap } from '@codemirror/commands';
 
 interface CodeMirrorEditorProps {
   value: string;
-  onChange: (value: string) => void;
-  language?: string;
-  filePath?: string;
-  isDisabled?: boolean;
-  classNames?: string;
+  onChange?: (value: string) => void;
+  filePath: string;
   height?: string;
   width?: string;
-  onEditorViewChange?: (view: EditorView) => void;
-  onSave?: () => void; // New prop for save functionality
+  minHeight?: string;
+  maxHeight?: string;
+  extensions?: any[];
+  basicSetup?: BasicSetupOptions | boolean;
+  /** If true, the editor content cannot be changed. Defaults to false. */
+  isDisabled?: boolean;
+  /** If true, the editor content can be changed. Defaults to true. */
+  editable?: boolean;
+  /** Optional callback for saving the file, typically on Cmd/Ctrl+S. */
+  onSave?: (value: string) => void;
+  /** If true, enables diff view specific styling. */
+  isDiffView?: boolean;
 }
-
-const STATUS_BAR_HEIGHT = '32px'; // Corresponds to Tailwind's h-8
 
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   value,
   onChange,
-  language,
   filePath,
-  isDisabled,
-  classNames,
-  height,
-  width,
-  onEditorViewChange,
-  onSave, // Destructure new prop
+  height = '100%',
+  width = '100%',
+  minHeight,
+  maxHeight,
+  extensions = [],
+  basicSetup = {
+    lineNumbers: true,
+    highlightActiveLineGutter: true,
+    highlightSpecialChars: true,
+    history: true,
+    foldGutter: true,
+    dropCursor: true,
+    allowMultipleSelections: true,
+    indentOnInput: true,
+    syntaxHighlighting: true,
+    bracketMatching: true,
+    closeBrackets: true,
+    autocompletion: true,
+    rectangularSelection: true,
+    crosshairCursor: true,
+    highlightActiveLine: true,
+    highlightSelectionMatches: true,
+    closeBracketsKeymap: true,
+    completionKeymap: true,
+    // Not including lintKeymap as it might interfere or be redundant if linting is setup via extensions
+    // searchKeymap: true, // Search is often useful, but can be added via extensions explicitly too.
+    // We'll manage search via default keymap and other extensions
+  },
+  isDisabled = false,
+  editable = true,
+  onSave,
+  isDiffView = false,
 }) => {
-  const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
-  const [editorViewInstance, setEditorViewInstance] = useState<EditorView | null>(null);
-  const [currentLine, setCurrentLine] = useState(1);
-  const [currentColumn, setCurrentColumn] = useState(1);
-  const [currentLanguageName, setCurrentLanguageName] = useState('Plain Text');
-  const [currentLintStatus, setCurrentLintStatus] = useState('No issues');
+  const muiTheme = useMuiTheme();
 
-  // Effect to update language name when filePath or explicit language prop changes
-  React.useEffect(() => {
-    const newLanguageName = filePath
-      ? getLanguageNameFromPath(filePath)
-      : language === 'typescript'
-        ? 'TypeScript'
-        : language === 'json'
-          ? 'Json'
-        : language === 'javascript'
-          ? 'JavaScript'
-          : 'Plain Text'; // Fallback for explicit language prop or no path
-    setCurrentLanguageName(newLanguageName);
-  }, [language, filePath]);
+  const languageExtensions = getCodeMirrorLanguage(filePath, isDiffView);
 
-  const handleChange = React.useCallback(
-    (val: string) => {
-      onChange(val);
-    },
-    [onChange],
-  );
+  const cmTheme = createCodeMirrorTheme(muiTheme, isDiffView);
 
-  const handleUpdate = React.useCallback(
-    (viewUpdate: { view: EditorView; changes: any; transactions: any }) => {
-      const view = viewUpdate.view;
+  const combinedExtensions = [
+    ...languageExtensions,
+    ...extensions,
+    cmTheme,
+    EditorView.lineWrapping, // Enable line wrapping
+    EditorState.readOnly.of(!editable || isDisabled), // Use editable prop here
+  ];
 
-      if (onEditorViewChange && view) {
-        onEditorViewChange(view);
-      }
-
-      // Only update editorViewInstance if it's a new instance to prevent unnecessary re-renders
-      if (view && view !== editorViewInstance) {
-        setEditorViewInstance(view);
-      }
-
-      // Update line and column based on current selection
-      if (view) {
-        const head = view.state.selection.main.head;
-        const lineObj = view.state.doc.lineAt(head);
-        setCurrentLine(lineObj.number);
-        setCurrentColumn(head - lineObj.from + 1);
-      }
-
-      // Placeholder for lint status update. Real linting would involve CodeMirror lint extensions.
-      setCurrentLintStatus('No issues');
-    },
-    [onEditorViewChange, editorViewInstance], // `editorViewInstance` added to dependencies to correctly detect changes in view instance.
-  );
-
-  const extensions = React.useMemo(() => {
-    // Determine language support based on filePath or explicit language prop
-    const langExtensions: LanguageSupport[] = [];
-    if (language) {
-      // Explicit language prop takes precedence
-      if (language === 'typescript') {
-        langExtensions.push(javascript({ jsx: true, typescript: true }));
-      } else if (language === 'javascript') {
-        langExtensions.push(javascript({ jsx: true }));
-      }
-      // Add more explicit language string mappings here if needed (e.g., 'json', 'markdown', 'html', 'css')
-    } else if (filePath) {
-      // Fallback to utility function if no explicit language and filePath is available
-      langExtensions.push(...getCodeMirrorLanguage(filePath, false));
-    }
-    // If no specific language is determined by 'language' prop or 'filePath',
-    // CodeMirror will treat it as plain text.
-
-    const baseExtensions = [
-      ...langExtensions,
-      createCodeMirrorTheme(muiTheme),
-      EditorView.lineWrapping,
-    ];
-
-    if (onSave) {
-      baseExtensions.push(
-        keymap.of([
-          {
-            key: 'Mod-s',
-            run: () => {
-              onSave();
-              return true;
-            },
+  // Add save keymap if onSave is provided
+  if (onSave) {
+    combinedExtensions.push(
+      keymap.of([
+        {
+          key: 'Mod-s',
+          run: () => {
+            onSave(value);
+            return true;
           },
-        ]),
-      );
-    }
-
-    return baseExtensions;
-  }, [language, filePath, muiTheme, onSave]); // Added onSave to dependencies
+          preventDefault: true,
+        },
+      ]),
+    );
+  }
 
   return (
-    <Box
-      className={`relative flex flex-col ${classNames || ''}`} // Added 'relative' and 'flex flex-col' for proper positioning context
-      sx={{
-        height: height || '100%',
-        width: width || '100%',
-        '--code-mirror-status-height': STATUS_BAR_HEIGHT, // Define CSS variable for status bar height
-      }}
-    >
-      {/* This Box wraps CodeMirror and takes available space, accounting for the status bar */}
-      <Box
-        sx={{
-          height: `calc(100% - var(--code-mirror-status-height))`, // Calculate height for editor area
-          width: '100%',
-          overflow: 'auto', // Ensures CodeMirror handles its own scrolling within this reserved space
-        }}
-      >
-        <CodeMirror
-          value={value}
-          height="100%" // CodeMirror itself fills its parent Box
-          width="100%" // CodeMirror itself fills its parent Box
-          theme={mode}
-          extensions={extensions}
-          onChange={handleChange}
-          onUpdate={handleUpdate}
-          editable={!isDisabled}
-        />
-      </Box>
-      {/* CodeMirrorStatus component at the bottom, absolutely positioned */}
-      <CodeMirrorStatus
-        languageName={currentLanguageName}
-        line={currentLine}
-        column={currentColumn}
-        lintStatus={currentLintStatus}
-        sx={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: STATUS_BAR_HEIGHT, // Ensure status bar maintains its height
-        }}
-      />
-    </Box>
+    <CodeMirror
+      value={value}
+      height={height}
+      width={width}
+      minHeight={minHeight}
+      maxHeight={maxHeight}
+      theme={cmTheme} // Apply the custom MUI theme
+      extensions={combinedExtensions}
+      onChange={onChange}
+      basicSetup={basicSetup}
+      readOnly={!editable || isDisabled} // Control editability based on prop
+      className="w-full"
+    />
   );
 };
 

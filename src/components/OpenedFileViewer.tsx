@@ -12,6 +12,7 @@ import {
   saveActiveFile,
   openedFileContent,
   openedFile,
+  isOpenedFileDirty // Directly import the atom
 } from '@/stores/fileStore';
 import { readFileContent } from '@/api/file';
 import { Box, Typography, CircularProgress, Alert, Paper } from '@mui/material';
@@ -27,11 +28,11 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
     initialFileContentSnapshot,
     isFetchingFileContent,
     fetchFileContentError,
-    isOpenedFileDirty,
     isSavingFileContent,
   } = useStore(fileStore);
   const $openedFileContent = useStore(openedFileContent);
   const $openedFile = useStore(openedFile);
+  const $isOpenedFileDirty = useStore(isOpenedFileDirty); // Subscribe directly to the atom
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
 
@@ -75,7 +76,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
       initialFileContentSnapshot !== null
     ) {
       const isDirty = $openedFileContent !== initialFileContentSnapshot;
-      if (isDirty !== isOpenedFileDirty) {
+      if (isDirty !== $isOpenedFileDirty) { // Compare with the atom's value
         setIsOpenedFileDirty(isDirty);
       }
     } else if (!$openedFile) {
@@ -86,7 +87,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
     $openedFileContent,
     initialFileContentSnapshot,
     isFetchingFileContent,
-    isOpenedFileDirty,
+    $isOpenedFileDirty, // Add the atom to dependencies
   ]);
 
   const handleContentChange = (value: string) => {

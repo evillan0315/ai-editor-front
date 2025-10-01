@@ -1,35 +1,36 @@
-// src/components/RemoteSvg.tsx
-import React, { useState } from 'react';
-import { useStore } from '@nanostores/react';
-import type { IconifyIconPrefix } from '@iconify/types';
-import { errorStore, setError } from '@/stores/errorStore';
+import React from 'react';
+import { Icon } from '@iconify-icon/react';
+import { Box, useTheme } from '@mui/material';
 
-export interface NamePrefixSvgIconProps {
-  prefix: IconifyIconPrefix;
-  name: string; // icon name inside the prefix
-  size?: number | string; // e.g. 48 or '2rem'
-  alt?: string;
-  fallback?: string; // optional fallback icon name
+interface NamePrefixSvgIconProps {
+  name: string;
+  prefix: string; // Changed from IconifyIconPrefix to string
+  color?: string;
+  size?: number | string;
 }
 
-export function NamePrefixSvgIcon({
-  prefix = 'material-icon-theme',
+const NamePrefixSvgIcon: React.FC<NamePrefixSvgIconProps> = ({
   name,
-  size = 48,
-  alt = `${prefix}:${name} icon`,
-  fallback = 'document', // supply a known fallback in your API
-}: NamePrefixSvgIconProps) {
-  const error = useStore(errorStore);
-  // pick the current name; if the first request errors, use the fallback
-  const iconName = error ? fallback : name;
-  const src = `http://localhost:3001/api/icon/${prefix}/${iconName}`;
+  prefix,
+  color,
+  size = 24,
+}) => {
+  const theme = useTheme();
 
   return (
-    <img
-      src={src}
-      alt={alt}
-      style={{ width: size, height: size }}
-      onError={() => setError('Icon does not exists in the api')}
-    />
+    <Box
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: size,
+        height: size,
+        color: color || theme.palette.text.primary,
+      }}
+    >
+      <Icon icon={`${prefix}:${name}`} width={size} height={size} />
+    </Box>
   );
-}
+};
+
+export default NamePrefixSvgIcon;
