@@ -43,9 +43,9 @@ import PromptGeneratorSettings from '@/components/Drawer/PromptGeneratorSettings
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import { ImportJson } from './ImportJson';
-import { ModelResponse } from '@/types/llm'; // Corrected import: CodeGeneratorData is ModelResponse
+import { ModelResponse } from '@/types/llm';
 import { RequestType } from '@/types/llm';
-import { GlobalAction } from '@/components/ui/GlobalActionButton'; // Corrected import path for GlobalAction
+import { GlobalAction } from '@/components/ui/GlobalActionButton';
 
 interface BottomToolbarProps {
   scanPathAutocompleteOptions: string[];
@@ -65,8 +65,8 @@ interface BottomToolbarProps {
 
   updateScanPaths: (paths: string[]) => void;
   requestType: RequestType;
-  handleSave: () => void; // Add handleSave prop
-  handleClear: () => void; // Add handleClear prop
+  handleSave: () => void;
+  handleClear: () => void;
   commonDisabled?: boolean;
 }
 
@@ -88,8 +88,8 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   updateScanPaths,
   requestType,
-  handleSave, // Receive handleSave
-  handleClear, // Receive handleClear
+  handleSave,
+  handleClear,
   commonDisabled
 }) => {
   const theme = useTheme();
@@ -104,7 +104,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   const handleImport = useCallback(() => {
     try {
-      const parsedData: ModelResponse = JSON.parse(importContentString); // Corrected type to ModelResponse
+      const parsedData: ModelResponse = JSON.parse(importContentString);
       setLastLlmResponse(parsedData);
       showGlobalSnackbar('Data imported successfully!', 'success');
       setIsImportDialogOpen(false);
@@ -120,22 +120,22 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       label: 'Cancel',
       action: () => setIsSettingsOpen(false),
       icon: CloseIcon,
-      disabled: false // Added disabled prop
+      disabled: false
     },
-    { label: 'Save', action: handleSave, icon: SaveIcon, disabled: false }, // Added disabled prop
+    { label: 'Save', action: handleSave, icon: SaveIcon, disabled: false },
   ];
   const ImportDataAction: GlobalAction[] = [
     {
       label: 'Cancel',
       action: () => setIsImportDialogOpen(false),
       icon: CloseIcon,
-      disabled: false // Added disabled prop
+      disabled: false
     },
     {
       label: 'Import',
       action: handleImport,
       icon: CloudUploadIcon,
-      disabled: !importContentString, // Disable if no content to import
+      disabled: !importContentString,
     },
   ]; 
   

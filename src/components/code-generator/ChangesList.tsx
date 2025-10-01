@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useReducer } from 'react';
+import React, { useCallback } from 'react';
 import { useStore } from '@nanostores/react';
 import {
   Box,
@@ -13,10 +13,11 @@ import { ChangeItem } from './ChangeItem';
 import OutputLogger from '@/components/OutputLogger';
 import { addLog } from '@/stores/logStore';
 import {
-  setError, // Still used for immediate, transient UI error
+  setError,
 } from '@/stores/errorStore';
 import {
   llmStore,
+  selectAllChanges,
   deselectAllChanges,
   setApplyingChanges,
   setLastLlmResponse,
@@ -24,59 +25,18 @@ import {
   performPostApplyActions,
 } from '@/stores/llmStore';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
-import { FileChange, ModelResponse, RequestType, LlmOutputFormat, ApplyResult } from '@/types/llm'; // Import ApplyResult
+import { FileChange, ModelResponse, RequestType, LlmOutputFormat, ApplyResult } from '@/types/llm';
 
 interface Props {
   changes: FileChange[];
 }
 
-// Define the state type
-type ChangesListState = {
-  selectedChanges: Record<string, FileChange>;
-};
-
-// Define the action type
-type ChangesListAction = {
-  type: 'SELECT_CHANGE' | 'DESELECT_CHANGE';
-  change: FileChange;
-};
-
-// Reducer function to manage selected changes
-const changesListReducer = (
-  state: ChangesListState,
-  action: ChangesListAction,
-): ChangesListState => {
-  switch (action.type) {
-    case 'SELECT_CHANGE':
-      return {
-        ...state,
-        selectedChanges: {
-          ...state.selectedChanges,
-          [action.change.filePath]: action.change,
-        },
-      };
-    case 'DESELECT_CHANGE':
-      const { [action.change.filePath]: _, ...rest } = state.selectedChanges;
-      return {
-        ...state,
-        selectedChanges: rest,
-      };
-    default:
-      return state;
-  }
-};
-
-// Initial state for the reducer
-const initialChangesListState: ChangesListState = {
-  selectedChanges: {},
-};
-
 // Define a minimal default ModelResponse for scenarios where lastLlmResponse might be null
 const defaultEmptyModelResponse: ModelResponse = {
   summary: 'No summary available.',
   changes: [],
-  requestType: RequestType.LLM_GENERATION, // Default request type
-  outputFormat: LlmOutputFormat.JSON, // Default output format
+  requestType: RequestType.LLM_GENERATION,
+  outputFormat: LlmOutputFormat.JSON,
 };
 
 export const ChangesList: React.FC<Props> = ({ changes }) => {
@@ -87,16 +47,10 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
     lastLlmGeneratePayload,
     scanPathsInput,
     isBuilding,
-    errorLlm, // Changed from `error` to `errorLlm`
+    errorLlm,
+    selectedChanges, // Get selectedChanges directly from llmStore
   } = useStore(llmStore);
   const currentProjectPath = useStore(projectRootDirectoryStore);
-
-  // UseReducer hook for managing selected changes
-  const [state, dispatch] = useReducer(
-    changesListReducer,
-    initialChangesListState,
-  );
-  const selectedChanges = state.selectedChanges;
 
   const handleApplySelectedChanges = async () => {
     if (Object.keys(selectedChanges).length === 0) {
@@ -122,7 +76,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
     }
 
     setApplyingChanges(true);
-    setError(null); // This is now valid after changing errorStore.ts
+    setError(null);
     addLog(
       'AI Response Display',
       'Starting application process for selected changes...', 'info',
@@ -136,7 +90,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
         currentProjectPath,
         changesToApply,
         lastLlmGeneratePayload,
-        lastLlmResponse || defaultEmptyModelResponse, // Use default if lastLlmResponse is null
+        lastLlmResponse || defaultEmptyModelResponse,
       );
 
       // ApplyResult could have messages & success status
@@ -171,7 +125,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
 
       // Clear state after successful apply (or partial success/error in apply process)
       setLastLlmResponse(null);
-      deselectAllChanges();
+      deselectAllChanges(); // Uses the new global action
       clearDiff();
     } catch (err) {
       const errorMsg = `Overall failure during application of changes: ${err instanceof Error ? err.message : String(err)}`;
@@ -190,42 +144,13 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
   };
   const isAnyProcessRunning = applyingChanges;
 
-  // Memoize the ChangeItem component to prevent unnecessary re-renders
-  const ChangeItemMemo = useMemo(() => ChangeItem, []);
-
-  const toggleChange = useCallback(
-    (change: FileChange) => {
-      const isSelected = !!selectedChanges[change.filePath];
-
-      dispatch({
-        type: isSelected ? 'DESELECT_CHANGE' : 'SELECT_CHANGE',
-        change: change,
-      });
-    },
-    [selectedChanges, dispatch],
-  );
-
   const handleSelectAllChanges = useCallback(() => {
-    changes.forEach((change) => {
-      if (!selectedChanges[change.filePath]) {
-        dispatch({
-          type: 'SELECT_CHANGE',
-          change: change,
-        });
-      }
-    });
-  }, [changes, selectedChanges, dispatch]);
+    selectAllChanges(); // Call global action
+  }, []);
 
   const handleDeselectAllChanges = useCallback(() => {
-    changes.forEach((change) => {
-      if (selectedChanges[change.filePath]) {
-        dispatch({
-          type: 'DESELECT_CHANGE',
-          change: change,
-        });
-      }
-    });
-  }, [changes, selectedChanges, dispatch]);
+    deselectAllChanges(); // Call global action
+  }, []);
 
   if (!lastLlmResponse) return null;
   return (
@@ -243,14 +168,14 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
         <Stack direction="row" spacing={2} alignItems="center">
           <Button
             variant="outlined"
-            onClick={handleSelectAllChanges} // This action also logs
+            onClick={handleSelectAllChanges}
             disabled={isAnyProcessRunning}
           >
             Select All
           </Button>
           <Button
             variant="outlined"
-            onClick={handleDeselectAllChanges} // This action also logs
+            onClick={handleDeselectAllChanges}
             disabled={isAnyProcessRunning}
           >
             Deselect All
@@ -276,7 +201,6 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
       {applyingChanges && (
         <Alert severity="info" sx={{ mt: 3, flexShrink: 0 }}>
           {' '}
-          {/* Added flexShrink */}
           Applying selected changes...
           <CircularProgress size={16} color="inherit" sx={{ ml: 1 }} />
         </Alert>
@@ -295,15 +219,12 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
         <List disablePadding>
           {changes &&
             changes.map((change, index) => {
-              const isSelected = !!selectedChanges[change.filePath];
 
               return (
-                <ChangeItemMemo
+                <ChangeItem
                   key={change.filePath}
                   index={index}
                   change={change}
-                  selected={isSelected}
-                  onToggle={() => toggleChange(change)}
                 />
               );
             })}

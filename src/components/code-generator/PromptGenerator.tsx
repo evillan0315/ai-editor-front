@@ -39,7 +39,7 @@ import {
   setLlmError,
   setLlmResponse,
   clearLlmStore,
-  autoApplyChanges // Import autoApplyChanges atom
+  autoApplyChanges
 } from '@/stores/llmStore';
 import { authStore } from '@/stores/authStore';
 import {
@@ -59,7 +59,7 @@ import { LlmOutputFormat, LlmGeneratePayload, ModelResponse } from '@/types';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import BottomToolbar from './BottomToolbar';
 import { debounce } from '@/utils/debounce';
-import { fileStore, clearUploadedFiles } from '@/stores/fileStore'; // Import fileStore and clearUploadedFiles
+import { fileStore, clearUploadedFiles } from '@/stores/fileStore';
 
 interface PromptGeneratorProps { /* No props needed as requestType is read from llmStore */ }
 
@@ -71,11 +71,11 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const { isLoggedIn } = useStore(authStore);
   const { flatFileList } = useStore(fileTreeStore);
 
-  const { uploadedFileData, uploadedFileMimeType } = useStore(fileStore); // Get from fileStore
-  const $autoApplyChanges = useStore(autoApplyChanges); // Get from autoApplyChanges atom
+  const { uploadedFileData, uploadedFileMimeType } = useStore(fileStore);
+  const $autoApplyChanges = useStore(autoApplyChanges);
 
   const {
-    instruction, // This comes from the global store
+    instruction,
     aiInstruction,
     expectedOutputInstruction,
     requestType,
@@ -95,8 +95,8 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const debouncedSetInstruction = useMemo(
     () =>
       debounce((value: string) => {
-        setInstruction(value); // This updates the nanostore
-      }, 300), // 300ms debounce delay
+        setInstruction(value);
+      }, 300),
     [],
   );
 
@@ -111,7 +111,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const [projectInput, setProjectInput] = useState(
     currentProjectPath || import.meta.env.VITE_BASE_DIR || '',
   );
-  const [isPickerDialogOpen, setIsPickerDialogOpen] = useState(false); // Unused
+  const [isPickerDialogOpen, setIsPickerDialogOpen] = useState(false);
   const [isProjectRootPickerDialogOpen, setIsProjectRootPickerDialogOpen] = useState(false);
   const [isScanPathsDialogOpen, setIsScanPathsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -214,7 +214,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         expectedOutputFormat: expectedOutputInstruction,
         scanPaths: currentScanPathsArray,
         requestType,
-        output: LlmOutputFormat.JSON, // Fixed: Use enum member instead of string literal
+        output: LlmOutputFormat.JSON,
         ...(uploadedFileData && { fileData: uploadedFileData }),
         ...(uploadedFileMimeType && { fileMimeType: uploadedFileMimeType }),
       };
@@ -247,7 +247,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         setLastLlmResponse(aiResponse);
         // Auto-apply changes if enabled
         if (
-          $autoApplyChanges && // Use the new atom for autoApplyChanges
+          $autoApplyChanges &&
           aiResponse.changes?.length
         ) {
           try {
@@ -291,7 +291,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
     requestType,
     uploadedFileData,
     uploadedFileMimeType,
-    $autoApplyChanges, // Add $autoApplyChanges to dependencies
+    $autoApplyChanges,
   ]);
 
   const handleSave = useCallback(() => {
@@ -301,11 +301,11 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   }, []);
 
   const handleClear = useCallback(() => {
-    setLocalInstruction(''); // Clear local instruction state
-    debouncedSetInstruction.cancel(); // Cancel any pending debounced updates
-    setInstruction(''); // Reset the global instruction store immediately
-    clearLlmStore(); // Clears LLM-related state (instruction, response, lastLlmResponse, etc.)
-    clearUploadedFiles(); // Clears uploaded file data from fileStore
+    setLocalInstruction('');
+    debouncedSetInstruction.cancel();
+    setInstruction('');
+    clearLlmStore();
+    clearUploadedFiles();
     showGlobalSnackbar('Editor and AI response cleared.', 'info');
   }, [debouncedSetInstruction]);
 
@@ -329,8 +329,8 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
             placeholder="Type your instruction..."
             value={localInstruction}
             onChange={(e) => {
-              setLocalInstruction(e.target.value); // Update local state immediately
-              debouncedSetInstruction(e.target.value); // Debounce update to global store
+              setLocalInstruction(e.target.value);
+              debouncedSetInstruction(e.target.value);
             }}
             variant="standard"
             InputProps={{ disableUnderline: true }}

@@ -27,11 +27,11 @@ import { ThoughtProcess } from './ThoughtProcess';
 import { ChangesList } from './ChangesList';
 import { GitInstructions } from './GitInstructions';
 import { DocumentationViewer } from './DocumentationViewer';
-import { FileChange, ModelResponse } from '@/types/llm'; // Import ModelResponse from types/llm.ts
+import { FileChange, ModelResponse } from '@/types/llm';
 
 interface Props {
   /** Data payload for the entire code-generator page */
-  data: ModelResponse | null; // Changed type to ModelResponse | null
+  data: ModelResponse | null;
 }
 
 const AIToolsView: React.FC = () => {

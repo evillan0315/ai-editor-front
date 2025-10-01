@@ -18,7 +18,7 @@ import {
   extractCodeFromMarkdown
 } from '@/api/llm';
 import { GeminiRequest, GeminiResponse } from '@/types/gemini';
-import { RequestType, ModelResponse } from '@/types/llm'; // Corrected import for RequestType and added ModelResponse
+import { RequestType, ModelResponse } from '@/types/llm';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { loadingStore } from '@/stores/loadingStore';
 import { showGlobalSnackbar } from '@/stores/snackbarStore';
@@ -67,7 +67,7 @@ const getDisplayTitleForResponse = (response: GeminiResponse): string => {
   // If no explicit title, try to parse from responseText as JSON
   if (response.responseText) {
     try {
-      const parsed: ModelResponse = JSON.parse(extractCodeFromMarkdown(response.responseText)); // Explicitly type as ModelResponse
+      const parsed: ModelResponse = JSON.parse(extractCodeFromMarkdown(response.responseText));
       
       // Check if it's an object and has a 'title' property that is a string
       if (typeof parsed === 'object' && parsed !== null && 'title' in parsed && typeof parsed.title === 'string') {
@@ -93,11 +93,6 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
   );
   const [geminiResponses, setGeminiResponses] = useState<GeminiResponse[]>([]
   );
-  const [selectedResponseId, setSelectedResponseId] = useState<string | null>(
-    null,
-  );
-  // Removed unused state: selectedResponseText
-  // const [selectedResponseText, setSelectedResponseText] = useState<string | null>(null);
   const isLoading = useStore(loadingStore);
 
   // Helper function to process a selected GeminiResponse and update the editor
@@ -124,8 +119,8 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
       //loadingStore.setLoading(true);
       try {
         const result = await getPaginatedGeminiRequests({
-          requestType: RequestType.LLM_GENERATION, // Fixed: Use enum member
-          pageSize: 100, // Changed 'limit' to 'pageSize'
+          requestType: RequestType.LLM_GENERATION,
+          pageSize: 100,
         });
         setGeminiRequests(result.items);
       } catch (error) {
@@ -146,7 +141,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
         try {
           const result = await getPaginatedGeminiResponses({
             requestId: selectedRequestId,
-            pageSize: 100, // Changed 'limit' to 'pageSize'
+            pageSize: 100,
           });
           
           setGeminiResponses(result.items);
@@ -158,7 +153,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
               try {
                 const extractedCode = extractCodeFromMarkdown(response.responseText);
                 const parsed = JSON.parse(extractedCode);
-                if (Array.isArray(parsed)) { // Check if the root JSON is an array
+                if (Array.isArray(parsed)) {
                   foundArrayResponse = response;
                   break;
                 }
@@ -169,6 +164,8 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
           }
           console.log(foundArrayResponse, 'foundArrayResponse');
           if (foundArrayResponse) {
+            // Fix: Directly set selectedResponseId to the ID of the foundArrayResponse
+            // and then process its content.
             setSelectedResponseId(foundArrayResponse.id);
             processAndSetResponseContent(foundArrayResponse);
           } else {
@@ -188,10 +185,11 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
       fetchResponses();
     } else {
       setGeminiResponses([]);
+      // Fix: Ensure selectedResponseId is cleared when selectedRequestId is cleared
       setSelectedResponseId(null);
       onChange('');
     }
-  }, [selectedRequestId, onChange, processAndSetResponseContent]); // Added processAndSetResponseContent to dependencies
+  }, [selectedRequestId, onChange, processAndSetResponseContent]);
 
   const handleRequestChange = useCallback(
     (event: React.SyntheticEvent, value: GeminiRequest | null) => {
@@ -201,15 +199,16 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
       // No need to clear selectedResponseId or onChange here explicitly,
       // as the useEffect for responses handles it.
     },
-    [], // No dependencies needed as it only sets state
+    [],
   );
 
   const handleResponseChange = useCallback(
     (event: any) => {
       const newResponseId = event.target.value as string;
+      // Update selectedResponseId directly
       setSelectedResponseId(newResponseId);
       const selected = geminiResponses.find((r) => r.id === newResponseId);
-      processAndSetResponseContent(selected || null); // Use the helper
+      processAndSetResponseContent(selected || null);
     },
     [geminiResponses, processAndSetResponseContent],
   );
