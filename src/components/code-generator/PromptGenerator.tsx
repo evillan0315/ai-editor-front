@@ -23,7 +23,8 @@ import {
   ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import { setError } from '@/stores/errorStore';
-import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
+
+import { showGlobalSnackbar } from '@/stores/snackbarStore';
 import {
   llmStore,
   setInstruction,
@@ -243,7 +244,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         setLastLlmResponse(aiResponse);
         // Auto-apply changes if enabled
         if (
-          aiEditorStore.get().autoApplyChanges &&
+          llmStore.get().autoApplyChanges &&
           aiResponse.changes?.length
         ) {
           try {
