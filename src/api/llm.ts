@@ -100,10 +100,14 @@ export const generateCode = async (
     try {
       // Attempt to parse JSON
       const parsed: ModelResponse = JSON.parse(extractedText);
+
       return {
         ...parsed,
         rawResponse: rawText,
-        error: null, // Ensure error is null
+        error:
+          parsed.error && parsed.message
+            ? `${parsed.error}: ${parsed.message}`
+            : null, // Ensure error is null
       };
     } catch (jsonErr) {
       console.log(JSON.parse(rawText), 'rawText');

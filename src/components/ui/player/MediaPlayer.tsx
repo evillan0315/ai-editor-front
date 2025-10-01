@@ -39,8 +39,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     <Box
       sx={{
         bgcolor: theme.palette.background.paper,
-        borderTop: `1px solid ${theme.palette.divider}`,
-        height: '80px',
+        borderTop: theme.palette.divider,
+        height: '49px',
+        maxWidth: '600px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',

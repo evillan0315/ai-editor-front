@@ -66,45 +66,31 @@ const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
     onIframeError?.(errorMessage);
   };
 
-  const getWrapperWidth = () => {
-    switch (screenSize) {
-      case 'mobile':
-        return '375px';
-      case 'tablet':
-        return '768px';
-      case 'desktop':
-        return '100%';
-      default:
-        return '100%';
-    }
-  };
-
-  const iframeSrc = useProxy && currentUrl // Use useProxy from store
-    ? `${import.meta.env.VITE_API_URL}/proxy?url=${encodeURIComponent(currentUrl)}`
-    : currentUrl;
-
+  // sx prop for the main Paper wrapper which defines the responsive preview area
   const appPreviewWrapperSx = {
     p: 0,
     bgcolor: theme.palette.background.default,
     color: theme.palette.text.primary,
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
+    alignItems: 'center', // Center content horizontally within the wrapper
     gap: 2,
-    flexGrow: 1,
-    minHeight: 'calc(100vh - 170px)', // Adjusted height to account for toolbar
+    flexShrink: 0, // Prevent shrinking if parent has limited space
     borderRadius: '0 0 6px 6px',
+    // Apply responsive width directly to the Paper wrapper
+    width: screenSize === 'desktop' ? '100%' : (screenSize === 'tablet' ? '768px' : '375px'),
+    height: '100%', // Take full height of its parent (the `Box` in `PreviewAppPage`)
+    transition: 'width 0.3s ease-in-out', // Smooth transition for width changes
   };
 
+  // sx prop for the inner Box that contains the iframe
   const iframeContainerSx = {
-    width: getWrapperWidth(),
-    height: '100%',
-    flexGrow: 1,
+    width: '100%', // Take full width of its Paper parent
+    height: '100%', // Take full height of its Paper parent
     border: `1px solid ${theme.palette.divider}`,
     borderRadius: 1,
     overflow: 'hidden',
     position: 'relative',
-    transition: 'width 0.3s ease-in-out', // Keep existing transition
     transform: `scale(${zoomLevel})`, // Apply zoom level
     transformOrigin: 'top center', // Zoom from the top center
   };
@@ -123,13 +109,9 @@ const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
     zIndex: 10,
   };
 
-  const errorAlertSx = {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    right: 16,
-    zIndex: 11,
-  };
+  const iframeSrc = useProxy && currentUrl // Use useProxy from store
+    ? `${import.meta.env.VITE_API_URL}/proxy?url=${encodeURIComponent(currentUrl)}`
+    : currentUrl;
 
   return (
     <Paper
@@ -145,7 +127,7 @@ const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
           )}
         </Alert>
       ) : (
-        <Box sx={iframeContainerSx}> {/* This Box now handles the zoom transform */}
+        <Box sx={iframeContainerSx}> {/* This Box now just sizes relative to its Paper parent */}
           {loadingIframe && (
             <Box sx={loadingOverlaySx}>
               <CircularProgress size={40} />

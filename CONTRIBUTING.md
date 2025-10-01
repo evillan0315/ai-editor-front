@@ -10,6 +10,7 @@ Please note that this project has a Code of Conduct. By participating in this pr
 
 ### Reporting Issues
 
+
 If you find a bug or have a feature request, please submit an issue using the [issue tracker](https://github.com/evillan0315/project-board-front/issues).
 
 *   Clearly describe the issue, including steps to reproduce it if possible.

@@ -288,9 +288,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
           <CircularProgress size={16} color="inherit" sx={{ ml: 1 }} />
         </Alert>
       )}
-      <Box className="flex items-start h-[140px] overflow-auto">
-        <OutputLogger />
-      </Box>
+
 
       <Paper
         elevation={3}

@@ -61,13 +61,3 @@ code {
 *::after {
   box-sizing: border-box;
 }
-
-/* Keyframes for horizontal seamless marquee effect */
-@keyframes marquee-seamless {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(var(--marquee-scroll-distance)); /* Scrolls to the left by this negative distance */
-  }
-}

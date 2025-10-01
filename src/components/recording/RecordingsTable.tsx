@@ -181,15 +181,9 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
                       {/* Re-using PlayArrow for consistency, but means 'view' */}
                     </IconButton>
                   )}
-                  {recording.data?.animatedGif && (
+                  {recording.data?.animatedGif && ( // MODIFIED: Simplified onPlay call for GIF
                     <IconButton
-                      onClick={() =>
-                        onPlay({
-                          ...recording,
-                          path: recording.data.animatedGif!,
-                          type: 'animatedGif',
-                        })
-                      } // Pass a modified recording item for GIF playback
+                      onClick={() => onPlay(recording)}
                       color="primary"
                       title="View Animated GIF"
                     >

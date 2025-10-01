@@ -25,14 +25,13 @@ interface VideoModalProps {
   controls?: boolean; // Make optional, usually true for videos in modals
   muted?: boolean; // Make optional, usually true for autoplay
   onPlayerReady?: (htmlMediaElement: HTMLVideoElement) => void;
-  mediaType: 'video' | 'gif' | 'image'; // MODIFIED: Added 'image' to mediaType
+  mediaType: 'video' | 'gif' | 'image';
   size?: VideoModalSize; // Add the new size prop, make it optional
 }
 
 // Helper function to get the modal width based on size
 const getModalWidthSx = (size: VideoModalSize): SxProps<Theme> => {
   let width: string;
-  let height: string = 'auto';
   const maxWidth: string = 'none'; // Override default maxWidth from Dialog
   let maxHeight: string = '90vh'; // Max height to ensure it fits on screen, leaving some margin
 
@@ -48,8 +47,7 @@ const getModalWidthSx = (size: VideoModalSize): SxProps<Theme> => {
       break;
     case 'fullscreen':
       width = '100vw';
-      height = '100vh';
-      maxHeight = '100vh';
+      maxHeight = '100vh'; // Fullscreen should take full height
       break;
     default:
       // Fallback or default behavior, should not be hit with good typing
@@ -59,7 +57,6 @@ const getModalWidthSx = (size: VideoModalSize): SxProps<Theme> => {
 
   return {
     width,
-    height,
     maxWidth,
     maxHeight,
     bgcolor: 'transparent',
@@ -126,24 +123,24 @@ const VideoModal: React.FC<VideoModalProps> = ({
             controls={controls}
             loop={false}
             muted={muted}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain aspect-video" // ADDED aspect-video
             onPlayerReady={onPlayerReady}
           />
-        ) : mediaType === 'gif' ? ( // MODIFIED: Explicitly check for gif
+        ) : mediaType === 'gif' ? (
           <img
             src={src}
             alt="Animated GIF"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain aspect-auto" // ADDED aspect-auto
             ref={
               mediaElementRef as React.MutableRefObject<HTMLImageElement | null>
             }
             // GIFs autoplay by default, controls/muted are not applicable
           />
-        ) : ( // MODIFIED: Treat as 'image' if not video or gif
+        ) : (
           <img
             src={src}
             alt="Captured Screenshot"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain aspect-auto" // ADDED aspect-auto
             ref={
               mediaElementRef as React.MutableRefObject<HTMLImageElement | null>
             }

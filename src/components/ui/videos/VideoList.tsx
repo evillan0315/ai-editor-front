@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Menu,
@@ -15,7 +15,8 @@ import {
 } from '@mui/material';
 
 // Types
-import { MediaFileResponseDto } from '@/types/refactored/media';
+import { MediaFileResponseDto, FileType } from '@/types/refactored/media';
+import { setCurrentTrack, setIsVideoModalOpen } from '@/stores/mediaStore';
 
 import {
   VideoGridItem,
@@ -34,7 +35,6 @@ interface MenuItemType {
 
 interface VideoListProps {
   videos: MediaFileResponseDto[];
-  onPlay: (video: MediaFileResponseDto) => void;
   onFavorite: (videoId: string) => void;
   onAction: (action: string, video: MediaFileResponseDto) => void;
   menuItems?: MenuItemType[];
@@ -45,7 +45,6 @@ type SortField = 'title' | 'year' | 'rating' | 'duration';
 
 const VideoList: React.FC<VideoListProps> = ({
   videos,
-  onPlay,
   onFavorite,
   onAction,
   menuItems = [
@@ -67,8 +66,7 @@ const VideoList: React.FC<VideoListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedVideo, setSelectedVideo] =
-    useState<MediaFileResponseDto | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<MediaFileResponseDto | null>(null);
   const [hoveredVideo, setHoveredVideo] = useState<string | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
@@ -151,6 +149,16 @@ const VideoList: React.FC<VideoListProps> = ({
     setHoveredVideo(videoId);
   };
 
+  const handlePlayVideo = useCallback((video: MediaFileResponseDto) => {
+    if (video.fileType === FileType.VIDEO) {
+      setCurrentTrack(video);
+      setIsVideoModalOpen(true);
+    } else if (video.fileType === FileType.AUDIO) {
+      setCurrentTrack(video);
+      setIsVideoModalOpen(false);
+    }
+  }, []);
+
   const openDetailDialog = (video: MediaFileResponseDto) => {
     setSelectedVideo(video);
     setDetailDialogOpen(true);
@@ -175,7 +183,7 @@ const VideoList: React.FC<VideoListProps> = ({
           key={video.id}
           video={video}
           hoveredVideo={hoveredVideo}
-          onPlay={onPlay}
+          onPlay={handlePlayVideo}
           onFavorite={onFavorite}
           handleMenuOpen={handleMenuOpen}
           handleVideoHover={handleVideoHover}
@@ -193,7 +201,7 @@ const VideoList: React.FC<VideoListProps> = ({
           video={video}
           hoveredVideo={hoveredVideo}
           openDetailDialog={openDetailDialog}
-          onPlay={onPlay}
+          onPlay={handlePlayVideo}
           onFavorite={onFavorite}
           handleMenuOpen={handleMenuOpen}
           handleVideoHover={handleVideoHover}
@@ -279,7 +287,7 @@ const VideoList: React.FC<VideoListProps> = ({
         open={detailDialogOpen}
         onClose={closeDetailDialog}
         selectedVideo={selectedVideo}
-        onPlay={onPlay}
+        onPlay={handlePlayVideo}
         onFavorite={onFavorite}
         formatDuration={formatDuration}
       />

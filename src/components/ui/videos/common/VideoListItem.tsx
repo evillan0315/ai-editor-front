@@ -19,7 +19,7 @@ import { MediaFileResponseDto } from '@/types/refactored/media';
 interface VideoListItemProps {
   video: MediaFileResponseDto;
   hoveredVideo: string | null;
-  onPlay: (video: MediaFileResponseDto) => void;
+  onPlay: (video: MediaFileResponseDto) => void; // Updated prop type
   onFavorite: (videoId: string) => void;
   handleMenuOpen: (
     event: React.MouseEvent<HTMLElement>,
@@ -104,7 +104,7 @@ const VideoListItem: React.FC<VideoListItemProps> = ({
             >
               {video.video?.rating ? <Favorite /> : <FavoriteBorder />}
             </IconButton>
-            <IconButton onClick={() => onPlay(video)} size="small">
+            <IconButton onClick={() => onPlay(video)} size="small"> {/* Call the updated onPlay prop */}
               <PlayArrow />
             </IconButton>
             <IconButton onClick={(e) => handleMenuOpen(e, video)} size="small">

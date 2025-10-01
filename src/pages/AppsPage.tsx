@@ -20,7 +20,11 @@ import { appDefinitions } from '@/constants/appDefinitions';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useStore } from '@nanostores/react';
-import { addNavbarApp, removeNavbarApp, $navbarApps } from '@/stores/navbarAppsStore';
+import {
+  addNavbarApp,
+  removeNavbarApp,
+  $navbarApps,
+} from '@/stores/navbarAppsStore';
 
 interface AppCardProps {
   app: AppDefinition;
@@ -71,11 +75,20 @@ const AppCard: React.FC<AppCardProps> = ({ app }) => {
           {app.description}
         </Typography>
       </CardContent>
-      <CardActions sx={{ mt: 'auto', p: 2, display: 'flex', justifyContent: 'space-between' }}>
+      <CardActions
+        sx={{
+          mt: 'auto',
+          p: 2,
+          display: 'flex',
+          justifyContent: 'space-between',
+        }}
+      >
         <Button size="small" component={Link} to={app.link} variant="outlined">
           {app.linkText}
         </Button>
-        <Tooltip title={isInNavbar ? 'Remove from Navbar Apps' : 'Add to Navbar Apps'}>
+        <Tooltip
+          title={isInNavbar ? 'Remove from Navbar Apps' : 'Add to Navbar Apps'}
+        >
           <IconButton
             onClick={handleToggleNavbar}
             color={isInNavbar ? 'primary' : 'default'}
@@ -105,14 +118,31 @@ const AppsPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4, flexGrow: 1 }}>
-      <AppsIcon sx={{ fontSize: 60, color: theme.palette.secondary.main }} />
-      <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-        Applications
-      </Typography>
-      <Typography variant="body1" color="text.secondary">
-        Discover and launch various AI-powered tools and features to enhance
-        your development workflow.
-      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          mb: 4,
+        }}
+      >
+        <AppsIcon sx={{ fontSize: 60, color: theme.palette.secondary.main }} />
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontWeight: 'bold', mt: 1, textAlign: 'center' }}
+        >
+          Applications
+        </Typography>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{ mt: 1, textAlign: 'center' }}
+        >
+          Discover and launch various AI-powered tools and features to enhance
+          your development workflow.
+        </Typography>
+      </Box>
       <Paper
         elevation={3}
         sx={{

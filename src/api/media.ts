@@ -1,4 +1,3 @@
-// /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/src/api/media.ts
 import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
 import { getToken } from '@/stores/authStore';
 import {
@@ -170,9 +169,9 @@ export const getTranscription = async (
   fileId: string,
 ): Promise<TranscriptionResult> => {
   try {
-    const response =
-      await fetchWithAuth(`${API_BASE_URL}/media/${fileId}/transcription
-`);
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/media/${fileId}/transcription`,
+    );
     return handleResponse<TranscriptionResult>(response);
   } catch (error) {
     console.error('Error getting transcription:', error);

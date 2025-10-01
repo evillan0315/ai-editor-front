@@ -146,7 +146,10 @@ const Footer = () => {
             onStopCameraRecording={handleStopCameraRecording}
             onCapture={handleCaptureScreenshot}
           />
-          <RecordingStatus /> { /* Added RecordingStatus */}
+          {/* Wrap RecordingStatus in a Box with flex-1 min-w-0 for proper truncation */}
+          <Box className="flex-1 min-w-0">
+            <RecordingStatus />
+          </Box>
         </Box>
         <Box className="flex justify-center items-center w-1/2 max-w-[600px]">
           <MediaPlayerContainer />

@@ -57,6 +57,7 @@ import { LlmOutputFormat, LlmGeneratePayload, ModelResponse } from '@/types';
 import { CodeGeneratorData } from './CodeGeneratorMain';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import BottomToolbar from './BottomToolbar';
+import { debounce } from '@/utils/debounce';
 
 interface PromptGeneratorProps {}
 
@@ -69,15 +70,40 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const { flatFileList } = useStore(fileTreeStore);
 
   const { uploadedFileData, uploadedFileMimeType } = useStore(llmStore);
-  const {
-    instruction,
+  const { 
+    instruction, // This comes from the global store
     aiInstruction,
     expectedOutputInstruction,
     requestType,
     llmOutputFormat,
     scanPathsInput,
   } = useStore(llmStore);
-  // ---- local state ----
+
+  // ---- local state for input to improve typing performance ----
+  const [localInstruction, setLocalInstruction] = useState(instruction);
+
+  // Synchronize localInstruction with global instruction when global state changes from other sources
+  useEffect(() => {
+    setLocalInstruction(instruction);
+  }, [instruction]);
+
+  // Debounced function to update the global instruction store
+  const debouncedSetInstruction = useMemo(
+    () =>
+      debounce((value: string) => {
+        setInstruction(value); // This updates the nanostore
+      }, 300), // 300ms debounce delay
+    [],
+  );
+
+  useEffect(() => {
+    // Cleanup the debounced function on component unmount
+    return () => {
+      debouncedSetInstruction.cancel();
+    };
+  }, [debouncedSetInstruction]);
+
+  // ---- other local states ----
   const [projectInput, setProjectInput] = useState(
     currentProjectPath || import.meta.env.VITE_BASE_DIR || '',
   );
@@ -287,8 +313,11 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
             multiline
             fullWidth
             placeholder="Type your instruction..."
-            value={instruction}
-            onChange={(e) => setInstruction(e.target.value)}
+            value={localInstruction}
+            onChange={(e) => {
+              setLocalInstruction(e.target.value); // Update local state immediately
+              debouncedSetInstruction(e.target.value); // Debounce update to global store
+            }}
             variant="standard"
             InputProps={{ disableUnderline: true }}
             className="mb-2 border-0"

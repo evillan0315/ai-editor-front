@@ -57,7 +57,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
   };
 
   const handleToggleTranscription = () => {
-    //toggleShowTranscription();
+    toggleShowTranscription();
   };
 
   const $isLoading = loading;

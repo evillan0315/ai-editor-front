@@ -95,13 +95,9 @@ const MediaPlayerContainer: React.FC = () => {
       ) {
         setTrackDuration(Math.floor(media.duration));
       }
-
-      // Update transcription sync data if showing transcription and data is loaded
-      if (showTranscription && transcriptionResult) {
-        updateCurrentTranscriptionSync(currentTrack.id, newProgress);
-      }
+      // Transcription sync moved to a dedicated useEffect below for better control
     }
-  }, [currentTrack, progress, duration, showTranscription, transcriptionResult]);
+  }, [currentTrack, progress, duration]); // Removed showTranscription, transcriptionResult from dependencies
 
   // Handle 'progress' event to update buffered ranges
   const handleProgress = useCallback(() => {
@@ -290,27 +286,33 @@ const MediaPlayerContainer: React.FC = () => {
     }
   }, [isPlaying, $mediaStore.get().mediaElement, currentTrack, isVideoModalOpen]);
 
-  // Effect to manage transcription data based on currentTrack and showTranscription state
+  // Effect to manage initial transcription loading for the current track
   useEffect(() => {
-    if (currentTrack?.id && showTranscription) {
-      // Only fetch if no transcription is currently loaded for this track
+    if (currentTrack?.id && showTranscription && currentTrack.fileType === FileType.AUDIO) {
+      // Only fetch if transcription data for the current track is NOT already loaded or is for a different track
       if (!transcriptionResult || transcriptionResult.id !== currentTrack.id) {
         fetchAndLoadTranscription(currentTrack.id);
       }
-      // Also update sync data immediately if media is playing and transcription is present
-      const media = $mediaStore.get().mediaElement;
-      if (media && transcriptionResult) {
-        updateCurrentTranscriptionSync(currentTrack.id, media.currentTime);
-      }
-    } else {
+    } else if (currentTrack?.id !== transcriptionResult?.id) {
+      // If track changed or transcription is hidden, and transcriptionResult doesn't match currentTrack, clear it.
+      // This handles cases where metadata might have loaded a transcription for a previous track.
+      clearTranscriptionData();
+    } else if (!currentTrack && transcriptionResult) {
+      // If no current track and transcriptionResult is present, clear it
       clearTranscriptionData();
     }
+  }, [currentTrack?.id, showTranscription, currentTrack?.fileType, transcriptionResult?.id]); // Depend on transcriptionResult.id to react to changes in loaded transcription for *this* track
 
-    // Cleanup on unmount or when transcription is hidden
-    return () => {
-      clearTranscriptionData();
-    };
-  }, [currentTrack?.id, showTranscription, transcriptionResult]); // Depend on transcriptionResult to prevent re-fetching if already loaded
+  // Effect to manage transcription sync data based on progress and loaded transcriptionResult
+  // This effect will trigger updateCurrentTranscriptionSync when playback progresses AND transcription data is available.
+  useEffect(() => {
+    const media = $mediaStore.get().mediaElement;
+    // Only attempt to sync if a track is playing, transcription is shown, transcriptionResult is available, and there's a media element.
+    if (currentTrack?.id && showTranscription && transcriptionResult && media && isPlaying) {
+      // console.log(`Syncing transcription for ${currentTrack.id} at ${progress.toFixed(2)}s`);
+      updateCurrentTranscriptionSync(currentTrack.id, progress);
+    }
+  }, [progress, currentTrack?.id, showTranscription, transcriptionResult, isPlaying]); // Depend on progress to trigger sync updates
 
 
   return (
@@ -351,17 +353,16 @@ const MediaPlayerContainer: React.FC = () => {
               </Button>
             )}
 
-          {transcriptionResult && transcriptionSyncData && (
+          {transcriptionResult && transcriptionSyncData ? (
             <TranscriptionHighlight
               syncData={transcriptionSyncData}
               currentTime={progress}
               fullTranscription={transcriptionResult} // Pass full transcription here
               onSeek={handleTranscriptionSeek}
             />
-          )}
-          {transcriptionResult && !transcriptionSyncData && !isTranscribing && (
-            <Alert severity="info">Transcription loaded, waiting for sync data.</Alert>
-          )}
+          ) : (currentTrack?.fileType === FileType.AUDIO && transcriptionResult && !isTranscribing) ? (
+            <Alert severity="info">Transcription loaded, waiting for sync data. Play audio to see highlights.</Alert>
+          ) : null}
         </Paper>
       )}
 

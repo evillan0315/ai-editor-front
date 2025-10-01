@@ -19,36 +19,47 @@ import {
   $mediaStore,
   fetchingMediaFiles,
   setCurrentTrack,
+  currentTrackAtom,
 } from '@/stores/mediaStore';
 import { getFileStreamUrl } from '@/api/media';
 
 import { TranscriptionPlayer } from '@/components/TranscriptionPlayer/TranscriptionPlayer';
-import { FileType } from '@/types/refactored/media'; // Corrected import path for FileType
+import { FileType } from '@/types/refactored/media';
 
 interface TranscriptionPageProps {}
 
 const TranscriptionPage: React.FC<TranscriptionPageProps> = () => {
   const theme = useTheme();
-  const { allAvailableMediaFiles, isFetchingMedia, fetchMediaError } = useStore(
-    $mediaStore,
-  ); // Use updated keys
+  const { allAvailableMediaFiles, isFetchingMedia, fetchMediaError } =
+    useStore($mediaStore);
+  const currentTrack = useStore(currentTrackAtom);
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
 
+  // Effect to fetch audio files on mount
   useEffect(() => {
-    // Fetch all media files when the component mounts if not already fetched
     if (
       allAvailableMediaFiles.length === 0 &&
-      !isFetchingMedia && // Use correct key
-      !fetchMediaError // Use correct key
+      !isFetchingMedia &&
+      !fetchMediaError
     ) {
-      // Call the correct function from mediaStore, with appropriate query
       fetchingMediaFiles({
         page: 1,
         pageSize: 200,
-        fileType: [FileType.AUDIO], // Pass FileType as an array
+        fileType: [FileType.AUDIO],
       });
     }
   }, [allAvailableMediaFiles.length, isFetchingMedia, fetchMediaError]);
+
+  // Effect to synchronize local selectedFileId with currentTrackAtom
+  useEffect(() => {
+    if (currentTrack && currentTrack.id !== selectedFileId) {
+      setSelectedFileId(currentTrack.id);
+    }
+    // If currentTrack becomes null and selectedFileId is set, clear selectedFileId
+    if (!currentTrack && selectedFileId) {
+      setSelectedFileId(null);
+    }
+  }, [currentTrack, selectedFileId]);
 
   const audioFiles = useMemo(
     () =>
@@ -58,12 +69,12 @@ const TranscriptionPage: React.FC<TranscriptionPageProps> = () => {
 
   const handleFileChange = (event: SelectChangeEvent<string>) => {
     const newFileId = event.target.value;
-    setSelectedFileId(newFileId);
-    // When a file is selected, set it as the current track in the mediaStore
+    // Find the file and set it as the current track in the mediaStore
     const fileToPlay = audioFiles.find((file) => file.id === newFileId);
     if (fileToPlay) {
-      setCurrentTrack(fileToPlay); // Update the global media store
+      setCurrentTrack(fileToPlay);
     }
+    // selectedFileId will be updated by the useEffect reacting to currentTrackAtom
   };
 
   const selectedAudioFile = useMemo(

@@ -30,7 +30,7 @@ import Box from '@mui/material/Box';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import CircularProgress from '@mui/material/CircularProgress';
 import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
-import VerticalSplitOutlinedIcon from '@mui/icons-material/VerticalSplitOutlined';
+import VerticalSplitOutlinedIcon from '@mui/icons-material/WebAssetOutlined';
 import WebAssetOutlinedIcon from '@mui/icons-material/WebAssetOutlined';
 import { useTheme } from '@mui/material/styles';
 import Menu from '@mui/material/Menu';
@@ -94,7 +94,7 @@ const Navbar: React.FC = () => {
   const isProfileMenuOpen = Boolean(profileMenuAnchorEl);
 
   // NEW: Subscribe to the navbarAppsStore to reactively update the apps menu
-  useStore($navbarApps); 
+  useStore($navbarApps);
   const navbarApps = getNavbarAppDefinitions(); // NEW: Get the dynamic list of navbar apps
 
   useEffect(() => {
@@ -102,7 +102,8 @@ const Navbar: React.FC = () => {
       setScriptsLoading(true);
       const loadScripts = async () => {
         try {
-          const { scripts, packageManager: detectedPackageManager } = await fetchProjectScripts(currentProjectPath);
+          const { scripts, packageManager: detectedPackageManager } =
+            await fetchProjectScripts(currentProjectPath);
           setPackageScripts(scripts);
           setPackageManager(detectedPackageManager);
         } finally {
@@ -323,18 +324,6 @@ const Navbar: React.FC = () => {
                       View All Apps
                     </MenuItem>
                   </Menu>
-
-                  <Button
-                    color="inherit"
-                    component={Link}
-                    to="/organizations"
-                    sx={{
-                      fontWeight: 'bold',
-                      color: theme.palette.text.primary,
-                    }}
-                  >
-                    Organizations
-                  </Button>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   {scriptsLoading ? (

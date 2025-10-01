@@ -13,15 +13,15 @@ const AiSchemaGenerator = lazy(
  * and handles lazy loading for the AiSchemaGenerator component.
  */
 const SchemeGeneratorPage: React.FC = () => (
-    <PageLayout
-      header={<PageHeader title="AI Schema Generator" sticky={true} />} // Use PageHeader component
-      body={
-        <Suspense fallback={<Loading message="Loading Schema Generator..." />}>
-          <AiSchemaGenerator />
-        </Suspense>
-      }
-      centerBodyContent={false}
-    />
-  );
+  <PageLayout
+    header={<PageHeader title="AI Schema Generator" sticky={true} />} // Use PageHeader component
+    body={
+      <Suspense fallback={<Loading message="Loading Schema Generator..." />}>
+        <AiSchemaGenerator />
+      </Suspense>
+    }
+    centerBodyContent={false}
+  />
+);
 
 export default SchemeGeneratorPage;

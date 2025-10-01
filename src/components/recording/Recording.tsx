@@ -77,8 +77,8 @@ export function Recording() {
     string | null
   >(null);
   const [currentPlayingMediaType, setCurrentPlayingMediaType] = useState<
-    'video' | 'gif'
-  >('video');
+    'video' | 'gif' | 'image'
+  >('video'); // MODIFIED: Added 'image' type
   const mediaElementRef = useRef<HTMLVideoElement | HTMLImageElement>(null); // Ref can be either
 
   // Fetch recordings from API
@@ -216,8 +216,21 @@ export function Recording() {
   };
 
   const handlePlay = (recording: RecordingItem) => {
-    const mediaPath = recording.data?.animatedGif || recording.path;
-    const mediaType = recording.data?.animatedGif ? 'gif' : 'video';
+    let mediaPath: string;
+    let mediaType: 'video' | 'gif' | 'image'; // MODIFIED: Added 'image' type
+
+    // MODIFIED: Logic to correctly determine mediaType and mediaPath
+    if (recording.data?.animatedGif) {
+      mediaPath = recording.data.animatedGif; // Prioritize animatedGif if present
+      mediaType = 'gif';
+    } else if (recording.type === 'screenShot') {
+      mediaPath = recording.path;
+      mediaType = 'image';
+    } else {
+      mediaPath = recording.path;
+      mediaType = 'video';
+    }
+
     const mediaUrl = getFileStreamUrl(mediaPath);
 
     setCurrentPlayingVideoSrc(mediaUrl);
@@ -228,10 +241,12 @@ export function Recording() {
   const handleCloseVideoModal = () => {
     setIsVideoModalOpen(false);
     setCurrentPlayingVideoSrc(null);
-    setCurrentPlayingMediaType('video'); // Reset to default
-    if (mediaElementRef.current && currentPlayingMediaType === 'video') {
-      (mediaElementRef.current as HTMLVideoElement).pause();
-      (mediaElementRef.current as HTMLVideoElement).currentTime = 0;
+    setCurrentPlayingMediaType('video'); // Reset to a default, as currentPlayingVideoSrc being null will prevent rendering anyway
+    if (mediaElementRef.current) {
+      if (currentPlayingMediaType === 'video') { // MODIFIED: Only pause/reset if it was a video
+        (mediaElementRef.current as HTMLVideoElement).pause();
+        (mediaElementRef.current as HTMLVideoElement).currentTime = 0;
+      }
     }
   };
 

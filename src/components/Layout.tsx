@@ -31,7 +31,7 @@ import { loadingStore } from '@/stores/loadingStore';
 import { currentURL } from '@/stores/page';
 
 const NAVBAR_HEIGHT = 64;
-const FOOTER_HEIGHT = 30;
+const FOOTER_HEIGHT = 50; // Adjusted to accommodate both original footer controls (40px) and MediaPlayerContainer (80px)
 
 const MIN_SIDEBAR_WIDTH = 300;
 const MAX_SIDEBAR_WIDTH = 1000;
@@ -148,8 +148,9 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
       <Navbar />
 
       {/* ✅ now also shows when global loadingStore has any active request */}
+
       {layoutLoader && (
-        <Box className="w-full sticky top-0 z-[1100] flex-shrink-0">
+        <Box className="w-full fixed top-18 z-[1100] flex-shrink-0">
           <LinearProgress />
         </Box>
       )}
@@ -235,7 +236,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
       {/* Sticky footer */}
       <Paper
         elevation={1}
-        className="sticky bottom-0 z-[300] w-full flex justify-center items-center border-t radius-0"
+        className="sticky bottom-0 z-[300] w-full flex flex-col justify-center items-center border-t radius-0" // Changed to flex-col
         sx={{
           height: FOOTER_HEIGHT,
           backgroundColor: theme.palette.background.paper,

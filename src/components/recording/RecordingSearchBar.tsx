@@ -1,6 +1,6 @@
-// Source: src/components/recording/RecordingSearchBar.tsx
 import React from 'react';
-import { Box, TextField, Button, MenuItem } from '@mui/material';
+import { Box, TextField, Button, MenuItem, IconButton, Tooltip } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 export interface RecordingSearchBarProps {
   searchQuery: string;
@@ -9,6 +9,7 @@ export interface RecordingSearchBarProps {
   typeFilter?: string;
   onTypeFilterChange?: (value: string) => void;
   typeOptions?: string[];
+  onRefresh: () => void; // New prop for refresh functionality
 }
 
 export const RecordingSearchBar: React.FC<RecordingSearchBarProps> = ({
@@ -18,6 +19,7 @@ export const RecordingSearchBar: React.FC<RecordingSearchBarProps> = ({
   typeFilter,
   onTypeFilterChange,
   typeOptions = [],
+  onRefresh,
 }) => (
     <Box className="flex gap-2 items-center flex-wrap">
       <TextField
@@ -46,5 +48,14 @@ export const RecordingSearchBar: React.FC<RecordingSearchBarProps> = ({
       <Button variant="outlined" onClick={onSearch}>
         Apply
       </Button>
+      <Tooltip title="Refresh Recordings">
+        <IconButton
+          aria-label="refresh recordings"
+          onClick={onRefresh}
+          color="primary"
+        >
+          <RefreshIcon />
+        </IconButton>
+      </Tooltip>
     </Box>
   );

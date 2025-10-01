@@ -17,7 +17,7 @@ import {
   IconButton,
   FormHelperText, // Import FormHelperText
 } from '@mui/material';
-import { JsonSchema } from '@/types/schema';
+import { JsonSchema, JsonSchemaProperty } from '@/types/schema'; // Import JsonSchemaProperty
 import { nanoid } from 'nanoid';
 import {
   Add as AddIcon,
@@ -156,7 +156,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
     );
   }
 
-  const renderField = (key: string, prop: JsonSchema, fieldClassNames: string) => {
+  const renderField = (key: string, prop: JsonSchemaProperty, fieldClassNames: string) => {
     const value = formData[key] ?? '';
     const label = prop.title || key;
     const description = prop.description;
@@ -208,7 +208,8 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
             </FormControl>
           );
         }
-        if ((prop as any)['x-multiline']) {
+        // Check for x-multiline custom property
+        if (prop['x-multiline']) {
           return (
             <TextField
               key={key}
@@ -216,8 +217,8 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
               value={value}
               onChange={(e) => handleChange(key, e.target.value)}
               helperText={description}
-              multiline
-              rows={4}
+              multiline // Render as multiline textarea
+              rows={4}   // Default number of rows
               {...muiCommonProps}
               className={fieldClassNames}
               sx={{ ml: level * 2 }}
@@ -399,7 +400,7 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
               <FormHelperText sx={{ ml: 0 }}>{description}</FormHelperText>
             )}
             <DynamicFormBuilder
-              schema={prop}
+              schema={prop as JsonSchema}
               initialData={formData[key] || {}}
               onFormChange={(nestedData) => handleChange(key, nestedData)}
               level={level + 1}

@@ -109,8 +109,9 @@ export const setLastLlmGeneratePayload = (
 ) => {
   llmStore.setKey('lastLlmGeneratePayload', payload);
 };
-export const setLlmError = (error: string | null) => // Changed type to string | null
-  llmStore.setKey('errorLlm', error);
+export const setLlmError = (
+  error: string | null, // Changed type to string | null
+) => llmStore.setKey('errorLlm', error);
 
 export const setLlmResponse = (response: string) =>
   llmStore.setKey('response', response);
@@ -181,14 +182,17 @@ export const updateProposedChangeContent = (
 
   const updated = state.lastLlmResponse.changes.map((ch) =>
     ch.filePath === filePath && ['add', 'modify', 'repair'].includes(ch.action)
-      ? { ...(ch as AddOrModifyFileChange), newContent } as FileChange // Explicitly cast to FileChange
+      ? ({ ...(ch as AddOrModifyFileChange), newContent } as FileChange) // Explicitly cast to FileChange
       : ch,
   );
 
   const newSelected = { ...state.selectedChanges };
   const sel = newSelected[filePath];
   if (sel && ['add', 'modify', 'repair'].includes(sel.action)) {
-    newSelected[filePath] = { ...(sel as AddOrModifyFileChange), newContent } as FileChange; // Explicitly cast to FileChange
+    newSelected[filePath] = {
+      ...(sel as AddOrModifyFileChange),
+      newContent,
+    } as FileChange; // Explicitly cast to FileChange
   }
 
   llmStore.set({
@@ -270,7 +274,7 @@ export const performPostApplyActions = async (
   if (llmResponse?.gitInstructions?.length) {
     addLog(
       'Git Automation',
-      'Executing AI-suggested git instructions...', 
+      'Executing AI-suggested git instructions...',
       'info',
     );
     let gitCommandsSuccessful = true;

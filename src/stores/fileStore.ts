@@ -119,7 +119,7 @@ export const setSaveFileContentError = (message: string | null) => {
 export const setIsOpenedFileDirty = (isDirty: boolean) => {
   isOpenedFileDirty.set(isDirty);
   if (isDirty) {
-    //addLog('File Editor', `Active file has unsaved changes.`, 'warning');
+    addLog('File Editor', `Active file has unsaved changes.`, 'warning');
   }
 };
 
@@ -172,7 +172,7 @@ export const saveActiveFile = async () => {
     const result = await writeFileContent(currentOpenedFile, fileContent);
     if (result.success) {
       setInitialFileContentSnapshot(fileContent);
-      setIsOpenedFileDirtyAtom(false);
+      setIsOpenedFileDirty(false);
       addLog('File Editor', `File saved: ${currentOpenedFile}`, 'success');
     } else {
       const msg = result.message || 'Failed to save file.';
@@ -222,7 +222,7 @@ export const discardActiveFileChanges = () => {
     )
   ) {
     setOpenedFileContent(initialFileContentSnapshot);
-    setIsOpenedFileDirtyAtom(false);
+    setIsOpenedFileDirty(false);
     setSaveFileContentError(null);
     addLog(
       'File Editor',
@@ -240,7 +240,7 @@ export const fetchFileContent = async (filePath: string) => {
     const content = await readFileContent(filePath);
     setOpenedFileContent(content);
     setInitialFileContentSnapshot(content);
-    setIsOpenedFileDirtyAtom(false);
+    setIsOpenedFileDirty(false);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     setFetchFileContentError(errorMessage);

@@ -24,7 +24,7 @@ interface VideoGridItemProps {
   video: MediaFileResponseDto;
   hoveredVideo: string | null;
   openDetailDialog: (video: MediaFileResponseDto) => void;
-  onPlay: (video: MediaFileResponseDto) => void;
+  onPlay: (video: MediaFileResponseDto) => void; // Updated prop type
   onFavorite: (videoId: string) => void;
   handleMenuOpen: (
     event: React.MouseEvent<HTMLElement>,
@@ -79,7 +79,7 @@ const VideoGridItem: React.FC<VideoGridItemProps> = ({
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                onPlay(video);
+                onPlay(video); // Call the updated onPlay prop
               }}
             >
               <PlayArrow />

@@ -12,7 +12,7 @@ export enum RequestType {
   AUDIO_TRANSLATION = 'AUDIO_TRANSLATION',
   TEXT_TRANSLATION = 'TEXT_TRANSLATION',
   FILE_TRANSLATION = 'FILE_TRANSLATION',
-  GITHUB_ACTION_GENERATION = 'GITHUB_ACTION_GENERATION'
+  GITHUB_ACTION_GENERATION = 'GITHUB_ACTION_GENERATION',
 }
 
 // Interfaces for GeminiRequest
@@ -46,7 +46,8 @@ export interface CreateGeminiRequestDto {
   files?: any;
 }
 
-export interface UpdateGeminiRequestDto extends Partial<CreateGeminiRequestDto> {}
+export interface UpdateGeminiRequestDto
+  extends Partial<CreateGeminiRequestDto> {}
 
 export interface PaginationGeminiRequestQueryDto {
   page?: number;
@@ -95,7 +96,8 @@ export interface CreateGeminiResponseDto {
   projectRoot?: string;
 }
 
-export interface UpdateGeminiResponseDto extends Partial<CreateGeminiResponseDto> {}
+export interface UpdateGeminiResponseDto
+  extends Partial<CreateGeminiResponseDto> {}
 
 export interface PaginationGeminiResponseQueryDto {
   page?: number;

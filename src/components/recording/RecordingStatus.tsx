@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Tooltip } from '@mui/material';
 import { useStore } from '@nanostores/react';
 import {
   isScreenRecordingStore,
@@ -19,22 +19,28 @@ export function RecordingStatus() {
   return (
     <Box className="flex flex-col gap-1">
       {isScreenRecording && (
-        <Typography variant="body1" color="error">
-          ● Screen Recording in progress
-          {currentScreenRecordingId && ` (ID: ${currentScreenRecordingId})`}
-        </Typography>
+        <Tooltip title={`Screen Recording in progress (ID: ${currentScreenRecordingId || 'N/A'})`}>
+          <Typography variant="body1" color="error" noWrap>
+            ● Screen Recording in progress
+            {currentScreenRecordingId && ` (ID: ${currentScreenRecordingId})`}
+          </Typography>
+        </Tooltip>
       )}
       {isCameraRecording && (
-        <Typography variant="body1" color="error">
-          ● Camera Recording in progress
-          {currentCameraRecordingId && ` (ID: ${currentCameraRecordingId})`}
-        </Typography>
+        <Tooltip title={`Camera Recording in progress (ID: ${currentCameraRecordingId || 'N/A'})`}>
+          <Typography variant="body1" color="error" noWrap>
+            ● Camera Recording in progress
+            {currentCameraRecordingId && ` (ID: ${currentCameraRecordingId})`}
+          </Typography>
+        </Tooltip>
       )}
 
       {!isAnyRecordingActive && (
-        <Typography variant="body1" color="text.secondary">
-          No active recording
-        </Typography>
+        <Tooltip title="No active recording">
+          <Typography variant="body1" color="text.secondary" noWrap>
+            No active recording
+          </Typography>
+        </Tooltip>
       )}
     </Box>
   );

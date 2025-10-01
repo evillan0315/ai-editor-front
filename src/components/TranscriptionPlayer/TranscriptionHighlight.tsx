@@ -1,30 +1,44 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Box, Typography, Chip, Paper } from '@mui/material';
 import { SyncTranscriptionResponse, TranscriptionResult } from '@/types';
 
 interface TranscriptionHighlightProps {
   syncData: SyncTranscriptionResponse;
   currentTime: number;
-  fullTranscription: TranscriptionResult | null; // Add this prop
+  fullTranscription: TranscriptionResult | null;
   onSeek: (time: number) => void;
 }
 
 export const TranscriptionHighlight: React.FC<TranscriptionHighlightProps> = ({
   syncData,
   currentTime,
-  fullTranscription, // Destructure new prop
+  fullTranscription,
   onSeek,
 }) => {
   const { currentSegment, previousSegments, upcomingSegments } = syncData;
 
+  // Ref for the currently highlighted segment to enable auto-scrolling
+  const currentSegmentRef = useRef<HTMLDivElement | null>(null);
+
+  // Effect to scroll the current segment into view when it changes
+  useEffect(() => {
+    if (currentSegmentRef.current && currentSegment) {
+      currentSegmentRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center', // Centers the element in the scrollable area
+      });
+    }
+  }, [currentSegment?.start]); // Trigger effect when the current segment's start time changes.
+                              // This ensures scrolling for distinct segments.
+
   return (
-    <Box >
+    <Box>
       {/* Previous Segments */}
       {previousSegments.map((segment, index) => (
         <Typography
-          key={index}
+          key={`prev-${index}-${segment.start}`} // More robust key
           variant="body1"
-          sx={{ mb: 1, opacity: 0.7 }}
+          sx={{ mb: 1, opacity: 0.7, cursor: 'pointer' }}
           onClick={() => onSeek(segment.start)}
         >
           {segment.text}
@@ -34,6 +48,7 @@ export const TranscriptionHighlight: React.FC<TranscriptionHighlightProps> = ({
       {/* Current Segment - Highlighted */}
       {currentSegment && (
         <Paper
+          ref={currentSegmentRef} // Apply ref here
           elevation={3}
           sx={{
             p: 2,
@@ -62,9 +77,9 @@ export const TranscriptionHighlight: React.FC<TranscriptionHighlightProps> = ({
       {/* Upcoming Segments */}
       {upcomingSegments.map((segment, index) => (
         <Typography
-          key={index}
+          key={`next-${index}-${segment.start}`} // More robust key
           variant="body1"
-          sx={{ mb: 1, opacity: 0.5 }}
+          sx={{ mb: 1, opacity: 0.5, cursor: 'pointer' }}
           onClick={() => onSeek(segment.start)}
         >
           {segment.text}
@@ -72,10 +87,10 @@ export const TranscriptionHighlight: React.FC<TranscriptionHighlightProps> = ({
       ))}
 
       {/* Progress Indicator */}
-      {fullTranscription && ( // Conditionally render if fullTranscription is available
+      {fullTranscription && (
         <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Chip
-            label={`Current: ${currentTime.toFixed(1)}s / Total: ${fullTranscription.duration.toFixed(1)}s`} // Use fullTranscription.duration
+            label={`Current: ${currentTime.toFixed(1)}s / Total: ${fullTranscription.duration.toFixed(1)}s`}
             color="primary"
             variant="outlined"
           />

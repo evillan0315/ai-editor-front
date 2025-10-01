@@ -167,6 +167,7 @@ export interface TranscriptionResult {
   languageProbability?: number;
   model?: string;
   device?: string;
+  id?: string; // Added for potential tracking if transcription result is stored separately
 }
 
 /**
@@ -183,7 +184,6 @@ export interface SyncTranscriptionResponse {
   currentSegment: TranscriptionSegment | null;
   previousSegments: TranscriptionSegment[];
   upcomingSegments: TranscriptionSegment[];
-  fullTranscription: TranscriptionResult;
 }
 
 /**

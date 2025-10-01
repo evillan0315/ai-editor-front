@@ -13,17 +13,12 @@ const PreviewAppPage: React.FC = () => {
   // Initialize currentUrl in the store if it's empty, using the environment variable
   useEffect(() => {
     if (!currentUrl && import.meta.env.VITE_PREVIEW_APP_URL) {
-      appPreviewStore.setKey('currentUrl', import.meta.env.VITE_PREVIEW_APP_URL);
+      appPreviewStore.setKey(
+        'currentUrl',
+        import.meta.env.VITE_PREVIEW_APP_URL,
+      );
     }
   }, [currentUrl]);
-
-  const handleUrlChange = (newUrl: string) => {
-    appPreviewStore.setKey('currentUrl', newUrl);
-  };
-
-  const handleScreenSizeChange = (size: 'mobile' | 'tablet' | 'desktop') => {
-    appPreviewStore.setKey('screenSize', size);
-  };
 
   const handleRefresh = () => {
     if (iframeRef.current) {
@@ -38,39 +33,39 @@ const PreviewAppPage: React.FC = () => {
   };
 
   const handleResetToDefault = () => {
-    appPreviewStore.setKey('currentUrl', import.meta.env.VITE_PREVIEW_APP_URL || '');
+    appPreviewStore.setKey(
+      'currentUrl',
+      import.meta.env.VITE_PREVIEW_APP_URL || '',
+    );
   };
 
   // Content for the header slot of PageLayout
   const headerContent = (
     // Wrap BrowserAppToolbar in a Box to center it horizontally within the AppBar's Toolbar
     <Box className="flex w-full justify-center">
-      <BrowserAppToolbar
-        onUrlChange={handleUrlChange}
-        onScreenSizeChange={handleScreenSizeChange}
-        onRefresh={handleRefresh}
-        onGoBack={handleGoBack}
-        onResetToDefault={handleResetToDefault}
-      />
+      <BrowserAppToolbar onRefresh={handleRefresh} onGoBack={handleGoBack} />
     </Box>
   );
 
   // Content for the body slot of PageLayout
   const bodyContent = (
     // AppPreviewContent should be allowed to size itself based on screenSize prop
-    // PageLayout's centerBodyContent will ensure this component is centered.
-    <AppPreviewContent
-      currentUrl={currentUrl}
-      screenSize={screenSize}
-      iframeRef={iframeRef}
-    />
+    // This wrapper Box will ensure AppPreviewContent is horizontally centered and takes up vertical space.
+    <Box className="w-full h-full flex justify-center items-start overflow-auto">
+      <AppPreviewContent
+        currentUrl={currentUrl}
+        screenSize={screenSize}
+        iframeRef={iframeRef}
+      />
+    </Box>
   );
 
   return (
     <PageLayout
       header={headerContent}
       body={bodyContent}
-      centerBodyContent={false} // Center the AppPreviewContent in the available body space
+      centerBodyContent={false} // The inner Box handles centering, so PageLayout should not force it.
+      bodyPosition="top" // Ensure PageLayout aligns its body content to the top.
     />
   );
 };

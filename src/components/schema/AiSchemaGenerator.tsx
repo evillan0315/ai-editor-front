@@ -66,6 +66,7 @@ const AiSchemaGenerator: React.FC = () => {
         xOrder: details['x-order'],
         xClassNames: details['x-classNames'],
         xLayout: details['x-layout'],
+        xMultiline: details['x-multiline'], // Extract x-multiline
       };
 
       // Handle array items
@@ -176,6 +177,7 @@ const AiSchemaGenerator: React.FC = () => {
       if (property.xOrder !== undefined) jsonSchema['x-order'] = property.xOrder;
       if (property.xClassNames) jsonSchema['x-classNames'] = property.xClassNames;
       if (property.xLayout) jsonSchema['x-layout'] = property.xLayout;
+      if (property.xMultiline !== undefined) jsonSchema['x-multiline'] = property.xMultiline; // Add x-multiline
 
       if (property.type === 'array' && property.items) {
         // For arrays, the 'items' field directly holds the schema for a single array element

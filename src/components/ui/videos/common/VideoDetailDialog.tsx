@@ -24,7 +24,7 @@ interface VideoDetailDialogProps {
   open: boolean;
   onClose: () => void;
   selectedVideo: MediaFileResponseDto | null;
-  onPlay: (video: MediaFileResponseDto) => void;
+  onPlay: (video: MediaFileResponseDto) => void; // Updated prop type
   onFavorite: (videoId: string) => void;
   formatDuration: (minutes: number) => string;
 }
@@ -109,7 +109,7 @@ const VideoDetailDialog: React.FC<VideoDetailDialogProps> = ({
                 <Fab
                   variant="extended"
                   color="primary"
-                  onClick={() => onPlay(selectedVideo)}
+                  onClick={() => onPlay(selectedVideo)} // Call the updated onPlay prop
                   sx={{ minWidth: 120 }}
                 >
                   <PlayArrow sx={{ mr: 1 }} />

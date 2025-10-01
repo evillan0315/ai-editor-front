@@ -88,6 +88,9 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
 
       // Update transcription sync data if we have transcription
       if (transcriptionData) {
+        // Here, we can directly call updateCurrentTranscriptionSync as the component is
+        // responsible for its own playback and transcription display.
+        // For MediaPlayerContainer, this logic was moved to a separate useEffect.
         updateCurrentTranscriptionSync(fileId, newTime);
       }
     }
@@ -122,13 +125,16 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
 
   // Load transcription when component mounts or fileId changes
   useEffect(() => {
-    fetchAndLoadTranscription(fileId);
+    // Only fetch if fileId is valid and transcription data is not already loaded for this fileId
+    if (fileId && (!transcriptionData || transcriptionData.id !== fileId)) {
+      fetchAndLoadTranscription(fileId);
+    }
 
     // Clean up transcription data when component unmounts
     return () => {
       clearTranscriptionData();
     };
-  }, [fileId]);
+  }, [fileId, transcriptionData]); // Added transcriptionData to dependencies to react to its changes
 
   // Sync audio element with store state
   useEffect(() => {
@@ -213,11 +219,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
           </Alert>
         )}
 
-        {isTranscribing && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-            <CircularProgress />
-          </Box>
-        )}
+
 
         {!transcriptionData && !isTranscribing && (
           <Button
@@ -232,7 +234,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
       </Box>
 
       {/* Transcription Display */}
-      {transcriptionData && (
+      {transcriptionData && !isTranscribing && (
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -253,6 +255,7 @@ export const TranscriptionPlayer: React.FC<TranscriptionPlayerProps> = ({
                 }}
               />
             ) : (
+              // If full transcription is loaded but sync data isn't, display full text
               <Typography>{transcriptionData.fullText}</Typography>
             )}
           </CardContent>

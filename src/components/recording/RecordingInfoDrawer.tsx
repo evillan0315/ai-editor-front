@@ -1,4 +1,3 @@
-// Source: src/components/recording/RecordingInfoDrawer.tsx
 import React, { useState } from 'react';
 import {
   Box,
@@ -18,7 +17,7 @@ interface RecordingInfoDrawerProps {
   onUpdate: (updated: Partial<RecordingItem>) => void;
 }
 
-const RECORDING_TYPES = ['screenRecord', 'screenShot'];
+const RECORDING_TYPES = ['screenRecord', 'screenShot', 'cameraRecord']; // Added 'cameraRecord'
 
 export const RecordingInfoDrawer: React.FC<RecordingInfoDrawerProps> = ({
   open,

@@ -28,4 +28,5 @@ export interface SchemaProperty {
   xOrder?: number; // Custom property for UI ordering
   xClassNames?: string; // Custom property for UI CSS classes (supports Tailwind classes)
   xLayout?: string; // Custom property for UI layout of children (supports Tailwind grid/flex classes)
+  xMultiline?: boolean; // Custom property to render string as a multiline textarea
 }

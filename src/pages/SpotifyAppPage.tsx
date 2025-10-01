@@ -4,6 +4,7 @@ import SpotifySidebar from '@/pages/spotify/SpotifySidebar';
 import SpotifyMainContent from '@/pages/spotify/SpotifyMainContent';
 import MediaPlayerContainer from '@/components/media/MediaPlayerContainer';
 import { useStore } from '@nanostores/react';
+import VideoModal from '@/components/VideoModal'; // Import VideoModal
 
 import {
   isVideoModalOpenAtom,
@@ -15,7 +16,7 @@ import {
   setPlaying,
   setError,
 } from '@/stores/mediaStore';
-import { FileType } from '@/types';
+import { FileType } from '@/types/refactored/media'; // Ensure FileType is imported from the correct path
 
 type SpotifyView = 'home' | 'search' | 'library' | 'settings';
 
@@ -103,14 +104,23 @@ const SpotifyAppPage: React.FC<SpotifyAppPageProps> = () => {
           <SpotifyMainContent currentView={currentView} />
         </Box>
       </Box>
-      <MediaPlayerContainer />
-      {/* TODO: Integrate VideoModal to use currentTrack and handleMediaElementReady/Close */}
-      {/* <VideoModal
-        isOpen={isVideoModalOpen}
-        onClose={handleVideoModalClose}
-        videoUrl={currentTrack?.fileType === FileType.VIDEO ? currentTrack?.streamUrl : undefined}
-        onMediaElementReady={handleMediaElementReady}
-      /> */}
+
+      {/* Integrate VideoModal to use currentTrack and handleMediaElementReady/Close */}
+      {isVideoModalOpen &&
+        currentTrack?.fileType === FileType.VIDEO &&
+        currentTrack?.streamUrl && (
+          <VideoModal
+            open={isVideoModalOpen}
+            onClose={handleVideoModalClose}
+            src={currentTrack.streamUrl}
+            mediaElementRef={
+              videoModalMediaElementRef as React.MutableRefObject<HTMLVideoElement | null>
+            }
+            onPlayerReady={handleMediaElementReady}
+            mediaType="video"
+            size="fullscreen"
+          />
+        )}
     </>
   );
 };
