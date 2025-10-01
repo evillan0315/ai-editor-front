@@ -6,6 +6,7 @@ import {
   addMessage,
   setLoading,
   setError,
+  clearChatState, // Import clearChatState
 } from '@/stores/aiChatStore';
 import {
   Accordion,
@@ -30,6 +31,7 @@ import BottomToolbar from '@/components/code-generator/BottomToolbar';
 import { generateText } from '@/api/ai';
 import { GenerateTextDto } from '@/types/ai';
 import { RequestType } from '@/types'; // Import RequestType
+import { showGlobalSnackbar } from '@/stores/snackbarStore'; // Import for snackbar
 
 const INSTRUCTION = `
 Youare an AI assistant integrated into a web application that uses a ChatGPT-style interface.
@@ -76,8 +78,8 @@ const AIPromptGenerator: React.FC = () => {
   // Implement handleClear for AIPromptGenerator
   const handleClear = () => {
     setInstruction('');
-    aiChatStore.setKey('messages', []); // Clear AI chat messages
-    aiChatStore.setKey('error', null); // Clear any chat errors
+    clearChatState(); // Clear AI chat messages using the new function
+    showGlobalSnackbar('AI chat cleared.', 'info');
   };
 
   // Stub handleSave for AIPromptGenerator, as it's primarily used in PromptGenerator's settings drawer

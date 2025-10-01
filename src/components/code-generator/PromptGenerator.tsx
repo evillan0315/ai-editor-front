@@ -60,7 +60,7 @@ import { CodeGeneratorData } from './CodeGeneratorMain';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import BottomToolbar from './BottomToolbar';
 import { debounce } from '@/utils/debounce';
-import { fileStore } from '@/stores/fileStore'; // Import fileStore
+import { fileStore, clearUploadedFiles } from '@/stores/fileStore'; // Import fileStore and clearUploadedFiles
 
 interface PromptGeneratorProps {}
 
@@ -215,7 +215,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         expectedOutputFormat: expectedOutputInstruction,
         scanPaths: currentScanPathsArray,
         requestType,
-        output: 'json',
+        output: LlmOutputFormat.JSON, // Fixed: Use enum member instead of string literal
         ...(uploadedFileData && { fileData: uploadedFileData }),
         ...(uploadedFileMimeType && { fileMimeType: uploadedFileMimeType }),
       };
@@ -301,6 +301,15 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
     addLog('Prompt Generator', 'Prompt Generator settings saved.', 'info');
   }, []);
 
+  const handleClear = useCallback(() => {
+    setLocalInstruction(''); // Clear local instruction state
+    debouncedSetInstruction.cancel(); // Cancel any pending debounced updates
+    setInstruction(''); // Reset the global instruction store immediately
+    clearLlmStore(); // Clears LLM-related state (instruction, response, lastLlmResponse, etc.)
+    clearUploadedFiles(); // Clears uploaded file data from fileStore
+    showGlobalSnackbar('Editor and AI response cleared.', 'info');
+  }, [debouncedSetInstruction]);
+
   // ---- render ----
   return (
     <Box className="flex flex-col gap-2 w-full relative ">
@@ -374,6 +383,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         updateScanPaths={updateScanPaths}
         requestType={requestType}
         handleSave={handleSave}
+        handleClear={handleClear}
         commonDisabled={commonDisabled}
       />
     </Box>

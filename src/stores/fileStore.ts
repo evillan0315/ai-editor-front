@@ -261,3 +261,10 @@ export const setUploadedFile = (
   fileStore.setKey('uploadedFileMimeType', mimeType);
   fileStore.setKey('uploadedFileName', fileName);
 };
+
+export const clearUploadedFiles = () => {
+  fileStore.setKey('uploadedFileData', null);
+  fileStore.setKey('uploadedFileMimeType', null);
+  fileStore.setKey('uploadedFileName', null);
+  addLog('File Upload', 'Uploaded files data cleared.', 'info');
+};

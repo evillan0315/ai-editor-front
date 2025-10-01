@@ -31,3 +31,11 @@ export function setError(error: string | null) {
     error: error,
   });
 }
+
+export function clearChatState() {
+  aiChatStore.set({
+    messages: [],
+    loading: false,
+    error: null,
+  });
+}
