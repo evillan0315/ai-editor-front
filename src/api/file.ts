@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
+import { API_BASE_URL, ResponseError, handleResponse, fetchWithAuth } from '@/api';
 import {
   ApiFileScanResult,
   FileTreeNode,
@@ -25,9 +25,9 @@ export const fetchScannedFilesForAI = async (
       },
     );
     return handleResponse<ApiFileScanResult[]>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching project files for AI scan:', error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -44,12 +44,12 @@ export const fetchDirectoryContents = async (
       { method: 'GET' },
     );
     return handleResponse<FileTreeNode[]>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(
       `Error fetching directory contents for ${directoryPath}:`,
       error,
     );
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -65,9 +65,9 @@ export const readFileContent = async (filePath: string): Promise<string> => {
     );
 
     return data.content;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error reading file ${filePath}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -87,9 +87,9 @@ export const writeFileContent = async (
       body: JSON.stringify({ filePath, content }),
     });
     return handleResponse<{ success: boolean; message: string }>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error writing file ${filePath}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -111,12 +111,12 @@ export const createFileOrFolder = async (
       body: JSON.stringify({ filePath, isDirectory, content }),
     });
     return handleResponse<{ success: boolean; filePath: string }>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(
       `Error creating ${isDirectory ? 'folder' : 'file'} at ${filePath}:`,
       error,
     );
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -134,9 +134,9 @@ export const deleteFile = async (
       body: JSON.stringify({ filePath }),
     });
     return handleResponse<FileOperationResult>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error deleting ${filePath}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -156,9 +156,9 @@ export const renameFile = async (
       body: JSON.stringify({ oldPath, newPath }),
     });
     return handleResponse<RenameResult>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error renaming ${oldPath} to ${newPath}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -178,9 +178,9 @@ export const copyFile = async (
       body: JSON.stringify({ sourcePath, destinationPath }),
     });
     return handleResponse<CopyResult>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error copying ${sourcePath} to ${destinationPath}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -200,9 +200,9 @@ export const moveFile = async (
       body: JSON.stringify({ sourcePath, destinationPath }),
     });
     return handleResponse<MoveResult>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error moving ${sourcePath} to ${destinationPath}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 

@@ -17,6 +17,7 @@ import { applyProposedChanges as apiApplyProposedChanges } from '@/api/llm'; // 
 import { addLog } from '@/stores/logStore';
 import { ErrorStoreState, errorStore, setError } from '@/stores/errorStore';
 import { runTerminalCommand } from '@/api/terminal';
+import { ResponseError } from '@/api/fetch'; // Import ResponseError
 
 export interface LlmStoreState {
   instruction: string;
@@ -304,9 +305,9 @@ export const performPostApplyActions = async (
       'Proposed file system changes applied successfully.',
       'success',
     );
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     overallSuccess = false;
-    const errMsg = `Failure during application of file system changes: ${err instanceof Error ? err.message : String(err)}`;
+    const errMsg = `Failure during application of file system changes: ${ (err instanceof ResponseError) ? err.message : (err instanceof Error ? err.message : String(err))}`;
     allMessages.push(errMsg);
     addLog('Post Apply', errMsg, 'error', String(err), undefined, true);
     return { success: false, messages: allMessages }; // Return early on error
@@ -341,8 +342,8 @@ export const performPostApplyActions = async (
             gitExecResult,
           );
         }
-      } catch (err: unknown) { // Fixed TS1196
-        const errMsg = `Failed to execute git command \`${command}\`: ${err instanceof Error ? err.message : String(err)}`;
+      } catch (err: unknown) {
+        const errMsg = `Failed to execute git command \`${command}\`: ${ (err instanceof ResponseError) ? err.message : (err instanceof Error ? err.message : String(err))}`;
         allMessages.push(errMsg);
         addLog('Git Automation ', errMsg, 'error', String(err), undefined, true);
         setError(errMsg); // Use errorStore's setError for immediate UI feedback

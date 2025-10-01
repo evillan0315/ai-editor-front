@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
+import { API_BASE_URL, ResponseError, handleResponse, fetchWithAuth } from '@/api';
 import { getToken } from '@/stores/authStore';
 import {
   CreateMediaDto,
@@ -41,9 +41,9 @@ export const extractMedia = async (
       body: JSON.stringify(dto),
     });
     return handleResponse<MediaFileResponseDto>(response);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error extracting media:', err);
-    throw err;
+    throw (err instanceof ResponseError) ? err : new Error(err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -72,9 +72,9 @@ export const fetchMediaFiles = async (
       // Explicitly return null if no items found in a successful response
       return null;
     }
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error fetching media files:', err);
-    throw err; // Re-throw the error, let caller handle it
+    throw (err instanceof ResponseError) ? err : new Error(err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -89,9 +89,9 @@ export const fetchMediaFileById = async (
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/media/${id}`);
     return handleResponse<MediaFileResponseDto>(response);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error(`Error fetching media file with ID ${id}:`, err);
-    throw err;
+    throw (err instanceof ResponseError) ? err : new Error(err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -108,9 +108,9 @@ export const deleteMediaFile = async (
       method: 'DELETE',
     });
     return handleResponse<{ message: string }>(response);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error(`Error deleting media file with ID ${id}:`, err);
-    throw err;
+    throw (err instanceof ResponseError) ? err : new Error(err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -131,9 +131,9 @@ export const scanMediaDirectory = async (
       },
     );
     return handleResponse<MediaScanResponseDto>(response);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error scanning media directory:', err);
-    throw err;
+    throw (err instanceof ResponseError) ? err : new Error(err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -157,9 +157,9 @@ export const transcribeAudio = async (
       },
     );
     return handleResponse<TranscriptionResult>(response);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error transcribing audio:', err);
-    throw err;
+    throw (err instanceof ResponseError) ? err : new Error(err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -176,9 +176,9 @@ export const getTranscription = async (
       `${API_BASE_URL}/media/${fileId}/transcription`,
     );
     return handleResponse<TranscriptionResult>(response);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error getting transcription:', err);
-    throw err;
+    throw (err instanceof ResponseError) ? err : new Error(err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -201,9 +201,9 @@ export const getSyncTranscription = async (
       },
     );
     return handleResponse<SyncTranscriptionResponse>(response);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error getting synchronized transcription:', err);
-    throw err;
+    throw (err instanceof ResponseError) ? err : new Error(err instanceof Error ? err.message : String(err));
   }
 };
 

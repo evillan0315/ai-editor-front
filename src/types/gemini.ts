@@ -94,6 +94,7 @@ export interface PaginationGeminiResponseQueryDto {
   safetyRatings?: any;
   tokenCount?: number;
   projectRoot?: string;
+  requestType?: RequestType; // Added missing property
 }
 
 export interface PaginationGeminiResponseResultDto {

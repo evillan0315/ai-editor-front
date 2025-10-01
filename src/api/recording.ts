@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
+import { API_BASE_URL, ResponseError, handleResponse, fetchWithAuth } from '@/api';
 
 import {
   RecordingStartResponse,
@@ -24,9 +24,9 @@ export const recordingApi = {
         },
       );
       return handleResponse<RecordingStartResponse>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error starting recording:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
   stopRecording: async (id: string) => {
@@ -38,9 +38,9 @@ export const recordingApi = {
         },
       );
       return handleResponse<RecordingStopResponse>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error stopping recording:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
   capture: async () => {
@@ -52,18 +52,18 @@ export const recordingApi = {
         },
       );
       return handleResponse<RecordingStopResponse>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error capturing screenshot:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
   recordingStatus: async () => {
     try {
       const response = await fetchWithAuth(`${API_BASE_URL}/recording/status`);
       return handleResponse<RecordingStatusDto>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error getting recording status:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
   startCameraRecording: async (dto: StartCameraRecordingDto) => {
@@ -76,9 +76,9 @@ export const recordingApi = {
         },
       );
       return handleResponse<CameraRecordingResponseDto>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error starting camera recording:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
   stopCameraRecording: async (id: string) => {
@@ -90,9 +90,9 @@ export const recordingApi = {
         },
       );
       return handleResponse<CameraRecordingResponseDto>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error stopping camera recording:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
   convertToGif: async (dto: TranscodeToGifDto) => {
@@ -105,9 +105,9 @@ export const recordingApi = {
         },
       );
       return handleResponse<TranscodeToGifResult>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error converting to GIF:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
   getRecordings: async (
@@ -124,9 +124,9 @@ export const recordingApi = {
         },
       );
       return handleResponse<PaginationRecordingResultDto>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching paginated recordings:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
   getRecording: async (id: string): Promise<RecordingResultDto> => {
@@ -135,9 +135,9 @@ export const recordingApi = {
         method: 'GET',
       });
       return handleResponse<RecordingResultDto>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching recording:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
   updateRecording: async (
@@ -150,9 +150,9 @@ export const recordingApi = {
         body: JSON.stringify(dto),
       });
       return handleResponse<RecordingResultDto>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error updating recording:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
   findRecording: async (id: string): Promise<RecordingResultDto> => {
@@ -161,9 +161,9 @@ export const recordingApi = {
         method: 'GET',
       });
       return handleResponse<RecordingResultDto>(response);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching recording:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
   deleteRecording: async (id: string): Promise<void> => {
@@ -171,14 +171,10 @@ export const recordingApi = {
       const response = await fetchWithAuth(`${API_BASE_URL}/recording/${id}`, {
         method: 'DELETE',
       });
-      if (!response.ok) {
-        const errorData: ApiError = await response.json();
-        throw new Error(errorData.message || `API error: ${response.status}`);
-      }
-      return;
-    } catch (error) {
+      await handleResponse<void>(response);
+    } catch (error: unknown) {
       console.error('Error deleting recording:', error);
-      throw error;
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
     }
   },
 };

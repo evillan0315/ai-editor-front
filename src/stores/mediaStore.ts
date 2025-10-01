@@ -22,6 +22,7 @@ import {
   getFileStreamUrl,
 } from '@/api/media';
 import { authStore } from './authStore'; // Import authStore for login check
+import { ResponseError } from '@/api';
 
 // --- Atoms (Non-persistent for transient playback state, persistent for user preferences) ---
 // Playback state should NOT be persistent to avoid browser autoplay issues on refresh.
@@ -203,10 +204,10 @@ export const fetchAndLoadTranscription = async (fileId: string) => {
     transcriptionResultAtom.set(result);
     //showGlobalSnackbar('Transcription loaded successfully', 'success'); // Add snackbar on success
     updateCurrentTranscriptionSync(fileId, progressAtom.get());
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error fetching transcription:', err);
     transcriptionErrorAtom.set(
-      `Failed to load transcription: ${err instanceof Error ? err.message : String(err)} `, // Adjusted error message
+      `Failed to load transcription: ${(err instanceof ResponseError) ? err.message : (err instanceof Error ? err.message : String(err))}`,
     );
   } finally {
     isTranscribingAtom.set(false);
@@ -229,12 +230,13 @@ export const transcribeCurrentAudio = async (fileId: string) => {
         $mediaStore.get().mediaElement!.currentTime,
       );
     }
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error transcribing audio:', err);
     transcriptionErrorAtom.set(
-      `Failed to transcribe audio: ${err instanceof Error ? err.message : String(err)} `, // Adjusted error message
+      `Failed to transcribe audio: ${(err instanceof ResponseError) ? err.message : (err instanceof Error ? err.message : String(err))}`,
     );
-  } finally {
+  }
+  finally {
     isTranscribingAtom.set(false);
   }
 };
@@ -251,7 +253,7 @@ export const updateCurrentTranscriptionSync = async (
   try {
     const result = await getSyncTranscription(fileId, currentTime);
     transcriptionSyncDataAtom.set(result);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     // Often occurs if transcription is not yet complete on backend or network issues
     console.warn(
       'Could not sync transcription, may not be available yet or API error:',
@@ -457,10 +459,10 @@ export const fetchingMediaFiles = async (
       fileType: [FileType.AUDIO],
     };
     audioResult = await fetchMediaFiles(audioQuery);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error fetching audio files:', err);
     showGlobalSnackbar(
-      `Failed to fetch audio files: ${err instanceof Error ? err.message : String(err)} `,
+      `Failed to fetch audio files: ${(err instanceof ResponseError) ? err.message : (err instanceof Error ? err.message : String(err))}`,
       'error',
     );
   }
@@ -472,10 +474,10 @@ export const fetchingMediaFiles = async (
       fileType: [FileType.VIDEO],
     };
     videoResult = await fetchMediaFiles(videoQuery);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error fetching video files:', err);
     showGlobalSnackbar(
-      `Failed to fetch video files: ${err instanceof Error ? err.message : String(err)} `,
+      `Failed to fetch video files: ${(err instanceof ResponseError) ? err.message : (err instanceof Error ? err.message : String(err))}`,
       'error',
     );
   }

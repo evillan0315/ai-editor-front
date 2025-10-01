@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
+import { API_BASE_URL, ResponseError, handleResponse, fetchWithAuth } from '@/api';
 import { generateText } from './ai';
 import {
   ModelResponse,
@@ -39,9 +39,10 @@ export const convertYamlToJson = async (data: string): Promise<any> => {
       },
     );
     return handleResponse<any>(response);
-  } catch (err: unknown) { // Fixed TS1196
-    console.error('Error converting YAML to JSON:', err);
-    throw err;
+  } catch (err: unknown) {
+    const errorMsg = (err instanceof ResponseError) ? err.message : (err instanceof Error ? err.message : String(err));
+    console.error('Error converting YAML to JSON:', errorMsg);
+    throw new Error(`Failed to convert YAML to JSON: ${errorMsg}`);
   }
 };
 
@@ -52,8 +53,8 @@ export const generateSchema = async (prompt: string): Promise<string> => {
   try {
     const response = await generateText({ prompt });
     return extractCodeFromMarkdown(response);
-  } catch (err: unknown) { // Fixed TS1196
-    const errorMsg = err instanceof Error ? err.message : String(err);
+  } catch (err: unknown) {
+    const errorMsg = (err instanceof ResponseError) ? err.message : (err instanceof Error ? err.message : String(err));
     console.error('Error generating schema:', errorMsg);
     throw new Error(`Failed to generate schema: ${errorMsg}`); // Re-throw to indicate failure properly
   }
@@ -97,21 +98,21 @@ export const generateCode = async (
         rawResponse: rawText,
         error: errorString, // Ensure error is string | null
       };
-    } catch (jsonErr: unknown) { // Fixed TS1196
+    } catch (jsonErr: unknown) {
       console.log(rawText, 'rawText'); // Log rawText directly to avoid re-parsing if already failed
       // If parsing fails, return raw content safely
       return {
         rawResponse: rawText,
         summary: null, // Fixed type assignment for summary
         changes: [],
-        error: jsonErr instanceof Error ? jsonErr.message : String(jsonErr),
+        error: (jsonErr instanceof ResponseError) ? jsonErr.message : (jsonErr instanceof Error ? jsonErr.message : String(jsonErr)),
         requestType: data.requestType, // Added missing required fields
         outputFormat: data.output || LlmOutputFormat.JSON, // Added missing required fields with fallback
       };
     }
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     // Network or fetch error
-    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorMsg = (err instanceof ResponseError) ? err.message : (err instanceof Error ? err.message : String(err));
     return {
       rawResponse: rawText,
       summary: null, // Fixed type assignment for summary
@@ -139,9 +140,9 @@ export const applyProposedChanges = async (
       body: JSON.stringify({ changes, projectRoot }),
     });
     return handleResponse<{ success: boolean; messages: string[] }>(response);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error applying changes:', err);
-    throw err;
+    throw (err instanceof ResponseError) ? err : new Error(err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -168,9 +169,9 @@ export const getGitDiff = async (
     const data = await handleResponse<{ diff: string }>(response);
 
     return data.diff;
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error(`Error fetching git diff for ${filePath}:`, err);
-    throw err;
+    throw (err instanceof ResponseError) ? err : new Error(err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -189,9 +190,9 @@ export const reportErrorToLlm = async (
       body: JSON.stringify(payload),
     });
     return handleResponse<{ success: boolean; message: string }>(response);
-  } catch (err: unknown) { // Fixed TS1196
+  } catch (err: unknown) {
     console.error('Error reporting error to LLM backend:', err);
-    throw err;
+    throw (err instanceof ResponseError) ? err : new Error(err instanceof Error ? err.message : String(err));
   }
 };
 

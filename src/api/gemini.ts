@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
+import { API_BASE_URL, ResponseError, handleResponse, fetchWithAuth } from '@/api';
 import {
   GeminiRequest,
   CreateGeminiRequestDto,
@@ -32,9 +32,9 @@ export const createGeminiRequest = async (
       body: JSON.stringify(data),
     });
     return handleResponse<GeminiRequest>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error creating Gemini request:', error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -48,9 +48,9 @@ export const getGeminiRequests = async (): Promise<GeminiRequest[]> => {
       method: 'GET',
     });
     return handleResponse<GeminiRequest[]>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching all Gemini requests:', error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -71,9 +71,9 @@ export const getPaginatedGeminiRequests = async (
       },
     );
     return handleResponse<PaginationGeminiRequestResultDto>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching paginated Gemini requests:', error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -90,9 +90,9 @@ export const getGeminiRequestById = async (
       method: 'GET',
     });
     return handleResponse<GeminiRequest>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error fetching Gemini request with ID ${id}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -112,9 +112,9 @@ export const updateGeminiRequest = async (
       body: JSON.stringify(data),
     });
     return handleResponse<GeminiRequest>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error updating Gemini request with ID ${id}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -131,9 +131,9 @@ export const deleteGeminiRequest = async (
       method: 'DELETE',
     });
     return handleResponse<{ message: string }>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error deleting Gemini request with ID ${id}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -157,9 +157,9 @@ export const createGeminiResponse = async (
       body: JSON.stringify(data),
     });
     return handleResponse<GeminiResponse>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error creating Gemini response:', error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -173,9 +173,9 @@ export const getGeminiResponses = async (): Promise<GeminiResponse[]> => {
       method: 'GET',
     });
     return handleResponse<GeminiResponse[]>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching all Gemini responses:', error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -196,9 +196,9 @@ export const getPaginatedGeminiResponses = async (
       },
     );
     return handleResponse<PaginationGeminiResponseResultDto>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching paginated Gemini responses:', error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -215,12 +215,12 @@ export const getGeminiResponsesByRequestId = async (
     const query: PaginationGeminiResponseQueryDto = { requestId, requestType };
     const result = await getPaginatedGeminiResponses(query);
     return result.items;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(
       `Error fetching Gemini responses for request ID ${requestId}:`,
       error,
     );
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -237,9 +237,9 @@ export const getGeminiResponseById = async (
       method: 'GET',
     });
     return handleResponse<GeminiResponse>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error fetching Gemini response with ID ${id}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -259,9 +259,9 @@ export const updateGeminiResponse = async (
       body: JSON.stringify(data),
     });
     return handleResponse<GeminiResponse>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error updating Gemini response with ID ${id}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -278,8 +278,8 @@ export const deleteGeminiResponse = async (
       method: 'DELETE',
     });
     return handleResponse<{ message: string }>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error deleting Gemini response with ID ${id}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };

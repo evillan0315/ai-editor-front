@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
+import { API_BASE_URL, ResponseError, handleResponse, fetchWithAuth } from '@/api';
 import { TerminalCommandResponse, ProjectScriptsResponse } from '@/types';
 
 /**
@@ -17,9 +17,9 @@ export const runTerminalCommand = async (
       body: JSON.stringify({ command, cwd }),
     });
     return handleResponse<TerminalCommandResponse>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error running terminal command '${command}':`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -41,8 +41,8 @@ export const fetchProjectScripts = async (
       },
     );
     return handleResponse<ProjectScriptsResponse>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error fetching package scripts for ${projectRoot}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };

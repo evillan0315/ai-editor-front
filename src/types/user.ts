@@ -4,7 +4,7 @@ export interface UserProfile {
   name?: string;
   image?: string;
   role?: 'USER' | 'ADMIN' | 'MANAGER' | 'SUPERADMIN'; // Mirroring backend Role enum
-  username?: string; // Add username for local registration/profile
+  username?: string | null; // Add username for local registration/profile, allowing null
   provider?: 'google' | 'github' | 'local'; // Added 'local' provider
   accessToken?: string; // Only for client-side use if needed, backend sets HTTP-only cookie
   organization?: string; // New: User's primary organization for display purposes

@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
+import { API_BASE_URL, ResponseError, handleResponse, fetchWithAuth } from '@/api';
 
 import {
   Project,
@@ -22,9 +22,9 @@ export const createProject = async (
       body: JSON.stringify(dto),
     });
     return handleResponse<Project>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error creating project:', error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -40,9 +40,9 @@ export const getProjects = async (
       method: 'GET',
     });
     return handleResponse<Project[]>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching projects:', error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -63,9 +63,9 @@ export const getPaginatedProjects = async (
       },
     );
     return handleResponse<PaginationProjectResultDto>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching paginated projects:', error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -78,9 +78,9 @@ export const getProjectById = async (id: string): Promise<Project> => {
       method: 'GET',
     });
     return handleResponse<Project>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error fetching project with ID ${id}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -97,9 +97,9 @@ export const updateProject = async (
       body: JSON.stringify(dto),
     });
     return handleResponse<Project>(response);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error updating project with ID ${id}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };
 
@@ -112,12 +112,9 @@ export const deleteProject = async (id: string): Promise<void> => {
       method: 'DELETE',
     });
     // For delete, usually no content, just status check
-    if (!response.ok) {
-      const errorData: ApiError = await response.json();
-      throw new Error(errorData.message || `API error: ${response.status}`);
-    }
-  } catch (error) {
+    await handleResponse<void>(response);
+  } catch (error: unknown) {
     console.error(`Error deleting project with ID ${id}:`, error);
-    throw error;
+    throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
   }
 };

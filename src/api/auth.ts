@@ -1,7 +1,7 @@
 import { loginSuccess, logout, setLoading, setError, getToken } from '@/stores/authStore';
-import { API_BASE_URL, type ApiError, handleResponse, fetchWithAuth } from '@/api';
-import { LoginRequest, RegisterRequest } from '@/types/auth'; // Corrected import path for LoginRequest and RegisterRequest
-import { UserProfile } from '@/types/user'; // Corrected import path
+import { API_BASE_URL, ResponseError, handleResponse, fetchWithAuth } from '@/api';
+import { LoginRequest, RegisterRequest } from '@/types/auth';
+import { UserProfile } from '@/types/user';
 
 export interface LoginLocalResponse {
   access_token: string;
@@ -47,10 +47,10 @@ export const handleLogout = async (): Promise<LogoutResponse> => {
     });
     logout();
     return handleResponse<LogoutResponse>(response);
-  } catch (error: unknown) { // Changed type to unknown
-    const errorMessage = (error instanceof ApiError) ? error.message : 'An unknown error occurred during logout.';
+  } catch (error: unknown) {
+    const errorMessage = (error instanceof ResponseError) ? error.message : 'An unknown error occurred during logout.';
     setError(errorMessage);
-    return Promise.reject(error); // Explicitly reject the promise
+    return Promise.reject(error);
   } finally {
     setLoading(false);
   }
@@ -60,14 +60,14 @@ export const handleLogout = async (): Promise<LogoutResponse> => {
  * Checks the current authentication status by calling the backend '/me' endpoint.
  * Updates the auth store based on the response.
  */
-export const checkAuthStatus = async (): Promise<MeResponseDto> => { // Updated return type
+export const checkAuthStatus = async (): Promise<MeResponseDto> => {
   setLoading(true);
   setError(null);
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/auth/me`, {
       method: 'GET',
     });
-    const meData = await handleResponse<MeResponseDto>(response); // Changed variable name to meData
+    const meData = await handleResponse<MeResponseDto>(response);
     if (meData && getToken()) {
       // Construct UserProfile from MeResponseDto
       const userProfile: UserProfile = {
@@ -81,11 +81,11 @@ export const checkAuthStatus = async (): Promise<MeResponseDto> => { // Updated 
       loginSuccess(userProfile, getToken() || ''); // Pass userProfile and handle null/undefined token
     }
     return meData; // Return the full MeResponseDto
-  } catch (error: unknown) { // Changed type to unknown
+  } catch (error: unknown) {
     console.error('Failed to check authentication', error);
-    const errorMessage = (error instanceof Error) ? error.message : 'You are not logged in. Please login.'; // Refined error message access
+    const errorMessage = (error instanceof ResponseError) ? error.message : 'You are not logged in. Please login.'; // Refined error message access
     setError(errorMessage);
-    return Promise.reject(error); // Explicitly reject the promise
+    return Promise.reject(error);
   } finally {
     setLoading(false);
   }
@@ -110,11 +110,11 @@ export const loginLocal = async (
       loginSuccess(authData.user, authData.access_token);
     }
     return authData;
-  } catch (error: unknown) { // Changed type to unknown
+  } catch (error: unknown) {
     console.error('Failed to authenticate:', error);
-    const errorMessage = (error instanceof ApiError) ? error.message : 'An unknown error message occurred during login.';
+    const errorMessage = (error instanceof ResponseError) ? error.message : 'An unknown error message occurred during login.';
     setError(errorMessage);
-    return Promise.reject(error); // Explicitly reject the promise
+    return Promise.reject(error);
   } finally {
     setLoading(false);
   }
@@ -139,11 +139,11 @@ export const registerLocal = async (
       loginSuccess(authData.user, authData.access_token); // Corrected property access
     }
     return authData;
-  } catch (error: unknown) { // Changed type to unknown
+  } catch (error: unknown) {
     console.error('Registration failed', error);
-    const errorMessage = (error instanceof ApiError) ? error.message : 'An unknown error message occurred during registration.';
+    const errorMessage = (error instanceof ResponseError) ? error.message : 'An unknown error message occurred during registration.';
     setError(errorMessage);
-    return Promise.reject(error); // Explicitly reject the promise
+    return Promise.reject(error);
   } finally {
     setLoading(false);
   }

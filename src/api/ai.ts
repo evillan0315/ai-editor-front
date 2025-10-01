@@ -3,7 +3,7 @@ import {
   GenerateImageBase64Dto,
   GenerateVideoDto,
 } from '@/types/ai';
-import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from './fetch';
+import { API_BASE_URL, ResponseError, handleResponse, fetchWithAuth } from './fetch';
 
 export const generateText = async (data: GenerateTextDto): Promise<string> => {
   const response = await fetchWithAuth(

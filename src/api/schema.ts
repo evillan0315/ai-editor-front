@@ -1,4 +1,4 @@
-import { API_BASE_URL, fetchWithAuth, handleResponse } from './fetch';
+import { API_BASE_URL, ResponseError, fetchWithAuth, handleResponse } from './fetch';
 import {
   Schema,
   CreateSchemaPayload,
@@ -20,11 +20,16 @@ export const schemaApi = {
    * @returns The created schema.
    */
   createSchema: async (payload: CreateSchemaPayload): Promise<Schema> => {
-    const response = await fetchWithAuth(SCHEMA_API_PATH, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-    return handleResponse<Schema>(response);
+    try {
+      const response = await fetchWithAuth(SCHEMA_API_PATH, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      return handleResponse<Schema>(response);
+    } catch (error: unknown) {
+      console.error('Error creating schema:', error);
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
+    }
   },
 
   /**
@@ -32,8 +37,13 @@ export const schemaApi = {
    * @returns An array of all schemas.
    */
   getAllSchemas: async (): Promise<Schema[]> => {
-    const response = await fetchWithAuth(SCHEMA_API_PATH);
-    return handleResponse<Schema[]>(response);
+    try {
+      const response = await fetchWithAuth(SCHEMA_API_PATH);
+      return handleResponse<Schema[]>(response);
+    } catch (error: unknown) {
+      console.error('Error fetching all schemas:', error);
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
+    }
   },
 
   /**
@@ -44,12 +54,17 @@ export const schemaApi = {
   getPaginatedSchemas: async (
     query: PaginationSchemaQuery,
   ): Promise<PaginationSchemaResult> => {
-    const queryString = new URLSearchParams(
-      query as Record<string, string>,
-    ).toString();
-    const url = `${SCHEMA_API_PATH}/paginated?${queryString}`;
-    const response = await fetchWithAuth(url);
-    return handleResponse<PaginationSchemaResult>(response);
+    try {
+      const queryString = new URLSearchParams(
+        query as Record<string, string>,
+      ).toString();
+      const url = `${SCHEMA_API_PATH}/paginated?${queryString}`;
+      const response = await fetchWithAuth(url);
+      return handleResponse<PaginationSchemaResult>(response);
+    } catch (error: unknown) {
+      console.error('Error fetching paginated schemas:', error);
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
+    }
   },
 
   /**
@@ -58,8 +73,13 @@ export const schemaApi = {
    * @returns The found schema.
    */
   getSchemaById: async (id: string): Promise<Schema> => {
-    const response = await fetchWithAuth(`${SCHEMA_API_PATH}/${id}`);
-    return handleResponse<Schema>(response);
+    try {
+      const response = await fetchWithAuth(`${SCHEMA_API_PATH}/${id}`);
+      return handleResponse<Schema>(response);
+    } catch (error: unknown) {
+      console.error(`Error fetching schema with ID ${id}:`, error);
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
+    }
   },
 
   /**
@@ -72,11 +92,16 @@ export const schemaApi = {
     id: string,
     payload: UpdateSchemaPayload,
   ): Promise<Schema> => {
-    const response = await fetchWithAuth(`${SCHEMA_API_PATH}/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    });
-    return handleResponse<Schema>(response);
+    try {
+      const response = await fetchWithAuth(`${SCHEMA_API_PATH}/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+      return handleResponse<Schema>(response);
+    } catch (error: unknown) {
+      console.error(`Error updating schema with ID ${id}:`, error);
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
+    }
   },
 
   /**
@@ -85,9 +110,14 @@ export const schemaApi = {
    * @returns A success message or confirmation.
    */
   deleteSchema: async (id: string): Promise<any> => {
-    const response = await fetchWithAuth(`${SCHEMA_API_PATH}/${id}`, {
-      method: 'DELETE',
-    });
-    return handleResponse<any>(response);
+    try {
+      const response = await fetchWithAuth(`${SCHEMA_API_PATH}/${id}`, {
+        method: 'DELETE',
+      });
+      return handleResponse<any>(response);
+    } catch (error: unknown) {
+      console.error(`Error deleting schema with ID ${id}:`, error);
+      throw (error instanceof ResponseError) ? error : new Error(error instanceof Error ? error.message : String(error));
+    }
   },
 };
