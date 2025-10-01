@@ -37,27 +37,24 @@ import {
   openedFile,
   openedFileContent,
   isOpenedFileDirty,
-  openedTabs, // import openedTabs
+  openedTabs,
+  discardActiveFileChanges, // Import the action directly
 } from '@/stores/fileStore';
+import { snackbarState } from '@/stores/snackbarStore'; // Import snackbarState
 import * as path from 'path-browserify';
 
 interface FileTabsProps extends BoxProps {}
 
 const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
   const {
-    //openedTabs,
-    //openedFile,
-    discardActiveFileChanges,
-    //openedFileContent,
     isFetchingFileContent,
-    //isOpenedFileDirty,
     isSavingFileContent,
-    snackbar, // Get global snackbar state
   } = useStore(fileStore);
   const $openedFile = useStore(openedFile);
   const $openedFileContent = useStore(openedFileContent);
   const $isOpenedFileDirty = useStore(isOpenedFileDirty);
   const $openedTabs = useStore(openedTabs); // get openedTabs from persistentAtom
+  const $snackbar = useStore(snackbarState); // Subscribe to snackbarState
   const theme = useTheme();
   const showTerminal = useStore(isTerminalVisible);
   const activeTabIndex = $openedTabs.indexOf($openedFile || '');
@@ -237,7 +234,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
               <span>
                 <IconButton
                   disabled={isDisabled}
-                  onClick={saveActiveFile}
+                  onClick={discardActiveFileChanges} // Corrected function call
                   size="small"
                   sx={{
                     color: theme.palette.error.main,

@@ -30,7 +30,7 @@ const FloatingSettings: React.FC<FloatingSettingsProps> = ({
     }
   }, []);
 
-  const handleMouseDown = useCallback((e: MouseEvent) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     setIsDragging(true);
     dragStart.current = {
       x: e.clientX - position.x,
@@ -51,7 +51,7 @@ const FloatingSettings: React.FC<FloatingSettingsProps> = ({
     }
   }, [isDragging]);
 
-  const handleResizeMouseDown = useCallback((e: MouseEvent) => {
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     setIsResizing(true);
     startSize.current = size;
     dragStart.current = { x: e.clientX, y: e.clientY };
