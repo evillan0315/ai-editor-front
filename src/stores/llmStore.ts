@@ -304,7 +304,7 @@ export const performPostApplyActions = async (
       'Proposed file system changes applied successfully.',
       'success',
     );
-  } catch (err) {
+  } catch (err: unknown) { // Fixed TS1196
     overallSuccess = false;
     const errMsg = `Failure during application of file system changes: ${err instanceof Error ? err.message : String(err)}`;
     allMessages.push(errMsg);
@@ -341,7 +341,7 @@ export const performPostApplyActions = async (
             gitExecResult,
           );
         }
-      } catch (err) {
+      } catch (err: unknown) { // Fixed TS1196
         const errMsg = `Failed to execute git command \`${command}\`: ${err instanceof Error ? err.message : String(err)}`;
         allMessages.push(errMsg);
         addLog('Git Automation ', errMsg, 'error', String(err), undefined, true);

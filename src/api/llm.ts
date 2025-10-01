@@ -8,6 +8,7 @@ import {
   LLM_ENDPOINT,
   SchemaResponse,
   RequestType,
+  LlmOutputFormat,
 } from '@/types'; // Import new LLM types and FileChange, RequestType, LlmOutputFormat, LlmGeneratePayload, LlmReportErrorApiPayload
 
 interface ConvertYamlResponse {
@@ -38,46 +39,23 @@ export const convertYamlToJson = async (data: string): Promise<any> => {
       },
     );
     return handleResponse<any>(response);
-  } catch (error) {
-    console.error('Error converting YAML to JSON:', error);
-    throw error;
+  } catch (err: unknown) { // Fixed TS1196
+    console.error('Error converting YAML to JSON:', err);
+    throw err;
   }
 };
-
-function parseJSONSafe(jsonString: string): ModelResponse {
-  try {
-    return JSON.parse(jsonString);
-  } catch (err: Error) {
-    console.error('JSON parse error:', err);
-    return {
-      summary: null,
-      changes: [],
-      rawResponse: jsonString,
-      error: err instanceof Error ? err.message : String(err),
-      gitInstructions: [],
-    };
-  }
-}
 
 // ────────────────────────────
 // Safe LLM code generation
 // ────────────────────────────
 export const generateSchema = async (prompt: string): Promise<string> => {
-  const rawText: string | null = null;
-  console.log(prompt, 'prompt');
   try {
     const response = await generateText({ prompt });
     return extractCodeFromMarkdown(response);
-
-    //return extractCodeFromMarkdown(res);
-  } catch (err) {
+  } catch (err: unknown) { // Fixed TS1196
     const errorMsg = err instanceof Error ? err.message : String(err);
-    return {
-      rawResponse: rawText,
-      summary: null,
-      changes: [],
-      error: errorMsg,
-    };
+    console.error('Error generating schema:', errorMsg);
+    throw new Error(`Failed to generate schema: ${errorMsg}`); // Re-throw to indicate failure properly
   }
 };
 export const generateCode = async (
@@ -101,32 +79,46 @@ export const generateCode = async (
       // Attempt to parse JSON
       const parsed: ModelResponse = JSON.parse(extractedText);
 
+      let errorString: string | null = null;
+      if (parsed.error) {
+        if (typeof parsed.error === 'string') {
+          errorString = parsed.error;
+        } else if (
+          typeof parsed.error === 'object' &&
+          parsed.error !== null &&
+          'message' in parsed.error
+        ) {
+          errorString = (parsed.error as { message?: string }).message || null;
+        }
+      }
+
       return {
         ...parsed,
         rawResponse: rawText,
-        error:
-          parsed.error && parsed.message
-            ? `${parsed.error}: ${parsed.message}`
-            : null, // Ensure error is null
+        error: errorString, // Ensure error is string | null
       };
-    } catch (jsonErr) {
-      console.log(JSON.parse(rawText), 'rawText');
+    } catch (jsonErr: unknown) { // Fixed TS1196
+      console.log(rawText, 'rawText'); // Log rawText directly to avoid re-parsing if already failed
       // If parsing fails, return raw content safely
       return {
         rawResponse: rawText,
-        summary: null,
+        summary: null, // Fixed type assignment for summary
         changes: [],
         error: jsonErr instanceof Error ? jsonErr.message : String(jsonErr),
+        requestType: data.requestType, // Added missing required fields
+        outputFormat: data.output || LlmOutputFormat.JSON, // Added missing required fields with fallback
       };
     }
-  } catch (err) {
+  } catch (err: unknown) { // Fixed TS1196
     // Network or fetch error
     const errorMsg = err instanceof Error ? err.message : String(err);
     return {
       rawResponse: rawText,
-      summary: null,
+      summary: null, // Fixed type assignment for summary
       changes: [],
       error: errorMsg,
+      requestType: data.requestType, // Added missing required fields
+      outputFormat: data.output || LlmOutputFormat.JSON, // Added missing required fields with fallback
     };
   }
 };
@@ -147,9 +139,9 @@ export const applyProposedChanges = async (
       body: JSON.stringify({ changes, projectRoot }),
     });
     return handleResponse<{ success: boolean; messages: string[] }>(response);
-  } catch (error) {
-    console.error('Error applying changes:', error);
-    throw error;
+  } catch (err: unknown) { // Fixed TS1196
+    console.error('Error applying changes:', err);
+    throw err;
   }
 };
 
@@ -176,9 +168,9 @@ export const getGitDiff = async (
     const data = await handleResponse<{ diff: string }>(response);
 
     return data.diff;
-  } catch (error) {
-    console.error(`Error fetching git diff for ${filePath}:`, error);
-    throw error;
+  } catch (err: unknown) { // Fixed TS1196
+    console.error(`Error fetching git diff for ${filePath}:`, err);
+    throw err;
   }
 };
 
@@ -197,9 +189,9 @@ export const reportErrorToLlm = async (
       body: JSON.stringify(payload),
     });
     return handleResponse<{ success: boolean; message: string }>(response);
-  } catch (error) {
-    console.error('Error reporting error to LLM backend:', error);
-    throw error;
+  } catch (err: unknown) { // Fixed TS1196
+    console.error('Error reporting error to LLM backend:', err);
+    throw err;
   }
 };
 

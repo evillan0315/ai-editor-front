@@ -66,15 +66,15 @@ export type FileChange = AddOrModifyFileChange | DeleteOrAnalyzeFileChange;
 // Model Response structure from LLM
 export interface ModelResponse {
   title?: string;
-  summary: string;
+  summary: string | null; // Changed to allow null
   thoughtProcess?: string;
   changes: FileChange[];
   gitInstructions?: string[];
   documentation?: string;
   requestType: RequestType;
   outputFormat: LlmOutputFormat;
-  rawResponse?: string; // For debugging or display of raw LLM output
-  error?: string | { message?: string } | null; // Modified to allow 'null' for the error property
+  rawResponse?: string | null; // Changed to allow null
+  error?: string | { message?: string } | null;
   buildScript?: string; // Optional build script from LLM response
 }
 

@@ -203,10 +203,10 @@ export const fetchAndLoadTranscription = async (fileId: string) => {
     transcriptionResultAtom.set(result);
     //showGlobalSnackbar('Transcription loaded successfully', 'success'); // Add snackbar on success
     updateCurrentTranscriptionSync(fileId, progressAtom.get());
-  } catch (err: any) {
+  } catch (err: unknown) { // Fixed TS1196
     console.error('Error fetching transcription:', err);
     transcriptionErrorAtom.set(
-      `Failed to load transcription: ${err.message || 'Unknown error'} `,
+      `Failed to load transcription: ${err instanceof Error ? err.message : String(err)} `, // Adjusted error message
     );
   } finally {
     isTranscribingAtom.set(false);
@@ -229,10 +229,10 @@ export const transcribeCurrentAudio = async (fileId: string) => {
         $mediaStore.get().mediaElement!.currentTime,
       );
     }
-  } catch (err: any) {
+  } catch (err: unknown) { // Fixed TS1196
     console.error('Error transcribing audio:', err);
     transcriptionErrorAtom.set(
-      `Failed to transcribe audio: ${err.message || 'Unknown error'} `,
+      `Failed to transcribe audio: ${err instanceof Error ? err.message : String(err)} `, // Adjusted error message
     );
   } finally {
     isTranscribingAtom.set(false);
@@ -251,7 +251,7 @@ export const updateCurrentTranscriptionSync = async (
   try {
     const result = await getSyncTranscription(fileId, currentTime);
     transcriptionSyncDataAtom.set(result);
-  } catch (err: any) {
+  } catch (err: unknown) { // Fixed TS1196
     // Often occurs if transcription is not yet complete on backend or network issues
     console.warn(
       'Could not sync transcription, may not be available yet or API error:',
@@ -309,9 +309,14 @@ export const nextTrack = async () => {
   // If media files are not loaded in the store, attempt to fetch them.
   if (allAvailableMediaFiles.length === 0) {
     showGlobalSnackbar('Fetching available media files...', 'info');
-    await fetchingMediaFiles(); // This will update $mediaStore
-    allAvailableMediaFiles = $mediaStore.get().allAvailableMediaFiles; // Re-fetch from store
-    if (allAvailableMediaFiles.length === 0) {
+    const fetchedResult = await fetchingMediaFiles(); // Now can be null
+    if (fetchedResult) {
+      allAvailableMediaFiles = fetchedResult.items; // Use items from the result
+    } else {
+      showGlobalSnackbar('No tracks available to play after fetching.', 'info');
+      return; // Exit if no media
+    }
+    if (allAvailableMediaFiles.length === 0) { // Double check
       showGlobalSnackbar('No tracks available to play after fetching.', 'info');
       return;
     }
@@ -367,9 +372,14 @@ export const previousTrack = async () => {
   // If media files are not loaded in the store, attempt to fetch them.
   if (allAvailableMediaFiles.length === 0) {
     showGlobalSnackbar('Fetching available media files...', 'info');
-    await fetchingMediaFiles(); // This will update $mediaStore
-    allAvailableMediaFiles = $mediaStore.get().allAvailableMediaFiles; // Re-fetch from store
-    if (allAvailableMediaFiles.length === 0) {
+    const fetchedResult = await fetchingMediaFiles(); // Now can be null
+    if (fetchedResult) {
+      allAvailableMediaFiles = fetchedResult.items; // Use items from the result
+    } else {
+      showGlobalSnackbar('No tracks available to play after fetching.', 'info');
+      return; // Exit if no media
+    }
+    if (allAvailableMediaFiles.length === 0) { // Double check
       showGlobalSnackbar('No tracks available to play after fetching.', 'info');
       return;
     }
@@ -447,10 +457,10 @@ export const fetchingMediaFiles = async (
       fileType: [FileType.AUDIO],
     };
     audioResult = await fetchMediaFiles(audioQuery);
-  } catch (err: any) {
+  } catch (err: unknown) { // Fixed TS1196
     console.error('Error fetching audio files:', err);
     showGlobalSnackbar(
-      `Failed to fetch audio files: ${err.message || 'Unknown error'} `,
+      `Failed to fetch audio files: ${err instanceof Error ? err.message : String(err)} `,
       'error',
     );
   }
@@ -462,10 +472,10 @@ export const fetchingMediaFiles = async (
       fileType: [FileType.VIDEO],
     };
     videoResult = await fetchMediaFiles(videoQuery);
-  } catch (err: any) {
+  } catch (err: unknown) { // Fixed TS1196
     console.error('Error fetching video files:', err);
     showGlobalSnackbar(
-      `Failed to fetch video files: ${err.message || 'Unknown error'} `,
+      `Failed to fetch video files: ${err instanceof Error ? err.message : String(err)} `,
       'error',
     );
   }
