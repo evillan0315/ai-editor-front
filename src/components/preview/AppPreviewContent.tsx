@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography, Paper, useTheme, Alert, CircularProgress } from '@mui/material';
 import { APP_NAME } from '@/constants';
+import { useStore } from '@nanostores/react';
+import { appPreviewStore } from '@/stores/appPreviewStore';
 
 interface AppPreviewContentProps {
   currentUrl: string;
   screenSize: 'mobile' | 'tablet' | 'desktop';
-  proxyServer?: boolean;
+  iframeRef: React.RefObject<HTMLIFrameElement>; // New: Pass iframe ref for external control
+  // proxyServer?: boolean; // Removed, now read from appPreviewStore
   onIframeLoad?: () => void;
   onIframeError?: (error: string) => void;
 }
@@ -13,14 +16,14 @@ interface AppPreviewContentProps {
 const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
   currentUrl,
   screenSize,
-  proxyServer = false,
+  iframeRef, // Destructure new prop
   onIframeLoad,
   onIframeError,
 }) => {
   const theme = useTheme();
+  const { zoomLevel, useProxy } = useStore(appPreviewStore); // Read zoomLevel and useProxy from store
   const [loadingIframe, setLoadingIframe] = useState(true);
   const [iframeLocalError, setIframeLocalError] = useState<string | null>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (currentUrl) {
@@ -73,7 +76,7 @@ const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
     }
   };
 
-  const iframeSrc = proxyServer && currentUrl
+  const iframeSrc = useProxy && currentUrl // Use useProxy from store
     ? `${import.meta.env.VITE_API_URL}/proxy?url=${encodeURIComponent(currentUrl)}`
     : currentUrl;
 
@@ -98,7 +101,9 @@ const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
     borderRadius: 1,
     overflow: 'hidden',
     position: 'relative',
-    transition: 'width 0.3s ease-in-out',
+    transition: 'width 0.3s ease-in-out', // Keep existing transition
+    transform: `scale(${zoomLevel})`, // Apply zoom level
+    transformOrigin: 'top center', // Zoom from the top center
   };
 
   const loadingOverlaySx = {
@@ -137,7 +142,7 @@ const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
           )}
         </Alert>
       ) : (
-        <Box sx={iframeContainerSx}>
+        <Box sx={iframeContainerSx}> {/* This Box now handles the zoom transform */}
           {loadingIframe && (
             <Box sx={loadingOverlaySx}>
               <CircularProgress size={40} />
@@ -150,7 +155,7 @@ const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
             </Box>
           )}
           <iframe
-            ref={iframeRef}
+            ref={iframeRef} // Assign ref here
             src={iframeSrc}
             title={`${APP_NAME} Preview`}
             onLoad={handleIframeLoad}
