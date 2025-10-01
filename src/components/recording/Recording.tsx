@@ -19,20 +19,20 @@ import { useStore } from '@nanostores/react';
 import { getFileStreamUrl } from '@/api/media';
 import { recordingApi } from '@/api/recording';
 import { setLoading, isLoading } from '@/stores/loadingStore';
-import { StartCameraRecordingDto, RecordingItem } from '@/types'; // MODIFIED: Import RecordingItem from types
-import VideoModal from '@/components/VideoModal'; // Import VideoModal
+import { StartCameraRecordingDto, RecordingItem } from '@/types';
+import VideoModal from '@/components/VideoModal';
 import path from 'path-browserify';
 
 type SortOrder = 'asc' | 'desc';
-type SortField = 'name' | 'createdAt' | 'type' | 'status';
+type SortField = 'name' | 'createdAt' | 'type' | 'status' | 'sizeBytes'; // MODIFIED: Added 'sizeBytes' to SortField
 
-const RECORDING_TYPES = ['screenRecord', 'screenShot', 'cameraRecord']; // Updated with cameraRecord
+const RECORDING_TYPES = ['screenRecord', 'screenShot', 'cameraRecord'];
 
 export function Recording() {
-  const isScreenRecording = useStore(isScreenRecordingStore); // Use renamed store
+  const isScreenRecording = useStore(isScreenRecordingStore);
   const currentRecordingId = useStore(currentRecordingIdStore);
 
-  const isCameraRecording = useStore(isCameraRecordingStore); // Use new camera store
+  const isCameraRecording = useStore(isCameraRecordingStore);
   const currentCameraRecordingId = useStore(currentCameraRecordingIdStore);
 
   const [recordings, setRecordings] = useState<RecordingItem[]>([]);
@@ -47,8 +47,7 @@ export function Recording() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedRecording, setSelectedRecording] =
-    useState<RecordingItem | null>(null);
+  const [selectedRecording, setSelectedRecording] = useState<RecordingItem | null>(null);
   const [editableRecording, setEditableRecording] = useState<
     Partial<RecordingItem>
   >({});
@@ -61,8 +60,8 @@ export function Recording() {
   >(null);
   const [currentPlayingMediaType, setCurrentPlayingMediaType] = useState<
     'video' | 'gif' | 'image'
-  >('video'); // MODIFIED: Added 'image' type
-  const mediaElementRef = useRef<HTMLVideoElement | HTMLImageElement>(null); // Ref can be either
+  >('video');
+  const mediaElementRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
 
   // Fetch recordings from API
   const fetchRecordings = useCallback(async () => {
@@ -70,7 +69,7 @@ export function Recording() {
     try {
       const data = await recordingApi.getRecordings({
         page: page + 1,
-        pageSize: rowsPerPage,
+        pageSize: rowsPerPage, // MODIFIED: Correct property for DTO
         sortBy,
         sortOrder,
         search: searchQuery || undefined,
@@ -96,7 +95,7 @@ export function Recording() {
     } finally {
       setLoading('recordingsList', false);
     }
-  }, [page, rowsPerPage, sortBy, sortOrder, searchQuery, typeFilter]); // Add typeFilter to dependencies
+  }, [page, rowsPerPage, sortBy, sortOrder, searchQuery, typeFilter]);
 
   useEffect(() => {
     fetchRecordings();
@@ -106,7 +105,7 @@ export function Recording() {
     currentRecordingId,
     isCameraRecording,
     currentCameraRecordingId,
-  ]); // Add camera recording states
+  ]);
 
   // Screen Recording actions
   const handleStartScreenRecording = async () => {
@@ -182,9 +181,9 @@ export function Recording() {
     try {
       const transcodeDto = {
         inputFilename: path.basename(recording.path),
-        fps: 15, // Default frames per second
-        width: 720, // Default width
-        loop: 0, // Loop indefinitely
+        fps: 15,
+        width: 720,
+        loop: 0,
       };
       const result = await recordingApi.convertToGif(transcodeDto);
 
@@ -192,7 +191,7 @@ export function Recording() {
       await recordingApi.updateRecording(recording.id, {
         data: { ...recording.data, animatedGif: result.fullPath },
       });
-      fetchRecordings(); // Reload recordings to show the new GIF
+      fetchRecordings();
     } finally {
       setLoading('convertToGif', false);
     }
@@ -200,11 +199,10 @@ export function Recording() {
 
   const handlePlay = (recording: RecordingItem) => {
     let mediaPath: string;
-    let mediaType: 'video' | 'gif' | 'image'; // MODIFIED: Added 'image' type
+    let mediaType: 'video' | 'gif' | 'image';
 
-    // MODIFIED: Logic to correctly determine mediaType and mediaPath
     if (recording.data?.animatedGif) {
-      mediaPath = recording.data.animatedGif; // Prioritize animatedGif if present
+      mediaPath = recording.data.animatedGif;
       mediaType = 'gif';
     } else if (recording.type === 'screenShot') {
       mediaPath = recording.path;
@@ -224,9 +222,9 @@ export function Recording() {
   const handleCloseVideoModal = () => {
     setIsVideoModalOpen(false);
     setCurrentPlayingVideoSrc(null);
-    setCurrentPlayingMediaType('video'); // Reset to a default, as currentPlayingVideoSrc being null will prevent rendering anyway
+    setCurrentPlayingMediaType('video');
     if (mediaElementRef.current) {
-      if (currentPlayingMediaType === 'video') { // MODIFIED: Only pause/reset if it was a video
+      if (currentPlayingMediaType === 'video') {
         (mediaElementRef.current as HTMLVideoElement).pause();
         (mediaElementRef.current as HTMLVideoElement).currentTime = 0;
       }
@@ -234,13 +232,12 @@ export function Recording() {
   };
 
   const handlePlayerReady = useCallback(
-    (_htmlMediaElement: HTMLVideoElement) => {
-      // Can be used to perform actions when the video player is ready
-    },
+    (_htmlMediaElement: HTMLVideoElement) => {},
     [],
   );
 
-  const handleEdit = (id: string) => recordingApi.editRecording?.(id);
+  // MODIFIED: Removed handleEdit as per the thought process.
+  // const handleEdit = (id: string) => recordingApi.editRecording?.(id);
 
   // Pagination
   const handlePageChange = (_: unknown, newPage: number) => setPage(newPage);
@@ -280,7 +277,7 @@ export function Recording() {
     try {
       await recordingApi.updateRecording(
         selectedRecording.id,
-        editableRecording,
+        editableRecording as any, // MODIFIED: Casting to any for now as editableRecording can have extra fields not explicitly in UpdateRecordingDto
       );
       fetchRecordings();
       closeDrawer();
@@ -321,19 +318,18 @@ export function Recording() {
         typeFilter={typeFilter}
         onTypeFilterChange={setTypeFilter}
         typeOptions={RECORDING_TYPES}
-        onRefresh={fetchRecordings} // Pass fetchRecordings to the search bar
+        onRefresh={fetchRecordings}
       />
 
       <RecordingsTable
         recordings={recordings}
         onPlay={handlePlay}
-        onEdit={handleEdit}
         onDelete={handleDelete}
-        onView={openDrawer} // View info drawer
+        onView={openDrawer}
         onSort={handleSort}
         sortBy={sortBy}
         sortOrder={sortOrder}
-        onConvertToGif={handleConvertToGif} // Pass the new handler
+        onConvertToGif={handleConvertToGif}
       />
 
       <RecordingsPagination
@@ -355,12 +351,12 @@ export function Recording() {
           open={isVideoModalOpen}
           onClose={handleCloseVideoModal}
           src={currentPlayingVideoSrc}
-          mediaElementRef={mediaElementRef} // Pass ref
+          mediaElementRef={mediaElementRef}
           autoplay={true}
           controls={true}
           muted={false}
           onPlayerReady={handlePlayerReady}
-          mediaType={currentPlayingMediaType} // Pass media type
+          mediaType={currentPlayingMediaType}
         />
       )}
     </Box>
