@@ -1,14 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { EditorView, keymap } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
+import { EditorView } from '@codemirror/view'; // Removed keymap as it's not directly used here for state
 import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
 import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
-import { oneDark } from '@codemirror/theme-one-dark';
 import { Box, useTheme } from '@mui/material';
 import { themeStore } from '@/stores/themeStore';
 import { LanguageSupport } from '@codemirror/language'; // Import LanguageSupport
+import CodeMirrorStatus from './CodeMirrorStatus'; // New import
 
 interface CodeMirrorEditorProps {
   value: string;
@@ -17,7 +16,7 @@ interface CodeMirrorEditorProps {
   filePath?: string;
   isDisabled?: boolean;
   classNames?: string;
-  height?: string;
+  height?: string; // This height now applies to the *entire* editor component, including status bar.
   width?: string;
   onEditorViewChange?: (view: EditorView) => void; // New prop to pass EditorView
 }
@@ -31,26 +30,31 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   classNames,
   height,
   width,
-  onEditorViewChange, // Destructure new prop
+  onEditorViewChange,
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
+  const [editorViewInstance, setEditorViewInstance] = useState<EditorView | null>(null); // State to hold EditorView
 
   const handleChange = React.useCallback(
-    (val: string, viewUpdate: any) => {
+    (val: string) => {
       onChange(val);
     },
     [onChange],
   );
 
   const handleUpdate = React.useCallback(
-    (viewUpdate: any) => {
+    (viewUpdate: { view: EditorView }) => {
       // Pass the EditorView to the parent component via callback on every update
       if (onEditorViewChange && viewUpdate.view) {
         onEditorViewChange(viewUpdate.view);
       }
+      // Also store it locally for CodeMirrorStatus if it's a new view instance
+      if (viewUpdate.view && viewUpdate.view !== editorViewInstance) {
+        setEditorViewInstance(viewUpdate.view);
+      }
     },
-    [onEditorViewChange],
+    [onEditorViewChange, editorViewInstance], // Add editorViewInstance to dependencies
   );
 
   const extensions = React.useMemo(() => {
@@ -79,17 +83,27 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   }, [language, filePath, muiTheme]); // Added filePath to dependencies for language detection
 
   return (
-    <Box className="h-full">
-      <CodeMirror
-        value={value}
-        height={height ? height : '100%'}
-        width={width ? width : '100%'}
-        theme={mode} // Retain original theme prop behavior
-        extensions={extensions}
-        onChange={handleChange}
-        onUpdate={handleUpdate} // Use onUpdate to pass EditorView changes
-        editable={!isDisabled}
-      />
+    <Box
+      className={`flex flex-col ${classNames || ''}`}
+      sx={{
+        height: height || '100%', // Total height for the editor + status bar
+        width: width || '100%',
+      }}
+    >
+      <Box className="flex-grow"> {/* This Box wraps CodeMirror and takes available space */}
+        <CodeMirror
+          value={value}
+          height="100%" // CodeMirror itself fills its parent flex-grow Box
+          width="100%" // CodeMirror itself fills its parent flex-grow Box
+          theme={mode}
+          extensions={extensions}
+          onChange={handleChange}
+          onUpdate={handleUpdate}
+          editable={!isDisabled}
+        />
+      </Box>
+      {/* CodeMirrorStatus component at the bottom, automatically sticky due to flex-col and flex-grow on editor */}
+      <CodeMirrorStatus editorView={editorViewInstance} filePath={filePath} />
     </Box>
   );
 };
