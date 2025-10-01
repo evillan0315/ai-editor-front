@@ -26,22 +26,15 @@ import SettingsIcon from '@mui/icons-material/Settings';
 
 interface BrowserAppToolbarProps {
   onRefresh?: () => void;
-  onGoBack?: () => void; // New prop for back navigation
-  onUrlChange: (url: string) => void;
-  onScreenSizeChange: (size: 'mobile' | 'tablet' | 'desktop') => void;
-  onResetToDefault: () => void;
-  // onZoomIn, onZoomOut, and onToggleProxy are now handled internally via appPreviewStore
+  onGoBack?: () => void; // Prop for back navigation
 }
 
 const BrowserAppToolbar: React.FC<BrowserAppToolbarProps> = ({
   onRefresh,
-  onGoBack, // Destructure new prop
-  onUrlChange,
-  onScreenSizeChange,
-  onResetToDefault,
+  onGoBack,
 }) => {
   const theme = useTheme();
-  const { currentUrl, screenSize, zoomLevel, useProxy } = useStore(appPreviewStore); // Read zoomLevel and useProxy from store
+  const { currentUrl, screenSize, zoomLevel, useProxy } = useStore(appPreviewStore);
   const [internalUrl, setInternalUrl] = useState(currentUrl);
 
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null); // For settings menu
@@ -59,7 +52,7 @@ const BrowserAppToolbar: React.FC<BrowserAppToolbarProps> = ({
     event.preventDefault();
     const trimmedUrl = internalUrl.trim();
     if (trimmedUrl && isValidUrl(trimmedUrl)) {
-      onUrlChange(trimmedUrl);
+      appPreviewStore.setKey('currentUrl', trimmedUrl); // Update store directly
     } else {
       console.error('Invalid URL:', trimmedUrl);
     }
@@ -98,6 +91,10 @@ const BrowserAppToolbar: React.FC<BrowserAppToolbarProps> = ({
     appPreviewStore.setKey('useProxy', event.target.checked);
   };
 
+  const handleResetToDefault = () => {
+    appPreviewStore.setKey('currentUrl', import.meta.env.VITE_PREVIEW_APP_URL || '');
+  };
+
   return (
     <Paper
       elevation={2}
@@ -113,7 +110,7 @@ const BrowserAppToolbar: React.FC<BrowserAppToolbarProps> = ({
     >
       <Box className="flex items-center gap-2 w-full">
         <Tooltip title="Reset URL to default">
-          <IconButton aria-label="reset url" onClick={onResetToDefault}>
+          <IconButton aria-label="reset url" onClick={handleResetToDefault}>
             <HomeIcon />
           </IconButton>
         </Tooltip>
@@ -129,7 +126,12 @@ const BrowserAppToolbar: React.FC<BrowserAppToolbarProps> = ({
             size="small"
             value={internalUrl}
             onChange={handleInternalUrlChange}
-            onBlur={() => onUrlChange(internalUrl.trim())}
+            onBlur={() => {
+              const trimmedUrl = internalUrl.trim();
+              if (isValidUrl(trimmedUrl)) {
+                appPreviewStore.setKey('currentUrl', trimmedUrl);
+              }
+            }}
             className="w-full"
             error={!!internalUrl && !isValidUrl(internalUrl)}
             helperText={!!internalUrl && !isValidUrl(internalUrl) ? 'Invalid URL format' : ''}
@@ -162,7 +164,7 @@ const BrowserAppToolbar: React.FC<BrowserAppToolbarProps> = ({
         <Tooltip title="Mobile view">
           <IconButton
             aria-label="mobile view"
-            onClick={() => onScreenSizeChange('mobile')}
+            onClick={() => appPreviewStore.setKey('screenSize', 'mobile')}
             color={getScreenSizeButtonColor('mobile')}
           >
             <MobileScreenShareIcon />
@@ -171,7 +173,7 @@ const BrowserAppToolbar: React.FC<BrowserAppToolbarProps> = ({
         <Tooltip title="Tablet view">
           <IconButton
             aria-label="tablet view"
-            onClick={() => onScreenSizeChange('tablet')}
+            onClick={() => appPreviewStore.setKey('screenSize', 'tablet')}
             color={getScreenSizeButtonColor('tablet')}
           >
             <TabletIcon />
@@ -180,7 +182,7 @@ const BrowserAppToolbar: React.FC<BrowserAppToolbarProps> = ({
         <Tooltip title="Desktop view">
           <IconButton
             aria-label="desktop view"
-            onClick={() => onScreenSizeChange('desktop')}
+            onClick={() => appPreviewStore.setKey('screenSize', 'desktop')}
             color={getScreenSizeButtonColor('desktop')}
           >
             <LaptopIcon />

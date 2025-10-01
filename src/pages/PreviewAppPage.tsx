@@ -1,16 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import { Box, Container } from '@mui/material';
+import { Box } from '@mui/material';
 import BrowserAppToolbar from '@/components/preview/BrowserAppToolbar';
 import AppPreviewContent from '@/components/preview/AppPreviewContent';
 import { useStore } from '@nanostores/react';
 import { appPreviewStore } from '@/stores/appPreviewStore';
+import PageLayout from '@/components/layouts/PageLayout'; // Import PageLayout
 
-// No longer needed as proxy setting is managed by appPreviewStore
-// interface PreviewAppPageProps {
-//   proxyServer?: boolean;
-// }
-
-const PreviewAppPage: React.FC = () => { // Removed props
+const PreviewAppPage: React.FC = () => {
   const { currentUrl, screenSize } = useStore(appPreviewStore);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -35,7 +31,7 @@ const PreviewAppPage: React.FC = () => { // Removed props
     }
   };
 
-  const handleGoBack = () => { // New handler for back navigation
+  const handleGoBack = () => {
     if (iframeRef.current) {
       iframeRef.current.contentWindow?.history.back();
     }
@@ -45,28 +41,37 @@ const PreviewAppPage: React.FC = () => { // Removed props
     appPreviewStore.setKey('currentUrl', import.meta.env.VITE_PREVIEW_APP_URL || '');
   };
 
-  return (
-    <Container
-      maxWidth={false}
-      sx={{ py: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}
-    >
-      <Box className="flex flex-col items-center justify-center">
-        <BrowserAppToolbar
-          onUrlChange={handleUrlChange}
-          onScreenSizeChange={handleScreenSizeChange}
-          onRefresh={handleRefresh}
-          onGoBack={handleGoBack} // Pass new handler
-          onResetToDefault={handleResetToDefault}
-        />
-      </Box>
-
-      <AppPreviewContent
-        currentUrl={currentUrl}
-        screenSize={screenSize}
-        iframeRef={iframeRef} // Pass ref to AppPreviewContent
-        // proxyServer prop removed, now handled by store directly in AppPreviewContent
+  // Content for the header slot of PageLayout
+  const headerContent = (
+    // Wrap BrowserAppToolbar in a Box to center it horizontally within the AppBar's Toolbar
+    <Box className="flex w-full justify-center">
+      <BrowserAppToolbar
+        onUrlChange={handleUrlChange}
+        onScreenSizeChange={handleScreenSizeChange}
+        onRefresh={handleRefresh}
+        onGoBack={handleGoBack}
+        onResetToDefault={handleResetToDefault}
       />
-    </Container>
+    </Box>
+  );
+
+  // Content for the body slot of PageLayout
+  const bodyContent = (
+    // AppPreviewContent should be allowed to size itself based on screenSize prop
+    // PageLayout's centerBodyContent will ensure this component is centered.
+    <AppPreviewContent
+      currentUrl={currentUrl}
+      screenSize={screenSize}
+      iframeRef={iframeRef}
+    />
+  );
+
+  return (
+    <PageLayout
+      header={headerContent}
+      body={bodyContent}
+      centerBodyContent={false} // Center the AppPreviewContent in the available body space
+    />
   );
 };
 

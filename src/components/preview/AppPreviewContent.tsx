@@ -5,37 +5,40 @@ import { useStore } from '@nanostores/react';
 import { appPreviewStore } from '@/stores/appPreviewStore';
 
 interface AppPreviewContentProps {
-  currentUrl: string;
-  screenSize: 'mobile' | 'tablet' | 'desktop';
-  iframeRef: React.RefObject<HTMLIFrameElement>; // New: Pass iframe ref for external control
-  // proxyServer?: boolean; // Removed, now read from appPreviewStore
+  iframeRef: React.RefObject<HTMLIFrameElement>; // Pass iframe ref for external control
   onIframeLoad?: () => void;
   onIframeError?: (error: string) => void;
 }
 
 const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
-  currentUrl,
-  screenSize,
-  iframeRef, // Destructure new prop
+  iframeRef,
   onIframeLoad,
   onIframeError,
 }) => {
   const theme = useTheme();
-  const { zoomLevel, useProxy } = useStore(appPreviewStore); // Read zoomLevel and useProxy from store
+  // Read all relevant state directly from the store
+  const { currentUrl, screenSize, zoomLevel, useProxy } = useStore(appPreviewStore);
   const [loadingIframe, setLoadingIframe] = useState(true);
   const [iframeLocalError, setIframeLocalError] = useState<string | null>(null);
+
+  // Effect to initialize currentUrl from environment variable if store is empty
+  useEffect(() => {
+    if (!currentUrl && import.meta.env.VITE_PREVIEW_APP_URL) {
+      appPreviewStore.setKey('currentUrl', import.meta.env.VITE_PREVIEW_APP_URL);
+    }
+  }, [currentUrl]); // Depend on currentUrl from store to trigger initial set if it's empty
 
   useEffect(() => {
     if (currentUrl) {
       setLoadingIframe(true);
       setIframeLocalError(null);
     } else {
-      const errorMsg = 'No preview URL configured. Please provide a URL to display the preview.';
+      const errorMsg = 'No preview URL is set. Please set the `VITE_PREVIEW_APP_URL` environment variable or provide a URL in the toolbar.';
       setIframeLocalError(errorMsg);
       setLoadingIframe(false);
       onIframeError?.(errorMsg);
     }
-  }, [currentUrl, onIframeError]);
+  }, [currentUrl, onIframeError]); // Depend on currentUrl from store
 
   const handleIframeLoad = () => {
     setLoadingIframe(false);
@@ -49,7 +52,7 @@ const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
       }
     } catch (e: any) {
       console.error('Error accessing iframe content (likely CORS issue):', e);
-      const errorMessage = `Failed to access iframe content: ${e.message || 'Possible Cross-Origin Restriction (CORS).'} If the issue persists, try disabling the proxy.`;
+      const errorMessage = `Failed to access iframe content: ${e.message || 'Possible Cross-Origin Restriction (CORS).'}${useProxy ? '' : ' If the issue persists, try enabling the proxy.'}`;
       setIframeLocalError(errorMessage);
       onIframeError?.(errorMessage);
     }
@@ -138,7 +141,7 @@ const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
         <Alert severity="error" sx={{ width: '100%', maxWidth: 600 }}>
           <strong>Configuration Error:</strong>{' '}
           {iframeLocalError || (
-            <><code>VITE_PREVIEW_APP_URL</code> is not defined in environment variables and no URL has been entered. Please set it or provide a URL in the toolbar.</>
+            <>No preview URL is set. Please set the <code>VITE_PREVIEW_APP_URL</code> environment variable or provide a URL in the toolbar.</>
           )}
         </Alert>
       ) : (
