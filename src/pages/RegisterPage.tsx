@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Button, TextField, Typography, Link as MuiLink } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { registerUser } from '@/api/auth';
+import { registerLocal } from '@/api/auth'; // Updated import to registerLocal
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 import { setLoading, authStore } from '@/stores/authStore'; // Import setLoading and authStore
 import { showGlobalSnackbar } from '@/stores/snackbarStore'; // Import showGlobalSnackbar
@@ -26,7 +26,7 @@ function RegisterPage() {
     }
     setLoading(true); // Use setLoading from authStore
     try {
-      await registerUser({ email, password, username }); // Pass username
+      await registerLocal({ email, password, username }); // Updated function call to registerLocal
       showGlobalSnackbar('Registration successful! Please log in.', 'success');
       navigate('/login');
     } catch (error: any) {

@@ -24,7 +24,7 @@ import {
   performPostApplyActions,
 } from '@/stores/llmStore';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
-import { FileChange, ModelResponse, RequestType, LlmOutputFormat } from '@/types/llm';
+import { FileChange, ModelResponse, RequestType, LlmOutputFormat, ApplyResult } from '@/types/llm'; // Import ApplyResult
 
 interface Props {
   changes: FileChange[];
@@ -71,12 +71,6 @@ const initialChangesListState: ChangesListState = {
   selectedChanges: {},
 };
 
-// Define the type for the apply result
-interface ApplyResult {
-  success: boolean;
-  messages: string[];
-}
-
 // Define a minimal default ModelResponse for scenarios where lastLlmResponse might be null
 const defaultEmptyModelResponse: ModelResponse = {
   summary: 'No summary available.',
@@ -93,7 +87,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
     lastLlmGeneratePayload,
     scanPathsInput,
     isBuilding,
-    error,
+    errorLlm, // Changed from `error` to `errorLlm`
   } = useStore(llmStore);
   const currentProjectPath = useStore(projectRootDirectoryStore);
 
@@ -128,7 +122,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
     }
 
     setApplyingChanges(true);
-    setError(null);
+    setError(null); // This is now valid after changing errorStore.ts
     addLog(
       'AI Response Display',
       'Starting application process for selected changes...', 'info',
@@ -137,17 +131,17 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
     try {
       const changesToApply = Object.values(selectedChanges);
 
-      // Call your API or store action to apply changes
-      const applyResult = (await performPostApplyActions(
+      // Perform post-apply actions (file system changes + git commands)
+      const applyResult: ApplyResult = await performPostApplyActions(
         currentProjectPath,
         changesToApply,
         lastLlmGeneratePayload,
         lastLlmResponse || defaultEmptyModelResponse, // Use default if lastLlmResponse is null
-      )) as ApplyResult; // Cast the result to ApplyResult
+      );
 
       // ApplyResult could have messages & success status
       if (applyResult) {
-        if (applyResult.messages) {
+        if (applyResult.messages && applyResult.messages.length > 0) {
           applyResult.messages.forEach((msg) =>
             addLog('AI Response Display', msg, 'info'),
           );
@@ -170,25 +164,17 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
             'Changes applied successfully.',
             'success',
           );
-
-          // Perform post-apply actions like  git
-          await performPostApplyActions(
-            currentProjectPath,
-            changesToApply,
-            lastLlmGeneratePayload,
-            lastLlmResponse || defaultEmptyModelResponse, // Use default if lastLlmResponse is null
-          );
         }
       } else {
-        console.warn('applyResult is undefined or null.');
+        console.warn('performPostApplyActions returned an undefined or null result.');
       }
 
-      // Clear state after successful apply
+      // Clear state after successful apply (or partial success/error in apply process)
       setLastLlmResponse(null);
       deselectAllChanges();
       clearDiff();
     } catch (err) {
-      const errorMsg = `Failure during application of changes: ${err instanceof Error ? err.message : String(err)}`;
+      const errorMsg = `Overall failure during application of changes: ${err instanceof Error ? err.message : String(err)}`;
       setError(errorMsg);
       addLog(
         'AI Response Display',

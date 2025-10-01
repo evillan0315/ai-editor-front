@@ -1,13 +1,15 @@
 import { map } from 'nanostores';
 import { persistentAtom } from '@/utils/persistentAtom';
-import { UserProfile, AuthState } from '@/types/auth';
+import { UserProfile, AuthState } from '@/types/user'; // Corrected import path
 
-export const authStore = map<AuthState>({
-  isLoggedIn: false,
-  user: null,
-  loading: true,
-  error: null,
-});
+export const authStore = map<AuthState>(
+  {
+    isLoggedIn: false,
+    user: null,
+    loading: true,
+    error: null,
+  },
+);
 export const token = persistentAtom<string | null>('token', null);
 export const getToken = () => {
   if (token) return token.get();

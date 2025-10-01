@@ -8,6 +8,8 @@ import {
   PaginationProjectResultDto,
 } from '@/types';
 
+const PROJECT_API_BASE = `${API_BASE_URL}/project`;
+
 /**
  * Creates a new project.
  */
@@ -15,7 +17,7 @@ export const createProject = async (
   dto: CreateProjectDto,
 ): Promise<Project> => {
   try {
-    const response = await fetchWithAuth(API_BASE_URL, {
+    const response = await fetchWithAuth(PROJECT_API_BASE, {
       method: 'POST',
       body: JSON.stringify(dto),
     });
@@ -34,7 +36,7 @@ export const getProjects = async (
 ): Promise<Project[]> => {
   const queryString = organizationId ? `?organizationId=${organizationId}` : '';
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}${queryString}`, {
+    const response = await fetchWithAuth(`${PROJECT_API_BASE}${queryString}`, {
       method: 'GET',
     });
     return handleResponse<Project[]>(response);
@@ -55,7 +57,7 @@ export const getPaginatedProjects = async (
   ).toString();
   try {
     const response = await fetchWithAuth(
-      `${API_BASE_URL}/paginated?${queryString}`,
+      `${PROJECT_API_BASE}/paginated?${queryString}`,
       {
         method: 'GET',
       },
@@ -72,7 +74,7 @@ export const getPaginatedProjects = async (
  */
 export const getProjectById = async (id: string): Promise<Project> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/${id}`, {
+    const response = await fetchWithAuth(`${PROJECT_API_BASE}/${id}`, {
       method: 'GET',
     });
     return handleResponse<Project>(response);
@@ -90,7 +92,7 @@ export const updateProject = async (
   dto: UpdateProjectDto,
 ): Promise<Project> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/${id}`, {
+    const response = await fetchWithAuth(`${PROJECT_API_BASE}/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(dto),
     });
@@ -106,7 +108,7 @@ export const updateProject = async (
  */
 export const deleteProject = async (id: string): Promise<void> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/${id}`, {
+    const response = await fetchWithAuth(`${PROJECT_API_BASE}/${id}`, {
       method: 'DELETE',
     });
     // For delete, usually no content, just status check

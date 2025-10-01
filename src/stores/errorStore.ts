@@ -19,10 +19,10 @@ export const errorStore = map<ErrorStoreState>({
  * Set a new error message.
  * Also suitable for use in catch blocks or validation failures.
  */
-export function setError(message: string): void {
+export function setError(message: string | null): void {
   errorStore.setKey('message', message);
 }
-export function setErrorRaw(raw: string): void {
+export function setErrorRaw(raw: string | null): void {
   errorStore.setKey('raw', raw);
 }
 /**

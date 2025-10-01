@@ -45,11 +45,15 @@ export const generateTextWithFile = async (
     formData.append('conversationId', conversationId);
   }
 
+  // fetchWithAuth will automatically set Content-Type to multipart/form-data
+  // and not add 'application/json' if body is FormData.
   const response = await fetchWithAuth(
     `${API_BASE_URL}/gemini/file/generate-file`,
     {
       method: 'POST',
-      body: JSON.stringify(formData),
+      body: formData,
+      // No 'Content-Type': 'application/json' header for FormData
+      headers: {},
     },
   );
   return handleResponse<string>(response);

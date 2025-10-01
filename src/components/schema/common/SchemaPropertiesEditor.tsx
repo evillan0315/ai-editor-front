@@ -26,7 +26,7 @@ import { CreateSchemaPayload } from '@/types/schema';
  */
 interface SchemaPropertiesEditorProps {
   properties: SchemaProperty[];
-  onPropertiesChange: (newProperties: SchemaProperty[]) => void;
+  onPropertiesChange: (updater: (prev: SchemaProperty[]) => SchemaProperty[]) => void;
   onGenerateSchema: () => void;
   schemaId: string;
   onSchemaIdChange: (id: string) => void;
@@ -210,7 +210,7 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   const handlePropertyChange = useCallback(
     (path: string[], field: keyof SchemaProperty, value: any) => {
       onPropertiesChange((prev) =>
-        updatePropertyByPath(prev as SchemaProperty[], path, field, value),
+        updatePropertyByPath(prev, path, field, value),
       );
     },
     [onPropertiesChange, updatePropertyByPath],
@@ -233,7 +233,7 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   const handleAddNestedProperty = useCallback(
     (path: string[], type: 'item' | 'property') => {
       onPropertiesChange((prev) => {
-        const result = addNestedPropertyByPath(prev as SchemaProperty[], path, type);
+        const result = addNestedPropertyByPath(prev, path, type);
         // filter out undefined if addNestedPropertyByPath returns undefined
         return result ? result.filter(Boolean) as SchemaProperty[] : prev;
       });
@@ -244,7 +244,7 @@ const SchemaPropertiesEditor: React.FC<SchemaPropertiesEditorProps> = ({
   const handleDeleteProperty = useCallback(
     (path: string[]) => {
       onPropertiesChange((prev) =>
-        deletePropertyByPath(prev as SchemaProperty[], path),
+        deletePropertyByPath(prev, path),
       );
     },
     [onPropertiesChange, deletePropertyByPath],

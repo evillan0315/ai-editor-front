@@ -181,10 +181,11 @@ export const fetchAndLoadTranscription = async (fileId: string) => {
   let result: TranscriptionResult;
   try {
     const currentTrack = currentTrackAtom.get();
-    // Ensure currentTrack and its metadata are available
-    if (!currentTrack || !currentTrack.metadata) {
+    // Ensure currentTrack and its metadata are available before proceeding
+    if (!currentTrack || !currentTrack.metadata || currentTrack.metadata.length === 0) {
       console.warn('No current track or metadata available to load transcription.');
-      return;
+      isTranscribingAtom.set(false);
+      return; // Exit early if no track or metadata
     }
 
     const transcriptionMetadata = currentTrack.metadata.find(

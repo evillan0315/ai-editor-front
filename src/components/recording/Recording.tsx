@@ -24,7 +24,7 @@ import VideoModal from '@/components/VideoModal';
 import path from 'path-browserify';
 
 type SortOrder = 'asc' | 'desc';
-type SortField = 'name' | 'createdAt' | 'type' | 'status' | 'sizeBytes'; // MODIFIED: Added 'sizeBytes' to SortField
+type SortField = keyof RecordingItem; // MODIFIED: Widened to keyof RecordingItem to match RecordingsTableProps
 
 const RECORDING_TYPES = ['screenRecord', 'screenShot', 'cameraRecord'];
 

@@ -32,144 +32,128 @@ const PromptGeneratorSettings: React.FC<PromptGeneratorSettingsProps> = ({
   globalActions,
 }) => {
   const theme = useTheme();
-  const { aiInstruction } = useStore(llmStore);
+  const { aiInstruction, expectedOutputInstruction } = useStore(llmStore);
   const [tab, setTab] = React.useState(0); // 0 = General Instruction, 1 = JSON Schema, 2 = Example Output
 
   /** Local editable states */
   const [localAiInstruction, setLocalAiInstruction] =
     React.useState(aiInstruction);
-  const [localInstructionSchema, setLocalInstructionSchema] = React.useState(
-    INSTRUCTION_SCHEMA_OUTPUT,
-  );
-  const [localInstructionExample, setLocalInstructionExample] = React.useState(
-    INSTRUCTION_EXAMPLE_OUTPUT,
-  );
+  // Extract current schema and example from expectedOutputInstruction
+  const [localInstructionSchema, setLocalInstructionSchema] = React.useState(() => {
+    const schemaMatch = expectedOutputInstruction.match(/The response MUST be a single JSON object that validates against the schema:\n\n([\s\S]*?)\n\nExample valid output:/);
+    return schemaMatch ? schemaMatch[1].trim() : INSTRUCTION_SCHEMA_OUTPUT;
+  });
+  const [localInstructionExample, setLocalInstructionExample] = React.useState(() => {
+    const exampleMatch = expectedOutputInstruction.match(/Example valid output:\n\n([\s\S]*)/);
+    return exampleMatch ? exampleMatch[1].trim() : INSTRUCTION_EXAMPLE_OUTPUT;
+  });
 
   React.useEffect(() => {
     setLocalAiInstruction(aiInstruction);
   }, [aiInstruction]);
 
-  /** Merge into ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT */
-  const handleSave = () => {
-    setAiInstruction(localAiInstruction);
-
-    const mergedAdditionalInstruction = `
-The response MUST be a single JSON object that validates against the schema:
-
-${localInstructionSchema}
-
-Example valid output:
-
-${localInstructionExample}
-`;
-
-    setExpectedOutputInstruction(mergedAdditionalInstruction);
-    onClose();
-  };
+  // When localInstructionSchema or localInstructionExample changes, update the combined instruction
+  React.useEffect(() => {
+    const mergedAdditionalInstruction = `The response MUST be a single JSON object that validates against the schema:\n\n${localInstructionSchema}\n\nExample valid output:\n\n${localInstructionExample}`;
+    // Only update the store if the combined instruction has actually changed
+    if (mergedAdditionalInstruction !== expectedOutputInstruction) {
+      setExpectedOutputInstruction(mergedAdditionalInstruction);
+    }
+  }, [localInstructionSchema, localInstructionExample, expectedOutputInstruction]);
 
   return (
+    <Box className="flex flex-col h-full">
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v)}
+        textColor="primary"
+        indicatorColor="primary"
+        centered
+      >
+        <Tab label="General Instruction" />
+        <Tab
+          label={
+            <span>
+              Instruction Schema <SchemaIcon />
+            </span>
+          }
+        />
+        <Tab
+          label={
+            <span>
+              Example Output <ExampleIcon />
+            </span>
+          }
+        />
+        <Tab
+          label={
+            <span>
+              AI Schema Generator <AutoAwesomeIcon />
+            </span>
+          }
+        />
+      </Tabs>
 
-                <Box className="flex flex-col h-full">
-        <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
-          textColor="primary"
-          indicatorColor="primary"
-          centered
+      {tab === 0 && (
+        <Box
+          sx={{
+            // flexGrow: 1, // Let MarkdownEditor handle its own flex growth
+          }}
+          className='flex-grow min-h-0'
         >
-          <Tab label="General Instruction" />
-          <Tab
-            label={
-              <span>
-                Instruction Schema <SchemaIcon />
-              </span>
-            }
+          <MarkdownEditor
+            value={localAiInstruction}
+            initialValue={localAiInstruction}
+            onChange={setLocalAiInstruction}
+            expectedSchema={localInstructionSchema}
+            exampleOutput={localInstructionExample}
+            filePath={`instruction.md`}
           />
-          <Tab
-            label={
-              <span>
-                Example Output <ExampleIcon />
-              </span>
-            }
+        </Box>
+      )}
+
+      {tab === 1 && (
+        <Box
+          sx={{
+            // flexGrow: 1, // Let CodeMirrorEditor handle its own flex growth
+          }}
+          className='flex-grow min-h-0'
+        >
+          <CodeMirrorEditor
+            value={localInstructionSchema}
+            onChange={setLocalInstructionSchema}
+            filePath="schema.json"
+            height='100%'
           />
-          <Tab
-            label={
-              <span>
-                AI Schema Generator <AutoAwesomeIcon />
-              </span>
-            }
+        </Box>
+      )}
+
+      {tab === 2 && (
+        <Box
+          sx={{
+            // flexGrow: 1, // Let CodeMirrorEditor handle its own flex growth
+          }}
+          className='flex-grow min-h-0'
+        >
+          <CodeMirrorEditor
+            value={localInstructionExample}
+            onChange={setLocalInstructionExample}
+            filePath="example.json"
           />
-        </Tabs>
+        </Box>
+      )}
 
-   
-        {tab === 0 && (
-              <Box
-      sx={{
-
-      }}
-      className='flex-grow min-h-0'
-    >
-              <MarkdownEditor
-                value={localAiInstruction}
-                initialValue={localAiInstruction}
-                onChange={setLocalAiInstruction}
-                expectedSchema={localInstructionSchema}
-                exampleOutput={localInstructionExample}
-                filePath={`instruction.md`}
-              />
-            </Box>
-
-        )}
-
-
-        {tab === 1 && (
-
-    <Box
-      sx={{
-
-      }}
-      className='flex-grow min-h-0'
-    >
-                <CodeMirrorEditor
-                  value={localInstructionSchema}
-                  onChange={setLocalInstructionSchema}
-                  filePath="schema.json"
-                  height='100%'
-                />
-              </Box>
-        
-
-        )}
-
-  
-        {tab === 2 && (
-          <Box
-      sx={{
-
-      }}
-      className='flex-grow min-h-0'
-    >
-                <CodeMirrorEditor
-                  value={localInstructionExample}
-                  onChange={setLocalInstructionExample}
-                  filePath="example.json"
-                />
-              </Box>
-
-        )}
-
-        {tab === 3 && (
-                   <Box
-      sx={{
-
-      }}
-      className='flex-grow min-h-0'
-    >
-            <AiSchemaGenerator />
-          </Box>
-        )}
-      </Box>
-
+      {tab === 3 && (
+        <Box
+          sx={{
+            // flexGrow: 1, // Let AiSchemaGenerator handle its own flex growth
+          }}
+          className='flex-grow min-h-0'
+        >
+          <AiSchemaGenerator />
+        </Box>
+      )}
+    </Box>
   );
 };
 

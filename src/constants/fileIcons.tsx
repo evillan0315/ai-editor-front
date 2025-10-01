@@ -114,7 +114,7 @@ export const getFileTypeIcon = (
   fileName: string,
   fileType: 'file' | 'folder',
   isExpanded: boolean = false,
-  size?: 'small' | 'medium' | 'large' | 'inherit' = 'inherit',
+  size: 'small' | 'medium' | 'large' | 'inherit' = 'inherit', // Removed '?' from size
 ): React.ReactElement => {
   if (fileType === 'folder') {
     return isExpanded ? (

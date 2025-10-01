@@ -26,9 +26,7 @@ const InstructionEditorDialog: React.FC<InstructionEditorDialogProps> = ({
   onClose,
   type,
 }) => {
-  const store = useStore(llmStore).get();
-  const aiInstruction = store.aiInstruction;
-  const expectedOutputInstruction = store.expectedOutputInstruction;
+  const { aiInstruction, expectedOutputInstruction } = useStore(llmStore); // Removed .get()
 
   const [localValue, setLocalValue] = useState(
     type === 'ai' ? aiInstruction : expectedOutputInstruction,

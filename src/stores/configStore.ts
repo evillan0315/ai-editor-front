@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import { addLog } from '@/stores/logStore';
 
-import { atom } from 'nanostores';
+import { map } from 'nanostores'; // Changed from 'atom'
 import type { ITheme } from '@xterm/xterm';
 
 interface TerminalTheme extends ITheme {
@@ -17,7 +17,7 @@ interface ConfigStoreState {
   };
 }
 
-export const configStore = atom<ConfigStoreState>({
+export const configStore = map<ConfigStoreState>({ // Changed from 'atom'
   terminalSettings: {
     fontSize: 14,
     fontFamily: 'monospace',

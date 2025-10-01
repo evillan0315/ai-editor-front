@@ -34,21 +34,17 @@ const AiEditorPage = lazy(() => import('./pages/AiEditorPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
-const SpotifyAppPage = lazy(() => import('./pages/SpotifyAppPage'));
-const TranslatorAppPage = lazy(() => import('./pages/TranslatorAppPage'));
-const GeminiLiveAudioPage = lazy(() => import('./pages/GeminiLiveAudioPage'));
+
 const PreviewAppPage = lazy(() => import('./pages/PreviewAppPage'));
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
-const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
-const UserSettingsPage = lazy(() => import('./pages/UserSettingsPage'));
 const TranscriptionPage = lazy(() => import('./pages/TranscriptionPage'));
 const TerminalPage = lazy(() => import('./pages/TerminalPage'));
 const LlmGenerationPage = lazy(() => import('./pages/LlmGenerationPage'));
 const ResumeBuilderPage = lazy(() => import('./pages/ResumeBuilderPage'));
 const RecordingPage = lazy(() => import('./pages/RecordingPage'));
 const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage'));
-const SimpleGitPage = lazy(() => import('./pages/SimpleGitPage'));
+
 const AIChatPage = lazy(() => import('./pages/AIChatPage'));
 const SchemeGeneratorPage = lazy(() => import('./pages/SchemeGeneratorPage')); // New: Lazy load SchemeGeneratorPage
 
@@ -119,42 +115,9 @@ const router = createBrowserRouter(
           </RequireAuth>
         }
       />
-      <Route
-        path="/apps/spotify"
-        element={
-          <RequireAuth>
-            <Suspense fallback={<Loading />}>
-              <ErrorBoundary>
-                <SpotifyAppPage />
-              </ErrorBoundary>
-            </Suspense>
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/apps/translator"
-        element={
-          <RequireAuth>
-            <Suspense fallback={<Loading />}>
-              <ErrorBoundary>
-                <TranslatorAppPage />
-              </ErrorBoundary>
-            </Suspense>
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/apps/gemini-live-audio"
-        element={
-          <RequireAuth>
-            <Suspense fallback={<Loading />}>
-              <ErrorBoundary>
-                <GeminiLiveAudioPage />
-              </ErrorBoundary>
-            </Suspense>
-          </RequireAuth>
-        }
-      />
+   
+
+
       <Route
         path="/apps/preview"
         element={
@@ -239,19 +202,7 @@ const router = createBrowserRouter(
           </RequireAuth>
         }
       />
-      <Route
-        path="/apps/simple-git"
-        element={
-          <RequireAuth>
-            <Suspense fallback={<Loading />}>
-              <ErrorBoundary>
-                <SimpleGitPage />
-              </ErrorBoundary>
-            </Suspense>
-          </RequireAuth>
-        }
-      />
-      {/* New: Route for Schema Generator Page */}
+
       <Route
         path="/apps/schema-generator"
         element={
@@ -290,30 +241,7 @@ const router = createBrowserRouter(
         }
       />
 
-      <Route
-        path="/profile"
-        element={
-          <RequireAuth>
-            <Suspense fallback={<Loading />}>
-              <ErrorBoundary>
-                <UserProfilePage />
-              </ErrorBoundary>
-            </Suspense>
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <RequireAuth>
-            <Suspense fallback={<Loading />}>
-              <ErrorBoundary>
-                <UserSettingsPage />
-              </ErrorBoundary>
-            </Suspense>
-          </RequireAuth>
-        }
-      />
+     
 
       {/* Public routes */}
       <Route

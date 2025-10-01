@@ -67,7 +67,7 @@ const MediaPlayerVolumeControl: React.FC = () => { // Removed mediaRef prop
     if (newVolume > 0) {
       setLastVolumeBeforeMute(newVolume); // Keep track of the last non-zero volume
     }
-  }, [isMutedLocally, setVolume]);
+  }, [isMutedLocally, setVolume, globalVolume]); // Added globalVolume for safety and setVolume
 
   const toggleMute = useCallback(() => { // Renamed from handleMuteToggle
     if (!mediaElement) return;
@@ -84,7 +84,7 @@ const MediaPlayerVolumeControl: React.FC = () => { // Removed mediaRef prop
       setVolume(0); // Mute via store (sets volumeAtom to 0, updates mediaElement.volume)
       setIsMutedLocally(true); // Mark as muted locally
     }
-  }, [isMutedLocally, mediaElement, lastVolumeBeforeMute, globalVolume, setVolume]);
+  }, [isMutedLocally, mediaElement, lastVolumeBeforeMute, globalVolume, setVolume, setIsMutedLocally]);
 
   const toggleVolumeSliderVisibility = useCallback(() => {
     setShowVolumeSlider((prev) => !prev);

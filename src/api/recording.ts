@@ -143,13 +143,13 @@ export const recordingApi = {
   updateRecording: async (
     id: string,
     dto: UpdateRecordingDto,
-  ): Promise<UpdateRecordingDto> => {
+  ): Promise<RecordingResultDto> => { // Changed return type to RecordingResultDto for consistency
     try {
       const response = await fetchWithAuth(`${API_BASE_URL}/recording/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(dto),
       });
-      return handleResponse<UpdateRecordingDto>(response);
+      return handleResponse<RecordingResultDto>(response);
     } catch (error) {
       console.error('Error updating recording:', error);
       throw error;

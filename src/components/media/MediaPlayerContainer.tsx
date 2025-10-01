@@ -173,7 +173,7 @@ const MediaPlayerContainer: React.FC = () => {
         setPlaying(false); // Pause the store if autoplay failed
       });
     }
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, $mediaStore.get().mediaElement, currentTrack]);
 
   const handleError = useCallback((e: Event) => {
     const mediaTarget = e.target as HTMLMediaElement;
@@ -377,8 +377,14 @@ const MediaPlayerContainer: React.FC = () => {
       ) : null}
 
       <MediaPlayer
-        mediaType={currentTrack?.fileType || FileType.AUDIO}
-        mediaElementRef={internalMediaElementRef} // Still pass this, but MediaPlayer uses $mediaStore.get().mediaElement
+        mediaType={
+          currentTrack?.fileType === FileType.AUDIO
+            ? FileType.AUDIO
+            : currentTrack?.fileType === FileType.VIDEO
+              ? FileType.VIDEO
+              : FileType.AUDIO // Default to AUDIO if currentTrack is null or not an audio/video type
+        }
+        mediaElementRef={internalMediaElementRef}
       />
     </Box>
   );

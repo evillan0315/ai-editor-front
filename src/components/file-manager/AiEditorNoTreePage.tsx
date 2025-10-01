@@ -37,7 +37,7 @@ const AiEditorNoTreePage: React.FC = () => {
   const $rightSidebarContent = useStore(rightSidebarContent);
   const currentProjectPath = useStore(projectRootDirectoryStore);
   const {
-    error: globalError,
+    errorLlm: globalError, // Changed from error: globalError
     lastLlmResponse,
     loading,
     applyingChanges,

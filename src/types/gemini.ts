@@ -1,4 +1,4 @@
-import { RequestType } from "./llm";
+import { RequestType } from './llm';
 
 // Interfaces for GeminiRequest
 export interface GeminiRequest {
@@ -103,3 +103,5 @@ export interface PaginationGeminiResponseResultDto {
   pageSize: number;
   totalPages: number;
 }
+
+export { RequestType } from './llm';

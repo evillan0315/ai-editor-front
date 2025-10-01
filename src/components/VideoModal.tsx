@@ -8,7 +8,7 @@ import {
   Theme,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import VideoPlayer from '@/pages/spotify/VideoPlayer';
+import VideoPlayer from '@/components/ui/player/VideoPlayer';
 
 // Define the size type
 type VideoModalSize = 'normal' | 'medium' | 'large' | 'fullscreen';

@@ -1,73 +1,50 @@
-import React, { useEffect, useRef } from 'react';
+import React, { RefObject } from 'react';
 import { Box } from '@mui/material';
-import { useStore } from '@nanostores/react';
-import { appPreviewStore } from '@/stores/appPreviewStore';
+import { AppScreenSize } from '@/types/preview';
 
 interface AppPreviewContentProps {
-  previewUrl: string | null;
-  iframeRef: React.RefObject<HTMLIFrameElement | null>; // Corrected type to allow null
+  currentUrl: string; // Added this property as it was missing
+  screenSize: AppScreenSize;
+  iframeRef: RefObject<HTMLIFrameElement | null>;
 }
 
 const AppPreviewContent: React.FC<AppPreviewContentProps> = ({
-  previewUrl,
+  currentUrl,
+  screenSize,
   iframeRef,
 }) => {
-  const { currentProjectRoot } = useStore(appPreviewStore);
-
-  useEffect(() => {
-    if (iframeRef.current && previewUrl) {
-      iframeRef.current.src = previewUrl;
+  const getSizeClasses = (size: AppScreenSize) => {
+    switch (size) {
+      case 'mobile':
+        return 'w-[375px] h-[667px]'; // iPhone 8 dimensions
+      case 'tablet':
+        return 'w-[768px] h-[1024px]'; // iPad dimensions
+      case 'desktop':
+      default:
+        return 'w-full h-full';
     }
-  }, [previewUrl, iframeRef]);
-
-  // Styles for the iframe wrapper
-  const iframeWrapperSx = {
-    flexGrow: 1,
-    border: 'none',
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'transparent',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
   };
 
-  // Conditional message if no preview URL is available
-  if (!previewUrl) {
-    return (
-      <Box sx={iframeWrapperSx}>
-        <Box
-          sx={{
-            p: 4,
-            textAlign: 'center',
-            color: 'text.secondary',
-            backgroundColor: 'background.default',
-            borderRadius: 2,
-            boxShadow: 1,
-          }}
-        >
-          No application preview URL configured or selected.
-          <br />
-          Please ensure `VITE_PREVIEW_APP_URL` is set in your `.env` file
-          or set a project root with a valid `package.json` for a `build` script to be run.
-        </Box>
-      </Box>
-    );
-  }
+  const responsiveClasses = getSizeClasses(screenSize);
 
   return (
-    <Box sx={iframeWrapperSx}>
-      <iframe
-        ref={iframeRef}
-        title="App Preview"
-        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-        style={{
-          width: '100%',
-          height: '100%',
-          border: 'none',
-          backgroundColor: 'white',
-        }}
-      />
+    <Box
+      className={`relative flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-800 ${
+        screenSize !== 'desktop' ? 'flex-shrink-0' : 'flex-grow'
+      } transition-all duration-300 ease-in-out`}
+    >
+      <Box
+        className={`relative border-8 border-gray-300 dark:border-gray-700 rounded-lg shadow-xl overflow-hidden ${responsiveClasses}`}
+      >
+        <iframe
+          ref={iframeRef}
+          src={currentUrl}
+          title="App Preview"
+          sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"
+          className="w-full h-full border-none"
+        />
+        {/* Optional: Add an overlay for loading or interaction blocking */}
+      </Box>
     </Box>
   );
 };

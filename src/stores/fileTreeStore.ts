@@ -1,7 +1,7 @@
 import { map } from 'nanostores';
 import { FileTreeState, FileEntry } from '@/types/refactored/fileTree'; // Updated import
 import { fetchDirectoryContents, fetchScannedFilesForAI } from '@/api/file';
-import { fileStore, setOpenedFile, setIsOpenedFileDirty } from './fileStore';
+import { fileStore, setOpenedFile, setIsOpenedFileDirty, isOpenedFileDirty as openedFileIsDirtyAtom } from './fileStore'; // Corrected import and added isOpenedFileDirty atom
 import { llmStore } from './llmStore';
 import { getRelativePath, persistentAtom } from '@/utils';
 
@@ -55,8 +55,8 @@ export const toggleDirExpansion = async (dirPath: string) => {
 };
 
 export const setSelectedFile = (filePath: string | null) => {
-  const { isOpenedFileDirty } = fileStore.get();
-  if (isOpenedFileDirty) {
+  const isDirty = openedFileIsDirtyAtom.get(); // Correctly get from the persistent atom
+  if (isDirty) {
     // Alert user about unsaved changes. If they cancel, don't change selection.
     const confirmDiscard = window.confirm(
       'You have unsaved changes in the current file. Do you want to discard them and open a new file?',

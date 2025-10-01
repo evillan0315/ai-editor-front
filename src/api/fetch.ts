@@ -39,11 +39,16 @@ export const handleResponse = async <T>(response: Response): Promise<T> => {
 
 export const fetchWithAuth = async (url: string, options?: RequestInit) => {
   const token = getToken();
-  const headers = {
-    'Content-Type': 'application/json',
+  const headers: HeadersInit = {
     ...(token && { Authorization: `Bearer ${token}` }),
     ...options?.headers,
   };
+
+  // Only set Content-Type: application/json if the body is not FormData
+  // FormData handles its own Content-Type header (multipart/form-data)
+  if (!(options?.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   return fetch(url, { ...options, headers });
 };

@@ -129,3 +129,8 @@ export interface LlmReportErrorApiPayload {
   context: LlmReportErrorContext;
   scanPaths?: string[];
 }
+
+export interface ApplyResult {
+  success: boolean;
+  messages: string[];
+}

@@ -40,7 +40,7 @@ const AiEditorPage: React.FC = () => {
   const currentProjectPath = useStore(projectRootDirectoryStore);
   const $openedTabs = useStore(openedTabs);
   const {
-    error: globalError,
+    errorLlm: globalError,
     lastLlmResponse,
     loading,
     applyingChanges,

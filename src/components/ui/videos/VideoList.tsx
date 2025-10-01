@@ -8,13 +8,27 @@ import {
   Chip,
   Fab,
   Grow,
-  ViewList,
-  ViewModule,
-  ViewComfy,
-  MoreVert,
 } from '@mui/material';
+import { MoreVert } from '@mui/icons-material'; // Corrected import
 
 // Types
+interface MenuItemType {
+  label: string;
+  value: string;
+  icon: React.ReactElement;
+  divider?: boolean;
+}
+
+export type ViewMode = 'list' | 'grid' | 'thumb'; // Exported for potential reuse
+export type SortField = 'title' | 'year' | 'rating' | 'duration'; // Exported for VideoControls
+
+interface VideoListProps {
+  videos: MediaFileResponseDto[];
+  onFavorite: (videoId: string) => void;
+  onAction: (action: string, video: MediaFileResponseDto) => void;
+  menuItems?: MenuItemType[];
+}
+
 import { MediaFileResponseDto, FileType } from '@/types/refactored/media';
 import { setCurrentTrack, setIsVideoModalOpen } from '@/stores/mediaStore';
 
@@ -26,22 +40,6 @@ import {
   VideoDetailDialog,
 } from './common';
 
-interface MenuItemType {
-  label: string;
-  value: string;
-  icon: React.ReactElement;
-  divider?: boolean;
-}
-
-interface VideoListProps {
-  videos: MediaFileResponseDto[];
-  onFavorite: (videoId: string) => void;
-  onAction: (action: string, video: MediaFileResponseDto) => void;
-  menuItems?: MenuItemType[];
-}
-
-type ViewMode = 'list' | 'grid' | 'thumb';
-type SortField = 'title' | 'year' | 'rating' | 'duration';
 
 const VideoList: React.FC<VideoListProps> = ({
   videos,

@@ -14,23 +14,23 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
 import GifIcon from '@mui/icons-material/Gif';
 
-import { RecordingItem } from '@/types'; // MODIFIED: Import RecordingItem from types
+import { RecordingItem } from '@/types';
 
 interface RecordingsTableProps {
   recordings: RecordingItem[];
   onPlay: (recording: RecordingItem) => void;
-  onEdit: (id: string) => void;
+  // MODIFIED: Removed onEdit prop. Editing is now handled via onView -> RecordingInfoDrawer.
+  // onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onView: (recording: RecordingItem) => void;
   onSort: (field: keyof RecordingItem) => void;
   sortBy: keyof RecordingItem;
   sortOrder: 'asc' | 'desc';
-  onConvertToGif: (recording: RecordingItem) => void; // New prop
+  onConvertToGif: (recording: RecordingItem) => void;
 }
 
 const tableContainerSx: SxProps<Theme> = (theme) => ({
@@ -71,7 +71,7 @@ const tableBodyCellSx: SxProps<Theme> = (theme) => ({
 const RecordingsTable: React.FC<RecordingsTableProps> = ({
   recordings,
   onPlay,
-  onEdit,
+  // MODIFIED: Removed onEdit from props
   onDelete,
   onView,
   onSort,
@@ -178,10 +178,9 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
                       title="View Screenshot"
                     >
                       <PlayArrowIcon />{' '}
-                      {/* Re-using PlayArrow for consistency, but means 'view' */}
                     </IconButton>
                   )}
-                  {recording.data?.animatedGif && ( // MODIFIED: Simplified onPlay call for GIF
+                  {recording.data?.animatedGif && (
                     <IconButton
                       onClick={() => onPlay(recording)}
                       color="primary"
@@ -197,13 +196,14 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
                   >
                     <InfoIcon />
                   </IconButton>
-                  <IconButton
+                  {/* MODIFIED: Removed the EditIcon button as it's redundant with 'View Details' which opens an editable drawer */}
+                  {/* <IconButton
                     onClick={() => onEdit(recording.id)}
                     color="secondary"
                     title="Edit"
                   >
                     <EditIcon />
-                  </IconButton>
+                  </IconButton> */}
                   <IconButton
                     onClick={() => onDelete(recording.id)}
                     color="error"

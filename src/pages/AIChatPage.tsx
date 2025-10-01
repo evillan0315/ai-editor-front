@@ -23,7 +23,7 @@ const AIChatPage: React.FC = () => {
       body={<AiPromptGeneratorBody />} // Implemented in body
       footer={<AIPromptGenerator />}
       bodyPosition={'top'}
-      centerBodyPostition={false}
+      centerBodyContent={false}
     />
   );
 };

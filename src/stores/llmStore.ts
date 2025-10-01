@@ -6,13 +6,14 @@ import {
   LlmGeneratePayload,
   RequestType,
   ModelResponse,
+  ApplyResult,
 } from '@/types/llm';
 import {
   INSTRUCTION,
   ADDITIONAL_INSTRUCTION_EXPECTED_OUTPUT,
 } from '@/constants/instruction';
 import { persistentAtom } from '@/utils/persistentAtom';
-import { applyProposedChanges } from '@/api/llm';
+import { applyProposedChanges as apiApplyProposedChanges } from '@/api/llm'; // Renaming to avoid conflict
 import { addLog } from '@/stores/logStore';
 import { ErrorStoreState, errorStore, setError } from '@/stores/errorStore';
 import { runTerminalCommand } from '@/api/terminal';
@@ -268,13 +269,51 @@ export const setIsBuilding = (building: boolean) => {
     'info',
   );
 };
+
+/**
+ * Orchestrates the post-apply actions: applying file changes and then executing Git instructions.
+ * Reports overall success/failure and collects messages.
+ */
 export const performPostApplyActions = async (
   projectRoot: string,
   changes: FileChange[],
   llmGeneratePayload: LlmGeneratePayload,
   llmResponse: ModelResponse,
-) => {
-  if (llmResponse?.gitInstructions?.length) {
+): Promise<ApplyResult> => {
+  let overallSuccess = true;
+  const allMessages: string[] = [];
+
+  // 1. Apply proposed changes to the file system
+  try {
+    const applyFsResult = await apiApplyProposedChanges(changes, projectRoot);
+    allMessages.push(...applyFsResult.messages);
+    if (!applyFsResult.success) {
+      overallSuccess = false;
+      addLog(
+        'Post Apply',
+        'Failed to apply file system changes. Halting post-apply actions.',
+        'error',
+        applyFsResult.messages.join('\n'),
+        undefined,
+        true,
+      );
+      return { success: false, messages: allMessages }; // Return early if file system apply fails
+    }
+    addLog(
+      'Post Apply',
+      'Proposed file system changes applied successfully.',
+      'success',
+    );
+  } catch (err) {
+    overallSuccess = false;
+    const errMsg = `Failure during application of file system changes: ${err instanceof Error ? err.message : String(err)}`;
+    allMessages.push(errMsg);
+    addLog('Post Apply', errMsg, 'error', String(err), undefined, true);
+    return { success: false, messages: allMessages }; // Return early on error
+  }
+
+  // 2. Execute AI-suggested git instructions (if any) if file system apply was successful
+  if (llmResponse?.gitInstructions?.length && overallSuccess) {
     addLog(
       'Git Automation',
       'Executing AI-suggested git instructions...', 'info',
@@ -287,27 +326,35 @@ export const performPostApplyActions = async (
 
         if (gitExecResult.exitCode !== 0) {
           const errMsg = `Git command failed: \`${command}\` (Exit Code: ${gitExecResult.exitCode}).`;
-          addLog('Git Automation', errMsg, 'error');
-          setError(errMsg);
+          allMessages.push(errMsg);
+          addLog('Git Automation', errMsg, 'error', undefined, gitExecResult, true);
+          setError(errMsg); // Use errorStore's setError for immediate UI feedback
           gitCommandsSuccessful = false;
-          break;
+          break; // Stop executing further git commands on first failure
         } else {
+          allMessages.push(`Git command succeeded: \`${command}\`.`);
           addLog(
             'Git Automation',
             `Git command succeeded: \`${command}\`.`,
             'success',
+            undefined,
+            gitExecResult,
           );
         }
       } catch (err) {
         const errMsg = `Failed to execute git command \`${command}\`: ${err instanceof Error ? err.message : String(err)}`;
-        addLog('Git Automation ', errMsg, 'error');
-        setError(errMsg);
+        allMessages.push(errMsg);
+        addLog('Git Automation ', errMsg, 'error', String(err), undefined, true);
+        setError(errMsg); // Use errorStore's setError for immediate UI feedback
         gitCommandsSuccessful = false;
-        break;
+        break; // Stop executing further git commands on first failure
       }
     }
 
-    if (gitCommandsSuccessful) {
+    if (!gitCommandsSuccessful) {
+      overallSuccess = false;
+      allMessages.push('Some git instructions failed to execute.');
+    } else {
       addLog(
         'Git Automation',
         'All git instructions executed successfully.',
@@ -316,19 +363,8 @@ export const performPostApplyActions = async (
     }
   }
 
-  // Apply proposed changes via API
-  try {
-    await applyProposedChanges(changes, projectRoot);
-    addLog(
-      'Post Apply',
-      'Proposed changes applied and scan completed.',
-      'success',
-    );
-  } catch (err) {
-    const errMsg = `Failed to apply proposed changes: ${err instanceof Error ? err.message : String(err)}`;
-    addLog('Post Apply', errMsg, 'error');
-    setError(errMsg);
-  }
+  // Final return
+  return { success: overallSuccess, messages: allMessages };
 };
 export const autoApplyChanges = persistentAtom<boolean>(
   'autoApplyChanges',

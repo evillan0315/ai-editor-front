@@ -14,7 +14,7 @@ import {
   Divider,
 } from '@mui/material';
 import { PlayArrow, MoreVert } from '@mui/icons-material';
-import { MediaFileResponseDto } from '@/types/refactored/media';
+import { MediaFileResponseDto, FileType, GenericMediaMetadataData } from '@/types/refactored/media';
 
 // Types
 interface MenuItemType {
@@ -60,6 +60,11 @@ export const SongListItem: React.FC<SongListItemProps> = ({
     { label: 'Update Metadata', value: 'update', icon: <></> },
   ];
 
+  // Safely access thumbnail by checking metadata type
+  const thumbnailUrl = song.metadata && song.metadata[0]?.type !== FileType.TRANSCRIPT
+    ? (song.metadata[0]?.data as GenericMediaMetadataData)?.thumbnail
+    : null;
+
   return (
     <List sx={{ bgcolor: 'background.paper' }}>
       <ListItem
@@ -82,11 +87,11 @@ export const SongListItem: React.FC<SongListItemProps> = ({
             <PlayArrow />
           </ListItemIcon>
 
-          {song.metadata && song.metadata[0]?.data.thumbnail && (
+          {thumbnailUrl && (
             <CardMedia
               component="img"
               sx={{ width: 60, height: 60, borderRadius: 1, mr: 2 }}
-              image={song.metadata[0]?.data.thumbnail}
+              image={thumbnailUrl}
               alt={song.song?.title}
             />
           )}

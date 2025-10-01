@@ -38,7 +38,7 @@ interface MediaPlayerControlsProps {
 
 const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
   const theme = useTheme();
-  const { loading } = useStore($mediaStore);
+  const { isFetchingMedia } = useStore($mediaStore);
   const isPlaying = useStore(isPlayingAtom);
   const shuffle = useStore(shuffleAtom);
   const repeatMode = useStore(repeatModeAtom);
@@ -60,7 +60,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
     toggleShowTranscription();
   };
 
-  const $isLoading = loading;
+  const $isLoading = isFetchingMedia;
 
   return (
     <Box

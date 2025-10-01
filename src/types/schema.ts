@@ -49,7 +49,7 @@ export interface PaginationSchemaResult {
 
 // Define a type for a JSON Schema property, allowing custom 'x-' properties
 export interface JsonSchemaProperty {
-  type?: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'null';
+  type?: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'null' | 'integer';
   title?: string;
   description?: string;
   format?: string;

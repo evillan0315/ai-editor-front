@@ -6,6 +6,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@nanostores/react';
 import { authStore } from '@/stores/authStore';
+import { handleLogout } from '@/api/auth';
+
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
 import { isRightSidebarVisible, isLeftSidebarVisible } from '@/stores/uiStore';
 import { snackbarState, setSnackbarState } from '@/stores/snackbarStore';

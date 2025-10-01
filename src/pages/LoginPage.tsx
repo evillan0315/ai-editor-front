@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Button, TextField, Typography, Link as MuiLink } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { loginUser } from '@/api/auth';
+import { loginLocal } from '@/api/auth'; // Updated import to loginLocal
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 import { authStore, setLoading, loginSuccess } from '@/stores/authStore'; // Import from authStore
 import { showGlobalSnackbar } from '@/stores/snackbarStore'; // Import showGlobalSnackbar
@@ -20,8 +20,8 @@ function LoginPage() {
     event.preventDefault();
     setLoading(true); // Use setLoading from authStore
     try {
-      const authResponse = await loginUser({ email, password });
-      loginSuccess(authResponse.user, authResponse.accessToken); // Update authStore on success
+      const authResponse = await loginLocal({ email, password }); // Updated function call to loginLocal
+      loginSuccess(authResponse.user, authResponse.access_token); // Update authStore on success, use access_token
       showGlobalSnackbar('Login successful!', 'success');
       navigate('/dashboard');
     } catch (error: any) {

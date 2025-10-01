@@ -15,7 +15,7 @@ import {
 
 interface MediaPlayerProps {
   mediaType: FileType.AUDIO | FileType.VIDEO;
-  mediaElementRef: React.RefObject<HTMLMediaElement>;
+  mediaElementRef?: React.RefObject<HTMLMediaElement | null>;
 }
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({

@@ -29,6 +29,7 @@ interface CustomDrawerProps {
   closeOnEscape?: boolean;
   stickyHeader?: ReactNode;
   footerActionButton?: GlobalAction[];
+  stickyFooter?: ReactNode; // MODIFIED: Added stickyFooter prop
   children: ReactNode;
   title?: string;
 }
@@ -50,6 +51,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
   closeOnEscape = true,
   stickyHeader,
   footerActionButton,
+  stickyFooter, // MODIFIED: Destructure stickyFooter
   children,
   title,
 }) => {
@@ -168,7 +170,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
           >
             {children}
           </Box>
-          {footerActionButton && (
+          {footerActionButton && !stickyFooter && ( // MODIFIED: Conditional render for footerActionButton
             <Box
               sx={{
                 p: 2,
@@ -177,6 +179,17 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({
               }}
             >
               <GlobalActionButton globalActions={footerActionButton} />
+            </Box>
+          )}
+          {stickyFooter && ( // MODIFIED: Render stickyFooter if provided
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: theme.palette.background.default,
+                borderTop: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              {stickyFooter}
             </Box>
           )}
         </Box>

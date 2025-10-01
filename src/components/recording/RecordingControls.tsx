@@ -6,6 +6,7 @@ import {
   Theme,
   Tooltip,
 } from '@mui/material';
+import { SystemStyleObject } from '@mui/system'; // MODIFIED: Added import for SystemStyleObject
 import { useTheme } from '@mui/material/styles';
 
 import {
@@ -28,26 +29,26 @@ export interface RecordingControlsProps {
 }
 
 // Define SX styles using theme
-const commonIconButtonSx: SxProps<Theme> = (theme) => ({
+const commonIconButtonSx = (theme: Theme): SystemStyleObject<Theme> => ({
   fontSize: '2rem', // Slightly larger icons for better visibility and touch targets
   '&:hover': {
     backgroundColor: theme.palette.action.hover, // Use theme's generic hover color for consistency
   },
 });
 
-const primaryIconColorSx: SxProps<Theme> = (theme) => ({
+const primaryIconColorSx = (theme: Theme): SystemStyleObject<Theme> => ({
   color: theme.palette.primary.main,
 });
 
-const errorIconColorSx: SxProps<Theme> = (theme) => ({
+const errorIconColorSx = (theme: Theme): SystemStyleObject<Theme> => ({
   color: theme.palette.error.main,
 });
 
-const secondaryIconColorSx: SxProps<Theme> = (theme) => ({
+const secondaryIconColorSx = (theme: Theme): SystemStyleObject<Theme> => ({
   color: theme.palette.secondary.main,
 });
 
-const circularProgressColorSx: SxProps<Theme> = (theme) => ({
+const circularProgressColorSx = (theme: Theme): SystemStyleObject<Theme> => ({
   color: theme.palette.secondary.main, // Keep consistent with capture button color
 });
 
@@ -70,7 +71,10 @@ export function RecordingControls({
           <IconButton
             aria-label="start screen recording"
             onClick={onStartScreenRecording}
-            sx={{ ...commonIconButtonSx(theme), ...primaryIconColorSx(theme) }}
+            sx={{
+              ...commonIconButtonSx(theme),
+              ...primaryIconColorSx(theme),
+            }}
           >
             <Videocam fontSize="inherit" />
           </IconButton>
@@ -81,7 +85,10 @@ export function RecordingControls({
           <IconButton
             aria-label="stop screen recording"
             onClick={onStopScreenRecording}
-            sx={{ ...commonIconButtonSx(theme), ...errorIconColorSx(theme) }}
+            sx={{
+              ...commonIconButtonSx(theme),
+              ...errorIconColorSx(theme),
+            }}
           >
             <Stop fontSize="inherit" />
           </IconButton>
@@ -92,7 +99,10 @@ export function RecordingControls({
           <IconButton
             aria-label="start camera recording"
             onClick={onStartCameraRecording}
-            sx={{ ...commonIconButtonSx(theme), ...primaryIconColorSx(theme) }}
+            sx={{
+              ...commonIconButtonSx(theme),
+              ...primaryIconColorSx(theme),
+            }}
           >
             <CameraAlt fontSize="inherit" />
           </IconButton>
@@ -103,7 +113,10 @@ export function RecordingControls({
           <IconButton
             aria-label="stop camera recording"
             onClick={onStopCameraRecording}
-            sx={{ ...commonIconButtonSx(theme), ...errorIconColorSx(theme) }}
+            sx={{
+              ...commonIconButtonSx(theme),
+              ...errorIconColorSx(theme),
+            }}
           >
             <StopCircle fontSize="inherit" />
           </IconButton>
@@ -115,7 +128,10 @@ export function RecordingControls({
           aria-label="capture screenshot"
           disabled={isCapturing}
           onClick={onCapture}
-          sx={{ ...commonIconButtonSx(theme), ...secondaryIconColorSx(theme) }}
+          sx={{
+            ...commonIconButtonSx(theme),
+            ...secondaryIconColorSx(theme),
+          }}
         >
           {isCapturing ? (
             <CircularProgress size={24} sx={circularProgressColorSx(theme)} />

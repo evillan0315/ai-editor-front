@@ -69,13 +69,13 @@ const MiniMediaPlayerControls: React.FC<MiniMediaPlayerControlsProps> = ({
     previousTrack();
   };
 
-  const handleTimeChange = (event: Event, newValue: number | number[]) => {
+  const handleTimeChange = useCallback((event: Event, newValue: number | number[]) => {
     const newTime = typeof newValue === 'number' ? newValue : 0;
     if (mediaElementRef?.current) {
       mediaElementRef.current.currentTime = newTime;
       setTrackProgress(newTime);
     }
-  };
+  }, [mediaElementRef, setTrackProgress]); // Added mediaElementRef and setTrackProgress
 
   const handleTimeChangeCommitted = useCallback(
     (_event: Event | SyntheticEvent, newValue: number | number[]) => {

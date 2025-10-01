@@ -1,6 +1,11 @@
 export interface PaginationRecordingQueryDto {
   page?: number;
   limit?: number;
+  pageSize?: number; // Added pageSize for frontend pagination logic
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  search?: string;
+  type?: string;
 }
 
 export interface PaginationRecordingResultDto {
@@ -39,6 +44,7 @@ export interface RecordingDataDto {
   stoppedAt?: string;
   capturedAt?: string;
   animatedGif?: string;
+  [key: string]: any; // Allow other properties
 }
 export interface TranscodeToGifDto {
   inputFilename: string;
@@ -69,7 +75,10 @@ export interface CameraRecordingResponseDto {
 }
 
 export interface UpdateRecordingDto {
-  data: any;
+  // Made `data`, `name`, and `type` optional for partial updates
+  data?: any;
+  name?: string;
+  type?: string;
 }
 
 /**

@@ -21,7 +21,7 @@ import {
 } from '@/stores/fileTreeStore';
 import { llmStore, showGlobalSnackbar } from '@/stores/llmStore';
 
-import { ContextMenuItem } from '@/types/main';
+import { ContextMenuItem } from '@/types'; // Corrected import path
 import { FileEntry } from '@/types/refactored/fileTree'; // Updated import path
 import { showFileTreeContextMenu } from '@/stores/contextMenuStore';
 import {

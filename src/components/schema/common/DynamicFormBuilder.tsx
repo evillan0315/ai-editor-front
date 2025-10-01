@@ -23,7 +23,6 @@ import {
   Add as AddIcon,
   RemoveCircleOutline as RemoveIcon,
 } from '@mui/icons-material';
-//import { deepEqual } from '@/utils'; // Import deepEqual
 
 interface DynamicFormBuilderProps {
   schema: JsonSchema;
@@ -64,11 +63,11 @@ const DynamicFormBuilder: React.FC<DynamicFormBuilderProps> = ({
       });
     }
     
-    // Only update formData if the new initial state is deeply different
-    //if (!deepEqual(formData, initial)) {
-      //setFormData(initial);
-    //}
-  }, [schema, initialData, formData]); // Add formData to dependencies to enable deep comparison against the latest state
+    // Always update formData to ensure it reflects the latest initialData and schema defaults.
+    // A deep equality check would prevent unnecessary re-renders but requires a deepEqual utility function.
+    // For simplicity, we directly set it here, assuming `initialData` changes when it should.
+    setFormData(initial);
+  }, [schema, initialData]); // `formData` removed from dependencies to avoid infinite loops during initialization.
 
   const handleChange = useCallback(
     (key: string, value: any, itemIndex?: number) => {

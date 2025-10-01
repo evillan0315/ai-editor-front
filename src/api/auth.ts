@@ -1,6 +1,6 @@
 import { loginSuccess, logout, setLoading, setError, getToken } from '@/stores/authStore';
 import { API_BASE_URL, type ApiError, handleResponse, fetchWithAuth } from '@/api';
-import { LoginRequest, RegisterRequest } from '@/types/auth';
+import { LoginRequest, RegisterRequest } from '@/types/auth'; // Corrected import path for LoginRequest and RegisterRequest
 import { UserProfile } from '@/types/user'; // Corrected import path
 
 export interface LoginLocalResponse {
@@ -125,14 +125,14 @@ export const loginLocal = async (
  * @param userData User's registration data (email, password, username).
  */
 export const registerLocal = async (
-  userData: RegisterRequest, // Corrected variable name
+  userData: RegisterRequest,
 ): Promise<RegisterLocalResponse> => {
   setLoading(true);
   setError(null);
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
-      body: JSON.stringify(userData), // Corrected variable name from credentials to userData
+      body: JSON.stringify(userData),
     });
     const authData = await handleResponse<RegisterLocalResponse>(response); // Corrected property access
     if (authData && authData.access_token) {

@@ -42,6 +42,19 @@ export const allowedMediaFormats = [
 export type AllowedMediaFormat = (typeof allowedMediaFormats)[number];
 
 /**
+ * Defines the repeat mode for media playback.
+ */
+export type RepeatMode = 'off' | 'context' | 'track';
+
+/**
+ * Represents a buffered time range in seconds.
+ */
+export interface BufferedRange {
+  start: number;
+  end: number;
+}
+
+/**
  * Interface for generic audio or video metadata (e.g., for AUDIO, VIDEO, IMAGE).
  */
 export interface GenericMediaMetadataData {

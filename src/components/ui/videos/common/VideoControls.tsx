@@ -12,6 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Search } from '@mui/icons-material';
+import { SortField } from '../VideoList'; // Imported SortField type
 
 interface VideoControlsProps {
   searchQuery: string;
@@ -19,9 +20,9 @@ interface VideoControlsProps {
   selectedGenre: string;
   setSelectedGenre: (genre: string) => void;
   genres: string[];
-  sortField: string;
+  sortField: SortField; // Updated type
   sortOrder: 'asc' | 'desc';
-  handleSortChange: (field: string) => void;
+  handleSortChange: (field: SortField) => void; // Updated type
   filteredVideoCount: number;
 }
 

@@ -1,1 +1,1 @@
-//
+export type AppScreenSize = 'mobile' | 'tablet' | 'desktop' | 'custom';

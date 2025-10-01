@@ -15,7 +15,7 @@ import {
   ListItemText,
 } from '@mui/material';
 import { MoreVert } from '@mui/icons-material';
-import { MediaFileResponseDto } from '@/types/refactored/media';
+import { MediaFileResponseDto, FileType, GenericMediaMetadataData } from '@/types/refactored/media';
 
 // Types
 interface MenuItemType {
@@ -61,6 +61,11 @@ export const SongGridItem: React.FC<SongGridItemProps> = ({
     { label: 'Update Metadata', value: 'update', icon: <></> },
   ];
 
+  // Safely access thumbnail by checking metadata type
+  const thumbnailUrl = song.metadata && song.metadata[0]?.type !== FileType.TRANSCRIPT
+    ? (song.metadata[0]?.data as GenericMediaMetadataData)?.thumbnail
+    : null;
+
   return (
     <Grid container xs={12} sm={6} md={4} lg={3}>
       <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -68,10 +73,7 @@ export const SongGridItem: React.FC<SongGridItemProps> = ({
           <CardMedia
             component="img"
             height="200"
-            image={
-              (song.metadata && song.metadata[0]?.data.thumbnail) ||
-              '/placeholder-album.jpg'
-            }
+            image={thumbnailUrl || '/placeholder-album.jpg'}
             alt={song.song?.title}
             sx={{ objectFit: 'cover' }}
           />

@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Box, Paper, Typography, useTheme, SxProps } from '@mui/material';
+import { Box, Paper, Typography, useTheme, SxProps, Theme } from '@mui/material'; // Import Theme
 import GlobalActionButton, {
   GlobalAction,
 } from '@/components/ui/GlobalActionButton';
@@ -25,7 +25,7 @@ interface PageHeaderProps {
  * @returns A SxProps object for the Paper component.
  */
 const headerPaperSx = (
-  theme: ReturnType<typeof useTheme>,
+  theme: Theme, // Explicitly type theme as Theme
   sticky: boolean,
 ): SxProps => ({
   px: 2,
@@ -64,7 +64,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   const theme = useTheme();
 
   return (
-    <Paper sx={(t) => ({ ...headerPaperSx(t, sticky), ...sx })}>
+    <Paper sx={(t: Theme) => ({ ...headerPaperSx(t, sticky), ...sx })}> {/* Explicitly type t as Theme */}
       <Box className="flex-grow">
         {typeof title === 'string' ? (
           <Typography

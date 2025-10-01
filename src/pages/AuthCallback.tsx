@@ -4,7 +4,7 @@ import { useStore } from '@nanostores/react';
 import { authStore, loginSuccess, setError } from '@/stores/authStore';
 import { API_BASE_URL } from '@/api';
 import type { UserProfile } from '@/types/user'; // Corrected import path
-import { Loading } from '@/components/Loading';
+import Loading from '@/components/Loading';
 import { Box, Typography } from '@mui/material';
 
 const AuthCallback: React.FC = () => {

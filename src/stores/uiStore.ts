@@ -1,7 +1,8 @@
 import { persistentAtom } from '@/utils/persistentAtom';
 import type { ReactNode } from 'react';
+import { atom } from 'nanostores'; // Keep only one import
 
-// --- Right Sidebar ---
+// --- Right Sidebar --- 
 
 // Whether the right sidebar is visible
 export const isRightSidebarVisible = persistentAtom<boolean>(
@@ -31,5 +32,3 @@ export const leftSidebarContent = atom<ReactNode | null>(null);
 
 // Left sidebar width
 export const leftSidebarWidth = persistentAtom<number>('leftSidebarWidth', 300);
-
-import { atom } from 'nanostores';

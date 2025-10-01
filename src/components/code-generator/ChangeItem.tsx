@@ -120,7 +120,7 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
     try {
       const relPath = getRelativePath(change.filePath, currentProjectPath);
       const diffContent = await (change.action === 'add'
-        ? createAddDiff(change.newContent, relPath)
+        ? createAddDiff(change.newContent || '', relPath) // Added fallback for newContent
         : getGitDiff(relPath, currentProjectPath));
 
       setCurrentDiff(change.filePath, diffContent);
@@ -233,7 +233,7 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
             }}
           >
             {currentProjectPath
-              ? truncateFilePath(path.join(currentProjectPath, change.filePath))
+              ? truncateFilePath(getRelativePath(change.filePath, currentProjectPath))
               : truncateFilePath(change.filePath)}
           </Typography>
         )}

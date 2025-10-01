@@ -5,6 +5,10 @@ import { useStore } from '@nanostores/react';
 import { currentTrackAtom } from '@/stores/mediaStore';
 import { FileType } from '@/types/refactored/media';
 
+interface MediaPlayerTrackInfoProps {
+  mediaType: FileType.AUDIO | FileType.VIDEO;
+}
+
 // Define styles outside the component for memoization and clean JSX
 const trackInfoWrapperStyles: SxProps = {
   display: 'flex',
@@ -23,7 +27,9 @@ const titleAndArtistColumnStyles: SxProps = {
   mr: 1,
 };
 
-const MediaPlayerTrackInfo: React.FC = () => {
+const MediaPlayerTrackInfo: React.FC<MediaPlayerTrackInfoProps> = ({
+  mediaType,
+}) => {
   const theme = useTheme();
   const currentTrack = useStore(currentTrackAtom);
 
@@ -32,7 +38,7 @@ const MediaPlayerTrackInfo: React.FC = () => {
 
   return (
     <Box sx={trackInfoWrapperStyles}>
-      {currentTrack?.fileType === FileType.VIDEO ? (
+      {mediaType === FileType.VIDEO ? (
         <Movie sx={{ fontSize: 30, mr: 1, color: theme.palette.text.secondary }} />
       ) : (
         <Album sx={{ fontSize: 30, mr: 1, color: theme.palette.text.secondary }} />

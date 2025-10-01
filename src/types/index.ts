@@ -4,6 +4,7 @@ export * from './file';
 export * from './git';
 export * from './llm';
 export * from './main';
+export * from './preview';
 export * from './project';
 export * from './recording';
 export * from './resume';

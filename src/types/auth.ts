@@ -1,3 +1,5 @@
+import { UserProfile } from './user';
+
 // src/types/auth.ts
 
 export interface User {
@@ -7,19 +9,19 @@ export interface User {
   // Add other user properties like avatar, roles, etc.
 }
 
-export interface LoginUserPayload {
+export interface LoginRequest {
   email: string;
   password: string;
 }
 
-export interface RegisterUserPayload {
+export interface RegisterRequest {
   email: string;
   password: string;
   username: string;
 }
 
 export interface AuthResponse {
-  user: User;
+  user: UserProfile; // Changed to UserProfile for consistency
   accessToken: string; // Assuming JWT or similar token
 }
 

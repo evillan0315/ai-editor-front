@@ -13,7 +13,7 @@ import {
   ListItemText,
 } from '@mui/material';
 import { MoreVert } from '@mui/icons-material';
-import { MediaFileResponseDto } from '@/types/refactored/media';
+import { MediaFileResponseDto, FileType, GenericMediaMetadataData } from '@/types/refactored/media';
 
 // Types
 interface MenuItemType {
@@ -59,6 +59,11 @@ export const SongThumbItem: React.FC<SongThumbItemProps> = ({
     { label: 'Update Metadata', value: 'update', icon: <></> },
   ];
 
+  // Safely access thumbnail by checking metadata type
+  const thumbnailUrl = song.metadata && song.metadata[0]?.type !== FileType.TRANSCRIPT
+    ? (song.metadata[0]?.data as GenericMediaMetadataData)?.thumbnail
+    : null;
+
   return (
     <Box sx={{ width: 160 }}>
       <Card>
@@ -66,10 +71,7 @@ export const SongThumbItem: React.FC<SongThumbItemProps> = ({
           <CardMedia
             component="img"
             height="160"
-            image={
-              (song.metadata && song.metadata[0]?.data.thumbnail) ||
-              '/placeholder-album.jpg'
-            }
+            image={thumbnailUrl || '/placeholder-album.jpg'}
             alt={song.song?.title}
             sx={{ objectFit: 'cover' }}
           />

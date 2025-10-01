@@ -6,9 +6,19 @@ import rehypeSanitize from 'rehype-sanitize';
 import rehypeHighlight from 'rehype-highlight';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
+import { Components } from 'react-markdown'; // Import Components type
 
 interface ReactMarkdownWithCodeCopyProps {
   children: string;
+}
+
+// Define the props type for the custom code renderer
+interface CodeRendererProps {
+  node?: any; // The AST node
+  inline?: boolean; // True if inline code, false if code block
+  className?: string; // Class name from syntax highlighting
+  children?: React.ReactNode; // The code content
+  [key: string]: any; // Allow other props
 }
 
 const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
@@ -23,7 +33,7 @@ const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
       remarkPlugins={[remarkGfm]}
       rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeHighlight]}
       components={{
-        code: ({ node, inline, className, children, ...props }) => {
+        code: ({ node, inline, className, children, ...props }: CodeRendererProps) => {
           const text = String(children).replace(/\n$/, '');
           const language = className ? className.replace('language-', '') : '';
           return inline ? (

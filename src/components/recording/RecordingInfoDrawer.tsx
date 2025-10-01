@@ -8,7 +8,7 @@ import {
   Divider,
 } from '@mui/material';
 import CustomDrawer from '../Drawer/CustomDrawer';
-import { RecordingItem } from './RecordingsTable';
+import { RecordingItem } from '@/types'; // MODIFIED: Import RecordingItem from types
 
 interface RecordingInfoDrawerProps {
   open: boolean;
