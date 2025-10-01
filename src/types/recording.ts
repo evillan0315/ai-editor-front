@@ -53,8 +53,8 @@ export interface TranscodeToGifResult {
 }
 
 export interface StartCameraRecordingDto {
-  audioDevice?: string;
-  cameraDevice?: string;
+  audioDevice?: string[];
+  cameraDevice?: string[];
   resolution?: string;
   framerate?: number;
   duration?: number; // In seconds
@@ -70,4 +70,25 @@ export interface CameraRecordingResponseDto {
 
 export interface UpdateRecordingDto {
   data: any;
+}
+
+/**
+ * Represents a recording item displayed in the frontend table.
+ * Moved from src/components/recording/Recording.tsx for shared use.
+ */
+export interface RecordingItem {
+  id: string;
+  name: string;
+  createdAt: string;
+  sizeBytes: number;
+  type: string;
+  status: string;
+  path: string;
+  createdById: string;
+  data: {
+    duration?: number;
+    fileSize?: number;
+    animatedGif?: string; // Added animatedGif property
+    [key: string]: any; // Allow other properties
+  };
 }

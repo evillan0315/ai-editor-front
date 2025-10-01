@@ -19,26 +19,9 @@ import { useStore } from '@nanostores/react';
 import { getFileStreamUrl } from '@/api/media';
 import { recordingApi } from '@/api/recording';
 import { setLoading, isLoading } from '@/stores/loadingStore';
-import { StartCameraRecordingDto } from '@/types';
+import { StartCameraRecordingDto, RecordingItem } from '@/types'; // MODIFIED: Import RecordingItem from types
 import VideoModal from '@/components/VideoModal'; // Import VideoModal
 import path from 'path-browserify';
-
-export interface RecordingItem {
-  id: string;
-  name: string;
-  createdAt: string;
-  sizeBytes: number;
-  type: string;
-  status: string;
-  path: string;
-  createdById: string;
-  data: {
-    duration?: number;
-    fileSize?: number;
-    animatedGif?: string; // Added animatedGif property
-    [key: string]: any; // Allow other properties
-  };
-}
 
 type SortOrder = 'asc' | 'desc';
 type SortField = 'name' | 'createdAt' | 'type' | 'status';
