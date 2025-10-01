@@ -10,6 +10,7 @@ import {
   UpdateGeminiResponseDto,
   PaginationGeminiResponseQueryDto,
   PaginationGeminiResponseResultDto,
+  RequestType,
 } from '@/types/gemini';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -204,12 +205,13 @@ export const getPaginatedGeminiResponses = async (
 
 /**
  * Retrieves Gemini Response records filtered by a specific request ID.
- * @param requestId The ID of the Gemini Request to filter responses by.
+ * @param requestId The ID of the Gemini Request to filter responses by. (string)
+ * @param requestType The type of request to filter by. (RequestType enum)
  * @returns A promise that resolves to an array of GeminiResponse.
  */
 export const getGeminiResponsesByRequestId = async (
   requestId: string,
-  requestType?: string,
+  requestType?: RequestType,
 ): Promise<GeminiResponse[]> => {
   try {
     const query: PaginationGeminiResponseQueryDto = { requestId, requestType };
