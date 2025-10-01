@@ -74,7 +74,7 @@ export interface ModelResponse {
   requestType: RequestType;
   outputFormat: LlmOutputFormat;
   rawResponse?: string; // For debugging or display of raw LLM output
-  error?: string; // If the LLM itself reports an error in its structured response
+  error?: string | { message?: string }; // Modified to handle object errors with a message property
   buildScript?: string; // Optional build script from LLM response
 }
 
