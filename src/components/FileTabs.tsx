@@ -81,6 +81,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
 
   return (
     <Paper
+      component="div" // Explicitly set component to 'div'
       sx={{
         color: theme.palette.text.primary,
         borderBottom: `1px solid ${theme.palette.divider}`,

@@ -17,7 +17,7 @@ import {
 } from '@/stores/llmStore';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import MarkdownEditor from '@/components/MarkdownEditor'; // ✅ New rich editor
-import { GlobalAction } from '@/types';
+import { GlobalAction } from '@/components/ui/GlobalActionButton';
 import AiSchemaGenerator from '@/components/schema/AiSchemaGenerator';
 
 interface PromptGeneratorSettingsProps {
@@ -36,7 +36,7 @@ const PromptGeneratorSettings: React.FC<PromptGeneratorSettingsProps> = ({
   const [tab, setTab] = React.useState(0); // 0 = General Instruction, 1 = JSON Schema, 2 = Example Output
 
   /** Local editable states */
-  const [localAiInstruction, setLocalAiInstruction] =
+  const [localAiInstruction, setLocalAiInstruction] = 
     React.useState(aiInstruction);
   // Extract current schema and example from expectedOutputInstruction
   const [localInstructionSchema, setLocalInstructionSchema] = React.useState(() => {

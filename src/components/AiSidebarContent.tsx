@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '@nanostores/react';
-import { aiEditorStore } from '@/stores/aiEditorStore';
+import { llmStore } from '@/stores/llmStore';
 import { Box, useTheme } from '@mui/material';
 import LlmGenerationContent from '@/components/LlmGenerationContent';
 
@@ -10,7 +10,7 @@ import LlmGenerationContent from '@/components/LlmGenerationContent';
  * Provides collapsible panels for better layout management.
  */
 const AiSidebarContent: React.FC = () => {
-  const { lastLlmResponse } = useStore(aiEditorStore);
+  const { lastLlmResponse } = useStore(llmStore);
   const theme = useTheme();
 
   return (
