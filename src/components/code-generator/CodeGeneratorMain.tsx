@@ -121,7 +121,7 @@ export const CodeGeneratorMain: React.FC<Props> = ({ data }) => {
               <ChangesList changes={data.changes} />
             </AccordionDetails>
           </Accordion>
-          {data.gitInstructions?.length > 0 && (
+          {data.gitInstructions && data.gitInstructions.length > 0 && (
             <Accordion>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Box display="flex" alignItems="center" gap={1}>

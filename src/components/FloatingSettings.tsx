@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Box, Paper, IconButton, Typography } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CloseIcon from '@mui/icons-material/Close';
@@ -30,39 +30,39 @@ const FloatingSettings: React.FC<FloatingSettingsProps> = ({
     }
   }, []);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = useCallback((e: MouseEvent) => {
     setIsDragging(true);
     dragStart.current = {
       x: e.clientX - position.x,
       y: e.clientY - position.y,
     };
-  };
+  }, [position.x, position.y]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging) {
       setPosition({
         x: e.clientX - dragStart.current.x,
         y: e.clientY - dragStart.current.y,
       });
     }
-  };
+  }, [isDragging]);
 
-  const handleResizeMouseDown = (e: React.MouseEvent) => {
+  const handleResizeMouseDown = useCallback((e: MouseEvent) => {
     setIsResizing(true);
     startSize.current = size;
     dragStart.current = { x: e.clientX, y: e.clientY };
     e.stopPropagation();
-  };
+  }, [size]);
 
-  const handleResizeMouseUp = () => {
+  const handleResizeMouseUp = useCallback(() => {
     setIsResizing(false);
-  };
+  }, []);
 
-  const handleResizeMouseMove = (e: React.MouseEvent) => {
+  const handleResizeMouseMove = useCallback((e: MouseEvent) => {
     if (isResizing) {
       const deltaX = e.clientX - dragStart.current.x;
       const deltaY = e.clientY - dragStart.current.y;
@@ -73,7 +73,7 @@ const FloatingSettings: React.FC<FloatingSettingsProps> = ({
       });
       e.stopPropagation();
     }
-  };
+  }, [isResizing]);
 
   useEffect(() => {
     if (isDragging) {
@@ -98,7 +98,7 @@ const FloatingSettings: React.FC<FloatingSettingsProps> = ({
       document.removeEventListener('mousemove', handleResizeMouseMove);
       document.removeEventListener('mouseup', handleResizeMouseUp);
     };
-  }, [isDragging, isResizing]);
+  }, [isDragging, isResizing, handleMouseMove, handleMouseUp, handleResizeMouseMove, handleResizeMouseUp]);
 
   const wrapperStyle = {
     position: 'fixed' as const,
