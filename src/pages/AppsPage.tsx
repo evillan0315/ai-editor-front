@@ -10,11 +10,17 @@ import {
   CardContent,
   Button,
   CardActions,
+  IconButton, // NEW
+  Tooltip, // NEW
 } from '@mui/material';
 import AppsIcon from '@mui/icons-material/Apps';
 import { Link } from 'react-router-dom';
 import { AppDefinition } from '@/types'; // Import AppDefinition
 import { appDefinitions } from '@/constants/appDefinitions'; // New: Import appDefinitions
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'; // NEW
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'; // NEW
+import { useStore } from '@nanostores/react'; // NEW
+import { addNavbarApp, removeNavbarApp, $navbarApps } from '@/stores/navbarAppsStore'; // NEW
 
 interface AppCardProps {
   app: AppDefinition;
@@ -23,6 +29,18 @@ interface AppCardProps {
 const AppCard: React.FC<AppCardProps> = ({ app }) => {
   const theme = useTheme();
   const Icon = app.icon; // Access icon directly from app object
+
+  // Use the nanostore to check if the app is in the navbar
+  const { appIds: currentNavbarAppIds } = useStore($navbarApps); // NEW
+  const isInNavbar = currentNavbarAppIds.includes(app.id); // NEW
+
+  const handleToggleNavbar = () => { // NEW
+    if (isInNavbar) {
+      removeNavbarApp(app.id);
+    } else {
+      addNavbarApp(app.id);
+    }
+  };
 
   return (
     <Card
@@ -54,10 +72,19 @@ const AppCard: React.FC<AppCardProps> = ({ app }) => {
           {app.description}
         </Typography>
       </CardContent>
-      <CardActions sx={{ mt: 'auto', p: 2 }}>
+      <CardActions sx={{ mt: 'auto', p: 2, display: 'flex', justifyContent: 'space-between' }}> {/* NEW: Added display flex and justify-content */}
         <Button size="small" component={Link} to={app.link} variant="outlined">
           {app.linkText}
         </Button>
+        <Tooltip title={isInNavbar ? 'Remove from Navbar Apps' : 'Add to Navbar Apps'}> {/* NEW */}
+          <IconButton
+            onClick={handleToggleNavbar}
+            color={isInNavbar ? 'primary' : 'default'}
+            size="small"
+          >
+            {isInNavbar ? <CheckCircleOutlineIcon /> : <AddCircleOutlineIcon />}
+          </IconButton>
+        </Tooltip>
       </CardActions>
     </Card>
   );
