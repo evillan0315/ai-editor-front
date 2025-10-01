@@ -513,7 +513,7 @@ const SchemaDataGrid: React.FC = () => {
             onChange={setEditedSchemaContent}
             height="400px"
             width="100%"
-            readOnly={!isEditingSchemaContent}
+            editable={isEditingSchemaContent}
           />
         </DialogContent>
         <DialogActions>

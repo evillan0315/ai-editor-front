@@ -173,7 +173,6 @@ const ScanPathsDialog: React.FC<ScanPathsDialogProps> = ({
             {filteredOptions.map((option, index) => (
               <ListItem
                 key={index}
-                component="div" // Added component="div" to satisfy ListItem typing requirements for button prop
                 button
                 selected={selectedPaths.includes(option)}
                 onClick={() => addPath(option)}
