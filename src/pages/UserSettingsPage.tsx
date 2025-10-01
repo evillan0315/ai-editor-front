@@ -1,110 +1,133 @@
-import React from 'react';
-import {
-  Box,
-  Typography,
-  Container,
-  Paper,
-  useTheme,
-  Button,
-  Divider,
-} from '@mui/material';
-import SettingsIcon from '@mui/icons-material/Settings';
-import { Link } from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import React, { useEffect, useState } from 'react';
+import { useStore } from '@nanostores/react';
+import { authStore, authActions } from '@/stores/authStore';
+import { UserProfile } from '@/types/user'; // Moved from '@/types/auth'
+import { Box, Typography, Paper, TextField, Button, CircularProgress, Alert } from '@mui/material';
+import { PageLayout } from '@/components/layouts/PageLayout';
+import { enqueueSnackbar } from 'notistack';
 
 const UserSettingsPage: React.FC = () => {
-  const theme = useTheme();
+  const { user, loading, error } = useStore(authStore);
+  const [localUser, setLocalUser] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    if (!user && !loading && !error) {
+      authActions.checkAuthStatus();
+    } else if (user) {
+      setLocalUser(user);
+    }
+  }, [user, loading, error]);
+
+  const handleFieldChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setLocalUser((prev) => (prev ? { ...prev, [name]: value } : null));
+  };
+
+  const handleSaveChanges = () => {
+    if (localUser) {
+      // This is a placeholder for actual save logic.
+      // In a real application, you'd send `localUser` data to a backend API.
+      console.log('Saving user settings:', localUser);
+      enqueueSnackbar('Settings saved (simulated)!', { variant: 'success' });
+      // After successful save, you might want to update the global authStore
+      // authActions.setUser(localUser);
+    } else {
+      enqueueSnackbar('No user data to save.', { variant: 'warning' });
+    }
+  };
+
+  if (loading) {
+    return (
+      <PageLayout title="Loading Settings...">
+        <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+          <CircularProgress />
+        </Box>
+      </PageLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageLayout title="Error">
+        <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+          <Alert severity="error">Failed to load user settings: {error}</Alert>
+        </Box>
+      </PageLayout>
+    );
+  }
+
+  if (!user) {
+    return (
+      <PageLayout title="Not Logged In">
+        <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+          <Alert severity="info">Please log in to manage your settings.</Alert>
+        </Box>
+      </PageLayout>
+    );
+  }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4, flexGrow: 1 }}>
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          borderRadius: 2,
-          bgcolor: theme.palette.background.paper,
-          color: theme.palette.text.primary,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 3,
-          minHeight: 'calc(100vh - 120px)',
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            width: '100%',
-            mb: 2,
-          }}
-        >
+    <PageLayout title="User Settings">
+      <Box className="p-6 max-w-2xl mx-auto">
+        <Paper elevation={3} className="p-6 flex flex-col space-y-4">
+          <Typography variant="h4" component="h1" className="mb-4">
+            Edit Profile
+          </Typography>
+
+          <TextField
+            label="Name"
+            name="name"
+            value={localUser?.name || ''}
+            onChange={handleFieldChange}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Username"
+            name="username"
+            value={localUser?.username || ''}
+            onChange={handleFieldChange}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Email"
+            name="email"
+            value={localUser?.email || ''}
+            onChange={handleFieldChange}
+            fullWidth
+            margin="normal"
+            disabled // Email often not editable directly
+          />
+          <TextField
+            label="Role"
+            name="role"
+            value={localUser?.role || ''}
+            fullWidth
+            margin="normal"
+            disabled // Role typically set by admin
+          />
+          {localUser?.organization && (
+            <TextField
+              label="Organization"
+              name="organization"
+              value={localUser.organization}
+              fullWidth
+              margin="normal"
+              disabled // Organization typically set by admin
+            />
+          )}
           <Button
-            startIcon={<ArrowBackIcon />}
-            component={Link}
-            to="/profile"
-            variant="outlined"
-            sx={{ mr: 'auto' }}
+            variant="contained"
+            color="primary"
+            onClick={handleSaveChanges}
+            className="self-end"
           >
-            Back to Profile
+            Save Changes
           </Button>
-        </Box>
-
-        <SettingsIcon
-          sx={{ fontSize: 60, color: theme.palette.primary.main }}
-        />
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-          User Settings
-        </Typography>
-        <Typography variant="body1" color="text.secondary" align="center">
-          Manage your account preferences, notifications, and other settings
-          here. This page is currently under development.
-        </Typography>
-
-        <Divider sx={{ width: '100%', my: 3 }} />
-
-        <Box sx={{ mt: 3, width: '100%', maxWidth: 500 }}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 3,
-              bgcolor: theme.palette.background.default,
-              color: theme.palette.text.primary,
-              mb: 2,
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Account Information
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Update your email, password, or display name.
-            </Typography>
-            <Button variant="text" color="primary" sx={{ mt: 2 }} disabled>
-              Manage Account (Coming Soon)
-            </Button>
-          </Paper>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 3,
-              bgcolor: theme.palette.background.default,
-              color: theme.palette.text.primary,
-              mb: 2,
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Notification Preferences
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Configure how you receive alerts and updates.
-            </Typography>
-            <Button variant="text" color="primary" sx={{ mt: 2 }} disabled>
-              Manage Notifications (Coming Soon)
-            </Button>
-          </Paper>
-        </Box>
-      </Paper>
-    </Container>
+        </Paper>
+      </Box>
+    </PageLayout>
   );
 };
 

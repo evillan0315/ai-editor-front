@@ -18,21 +18,21 @@ export const CodeRepair: React.FC<CodeRepairProps> = ({
   width,
 }) => {
   return (
+    <Box className="flex flex-col h-full">
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        width: '100%',
-        position: 'relative',
+
       }}
+      className='flex-grow min-h-0'
     >
       <CodeMirrorEditor
         value={value}
         onChange={onChange}
         filePath={filePath}
-        height={height ? height : '100%'}
+        height={'100%'}
         width={width ? width : '100%'}
       />
+    </Box>
     </Box>
   );
 };

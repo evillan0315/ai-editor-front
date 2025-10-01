@@ -303,7 +303,11 @@ const AiSchemaGenerator: React.FC = () => {
   }, [applyInstruction, $schema]);
 
   return (
-    <Box sx={{ padding: 3, width: '100%' }}>
+    <Box className='flex flex-col ' sx={{ width: '100%', height: '100%' }}>
+      <Box className='mb-2'>
+      <GeneratedSchemaViewer />
+        </Box>
+       <Box className='p-4'>
       <FormGroup>
         <FormControlLabel
           control={
@@ -343,8 +347,7 @@ const AiSchemaGenerator: React.FC = () => {
           onSchemaLayoutChange={setSchemaLayout} // Pass top-level x-layout handler
         />
       )}
-
-      <GeneratedSchemaViewer />
+       </Box>
     </Box>
   );
 };

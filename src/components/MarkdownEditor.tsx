@@ -23,7 +23,7 @@ import ImageIcon from '@mui/icons-material/Image';
 import TitleIcon from '@mui/icons-material/Title';
 import TaskIcon from '@mui/icons-material/CheckBox';
 import { keymap } from '@codemirror/view';
-import CodeMirror from '@uiw/react-codemirror';
+import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { markdown } from '@codemirror/lang-markdown';
 import { themeStore } from '@/stores/themeStore';
 import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
@@ -45,6 +45,7 @@ interface MarkdownEditorProps {
   disabled?: boolean;
   expectedSchema?: string;
   exampleOutput?: string;
+  filePath?: string;
 }
 
 const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
@@ -56,6 +57,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   disabled = false,
   expectedSchema,
   exampleOutput,
+  filePath,
 }) => {
   const { mode } = useStore(themeStore); // 'light' | 'dark'
   const theme = useTheme();
@@ -185,24 +187,10 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       {/* ---------- Editor / Preview Area ---------- */}
       <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden' }}>
         {tab === 0 && (
-          <CodeMirror
+          <CodeMirrorEditor
             value={internalValue}
             height="100%"
-            extensions={[
-              getCodeMirrorLanguage(`editor.md`),
-              createCodeMirrorTheme(theme),
-              markdown(),
-              keymap.of([
-                {
-                  key: 'Mod-s',
-                  run: () => {
-                    onSave?.();
-                    return true;
-                  },
-                },
-              ]),
-            ]}
-            theme={mode}
+            filePath={filePath}
             editable={!disabled}
             onChange={(val) => setValue(val)}
             style={{ flex: 1 }}
@@ -223,14 +211,10 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             {expectedSchema && (
               <>
                 <Typography variant="h6">Expected Schema:</Typography>
-                <CodeMirror
+                <CodeMirrorEditor
                   value={expectedSchema}
                   height="200px"
-                  extensions={[
-                    getCodeMirrorLanguage(`json`),
-                    createCodeMirrorTheme(theme),
-                  ]}
-                  theme={mode}
+                  filePath={`schema.json`}
                   editable={false}
                 />
               </>
@@ -238,14 +222,10 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             {exampleOutput && (
               <>
                 <Typography variant="h6">Example Output:</Typography>
-                <CodeMirror
+                <CodeMirrorEditor
                   value={exampleOutput}
                   height="200px"
-                  extensions={[
-                    getCodeMirrorLanguage(`json`),
-                    createCodeMirrorTheme(theme),
-                  ]}
-                  theme={mode}
+                  filePath={`example-schema.json`}
                   editable={false}
                 />
               </>

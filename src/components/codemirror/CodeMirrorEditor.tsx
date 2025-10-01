@@ -22,6 +22,8 @@ interface CodeMirrorEditorProps {
   onSave?: () => void; // New prop for save functionality
 }
 
+const STATUS_BAR_HEIGHT = '32px'; // Corresponds to Tailwind's h-8
+
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   value,
   onChange,
@@ -133,17 +135,25 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
   return (
     <Box
-      className={`flex flex-col ${classNames || ''}`}
+      className={`relative flex flex-col ${classNames || ''}`} // Added 'relative' and 'flex flex-col' for proper positioning context
       sx={{
         height: height || '100%',
         width: width || '100%',
+        '--code-mirror-status-height': STATUS_BAR_HEIGHT, // Define CSS variable for status bar height
       }}
     >
-      <Box className="flex-grow"> {/* This Box wraps CodeMirror and takes available space */}
+      {/* This Box wraps CodeMirror and takes available space, accounting for the status bar */}
+      <Box
+        sx={{
+          height: `calc(100% - var(--code-mirror-status-height))`, // Calculate height for editor area
+          width: '100%',
+          overflow: 'auto', // Ensures CodeMirror handles its own scrolling within this reserved space
+        }}
+      >
         <CodeMirror
           value={value}
-          height="100%" // CodeMirror itself fills its parent flex-grow Box
-          width="100%" // CodeMirror itself fills its parent flex-grow Box
+          height="100%" // CodeMirror itself fills its parent Box
+          width="100%" // CodeMirror itself fills its parent Box
           theme={mode}
           extensions={extensions}
           onChange={handleChange}
@@ -151,12 +161,19 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           editable={!isDisabled}
         />
       </Box>
-      {/* CodeMirrorStatus component at the bottom, automatically sticky due to flex-col and flex-grow on editor */}
+      {/* CodeMirrorStatus component at the bottom, absolutely positioned */}
       <CodeMirrorStatus
         languageName={currentLanguageName}
         line={currentLine}
         column={currentColumn}
         lintStatus={currentLintStatus}
+        sx={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: STATUS_BAR_HEIGHT, // Ensure status bar maintains its height
+        }}
       />
     </Box>
   );

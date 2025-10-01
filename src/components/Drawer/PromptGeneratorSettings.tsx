@@ -69,11 +69,7 @@ ${localInstructionExample}
 
   return (
 
-      <Box
-        sx={{
-          color: theme.palette.text.primary,
-        }}
-      >
+                <Box className="flex flex-col h-full">
         <Tabs
           value={tab}
           onChange={(_, v) => setTab(v)}
@@ -105,72 +101,70 @@ ${localInstructionExample}
           />
         </Tabs>
 
-        {/* ---------- General Instruction (Markdown Editor) ---------- */}
+   
         {tab === 0 && (
-          <Box sx={{ color: theme.palette.text.primary, mt: 1 }}>
-            <Box
-              sx={{
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 1,
-                overflow: 'hidden',
-                mb: 2,
-              }}
-            >
+              <Box
+      sx={{
+
+      }}
+      className='flex-grow min-h-0'
+    >
               <MarkdownEditor
                 value={localAiInstruction}
                 initialValue={localAiInstruction}
                 onChange={setLocalAiInstruction}
                 expectedSchema={localInstructionSchema}
                 exampleOutput={localInstructionExample}
+                filePath={`instruction.md`}
               />
             </Box>
-          </Box>
+
         )}
 
-        {/* ---------- Accordion: JSON Schema ---------- */}
+
         {tab === 1 && (
-          <Box>
-            <Box sx={{ color: theme.palette.text.primary, mt: 1 }}>
-              <Box
-                sx={{
-                  borderTop: `1px solid ${theme.palette.divider}`,
-                  overflow: 'hidden',
-                }}
-              >
+
+    <Box
+      sx={{
+
+      }}
+      className='flex-grow min-h-0'
+    >
                 <CodeMirrorEditor
                   value={localInstructionSchema}
                   onChange={setLocalInstructionSchema}
-                  language="json"
                   filePath="schema.json"
+                  height='100%'
                 />
               </Box>
-            </Box>
-          </Box>
+        
+
         )}
 
-        {/* ---------- Accordion: Example Output ---------- */}
+  
         {tab === 2 && (
-          <Box>
-            <Box sx={{ color: theme.palette.text.primary, mt: 1 }}>
-              <Box
-                sx={{
-                  borderTop: `1px solid ${theme.palette.divider}`,
-                  overflow: 'hidden',
-                }}
-              >
+          <Box
+      sx={{
+
+      }}
+      className='flex-grow min-h-0'
+    >
                 <CodeMirrorEditor
                   value={localInstructionExample}
                   onChange={setLocalInstructionExample}
-                  language="json"
                   filePath="example.json"
                 />
               </Box>
-            </Box>
-          </Box>
+
         )}
-        {/* ---------- AI Schema Generator  ---------- */}
+
         {tab === 3 && (
-          <Box>
+                   <Box
+      sx={{
+
+      }}
+      className='flex-grow min-h-0'
+    >
             <AiSchemaGenerator />
           </Box>
         )}

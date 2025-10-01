@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme, BoxProps } from '@mui/material';
 import { useStore } from '@nanostores/react';
 import { themeStore } from '@/stores/themeStore';
 
@@ -8,6 +8,7 @@ interface CodeMirrorStatusProps {
   line: number;
   column: number;
   lintStatus: string;
+  sx?: BoxProps['sx']; // Allow external sx prop to be passed and merged
 }
 
 const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
@@ -15,6 +16,7 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
   line,
   column,
   lintStatus,
+  sx, // Destructure the new sx prop
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
@@ -34,10 +36,13 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
   return (
     <Box
       className="flex items-center justify-end px-2 py-1 h-8"
-      sx={{
-        backgroundColor: muiTheme.palette.background.default,
-        borderTop: `1px solid ${muiTheme.palette.divider}`,
-      }}
+      sx={[
+        {
+          backgroundColor: muiTheme.palette.background.default,
+          borderTop: `1px solid ${muiTheme.palette.divider}`,
+        },
+        ...(Array.isArray(sx) ? sx : [sx]), // Merge the passed sx prop with existing styles
+      ]}
     >
       <Typography sx={sxStatusText}>
         Language: {languageName}

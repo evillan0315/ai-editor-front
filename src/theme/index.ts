@@ -1,4 +1,3 @@
-// src/theme/getAppTheme.ts
 import { createTheme, ThemeOptions } from '@mui/material/styles';
 import { PaletteMode } from '@mui/material';
 
@@ -72,8 +71,6 @@ export const getAppTheme = (mode: PaletteMode) => {
           '.markdown-body': {
             backgroundColor: mode === 'dark' ? '#1d1d1d' : '#f5f5f5',
           },
-        },
-        styleOverrides: {
           '.cm-editor .cm-gutters': {
             backgroundColor: mode === 'dark' ? '#1d1d1d' : '#f5f5f5',
           },

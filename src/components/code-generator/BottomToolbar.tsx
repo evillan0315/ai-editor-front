@@ -274,7 +274,6 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           value={response || ''}
           onChange={setLlmResponse}
           filePath="temp.json"
-          height="100%"
         />
       </CustomDrawer>
     </Box>

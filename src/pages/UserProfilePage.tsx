@@ -1,136 +1,84 @@
-import React from 'react';
-import {
-  Box,
-  Typography,
-  Container,
-  Paper,
-  useTheme,
-  Avatar,
-  Button,
-} from '@mui/material';
-import SettingsIcon from '@mui/icons-material/Settings';
+import React, { useEffect } from 'react';
 import { useStore } from '@nanostores/react';
-import { authStore } from '@/stores/authStore';
-import { Link, useNavigate } from 'react-router-dom';
-import Loading from '@/components/Loading';
+import { authStore, authActions } from '@/stores/authStore';
+import { UserProfile } from '@/types/user'; // Moved from '@/types/auth'
+import { Box, Typography, Paper, Avatar, CircularProgress, Alert } from '@mui/material';
+import { PageLayout } from '@/components/layouts/PageLayout';
 
 const UserProfilePage: React.FC = () => {
-  const theme = useTheme();
-  const { user, loading: authLoading, isLoggedIn } = useStore(authStore);
-  const navigate = useNavigate();
+  const { user, loading, error } = useStore(authStore);
 
-  if (authLoading) {
-    return <Loading message="Loading user profile..." />;
+  useEffect(() => {
+    if (!user && !loading && !error) {
+      authActions.checkAuthStatus();
+    }
+  }, [user, loading, error]);
+
+  if (loading) {
+    return (
+      <PageLayout title="Loading Profile...">
+        <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+          <CircularProgress />
+        </Box>
+      </PageLayout>
+    );
   }
 
-  if (!isLoggedIn || !user) {
-    navigate('/login');
-    return null;
+  if (error) {
+    return (
+      <PageLayout title="Error">
+        <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+          <Alert severity="error">Failed to load user profile: {error}</Alert>
+        </Box>
+      </PageLayout>
+    );
   }
 
-  const displayName = user.name || user.username || 'N/A';
-  const displayEmail = user.email || 'N/A';
-  const displayRole = user.role || 'User';
-  const displayOrganization = user.organization || 'N/A';
+  if (!user) {
+    return (
+      <PageLayout title="Not Logged In">
+        <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+          <Alert severity="info">Please log in to view your profile.</Alert>
+        </Box>
+      </PageLayout>
+    );
+  }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4, flexGrow: 1 }}>
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          borderRadius: 2,
-          bgcolor: theme.palette.background.paper,
-          color: theme.palette.text.primary,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 3,
-          minHeight: 'calc(100vh - 120px)',
-        }}
-      >
-        <Avatar
-          alt={displayName}
-          src={user.image || undefined}
-          sx={{
-            width: 120,
-            height: 120,
-            mb: 2,
-            bgcolor: theme.palette.primary.main,
-            fontSize: 50,
-            color: theme.palette.primary.contrastText,
-          }}
-        >
-          {!user.image && displayName[0] ? displayName[0].toUpperCase() : null}
-        </Avatar>
-
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-          {displayName}
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          {user.role} at {displayOrganization}
-        </Typography>
-
-        <Box sx={{ width: '100%', maxWidth: 400, mt: 3 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              mb: 1.5,
-            }}
-          >
-            <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-              Email:
+    <PageLayout title="User Profile">
+      <Box className="p-6 max-w-2xl mx-auto">
+        <Paper elevation={3} className="p-6 flex flex-col items-center space-y-4">
+          {user.image && <Avatar src={user.image} alt={user.name} sx={{ width: 100, height: 100 }} />}
+          <Typography variant="h4" component="h1" className="text-center">
+            {user.name || user.email || 'User'}
+          </Typography>
+          <Typography variant="h6" color="text.secondary">
+            {user.username && `@${user.username}`}
+          </Typography>
+          <Box className="w-full space-y-2 text-center">
+            <Typography variant="body1">
+              <strong>Email:</strong> {user.email}
             </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {displayEmail}
-            </Typography>
+            {user.provider && (
+              <Typography variant="body1">
+                <strong>Provider:</strong> {user.provider}
+              </Typography>
+            )}
+            {user.role && (
+              <Typography variant="body1">
+                <strong>Role:</strong> {user.role}
+              </Typography>
+            )}
+            {user.organization && (
+              <Typography variant="body1">
+                <strong>Organization:</strong> {user.organization}
+              </Typography>
+            )}
+            {/* Add more profile fields as needed */}
           </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              mb: 1.5,
-            }}
-          >
-            <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-              Role:
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {displayRole}
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              mb: 1.5,
-            }}
-          >
-            <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-              Provider:
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {user.provider || 'Local'}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<SettingsIcon />}
-          component={Link}
-          to="/settings"
-          sx={{ mt: 3, py: 1.5, px: 3, fontSize: '1.05rem' }}
-        >
-          Edit Profile Settings
-        </Button>
-      </Paper>
-    </Container>
+        </Paper>
+      </Box>
+    </PageLayout>
   );
 };
 

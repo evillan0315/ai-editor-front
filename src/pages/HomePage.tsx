@@ -18,6 +18,16 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows'; // For diff/c
 import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined'; // For file tree
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'; // For file upload
 import EditNoteIcon from '@mui/icons-material/EditNote'; // For instructions
+import LightbulbIcon from '@mui/icons-material/Lightbulb'; // Why Choose Us
+import GroupWorkIcon from '@mui/icons-material/GroupWork'; // Why Choose Us
+import GppGoodIcon from '@mui/icons-material/GppGood'; // Why Choose Us
+import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest'; // Why Choose Us
+import StartIcon from '@mui/icons-material/Start'; // How It Works
+import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges'; // How It Works
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'; // How It Works
+import LoopIcon from '@mui/icons-material/Loop'; // How It Works
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos'; // How It Works step separator
+
 import { APP_NAME, APP_DESCRIPTION } from '@/constants'; // Import APP_NAME and APP_DESCRIPTION
 
 interface FeatureCardProps {
@@ -27,6 +37,41 @@ interface FeatureCardProps {
   link?: string;
   linkText?: string;
 }
+
+interface HowItWorksStepProps {
+  title: string;
+  description: string;
+  icon: React.ElementType;
+}
+
+const sectionTitleSx = {
+  fontWeight: 700,
+  mb: 6,
+  className: '!text-3xl sm:!text-4xl md:!text-5xl', // Responsive text size
+};
+
+const howItWorksStepCardSx = (theme) => ({
+  bgcolor: theme.palette.background.paper,
+  color: theme.palette.text.primary,
+  border: `1px solid ${theme.palette.divider}`,
+  p: 3,
+  borderRadius: 2,
+  textAlign: 'center',
+  flex: '1 1 auto',
+});
+
+const callToActionBoxSx = (theme) => ({
+  bgcolor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
+  py: 8,
+  px: 3,
+  borderRadius: 2,
+  mt: 8,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+});
 
 const FeatureCard: React.FC<FeatureCardProps> = ({
   title,
@@ -75,6 +120,27 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
         </CardActions>
       )}
     </Card>
+  );
+};
+
+const HowItWorksStep: React.FC<HowItWorksStepProps> = ({
+  title,
+  description,
+  icon: Icon,
+}) => {
+  const theme = useTheme();
+  return (
+    <Box sx={howItWorksStepCardSx(theme)} className="flex-1 flex flex-col justify-center items-center">
+      <Icon
+        sx={{ fontSize: 48, color: theme.palette.primary.main, mb: 2 }}
+      />
+      <Typography variant="h6" component="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+        {title}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        {description}
+      </Typography>
+    </Box>
   );
 };
 
@@ -129,6 +195,60 @@ const HomePage: React.FC = () => {
       icon: TerminalIcon,
       link: '/editor',
       linkText: 'Run Commands',
+    },
+  ];
+
+  const whyChooseUs = [
+    {
+      title: 'Robust AI Capabilities',
+      description: 'Leverage cutting-edge AI for code generation, modification, and analysis across your projects.',
+      icon: LightbulbIcon,
+      link: '/editor',
+      linkText: 'Learn More',
+    },
+    {
+      title: 'Seamless Collaboration',
+      description: 'Manage organizations and projects, fostering teamwork and productivity with intuitive tools.',
+      icon: GroupWorkIcon,
+      link: '/organizations',
+      linkText: 'Start a Team',
+    },
+    {
+      title: 'Secure & Reliable',
+      description: 'Built with security in mind, ensuring your projects and data are safe and sound.',
+      icon: GppGoodIcon,
+      link: '/auth/register',
+      linkText: 'Join Now',
+    },
+    {
+      title: 'Extensible & Adaptable',
+      description: 'Customize AI instructions, integrate with various tools, and adapt to your workflow.',
+      icon: SettingsSuggestIcon,
+      link: '/editor',
+      linkText: 'Customize',
+    },
+  ];
+
+  const howItWorksSteps = [
+    {
+      title: 'Define Your Goal',
+      description: 'Clearly articulate your coding or project requirement to the AI in natural language.',
+      icon: StartIcon,
+    },
+    {
+      title: 'Review & Refine',
+      description: 'Examine AI-generated changes and git diffs, making adjustments before applying.',
+      icon: PublishedWithChangesIcon,
+    },
+    {
+      title: 'Apply & Execute',
+      description: 'Apply changes to your codebase and execute relevant commands directly from the UI.',
+      icon: PlayArrowIcon,
+    },
+    {
+      title: 'Iterate & Innovate',
+      description: 'Continuously build and improve your projects with iterative AI-driven development.',
+      icon: LoopIcon,
     },
   ];
 
@@ -211,10 +331,9 @@ const HomePage: React.FC = () => {
       </Container>
 
       <Container maxWidth="lg" sx={{ mt: 8, textAlign: 'center' }}>
-        <Typography variant="h4" component="h2" sx={{ fontWeight: 700, mb: 6 }}>
+        <Typography variant="h4" component="h2" sx={sectionTitleSx}>
           Key Features
         </Typography>
-        {/* Use Tailwind CSS grid for responsiveness */}
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
           {features.map((feature, index) => (
             <div key={index}>
@@ -222,6 +341,62 @@ const HomePage: React.FC = () => {
             </div>
           ))}
         </div>
+      </Container>
+
+      <Container maxWidth="lg" sx={{ mt: 8, textAlign: 'center' }}>
+        <Typography variant="h4" component="h2" sx={sectionTitleSx}>
+          Why Choose {APP_NAME}?
+        </Typography>
+        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {whyChooseUs.map((item, index) => (
+            <div key={index}>
+              <FeatureCard {...item} />
+            </div>
+          ))}
+        </div>
+      </Container>
+
+      <Container maxWidth="lg" sx={{ mt: 8, textAlign: 'center' }}>
+        <Typography variant="h4" component="h2" sx={sectionTitleSx}>
+          How It Works
+        </Typography>
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-2 lg:gap-8 flex-wrap">
+          {howItWorksSteps.map((step, index) => (
+            <React.Fragment key={index}>
+              <HowItWorksStep {...step} />
+              {index < howItWorksSteps.length - 1 && (
+                <ArrowForwardIosIcon
+                  sx={{ fontSize: 30, color: theme.palette.text.secondary, display: { xs: 'none', sm: 'block' } }}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </Container>
+
+      <Container maxWidth="md" sx={{ mt: 8, mb: 4 }}>
+        <Box sx={callToActionBoxSx(theme)}>
+          <Typography
+            variant="h4"
+            component="h2"
+            sx={{ fontWeight: 700, mb: 2, className: '!text-3xl sm:!text-4xl' }}
+          >
+            Ready to Revolutionize Your Workflow?
+          </Typography>
+          <Typography variant="h6" sx={{ mb: 4, className: '!text-md sm:!text-lg', color: theme.palette.primary.contrastText + 'dd' }}>
+            Experience the power of AI-assisted development and project management.
+          </Typography>
+          <Button
+            variant="contained"
+            size="large"
+            component={Link}
+            to="/editor"
+            startIcon={<AutoAwesomeIcon />}
+            sx={{ py: 1.5, px: 4, fontSize: '1.2rem', bgcolor: theme.palette.secondary.main, '&:hover': { bgcolor: theme.palette.secondary.dark } }}
+          >
+            Start Building Today!
+          </Button>
+        </Box>
       </Container>
     </Box>
   );

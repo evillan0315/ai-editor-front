@@ -1,17 +1,14 @@
-/**
- * Debounces a function, ensuring it's only called after a specified delay
- * since the last time it was invoked.
- * @param func The function to debounce.
- * @param delay The delay in milliseconds.
- * @returns A new, debounced function.
- */
+// FilePath: src/utils/debounce.ts
+// Title: Debounce with cancel support
+// Reason: Add `.cancel()` so cleanup in components won’t throw
+
 export function debounce<T extends (...args: any[]) => void>(
   func: T,
   delay: number,
-): T {
+) {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-  return ((...args: Parameters<T>) => {
+  const debounced = ((...args: Parameters<T>) => {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
@@ -19,5 +16,14 @@ export function debounce<T extends (...args: any[]) => void>(
       func(...args);
       timeoutId = undefined;
     }, delay);
-  }) as T;
+  }) as T & { cancel: () => void };
+
+  debounced.cancel = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = undefined;
+    }
+  };
+
+  return debounced;
 }

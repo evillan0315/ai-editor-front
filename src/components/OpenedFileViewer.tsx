@@ -14,19 +14,16 @@ import {
   openedFile,
 } from '@/stores/fileStore';
 import { readFileContent } from '@/api/file';
-import CodeMirror from '@uiw/react-codemirror';
 import { Box, Typography, CircularProgress, Alert, Paper } from '@mui/material';
 
-import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
-import { keymap, EditorView } from '@codemirror/view';
+import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor'; // Import CodeMirrorEditor
 import InitialEditorViewer from './InitialEditorViewer';
-import MarkdownEditor from '@/components/MarkdownEditor'; // ✅ NEW
+import MarkdownEditor from '@/components/MarkdownEditor';
 
 interface OpenedFileViewerProps {}
 
 const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   const {
-    //openedFile,
     initialFileContentSnapshot,
     isFetchingFileContent,
     fetchFileContentError,
@@ -81,7 +78,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
       if (isDirty !== isOpenedFileDirty) {
         setIsOpenedFileDirty(isDirty);
       }
-    } else if (!openedFile) {
+    } else if (!$openedFile) {
       setIsOpenedFileDirty(false);
     }
   }, [
@@ -101,7 +98,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   const isLoadingContent = isFetchingFileContent;
   const isDisabled = isLoadingContent || isSavingFileContent;
 
-  // ✅ Detect markdown files by extension
+  // Detect markdown files by extension
   const isMarkdownFile = $openedFile?.toLowerCase().endsWith('.md');
 
   return (
@@ -147,36 +144,22 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
           }}
         >
           {isMarkdownFile ? (
-            // ✅ Use MarkdownEditor for .md files
+            // Use MarkdownEditor for .md files
             <MarkdownEditor
               value={$openedFileContent || ''}
               onChange={handleContentChange}
               disabled={isDisabled}
               onSave={() => saveActiveFile()}
+              filePath={$openedFile}
             />
           ) : (
-            // ✅ Default: CodeMirror editor for other files
-            <CodeMirror
+            // Use CodeMirrorEditor for other files
+            <CodeMirrorEditor
               value={$openedFileContent || ''}
               onChange={handleContentChange}
-              extensions={[
-                getCodeMirrorLanguage($openedFile),
-                createCodeMirrorTheme(muiTheme),
-                keymap.of([
-                  {
-                    key: 'Mod-s',
-                    run: () => {
-                      saveActiveFile();
-                      return true;
-                    },
-                  },
-                ]),
-                EditorView.lineWrapping,
-              ]}
-              theme={mode}
-              editable={!isDisabled}
-              minHeight="100%"
-              maxHeight="100%"
+              filePath={$openedFile} // Pass filePath for language detection and status
+              isDisabled={isDisabled}
+              onSave={() => saveActiveFile()} // Pass save handler
             />
           )}
         </Box>

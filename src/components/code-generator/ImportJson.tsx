@@ -39,6 +39,7 @@ const selectContainerSx = {
   flexDirection: { xs: 'column', sm: 'row' },
   gap: 2,
   px: 2,
+  pt:2,
   mb: 2,
 };
 
@@ -213,7 +214,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
   );
 
   return (
-    <Box className="flex flex-col h-full py-4">
+    <Box className="flex flex-col h-full">
       <Box sx={selectContainerSx}>
         <Autocomplete
           fullWidth

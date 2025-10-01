@@ -88,7 +88,100 @@ export function getCodeMirrorLanguage(
   }
 }
 
+/**
+ * Returns a human-readable language name based on the file path's extension.
+ * @param filePath The path of the file.
+ * @returns A string representing the language name (e.g., "TypeScript", "JavaScript", "JSON", "Markdown", "HTML", "CSS", "Plain Text").
+ */
+export function getLanguageNameFromPath(filePath: string): string {
+  if (!filePath) {
+    return 'Plain Text';
+  }
+
+  const ext = path.extname(filePath).toLowerCase();
+  const fileName = path.basename(filePath).toLowerCase();
+
+  switch (ext) {
+    case '.js':
+    case '.jsx':
+      return 'JavaScript';
+    case '.ts':
+    case '.tsx':
+      return 'TypeScript';
+    case '.json':
+      return 'JSON';
+    case '.md':
+    case '.markdown':
+      return 'Markdown';
+    case '.html':
+    case '.htm':
+      return 'HTML';
+    case '.css':
+    case '.scss':
+    case '.less':
+      return 'CSS';
+    case '.yml':
+    case '.yaml':
+      return 'YAML';
+    case '.xml':
+      return 'XML';
+    case '.py':
+      return 'Python';
+    case '.java':
+      return 'Java';
+    case '.c':
+    case '.cpp':
+    case '.h':
+      return 'C/C++';
+    case '.go':
+      return 'Go';
+    case '.rs':
+      return 'Rust';
+    case '.php':
+      return 'PHP';
+    case '.rb':
+      return 'Ruby';
+    case '.sh':
+    case '.bash':
+      return 'Shell Script';
+    case '.sql':
+      return 'SQL';
+    case '.vue':
+      return 'Vue';
+    case '.svelte':
+      return 'Svelte';
+    case '.toml':
+      return 'TOML';
+    case '.ini':
+      return 'INI';
+    case '.log':
+      return 'Log';
+    // Add more common extensions here
+
+    default:
+      // Handle specific filenames without extensions
+      if (fileName === 'dockerfile') return 'Dockerfile';
+      if (fileName === 'makefile') return 'Makefile';
+      if (fileName === 'licence' || fileName === 'license') return 'License';
+      if (fileName === 'readme' || fileName.startsWith('readme.'))
+        return 'Markdown';
+      if (fileName === '.env' || fileName.startsWith('.env.'))
+        return 'Environment Variables';
+      if (fileName === 'package.json') return 'JSON (Package)';
+      if (fileName === 'tsconfig.json') return 'JSON (TS Config)';
+      if (fileName === 'vite.config.ts') return 'TypeScript (Vite Config)';
+      if (fileName === 'eslint.config.ts') return 'TypeScript (ESLint Config)';
+      if (
+        fileName === 'yarn.lock' ||
+        fileName === 'pnpm-lock.yaml' ||
+        fileName === 'package-lock.json'
+      )
+        return 'Lockfile';
+
+      return 'Plain Text'; // Default for unknown extensions
+  }
+}
+
 export * from './fileUtils';
-export * from './mediaUtils';
 export * from './persistentAtom';
-export { createCodeMirrorTheme };
+export { createCodeMirrorTheme } from './codemirrorTheme';

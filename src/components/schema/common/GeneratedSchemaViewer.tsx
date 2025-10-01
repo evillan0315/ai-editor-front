@@ -171,7 +171,6 @@ const GeneratedSchemaViewer: React.FC<GeneratedSchemaViewerProps> = () => {
       ) : (
         <CodeMirrorEditor
           value={JSON.stringify($schema, null, 2)}
-          language="json"
           filePath="schema.json"
           onChange={handleGeneratedSchemaEditorChange}
           height="400px"
