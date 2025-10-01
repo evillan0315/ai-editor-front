@@ -1,16 +1,11 @@
 import { map, atom } from 'nanostores';
 import { showGlobalSnackbar } from './aiEditorStore';
-import { persistentAtom, mapMediaFileToTrack } from '@/utils';
+import { persistentAtom } from '@/utils';
 import {
   Track,
-  Playlist,
-  PaginationPlaylistQueryDto,
-  UpdatePlaylistDto,
-  AddRemoveMediaToPlaylistDto,
   MediaFileResponseDto,
   MediaFileResponseDtoUrl,
   RepeatMode,
-  PlaylistCreationRequest,
   PaginationMediaQueryDto,
   FileType,
   BufferedRange,
@@ -18,15 +13,7 @@ import {
   TranscriptionResult,
   SyncTranscriptionResponse,
 } from '@/types/refactored/media';
-import {
-  fetchPlaylists,
-  fetchPlaylistById,
-  createPlaylist,
-  updatePlaylist,
-  deletePlaylist,
-  addMediaToPlaylist,
-  removeMediaFromPlaylist,
-} from '@/api/playlist';
+
 import {
   scanMediaDirectory,
   fetchMediaFiles,
@@ -86,8 +73,6 @@ export const transcriptionErrorAtom = persistentAtom<string | null>(
 export const $mediaStore = map({
   isFetchingMedia: false, // Renamed from 'loading'
   fetchMediaError: null as string | null, // Renamed from 'error'
-  currentPlaylist: null as Playlist | null,
-  playlists: [] as Playlist[],
   allAvailableMediaFiles: [] as MediaFileResponseDto[],
   mediaElement: null as HTMLMediaElement | null, // Added to store direct media element reference
 });
@@ -428,74 +413,7 @@ export const previousTrack = async () => {
   }
 };
 
-export const addMediaToPlaylistAction = async (
-  playlistId: string,
-  mediaFileId: string,
-) => {
-  try {
-    await addMediaToPlaylist({ playlistId, mediaFileId });
-    showGlobalSnackbar('Media Added to Playlist', 'success');
-  } catch (error: any) {
-    showGlobalSnackbar(error.message, 'error');
-  }
-};
 
-export const removeMediaFromPlaylistAction = async (
-  playlistId: string,
-  mediaFileId: string,
-) => {
-  try {
-    await removeMediaFromPlaylist({ playlistId, mediaFileId });
-    showGlobalSnackbar('Media Removed from Playlist', 'success');
-  } catch (error: any) {
-    showGlobalSnackbar(error.message, 'error');
-  }
-};
-
-export const fetchPlaylistsAction = async (
-  query?: PaginationPlaylistQueryDto,
-) => {
-  try {
-    return await fetchPlaylists(query);
-  } catch (error: any) {
-    showGlobalSnackbar(error.message, 'error');
-  }
-};
-
-export const fetchPlaylistByIdAction = async (id: string) => {
-  try {
-    return await fetchPlaylistById(id);
-  } catch (error: any) {
-    showGlobalSnackbar(error.message, 'error');
-  }
-};
-
-export const createPlaylistAction = async (data: PlaylistCreationRequest) => {
-  try {
-    return await createPlaylist(data);
-  } catch (error: any) {
-    showGlobalSnackbar(error.message, 'error');
-  }
-};
-
-export const updatePlaylistAction = async (
-  id: string,
-  data: UpdatePlaylistDto,
-) => {
-  try {
-    return await updatePlaylist(id, data);
-  } catch (error: any) {
-    showGlobalSnackbar(error.message, 'error');
-  }
-};
-
-export const deletePlaylistAction = async (id: string) => {
-  try {
-    return await deletePlaylist(id);
-  } catch (error: any) {
-    showGlobalSnackbar(error.message, 'error');
-  }
-};
 
 export const fetchingMediaFiles = async (
   query?: PaginationMediaQueryDto,
