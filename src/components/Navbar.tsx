@@ -13,6 +13,7 @@ import AppsMenuContent from './AppsMenuContent';
 import ProfileMenuContent from './ProfileMenuContent';
 import { appDefinitions } from '@/constants/appDefinitions';
 import { profileMenuDefinitions } from '@/constants/profileMenuDefinitions';
+import { getNavbarAppDefinitions, $navbarApps } from '@/stores/navbarAppsStore'; // NEW import for dynamic apps menu
 import {
   type PackageScript,
   type TerminalCommandResponse,
@@ -92,13 +93,16 @@ const Navbar: React.FC = () => {
   const isAppsMenuOpen = Boolean(appsMenuAnchorEl);
   const isProfileMenuOpen = Boolean(profileMenuAnchorEl);
 
+  // NEW: Subscribe to the navbarAppsStore to reactively update the apps menu
+  useStore($navbarApps); 
+  const navbarApps = getNavbarAppDefinitions(); // NEW: Get the dynamic list of navbar apps
+
   useEffect(() => {
     if (currentProjectPath) {
       setScriptsLoading(true);
       const loadScripts = async () => {
         try {
-          const { scripts, packageManager: detectedPackageManager } =
-            await fetchProjectScripts(currentProjectPath);
+          const { scripts, packageManager: detectedPackageManager } = await fetchProjectScripts(currentProjectPath);
           setPackageScripts(scripts);
           setPackageManager(detectedPackageManager);
         } finally {
@@ -210,12 +214,6 @@ const Navbar: React.FC = () => {
 
   const isAnyScriptRunning = Object.values(scriptExecutionStatus).some(
     (state) => state.status === ScriptStatus.RUNNING,
-  );
-
-  const navbarApps = appDefinitions.filter((app) =>
-    ['ai-editor', 'llm-generation', 'media-player', 'recording'].includes(
-      app.id,
-    ),
   );
 
   return (
