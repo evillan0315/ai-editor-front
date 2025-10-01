@@ -1,57 +1,55 @@
 import React, { useEffect } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { loginSuccess } from '@/stores/authStore';
-import Loading from '@/components/Loading';
-
-import type { UserProfile } from '@/types/auth';
-//import Loading from '@/components/Loading'; // Assuming a Loading component exists
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useStore } from '@nanostores/react';
+import { authStore, loginSuccess, setError } from '@/stores/authStore';
+import { API_BASE_URL } from '@/api';
+import type { UserProfile } from '@/types/user'; // Corrected import path
+import { Loading } from '@/components/Loading';
+import { Box, Typography } from '@mui/material';
 
 const AuthCallback: React.FC = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const { error: authError } = useStore(authStore);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const token = params.get('accessToken');
-    if (token) {
-      const userData: UserProfile = {
-        id: params.get('userId') || undefined,
-        email: params.get('userEmail') || undefined,
-        name: params.get('userName')
-          ? decodeURIComponent(params.get('userName') as string)
-          : undefined,
-        image: params.get('userImage')
-          ? decodeURIComponent(params.get('userImage') as string)
-          : undefined,
-        role: (params.get('userRole') as UserProfile['role']) || 'USER',
-        username: params.get('username')
-          ? decodeURIComponent(params.get('username') as string)
-          : undefined,
-        provider:
-          (params.get('provider') as UserProfile['provider']) || undefined,
-      };
+    const handleAuthCallback = async () => {
+      const params = new URLSearchParams(location.search);
+      const token = params.get('token');
+      const userJson = params.get('user');
 
-      try {
-        loginSuccess(userData, token);
-        navigate('/', { replace: true });
-      } catch (error) {
-        console.error('Failed to process auth callback:', error);
-        // Optionally redirect to login with an error message
-        //navigate('/login?error=auth_failed', { replace: true });
+      if (token && userJson) {
+        try {
+          const user: UserProfile = JSON.parse(decodeURIComponent(userJson));
+          loginSuccess(user, token);
+          navigate('/dashboard', { replace: true });
+        } catch (err) {
+          console.error('Failed to parse user data:', err);
+          setError('Authentication failed: Invalid user data.');
+          navigate('/login', { replace: true });
+        }
+      } else if (params.get('error')) {
+        const errorMessage = params.get('error_description') || 'Authentication failed.';
+        setError(errorMessage);
+        navigate('/login', { replace: true });
+      } else {
+        setError('Authentication callback missing token or user data.');
+        navigate('/login', { replace: true });
       }
-    } else {
-      console.error('AuthCallback: No access token found in URL.');
-      navigate('/login?error=no_token', { replace: true });
-    }
+    };
+
+    handleAuthCallback();
   }, [location, navigate]);
 
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-      <Loading />
-      <p className="ml-4 text-lg">Processing authentication...</p>
-    </div>
-  );
+  if (authError) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <Typography color="error">Error: {authError}</Typography>
+      </Box>
+    );
+  }
+
+  return <Loading message="Authenticating..." />;
 };
 
 export default AuthCallback;
