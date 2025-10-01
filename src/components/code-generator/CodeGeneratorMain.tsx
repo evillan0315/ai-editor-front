@@ -130,7 +130,7 @@ export const CodeGeneratorMain: React.FC<Props> = ({ data }) => {
                 </Box>
               </AccordionSummary>
               <AccordionDetails>
-                <GitInstructions instructions={data.gitInstructions} />
+                <GitInstructions instructions={data.gitInstructions || []} />
               </AccordionDetails>
             </Accordion>
           )}

@@ -17,7 +17,8 @@ import {
 import {
   extractCodeFromMarkdown
 } from '@/api/llm';
-import { GeminiRequest, GeminiResponse, RequestType } from '@/types/gemini';
+import { GeminiRequest, GeminiResponse } from '@/types/gemini';
+import { RequestType, ModelResponse } from '@/types/llm'; // Corrected import for RequestType and added ModelResponse
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { loadingStore } from '@/stores/loadingStore';
 import { showGlobalSnackbar } from '@/stores/snackbarStore';
@@ -66,7 +67,7 @@ const getDisplayTitleForResponse = (response: GeminiResponse): string => {
   // If no explicit title, try to parse from responseText as JSON
   if (response.responseText) {
     try {
-      const parsed = JSON.parse(extractCodeFromMarkdown(response.responseText));
+      const parsed: ModelResponse = JSON.parse(extractCodeFromMarkdown(response.responseText)); // Explicitly type as ModelResponse
       
       // Check if it's an object and has a 'title' property that is a string
       if (typeof parsed === 'object' && parsed !== null && 'title' in parsed && typeof parsed.title === 'string') {

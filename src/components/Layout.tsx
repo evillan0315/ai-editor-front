@@ -1,4 +1,3 @@
-// Source: src/components/Layout.tsx
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -17,7 +16,7 @@ import {
   leftSidebarWidth,
 } from '@/stores/uiStore';
 import Navbar from './Navbar';
-import { fileStore } from '@/stores/fileStore';
+import { openedFile } from '@/stores/fileStore'; // Corrected import
 import { $mediaStore } from '@/stores/mediaStore';
 import FileTree from '@/components/file-tree/FileTree';
 
@@ -44,9 +43,9 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ footer }) => {
   const { loading: authLoading, isLoggedIn } = useStore(authStore);
   const { loading: llmLoading, isBuilding } = useStore(llmStore);
-  const { loading: mediaLoading } = useStore($mediaStore);
+  const { isFetchingMedia: mediaLoading } = useStore($mediaStore); // Corrected property access
 
-  const { openedFile } = useStore(fileStore);
+  const $openedFile = useStore(openedFile); // Corrected Nanostore access
 
   // ✅ subscribe to global loading store
   const globalLoadingState = useStore(loadingStore);
@@ -181,9 +180,8 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
               className="flex-shrink-0 cursor-ew-resize z-10"
               sx={{
                 width: SIDEBAR_RESIZER_WIDTH,
-                backgroundColor: theme.palette.divider,
+                backgroundColor: theme.palette.divider, // Corrected from background.dark
                 transition: 'background-color 0.2s ease',
-                bgcolor: theme.palette.background.dark,
                 '&:hover': {
                   backgroundColor: theme.palette.primary.main,
                 },
@@ -198,7 +196,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
           className="flex-grow flex flex-col overflow-auto min-w-0 pb-[0px]"
           sx={{ backgroundColor: theme.palette.background.paper }}
         >
-          {openedFile ? <AiEditorNoTreePage /> : <Outlet />}
+          {$openedFile ? <AiEditorNoTreePage /> : <Outlet />}
         </Box>
 
         {/* Right sidebar */}
@@ -210,8 +208,7 @@ const Layout: React.FC<LayoutProps> = ({ footer }) => {
               className="flex-shrink-0 cursor-ew-resize z-10"
               sx={{
                 width: SIDEBAR_RESIZER_WIDTH,
-                backgroundColor: theme.palette.divider,
-                bgcolor: theme.palette.background.dark,
+                backgroundColor: theme.palette.divider, // Corrected from background.dark
                 transition: 'background-color 0.2s ease',
                 '&:hover': {
                   backgroundColor: theme.palette.primary.main,

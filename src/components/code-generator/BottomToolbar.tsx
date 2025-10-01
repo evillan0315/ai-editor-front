@@ -43,7 +43,7 @@ import PromptGeneratorSettings from '@/components/Drawer/PromptGeneratorSettings
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import { ImportJson } from './ImportJson';
-import { CodeGeneratorData } from './CodeGeneratorMain';
+import { ModelResponse } from '@/types/llm'; // Corrected import: CodeGeneratorData is ModelResponse
 import { RequestType } from '@/types/llm';
 import { GlobalAction } from '@/components/ui/GlobalActionButton'; // Corrected import path for GlobalAction
 
@@ -104,8 +104,8 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   const handleImport = useCallback(() => {
     try {
-      const parsedData: CodeGeneratorData = JSON.parse(importContentString);
-      setLastLlmResponse(parsedData as any); // Type assertion needed due to partial match with ModelResponse
+      const parsedData: ModelResponse = JSON.parse(importContentString); // Corrected type to ModelResponse
+      setLastLlmResponse(parsedData);
       showGlobalSnackbar('Data imported successfully!', 'success');
       setIsImportDialogOpen(false);
     } catch (err) {
