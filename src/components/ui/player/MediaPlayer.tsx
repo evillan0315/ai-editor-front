@@ -53,8 +53,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       }}
     >
       <MediaPlayerTrackInfo mediaType={mediaType} />
-      <MediaPlayerControls mediaElementRef={mediaElementRef} />
-      <MediaPlayerVolumeControl mediaRef={mediaElementRef} />
+      <MediaPlayerControls />
+      <MediaPlayerVolumeControl />
     </Box>
   );
 };
