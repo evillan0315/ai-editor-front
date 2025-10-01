@@ -9,7 +9,6 @@ import {
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { FileEntry } from '@/types/refactored/fileTree'; // Updated import path
-import type { IconifyIconPrefix } from '@iconify/types';
 import {
   toggleDirExpansion,
   setSelectedFile,
@@ -50,7 +49,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
       toggleDirExpansion(fileEntry.path);
     } else {
       setSelectedFile(fileEntry.path);
-    }
+    }D
   }, [fileEntry.type, fileEntry.path]);
 
   const handleContextMenu = useCallback(
@@ -104,12 +103,14 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
             <IconButton
               size="small"
               onClick={handleToggleIconClick}
-              sx={{
-                color: isSelected
-                  ? theme.palette.primary.contrastText
-                  : textColor,
-                p: 0,
-              }}
+              sx={
+                {
+                  color: isSelected
+                    ? theme.palette.primary.contrastText
+                    : textColor,
+                  p: 0,
+                }
+              }
             >
               {isCurrentlyLoadingChildren ? (
                 <CircularProgress size={16} color="inherit" /> // Show spinner if loading children
@@ -163,7 +164,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
           <Box sx={{ pl: 0 }}>
             {' '}
             {/* Children handle their own paddingLeft */}
-            {fileEntry.children.map((child) => (
+            {fileEntry.children?.map((child) => (  // Added optional chaining for 'children'
               <FileTreeItem
                 key={child.path}
                 fileEntry={child}
