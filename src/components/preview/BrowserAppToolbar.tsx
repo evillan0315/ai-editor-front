@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import { themeStore } from '@/stores/themeStore';
 import { useTheme } from '@mui/material';
-import { IconButton, TextField, Paper, Box } from '@mui/material';
+import { IconButton, TextField, Paper, Box, Tooltip } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import ZoomInIcon from '@mui/icons-material/ZoomIn'; // Not implemented yet but kept for future expansion
+import ZoomOutIcon from '@mui/icons-material/ZoomOut'; // Not implemented yet but kept for future expansion
 import MobileScreenShareIcon from '@mui/icons-material/MobileScreenShare';
 import TabletIcon from '@mui/icons-material/Tablet';
 import LaptopIcon from '@mui/icons-material/Laptop';
 import HomeIcon from '@mui/icons-material/Home';
+import { appPreviewStore } from '@/stores/appPreviewStore';
+
 interface BrowserAppToolbarProps {
   onRefresh?: () => void;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onUrlChange: (url: string) => void;
-  onScreenSizeChange: (size: string) => void;
+  onScreenSizeChange: (size: 'mobile' | 'tablet' | 'desktop') => void;
+  onResetToDefault: () => void;
 }
 
 const BrowserAppToolbar: React.FC<BrowserAppToolbarProps> = ({
@@ -24,15 +27,42 @@ const BrowserAppToolbar: React.FC<BrowserAppToolbarProps> = ({
   onZoomOut,
   onUrlChange,
   onScreenSizeChange,
+  onResetToDefault,
 }) => {
   const theme = useTheme();
-  const { mode } = useStore(themeStore);
-  const [url, setUrl] = useState<string>('');
+  const { currentUrl, screenSize } = useStore(appPreviewStore);
+  const [internalUrl, setInternalUrl] = useState(currentUrl);
 
-  const handleUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newUrl = event.target.value;
-    setUrl(newUrl);
-    onUrlChange(newUrl);
+  useEffect(() => {
+    setInternalUrl(currentUrl);
+  }, [currentUrl]);
+
+  const handleInternalUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setInternalUrl(event.target.value);
+  };
+
+  const handleUrlSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmedUrl = internalUrl.trim();
+    if (trimmedUrl && isValidUrl(trimmedUrl)) {
+      onUrlChange(trimmedUrl);
+    } else {
+      // Optionally, show an error message for invalid URL
+      console.error('Invalid URL:', trimmedUrl);
+    }
+  };
+
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const getScreenSizeButtonColor = (size: 'mobile' | 'tablet' | 'desktop') => {
+    return screenSize === size ? 'primary' : 'inherit';
   };
 
   return (
@@ -49,44 +79,53 @@ const BrowserAppToolbar: React.FC<BrowserAppToolbarProps> = ({
       }}
     >
       <Box className="flex items-center gap-2 w-full">
-        <IconButton aria-label="refresh" onClick={onRefresh}>
+        <Tooltip title="Reset URL to default"><IconButton aria-label="reset url" onClick={onResetToDefault}>
           <HomeIcon />
-        </IconButton>
-        <TextField
-          label="URL"
-          variant="outlined"
-          size="small"
-          value={url}
-          onChange={handleUrlChange}
-          className="flex-grow"
-        />
-        <IconButton aria-label="refresh" onClick={onRefresh}>
+        </IconButton></Tooltip>
+        <form onSubmit={handleUrlSubmit} className="flex-grow">
+          <TextField
+            label="URL"
+            variant="outlined"
+            size="small"
+            value={internalUrl}
+            onChange={handleInternalUrlChange}
+            onBlur={() => onUrlChange(internalUrl.trim())}
+            className="w-full"
+            error={!!internalUrl && !isValidUrl(internalUrl)}
+            helperText={!!internalUrl && !isValidUrl(internalUrl) ? 'Invalid URL format' : ''}
+          />
+        </form>
+        <Tooltip title="Refresh iframe"><IconButton aria-label="refresh" onClick={onRefresh}>
           <RefreshIcon />
-        </IconButton>
-        <IconButton aria-label="zoom in" onClick={onZoomIn}>
+        </IconButton></Tooltip>
+        {/* Zoom functionality not implemented yet */}
+        {/* <IconButton aria-label="zoom in" onClick={onZoomIn}>
           <ZoomInIcon />
         </IconButton>
         <IconButton aria-label="zoom out" onClick={onZoomOut}>
           <ZoomOutIcon />
-        </IconButton>
-        <IconButton
+        </IconButton> */}
+        <Tooltip title="Mobile view"><IconButton
           aria-label="mobile view"
           onClick={() => onScreenSizeChange('mobile')}
+          color={getScreenSizeButtonColor('mobile')}
         >
           <MobileScreenShareIcon />
-        </IconButton>
-        <IconButton
+        </IconButton></Tooltip>
+        <Tooltip title="Tablet view"><IconButton
           aria-label="tablet view"
           onClick={() => onScreenSizeChange('tablet')}
+          color={getScreenSizeButtonColor('tablet')}
         >
           <TabletIcon />
-        </IconButton>
-        <IconButton
+        </IconButton></Tooltip>
+        <Tooltip title="Desktop view"><IconButton
           aria-label="desktop view"
           onClick={() => onScreenSizeChange('desktop')}
+          color={getScreenSizeButtonColor('desktop')}
         >
           <LaptopIcon />
-        </IconButton>
+        </IconButton></Tooltip>
       </Box>
     </Paper>
   );
