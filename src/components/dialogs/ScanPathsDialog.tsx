@@ -83,7 +83,6 @@ const ScanPathsDialog: React.FC<ScanPathsDialogProps> = ({
 
   return (
     <Dialog
-      elevation={0}
       open={open}
       onClose={onClose}
       maxWidth="md"
@@ -93,6 +92,7 @@ const ScanPathsDialog: React.FC<ScanPathsDialogProps> = ({
           bgcolor: theme.palette.background.paper,
           color: theme.palette.text.primary,
           borderRadius: 5,
+          elevation: 0, // Apply elevation via PaperProps
         },
       }}
       aria-labelledby="scan-paths-dialog-title"
@@ -174,6 +174,7 @@ const ScanPathsDialog: React.FC<ScanPathsDialogProps> = ({
               <ListItem
                 key={option}
                 button
+                component="div" // Added component="div" to resolve the error
                 selected={selectedPaths.includes(option)}
                 onClick={() => addPath(option)}
               >

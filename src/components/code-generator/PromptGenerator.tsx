@@ -38,7 +38,8 @@ import {
   setLoading,
   setLlmError,
   setLlmResponse,
-  clearLlmStore
+  clearLlmStore,
+  autoApplyChanges // Import autoApplyChanges atom
 } from '@/stores/llmStore';
 import { authStore } from '@/stores/authStore';
 import {
@@ -59,6 +60,7 @@ import { CodeGeneratorData } from './CodeGeneratorMain';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import BottomToolbar from './BottomToolbar';
 import { debounce } from '@/utils/debounce';
+import { fileStore } from '@/stores/fileStore'; // Import fileStore
 
 interface PromptGeneratorProps {}
 
@@ -70,8 +72,10 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const { isLoggedIn } = useStore(authStore);
   const { flatFileList } = useStore(fileTreeStore);
 
-  const { uploadedFileData, uploadedFileMimeType } = useStore(llmStore);
-  const { 
+  const { uploadedFileData, uploadedFileMimeType } = useStore(fileStore); // Get from fileStore
+  const $autoApplyChanges = useStore(autoApplyChanges); // Get from autoApplyChanges atom
+
+  const {
     instruction, // This comes from the global store
     aiInstruction,
     expectedOutputInstruction,
@@ -244,7 +248,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         setLastLlmResponse(aiResponse);
         // Auto-apply changes if enabled
         if (
-          llmStore.get().autoApplyChanges &&
+          $autoApplyChanges && // Use the new atom for autoApplyChanges
           aiResponse.changes?.length
         ) {
           try {
@@ -288,6 +292,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
     requestType,
     uploadedFileData,
     uploadedFileMimeType,
+    $autoApplyChanges, // Add $autoApplyChanges to dependencies
   ]);
 
   const handleSave = useCallback(() => {
