@@ -1,6 +1,6 @@
 import React from 'react';
 import CodeMirror, { BasicSetupOptions } from '@uiw/react-codemirror';
-import { createTheme } from '@uiw/codemirror-theme-one-dark'; // Use one-dark as a fallback
+// import { createTheme } from '@uiw/codemirror-theme-one-dark'; // Removed incorrect import
 import { tags as t } from '@lezer/highlight';
 import { useStore } from '@nanostores/react';
 import { themeStore } from '@/stores/themeStore';
@@ -15,7 +15,7 @@ import { defaultKeymap } from '@codemirror/commands';
 interface CodeMirrorEditorProps {
   value: string;
   onChange?: (value: string) => void;
-  filePath: string;
+  filePath: string; // This prop remains string as it expects a valid path for language detection
   height?: string;
   width?: string;
   minHeight?: string;

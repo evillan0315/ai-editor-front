@@ -45,7 +45,7 @@ interface MarkdownEditorProps {
   disabled?: boolean;
   expectedSchema?: string;
   exampleOutput?: string;
-  filePath?: string;
+  filePath?: string; // Made optional as per requirement
 }
 
 const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
@@ -190,7 +190,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <CodeMirrorEditor
             value={internalValue}
             height="100%"
-            filePath={filePath}
+            filePath={filePath || 'untitled.md'} // Provide fallback for filePath
             editable={!disabled}
             onChange={(val) => setValue(val)}
             style={{ flex: 1 }}
@@ -214,7 +214,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 <CodeMirrorEditor
                   value={expectedSchema}
                   height="200px"
-                  filePath={`schema.json`}
+                  filePath={`schema.json`} // Fixed filename for schema
                   editable={false}
                 />
               </>
@@ -225,7 +225,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 <CodeMirrorEditor
                   value={exampleOutput}
                   height="200px"
-                  filePath={`example-schema.json`}
+                  filePath={`example-output.json`} // Fixed filename for example output
                   editable={false}
                 />
               </>
