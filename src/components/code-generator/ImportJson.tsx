@@ -124,7 +124,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
       try {
         const result = await getPaginatedGeminiRequests({
           requestType: 'LLM_GENERATION',
-          limit: 100, // Fetch a reasonable number of recent requests
+          pageSize: 100, // Changed 'limit' to 'pageSize'
         });
         setGeminiRequests(result.items);
       } catch (error) {
@@ -145,7 +145,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
         try {
           const result = await getPaginatedGeminiResponses({
             requestId: selectedRequestId,
-            limit: 100,
+            pageSize: 100, // Changed 'limit' to 'pageSize'
           });
           
           setGeminiResponses(result.items);
@@ -223,7 +223,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
           getOptionLabel={(option) => truncate(option.prompt, 50)}
           isOptionEqualToValue={(option, value) => option.id === value.id}
           value={geminiRequests.find(req => req.id === selectedRequestId) || null}
-          key={(option, value) => option.id === value.id}
+          // Removed the incorrect `key` prop here
           onChange={handleRequestChange}
           disabled={isLoading.isLoading}
           renderInput={(params) => (
