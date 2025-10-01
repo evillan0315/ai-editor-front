@@ -1,13 +1,14 @@
 import React from 'react';
 import { Box, Button, useTheme } from '@mui/material';
-import { ButtonColor, ButtonVariant } from '@mui/material/Button';
+import { ButtonProps } from '@mui/material/Button';
 
 export interface GlobalAction {
   label: string;
   action: () => void;
   icon?: React.ElementType;
-  color?: ButtonColor;
-  variant?: ButtonVariant;
+  color?: ButtonProps['color'];
+  variant?: ButtonProps['variant'];
+  disabled?: boolean; // Added disabled property
 }
 
 interface GlobalActionButtonProps {
@@ -32,6 +33,7 @@ function GlobalActionButton({ globalActions }: GlobalActionButtonProps) {
             color={action.color || 'primary'}
             variant={action.variant || 'contained'}
             startIcon={action.icon ? <action.icon /> : null}
+            disabled={action.disabled} // Pass disabled prop to the Button
           >
             {action.label}
           </Button>

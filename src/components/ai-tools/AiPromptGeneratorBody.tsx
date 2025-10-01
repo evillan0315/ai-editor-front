@@ -39,7 +39,7 @@ const AiPromptGeneratorBody: React.FC<AiPromptGeneratorBodyProps> = () => {
               }}
             >
               <strong>{message.role === 'user' ? 'You:' : 'AI:'}</strong>
-              {message.role === 'model' && (
+              {message.role === 'ai' && ( // Changed 'model' to 'ai'
                 <ReactMarkdownWithCodeCopy>
                   {message.text}
                 </ReactMarkdownWithCodeCopy>

@@ -7,7 +7,6 @@ import {
   setLoading,
   setError,
 } from '@/stores/aiChatStore';
-import { ErrorMessage, SuccessMessage } from '@/types/ai';
 import {
   Accordion,
   AccordionDetails,
@@ -30,9 +29,10 @@ import BottomToolbar from '@/components/code-generator/BottomToolbar';
 // import useHandleMessages from '@/hooks/useHandleMessages';
 import { generateText } from '@/api/ai';
 import { GenerateTextDto } from '@/types/ai';
+import { RequestType } from '@/types'; // Import RequestType
 
 const INSTRUCTION = `
-You are an AI assistant integrated into a web application that uses a ChatGPT-style interface.
+Youare an AI assistant integrated into a web application that uses a ChatGPT-style interface.
 Your role is to transform a user\’s plain-text input into a clear and concise “system prompt” that can be used by other AI models.
 
 Behavioural requirements:
@@ -85,7 +85,7 @@ const AIPromptGenerator: React.FC = () => {
           systemInstruction,
         };
         const response = await generateText(data);
-        addMessage({ role: 'model', text: response });
+        addMessage({ role: 'ai', text: response });
         // await sendMessage(instruction.trim());
         setInstruction('');
       } catch (error: any) {
@@ -187,7 +187,7 @@ const AIPromptGenerator: React.FC = () => {
         setIsScanPathsDialogOpen={setIsScanPathsDialogOpen}
         updateScanPaths={updateScanPaths}
         handleClear={handleClear}
-        requestType={`TEXT_ONLY`}
+        requestType={RequestType.TEXT_ONLY}
       />
     </Box>
   );

@@ -118,14 +118,16 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       label: 'Cancel',
       action: () => setIsSettingsOpen(false),
       icon: CloseIcon,
+      disabled: false // Added disabled prop
     },
-    { label: 'Save', action: handleSave, icon: SaveIcon },
+    { label: 'Save', action: handleSave, icon: SaveIcon, disabled: false }, // Added disabled prop
   ];
   const ImportDataAction: GlobalAction[] = [
     {
       label: 'Cancel',
       action: () => setIsImportDialogOpen(false),
       icon: CloseIcon,
+      disabled: false // Added disabled prop
     },
     {
       label: 'Import',
