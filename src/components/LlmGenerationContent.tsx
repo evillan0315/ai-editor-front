@@ -86,7 +86,7 @@ const LlmGenerationContent: React.FC = () => {
             boxShadow: 1,
           }}
         >
-          <PromptGenerator requestType={'LLM_GENERATION'} />
+          <PromptGenerator />
         </Paper>
       </Box>
     </Box>

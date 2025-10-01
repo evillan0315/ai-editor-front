@@ -1,7 +1,7 @@
 import React from 'react';
 import { AppDefinition } from '@/types';
 import { appDefinitions } from '@/constants/appDefinitions';
-import { AppsIcon } from '@mui/icons-material';
+
 import {
   Card,
   CardContent,
@@ -27,20 +27,11 @@ import { ThoughtProcess } from './ThoughtProcess';
 import { ChangesList } from './ChangesList';
 import { GitInstructions } from './GitInstructions';
 import { DocumentationViewer } from './DocumentationViewer';
-import { FileChange } from '@/types/llm';
-
-export interface CodeGeneratorData {
-  title: string;
-  summary: string;
-  thoughtProcess: string;
-  documentation: string;
-  gitInstructions: string[]; // ← change from string to string[]
-  changes: FileChange[];
-}
+import { FileChange, ModelResponse } from '@/types/llm'; // Import ModelResponse from types/llm.ts
 
 interface Props {
   /** Data payload for the entire code-generator page */
-  data: CodeGeneratorData | null;
+  data: ModelResponse | null; // Changed type to ModelResponse | null
 }
 
 const AIToolsView: React.FC = () => {
@@ -115,7 +106,7 @@ export const CodeGeneratorMain: React.FC<Props> = ({ data }) => {
               </Box>
             </AccordionSummary>
             <AccordionDetails>
-              <ThoughtProcess text={data.thoughtProcess} />
+              <ThoughtProcess text={data.thoughtProcess || ''} />
             </AccordionDetails>
           </Accordion>
 

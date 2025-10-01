@@ -56,13 +56,12 @@ import {
 import { generateCode, applyProposedChanges } from '@/api/llm';
 import PromptGeneratorSettings from '@/components/Drawer/PromptGeneratorSettings';
 import { LlmOutputFormat, LlmGeneratePayload, ModelResponse } from '@/types';
-import { CodeGeneratorData } from './CodeGeneratorMain';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import BottomToolbar from './BottomToolbar';
 import { debounce } from '@/utils/debounce';
 import { fileStore, clearUploadedFiles } from '@/stores/fileStore'; // Import fileStore and clearUploadedFiles
 
-interface PromptGeneratorProps {}
+interface PromptGeneratorProps { /* No props needed as requestType is read from llmStore */ }
 
 const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const theme = useTheme();

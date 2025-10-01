@@ -193,7 +193,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             filePath={filePath || 'untitled.md'} // Provide fallback for filePath
             editable={!disabled}
             onChange={(val) => setValue(val)}
-            style={{ flex: 1 }}
           />
         )}
         {tab === 1 && (
