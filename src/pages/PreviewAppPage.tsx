@@ -5,15 +5,14 @@ import AppPreviewContent from '@/components/preview/AppPreviewContent';
 import { useStore } from '@nanostores/react';
 import { appPreviewStore } from '@/stores/appPreviewStore';
 
-interface PreviewAppPageProps {
-  proxyServer?: boolean;
-}
+// No longer needed as proxy setting is managed by appPreviewStore
+// interface PreviewAppPageProps {
+//   proxyServer?: boolean;
+// }
 
-const PreviewAppPage: React.FC<PreviewAppPageProps> = ({
-  proxyServer = false,
-}) => {
+const PreviewAppPage: React.FC = () => { // Removed props
   const { currentUrl, screenSize } = useStore(appPreviewStore);
-  const iframeRef = useRef<HTMLIFrameElement>(null); // Still need a ref for refresh action
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Initialize currentUrl in the store if it's empty, using the environment variable
   useEffect(() => {
@@ -36,6 +35,12 @@ const PreviewAppPage: React.FC<PreviewAppPageProps> = ({
     }
   };
 
+  const handleGoBack = () => { // New handler for back navigation
+    if (iframeRef.current) {
+      iframeRef.current.contentWindow?.history.back();
+    }
+  };
+
   const handleResetToDefault = () => {
     appPreviewStore.setKey('currentUrl', import.meta.env.VITE_PREVIEW_APP_URL || '');
   };
@@ -50,6 +55,7 @@ const PreviewAppPage: React.FC<PreviewAppPageProps> = ({
           onUrlChange={handleUrlChange}
           onScreenSizeChange={handleScreenSizeChange}
           onRefresh={handleRefresh}
+          onGoBack={handleGoBack} // Pass new handler
           onResetToDefault={handleResetToDefault}
         />
       </Box>
@@ -57,7 +63,8 @@ const PreviewAppPage: React.FC<PreviewAppPageProps> = ({
       <AppPreviewContent
         currentUrl={currentUrl}
         screenSize={screenSize}
-        proxyServer={proxyServer}
+        iframeRef={iframeRef} // Pass ref to AppPreviewContent
+        // proxyServer prop removed, now handled by store directly in AppPreviewContent
       />
     </Container>
   );
