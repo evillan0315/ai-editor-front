@@ -17,7 +17,7 @@ import {
 import {
   extractCodeFromMarkdown
 } from '@/api/llm';
-import { GeminiRequest, GeminiResponse } from '@/types/gemini';
+import { GeminiRequest, GeminiResponse, RequestType } from '@/types/gemini';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { loadingStore } from '@/stores/loadingStore';
 import { showGlobalSnackbar } from '@/stores/snackbarStore';
@@ -123,7 +123,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
       //loadingStore.setLoading(true);
       try {
         const result = await getPaginatedGeminiRequests({
-          requestType: 'LLM_GENERATION',
+          requestType: RequestType.LLM_GENERATION, // Fixed: Use enum member
           pageSize: 100, // Changed 'limit' to 'pageSize'
         });
         setGeminiRequests(result.items);

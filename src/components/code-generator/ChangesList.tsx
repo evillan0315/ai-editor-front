@@ -24,7 +24,7 @@ import {
   performPostApplyActions,
 } from '@/stores/llmStore';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
-import { FileChange } from '@/types/llm';
+import { FileChange, ModelResponse, RequestType, LlmOutputFormat } from '@/types/llm';
 
 interface Props {
   changes: FileChange[];
@@ -77,6 +77,14 @@ interface ApplyResult {
   messages: string[];
 }
 
+// Define a minimal default ModelResponse for scenarios where lastLlmResponse might be null
+const defaultEmptyModelResponse: ModelResponse = {
+  summary: 'No summary available.',
+  changes: [],
+  requestType: RequestType.LLM_GENERATION, // Default request type
+  outputFormat: LlmOutputFormat.JSON, // Default output format
+};
+
 export const ChangesList: React.FC<Props> = ({ changes }) => {
   const {
     lastLlmResponse,
@@ -123,8 +131,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
     setError(null);
     addLog(
       'AI Response Display',
-      'Starting application process for selected changes...',
-      'info',
+      'Starting application process for selected changes...', 'info',
     );
 
     try {
@@ -135,7 +142,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
         currentProjectPath,
         changesToApply,
         lastLlmGeneratePayload,
-        lastLlmResponse || {},
+        lastLlmResponse || defaultEmptyModelResponse, // Use default if lastLlmResponse is null
       )) as ApplyResult; // Cast the result to ApplyResult
 
       // ApplyResult could have messages & success status
@@ -169,7 +176,7 @@ export const ChangesList: React.FC<Props> = ({ changes }) => {
             currentProjectPath,
             changesToApply,
             lastLlmGeneratePayload,
-            lastLlmResponse || {},
+            lastLlmResponse || defaultEmptyModelResponse, // Use default if lastLlmResponse is null
           );
         }
       } else {

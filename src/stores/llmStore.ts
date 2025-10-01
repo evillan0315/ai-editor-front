@@ -132,8 +132,8 @@ export const setLastLlmResponse = (response: ModelResponse | null) => {
       typeof response.error === 'string'
         ? response.error
         : (response.error && typeof response.error === 'object' && 'message' in response.error
-            ? response.error.message
-            : null),
+            ? response.error.message // Extract message from error object
+            : null), // If error object without message or other type, set to null
     changes: Array.isArray(response.changes) ? response.changes : [],
     gitInstructions: Array.isArray(response.gitInstructions)
       ? response.gitInstructions
