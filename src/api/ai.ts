@@ -15,7 +15,6 @@ export const generateText = async (data: GenerateTextDto): Promise<string> => {
   );
   return handleResponse<string>(response);
 };
-
 export const generateTextWithBase64Image = async (
   data: GenerateImageBase64Dto,
 ): Promise<string> => {

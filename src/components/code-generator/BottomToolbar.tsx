@@ -25,7 +25,8 @@ import {
   setIsBuilding,
   llmStore,
   setLlmResponse,
-  clearLlmStore
+  clearLlmStore,
+  autoApplyChanges, setAutoApplyChanges, showGlobalSnackbar
 } from '@/stores/llmStore';
 import {
   loadInitialTree,
@@ -34,18 +35,18 @@ import {
 } from '@/stores/fileTreeStore';
 import { addLog } from '@/stores/logStore';
 import { errorStore, setErrorRaw } from '@/stores/errorStore';
-import { autoApplyChanges, setAutoApplyChanges } from '@/stores/llmStore';
-import { showGlobalSnackbar } from '@/stores/snackbarStore';
+
 import { useStore } from '@nanostores/react';
 import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
 import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
-import PromptGeneratorSettings from '@/components/Drawer/PromptGeneratorSettings';
+import PromptGeneratorSettings, {
+  type GlobalAction,
+} from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import { ImportJson } from './ImportJson';
-import { ModelResponse } from '@/types/llm';
+import { CodeGeneratorData } from './CodeGeneratorMain';
 import { RequestType } from '@/types/llm';
-import { GlobalAction } from '@/components/ui/GlobalActionButton';
 
 interface BottomToolbarProps {
   scanPathAutocompleteOptions: string[];
@@ -65,8 +66,7 @@ interface BottomToolbarProps {
 
   updateScanPaths: (paths: string[]) => void;
   requestType: RequestType;
-  handleSave: () => void;
-  handleClear: () => void;
+  handleSave: () => void; // Add handleSave prop
   commonDisabled?: boolean;
 }
 
@@ -88,8 +88,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   updateScanPaths,
   requestType,
-  handleSave,
-  handleClear,
+  handleSave, // Receive handleSave
   commonDisabled
 }) => {
   const theme = useTheme();
@@ -104,8 +103,8 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   const handleImport = useCallback(() => {
     try {
-      const parsedData: ModelResponse = JSON.parse(importContentString);
-      setLastLlmResponse(parsedData);
+      const parsedData: CodeGeneratorData = JSON.parse(importContentString);
+      setLastLlmResponse(parsedData as any); // Type assertion needed due to partial match with ModelResponse
       showGlobalSnackbar('Data imported successfully!', 'success');
       setIsImportDialogOpen(false);
     } catch (err) {
@@ -120,22 +119,20 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       label: 'Cancel',
       action: () => setIsSettingsOpen(false),
       icon: CloseIcon,
-      disabled: false
     },
-    { label: 'Save', action: handleSave, icon: SaveIcon, disabled: false },
+    { label: 'Save', action: handleSave, icon: SaveIcon },
   ];
   const ImportDataAction: GlobalAction[] = [
     {
       label: 'Cancel',
       action: () => setIsImportDialogOpen(false),
       icon: CloseIcon,
-      disabled: false
     },
     {
       label: 'Import',
       action: handleImport,
       icon: CloudUploadIcon,
-      disabled: !importContentString,
+      disabled: !importContentString, // Disable if no content to import
     },
   ]; 
   
@@ -201,7 +198,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           </IconButton>
         </Tooltip>
           <Tooltip title="Clear editor and AI response">
-            <IconButton color="error" onClick={handleClear} disabled={commonDisabled}>
+            <IconButton color="error" onClick={clearLlmStore} disabled={commonDisabled}>
               <ClearIcon />
             </IconButton>
           </Tooltip>

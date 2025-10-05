@@ -74,7 +74,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
   const languageExtensions = getCodeMirrorLanguage(filePath, isDiffView);
 
-  const cmTheme = createCodeMirrorTheme(muiTheme, isDiffView);
+  const cmTheme = createCodeMirrorTheme(muiTheme);
 
   const combinedExtensions = [
     ...languageExtensions,

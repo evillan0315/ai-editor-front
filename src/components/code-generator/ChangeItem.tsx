@@ -5,7 +5,6 @@ import {
   setCurrentDiff,
   updateProposedChangeContent,
   updateProposedChangePath,
-  toggleChangeSelection,
 } from '@/stores/llmStore';
 import { addLog } from '@/stores/logStore';
 import { setError } from '@/stores/errorStore';
@@ -34,7 +33,7 @@ import {
 } from '@mui/material';
 import { type SvgIconProps } from '@mui/material/SvgIcon';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import EditIcon from '@mui/icons-material/Edit';
+import EditIcon from '@mui/icons-material/Edit'; // Explicitly import EditIcon for editing
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -51,7 +50,8 @@ import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
 interface ChangeItemProps {
   index: number;
   change: FileChange;
-  // `selected` and `onToggle` props are now removed as selection state is managed globally
+  selected: boolean;
+  onToggle: () => void;
 }
 
 const ACTION_COLOR: Record<
@@ -76,11 +76,13 @@ const ACTION_ICON: Record<
   delete: DeleteOutlineIcon,
 };
 
-export const ChangeItem: React.FC<ChangeItemProps> = React.memo(({
+export const ChangeItem: React.FC<ChangeItemProps> = ({
   change,
+  selected,
+  onToggle,
 }) => {
   const muiTheme = useTheme();
-  const ActionIconComponent = ACTION_ICON[change.action];
+  const ActionIconComponent = ACTION_ICON[change.action]; // Renamed to avoid conflict
 
   const [isEditingFilePath, setIsEditingFilePath] = useState(false);
   const [editedFilePath, setEditedFilePath] = useState(change.filePath);
@@ -89,11 +91,8 @@ export const ChangeItem: React.FC<ChangeItemProps> = React.memo(({
   );
   const [isCodeExpanded, setIsCodeExpanded] = useState(false);
 
-  const { loading, currentDiff, diffFilePath, applyingChanges, selectedChanges } = useStore(llmStore);
+  const { loading, currentDiff, diffFilePath, applyingChanges } = useStore(llmStore);
   const currentProjectPath = useStore(projectRootDirectoryStore);
-
-  // Determine selection status directly from the global llmStore
-  const isSelected = !!selectedChanges[change.filePath];
 
   // Update editedFilePath if the actual change.filePath from store changes
   useEffect(() => {
@@ -121,7 +120,7 @@ export const ChangeItem: React.FC<ChangeItemProps> = React.memo(({
     try {
       const relPath = getRelativePath(change.filePath, currentProjectPath);
       const diffContent = await (change.action === 'add'
-        ? createAddDiff(change.newContent || '', relPath)
+        ? createAddDiff(change.newContent || '', relPath) // Added fallback for newContent
         : getGitDiff(relPath, currentProjectPath));
 
       setCurrentDiff(change.filePath, diffContent);
@@ -167,14 +166,10 @@ export const ChangeItem: React.FC<ChangeItemProps> = React.memo(({
     [change.filePath],
   );
 
-  const handleToggleCheckbox = useCallback(() => {
-    toggleChangeSelection(change);
-  }, [change]);
-
   return (
     <ListItem alignItems="flex-start" sx={{ flexDirection: 'column', mb: 2 }}>
       <Box display="flex" alignItems="center" width="100%" gap={1}>
-        <Checkbox checked={isSelected} onChange={handleToggleCheckbox} />
+        <Checkbox checked={selected} onChange={onToggle} />
 
         {isEditingFilePath ? (
           <TextField
@@ -247,7 +242,7 @@ export const ChangeItem: React.FC<ChangeItemProps> = React.memo(({
           <IconButton
             size="small"
             onClick={(e) => {
-              e.stopPropagation();
+              e.stopPropagation(); // Prevent accordion collapse
               setIsEditingFilePath(true);
               addLog(
                 'ChangeItem',
@@ -256,7 +251,7 @@ export const ChangeItem: React.FC<ChangeItemProps> = React.memo(({
               );
             }}
             disabled={commonDisabled}
-            sx={{ color: muiTheme.palette.text.secondary }}
+            sx={{ color: muiTheme.palette.text.secondary }} // This icon is for editing the path
           >
             <EditIcon color="action" /> 
           </IconButton>
@@ -314,4 +309,4 @@ export const ChangeItem: React.FC<ChangeItemProps> = React.memo(({
       />
     </ListItem>
   );
-});
+};
