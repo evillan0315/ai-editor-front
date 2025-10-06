@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { EditorView } from '@codemirror/view';
+import { EditorView, keymap } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
-import { getCodeMirrorLanguage, createCodeMirrorTheme, getFileExtension } from '@/utils/index';
+import { getCodeMirrorLanguage, createCodeMirrorTheme, getLanguageNameFromPath } from '@/utils/index';
 import { Box, useTheme } from '@mui/material';
 import { themeStore } from '@/stores/themeStore';
 import { LanguageSupport } from '@codemirror/language';
 import CodeMirrorStatus from './CodeMirrorStatus';
-import { Extension } from '@codemirror/state'; // Import Extension type
 
 interface CodeMirrorEditorProps {
   value: string;
@@ -20,7 +19,7 @@ interface CodeMirrorEditorProps {
   height?: string;
   width?: string;
   onEditorViewChange?: (view: EditorView) => void;
-  additionalExtensions?: Extension[]; // New prop for additional CodeMirror extensions
+  onSave?: () => void; // New prop for save functionality
 }
 
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
@@ -33,17 +32,29 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   height,
   width,
   onEditorViewChange,
-  additionalExtensions,
+  onSave, // Destructure new prop
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
   const [editorViewInstance, setEditorViewInstance] = useState<EditorView | null>(null);
-
-  // State for CodeMirrorStatus
   const [currentLine, setCurrentLine] = useState(1);
   const [currentColumn, setCurrentColumn] = useState(1);
   const [currentLanguageName, setCurrentLanguageName] = useState('Plain Text');
-  const lintStatus = 'No issues'; // Placeholder for actual linting status
+  const [currentLintStatus, setCurrentLintStatus] = useState('No issues');
+
+  // Effect to update language name when filePath or explicit language prop changes
+  React.useEffect(() => {
+    const newLanguageName = filePath
+      ? getLanguageNameFromPath(filePath)
+      : language === 'typescript'
+        ? 'TypeScript'
+        : language === 'json'
+          ? 'Json'
+        : language === 'javascript'
+          ? 'JavaScript'
+          : 'Plain Text'; // Fallback for explicit language prop or no path
+    setCurrentLanguageName(newLanguageName);
+  }, [language, filePath]);
 
   const handleChange = React.useCallback(
     (val: string) => {
@@ -53,47 +64,30 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   );
 
   const handleUpdate = React.useCallback(
-    (viewUpdate: { view: EditorView }) => {
-      const { view } = viewUpdate;
+    (viewUpdate: { view: EditorView; changes: any; transactions: any }) => {
+      const view = viewUpdate.view;
 
-      // Pass the EditorView to the parent component via callback on every update
       if (onEditorViewChange && view) {
         onEditorViewChange(view);
       }
-      // Also store it locally for CodeMirrorStatus if it's a new view instance
+
+      // Only update editorViewInstance if it's a new instance to prevent unnecessary re-renders
       if (view && view !== editorViewInstance) {
         setEditorViewInstance(view);
       }
 
-      // Update line and column for status bar
+      // Update line and column based on current selection
       if (view) {
-        const selection = view.state.selection.main;
-        const line = view.state.doc.lineAt(selection.head);
-        setCurrentLine(line.number);
-        setCurrentColumn(selection.head - line.from + 1);
-
-        // Update language name for status bar
-        // Prioritize language detected by CodeMirror extensions
-        const languageData = view.state.languageDataAt(selection.head);
-        const detectedLangName = languageData.find((data: any) => data.name)?.name;
-
-        if (detectedLangName) {
-          setCurrentLanguageName(
-            detectedLangName.charAt(0).toUpperCase() + detectedLangName.slice(1),
-          );
-        } else if (language) {
-          // Fallback to explicit language prop
-          setCurrentLanguageName(language.charAt(0).toUpperCase() + language.slice(1));
-        } else if (filePath) {
-          // Fallback to file extension
-          const ext = getFileExtension(filePath);
-          setCurrentLanguageName(ext ? ext.toUpperCase() : 'Plain Text');
-        } else {
-          setCurrentLanguageName('Plain Text');
-        }
+        const head = view.state.selection.main.head;
+        const lineObj = view.state.doc.lineAt(head);
+        setCurrentLine(lineObj.number);
+        setCurrentColumn(head - lineObj.from + 1);
       }
+
+      // Placeholder for lint status update. Real linting would involve CodeMirror lint extensions.
+      setCurrentLintStatus('No issues');
     },
-    [onEditorViewChange, editorViewInstance, language, filePath],
+    [onEditorViewChange, editorViewInstance], // `editorViewInstance` added to dependencies to correctly detect changes in view instance.
   );
 
   const extensions = React.useMemo(() => {
@@ -111,28 +105,45 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       // Fallback to utility function if no explicit language and filePath is available
       langExtensions.push(...getCodeMirrorLanguage(filePath, false));
     }
+    // If no specific language is determined by 'language' prop or 'filePath',
+    // CodeMirror will treat it as plain text.
 
-    return [
+    const baseExtensions = [
       ...langExtensions,
       createCodeMirrorTheme(muiTheme),
       EditorView.lineWrapping,
-      ...(additionalExtensions || []), // Include additional extensions passed via props
     ];
-  }, [language, filePath, muiTheme, additionalExtensions]); // Add additionalExtensions to dependencies
+
+    if (onSave) {
+      baseExtensions.push(
+        keymap.of([
+          {
+            key: 'Mod-s',
+            run: () => {
+              onSave();
+              return true;
+            },
+          },
+        ]),
+      );
+    }
+
+    return baseExtensions;
+  }, [language, filePath, muiTheme, onSave]); // Added onSave to dependencies
 
   return (
     <Box
-      className={`flex flex-col relative ${classNames || ''}`} // Added relative positioning
+      className={`flex flex-col ${classNames || ''}`}
       sx={{
         height: height || '100%',
         width: width || '100%',
       }}
     >
-      <Box className="flex-grow pb-8"> {/* Added padding-bottom to account for fixed status bar */}
+      <Box className="flex-grow"> {/* This Box wraps CodeMirror and takes available space */}
         <CodeMirror
           value={value}
-          height="100%"
-          width="100%"
+          //height="100%" // CodeMirror itself fills its parent flex-grow Box
+          width="100%" // CodeMirror itself fills its parent flex-grow Box
           theme={mode}
           extensions={extensions}
           onChange={handleChange}
@@ -140,12 +151,12 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           editable={!isDisabled}
         />
       </Box>
+      {/* CodeMirrorStatus component at the bottom, automatically sticky due to flex-col and flex-grow on editor */}
       <CodeMirrorStatus
         languageName={currentLanguageName}
         line={currentLine}
         column={currentColumn}
-        lintStatus={lintStatus}
-        filePath={filePath}
+        lintStatus={currentLintStatus}
       />
     </Box>
   );
