@@ -2,12 +2,14 @@ import React from 'react';
 import { Box, Typography, useTheme } from '@mui/material';
 import { useStore } from '@nanostores/react';
 import { themeStore } from '@/stores/themeStore';
+import path from 'path-browserify';
 
 interface CodeMirrorStatusProps {
   languageName: string;
   line: number;
   column: number;
   lintStatus: string;
+  filePath?: string; // Add filePath prop
 }
 
 const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
@@ -15,9 +17,13 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
   line,
   column,
   lintStatus,
+  filePath,
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
+
+  // Extract filename if filePath is provided
+  const filename = filePath ? path.basename(filePath) : 'No file open';
 
   const sxStatusText = {
     color: muiTheme.palette.text.secondary,
@@ -39,6 +45,9 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
         borderTop: `1px solid ${muiTheme.palette.divider}`,
       }}
     >
+      <Typography sx={sxStatusText}>
+        File: {filename}
+      </Typography>
       <Typography sx={sxStatusText}>
         Language: {languageName}
       </Typography>

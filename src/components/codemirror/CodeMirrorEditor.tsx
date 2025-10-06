@@ -145,7 +145,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         line={currentLine}
         column={currentColumn}
         lintStatus={lintStatus}
-        filePath={filePath}
+        filePath={filePath} // Pass filePath to CodeMirrorStatus
       />
     </Box>
   );
