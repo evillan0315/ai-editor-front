@@ -33,7 +33,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   height,
   width,
   onEditorViewChange,
-  additionalExtensions, // Destructure new prop
+  additionalExtensions,
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
@@ -122,13 +122,13 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
   return (
     <Box
-      className={`flex flex-col ${classNames || ''}`}
+      className={`flex flex-col relative ${classNames || ''}`} // Added relative positioning
       sx={{
         height: height || '100%',
         width: width || '100%',
       }}
     >
-      <Box className="flex-grow"> {/* This Box wraps CodeMirror and takes available space */}
+      <Box className="flex-grow pb-8"> {/* Added padding-bottom to account for fixed status bar */}
         <CodeMirror
           value={value}
           height="100%"
