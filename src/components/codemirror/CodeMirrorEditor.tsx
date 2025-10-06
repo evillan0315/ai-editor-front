@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
-import { EditorView } from '@codemirror/view';
+import { EditorView, Line } from '@codemirror/view'; // Import Line type
 import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
 import { getCodeMirrorLanguage, createCodeMirrorTheme, getFileExtension } from '@/utils/index';
@@ -64,14 +64,28 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     const tree = syntaxTree(view.state);
 
     // Example: Find lines containing "TODO" and mark them as warnings
-    view.state.doc.iterLines((line: string, i: number) => {
-      const todoMatch = line.match(/TODO/i);
+    view.state.doc.iterLines((lineObj: Line, i: number) => { // 'lineObj' is a Line object, not a string
+      const lineText = lineObj.text; // Get the actual string content
+      const lineNumber = i + 1; // Line numbers are 1-based
+
+      const todoMatch = lineText.match(/TODO/i);
       if (todoMatch) {
         diagnostics.push({
-          from: view.state.doc.line(i + 1).from + (todoMatch.index || 0),
-          to: view.state.doc.line(i + 1).from + (todoMatch.index || 0) + todoMatch[0].length,
+          from: lineObj.from + (todoMatch.index || 0),
+          to: lineObj.from + (todoMatch.index || 0) + todoMatch[0].length,
           severity: 'warning',
           message: 'Todo item found',
+          source: 'custom-linter',
+        });
+      }
+
+      // Example: Basic check for empty lines (can be expanded)
+      if (lineText.trim() === '' && lineNumber > 1 && lineNumber < view.state.doc.lines) {
+        diagnostics.push({
+          from: lineObj.from,
+          to: lineObj.from + lineText.length,
+          severity: 'info',
+          message: 'Empty line',
           source: 'custom-linter',
         });
       }
