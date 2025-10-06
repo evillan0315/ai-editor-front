@@ -29,59 +29,75 @@ interface CodeMirrorEditorProps {
 // Function to generate diagnostics, extracted from basicLinter
 const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
   const diagnostics: Diagnostic[] = [];
-  const tree = syntaxTree(view.state);
+  try {
+    const tree = syntaxTree(view.state);
 
-  view.state.doc.iterLines((lineObj: Line) => {
-    // Defensive check for lineObj and its text property
-    if (!lineObj || typeof lineObj.text !== 'string') {
-      console.warn("generateBasicDiagnostics: Invalid line object encountered during iteration.", lineObj);
-      return; // Skip this line if invalid
-    }
-    const lineText = lineObj.text;
-    const lineNumber = lineObj.number; // Use lineObj.number directly for 1-based line number
+    view.state.doc.iterLines((lineObj: Line) => {
+      // Defensive check for lineObj and its text property
+      if (!lineObj || typeof lineObj.text !== 'string') {
+        console.warn("generateBasicDiagnostics: Invalid line object encountered during iteration.", lineObj);
+        return; // Skip this line if invalid
+      }
+      const lineText = lineObj.text;
+      const lineNumber = lineObj.number; // Use lineObj.number directly for 1-based line number
 
-    const todoMatch = lineText.match(/TODO/i);
-    if (todoMatch) {
-      diagnostics.push({
-        from: lineObj.from + (todoMatch.index || 0),
-        to: lineObj.from + (todoMatch.index || 0) + todoMatch[0].length,
-        severity: 'warning',
-        message: 'Todo item found',
-        source: 'custom-linter',
-      });
-    }
-
-    // Example: Basic check for empty lines (can be expanded)
-    // Avoid marking the very last empty line or first empty line unless specifically desired
-    // doc.lines gives total number of lines (1-based count)
-    if (
-      lineText.trim() === '' &&
-      lineNumber > 1 && // Not the first line if empty
-      lineNumber < view.state.doc.lines // Not the very last line if empty
-    ) {
-      diagnostics.push({
-        from: lineObj.from,
-        to: lineObj.from + lineText.length,
-        severity: 'info',
-        message: 'Empty line',
-        source: 'custom-linter',
-      });
-    }
-  });
-
-  tree.iterate({
-    enter: (node) => {
-      if (node.type.name === '⚠') {
+      const todoMatch = lineText.match(/TODO/i);
+      if (todoMatch) {
         diagnostics.push({
-          from: node.from,
-          to: node.to,
-          severity: 'error',
-          message: `Syntax Error: ${view.state.doc.sliceString(node.from, node.to)}`,
-          source: 'codemirror-syntax',
+          from: lineObj.from + (todoMatch.index || 0),
+          to: lineObj.from + (todoMatch.index || 0) + todoMatch[0].length,
+          severity: 'warning',
+          message: 'Todo item found',
+          source: 'custom-linter',
         });
       }
-    },
-  });
+
+      // Example: Basic check for empty lines (can be expanded)
+      // Avoid marking the very last empty line or first empty line unless specifically desired
+      // doc.lines gives total number of lines (1-based count)
+      if (
+        lineText.trim() === '' &&
+        lineNumber > 1 && // Not the first line if empty
+        lineNumber < view.state.doc.lines // Not the very last line if empty
+      ) {
+        diagnostics.push({
+          from: lineObj.from,
+          to: lineObj.from + lineText.length,
+          severity: 'info',
+          message: 'Empty line',
+          source: 'custom-linter',
+        });
+      }
+    });
+
+    tree.iterate({
+      enter: (node) => {
+        // Added defensive check for node validity
+        if (!node || !node.type || !node.type.name) {
+          console.warn("generateBasicDiagnostics: Invalid syntax tree node encountered.", node);
+          return;
+        }
+        if (node.type.name === '⚠') {
+          diagnostics.push({
+            from: node.from,
+            to: node.to,
+            severity: 'error',
+            message: `Syntax Error: ${view.state.doc.sliceString(node.from, node.to)}`,
+            source: 'codemirror-syntax',
+          });
+        }
+      },
+    });
+  } catch (e) {
+    console.error("Error within generateBasicDiagnostics linter function:", e);
+    diagnostics.push({
+      from: 0,
+      to: view.state.doc.length, // Report error over the entire document
+      severity: 'error',
+      message: `Linter internal error: ${e instanceof Error ? e.message : String(e)}`,
+      source: 'custom-linter-error',
+    });
+  }
 
   return diagnostics;
 };
