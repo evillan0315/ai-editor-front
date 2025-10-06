@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { EditorView, Line } from '@codemirror/view'; // Import Line type
 import { javascript } from '@codemirror/lang-javascript';
@@ -9,7 +9,7 @@ import { themeStore } from '@/stores/themeStore';
 import { LanguageSupport, syntaxTree } from '@codemirror/language';
 import CodeMirrorStatus from './CodeMirrorStatus';
 import { Extension, EditorState } from '@codemirror/state';
-import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
+import { linter, lintGutter, Diagnostic, getDiagnostics } from '@codemirror/lint';
 import { llmStore } from '@/stores/llmStore';
 import { fileStore } from '@/stores/fileStore';
 
@@ -25,6 +25,66 @@ interface CodeMirrorEditorProps {
   onEditorViewChange?: (view: EditorView) => void;
   additionalExtensions?: Extension[];
 }
+
+// Function to generate diagnostics, extracted from basicLinter
+const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
+  const diagnostics: Diagnostic[] = [];
+  const tree = syntaxTree(view.state);
+
+  view.state.doc.iterLines((lineObj: Line) => {
+    // Defensive check for lineObj and its text property
+    if (!lineObj || typeof lineObj.text !== 'string') {
+      console.warn("generateBasicDiagnostics: Invalid line object encountered during iteration.", lineObj);
+      return; // Skip this line if invalid
+    }
+    const lineText = lineObj.text;
+    const lineNumber = lineObj.number; // Use lineObj.number directly for 1-based line number
+
+    const todoMatch = lineText.match(/TODO/i);
+    if (todoMatch) {
+      diagnostics.push({
+        from: lineObj.from + (todoMatch.index || 0),
+        to: lineObj.from + (todoMatch.index || 0) + todoMatch[0].length,
+        severity: 'warning',
+        message: 'Todo item found',
+        source: 'custom-linter',
+      });
+    }
+
+    // Example: Basic check for empty lines (can be expanded)
+    // Avoid marking the very last empty line or first empty line unless specifically desired
+    // doc.lines gives total number of lines (1-based count)
+    if (
+      lineText.trim() === '' &&
+      lineNumber > 1 && // Not the first line if empty
+      lineNumber < view.state.doc.lines // Not the very last line if empty
+    ) {
+      diagnostics.push({
+        from: lineObj.from,
+        to: lineObj.from + lineText.length,
+        severity: 'info',
+        message: 'Empty line',
+        source: 'custom-linter',
+      });
+    }
+  });
+
+  tree.iterate({
+    enter: (node) => {
+      if (node.type.name === '⚠') {
+        diagnostics.push({
+          from: node.from,
+          to: node.to,
+          severity: 'error',
+          message: `Syntax Error: ${view.state.doc.sliceString(node.from, node.to)}`,
+          source: 'codemirror-syntax',
+        });
+      }
+    },
+  });
+
+  return diagnostics;
+};
 
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   value,
@@ -58,59 +118,10 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     [onChange],
   );
 
-  // Basic linter: can be expanded with more sophisticated checks or integrated with a language server
-  const basicLinter = React.useCallback(linter((view: EditorView) => {
-    const diagnostics: Diagnostic[] = [];
-    const tree = syntaxTree(view.state);
-
-    // Example: Find lines containing "TODO" and mark them as warnings
-    view.state.doc.iterLines((lineObj: Line, i: number) => { // 'lineObj' is a Line object, not a string
-      const lineText = lineObj.text; // Get the actual string content
-      const lineNumber = i + 1; // Line numbers are 1-based
-
-      const todoMatch = lineText.match(/TODO/i);
-      if (todoMatch) {
-        diagnostics.push({
-          from: lineObj.from + (todoMatch.index || 0),
-          to: lineObj.from + (todoMatch.index || 0) + todoMatch[0].length,
-          severity: 'warning',
-          message: 'Todo item found',
-          source: 'custom-linter',
-        });
-      }
-
-      // Example: Basic check for empty lines (can be expanded)
-      if (lineText.trim() === '' && lineNumber > 1 && lineNumber < view.state.doc.lines) {
-        diagnostics.push({
-          from: lineObj.from,
-          to: lineObj.from + lineText.length,
-          severity: 'info',
-          message: 'Empty line',
-          source: 'custom-linter',
-        });
-      }
-    });
-
-    // Example: Find basic syntax errors if the language support provides them
-    // This part requires specific language package integration to get syntax errors
-    // For now, it's mostly reliant on CodeMirror's own syntax parsing to identify "error" nodes
-    tree.iterate({
-      enter: (node) => {
-        if (node.type.name === '⚠') { // CodeMirror's generic error node type
-          diagnostics.push({
-            from: node.from,
-            to: node.to,
-            severity: 'error',
-            message: `Syntax Error: ${view.state.doc.sliceString(node.from, node.to)}`,
-            source: 'codemirror-syntax',
-          });
-        }
-      },
-    });
-
-    setLintIssuesCount(diagnostics.length);
-    return diagnostics;
-  }), []);
+  // Memoize the linter extension itself
+  const basicLinterExtension = React.useMemo(() => {
+    return linter(generateBasicDiagnostics);
+  }, []); // Empty dependency array as generateBasicDiagnostics is a pure function
 
 
   const handleUpdate = React.useCallback(
@@ -150,11 +161,13 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           setCurrentLanguageName('Plain Text');
         }
 
-        // Update lint issues count on every update
-        // The linter extension itself (basicLinter) will update setLintIssuesCount
+        // --- CORRECTED: Update lint issues count from the editor state's diagnostics --- 
+        // Get all diagnostics currently in the editor state, managed by lint extensions.
+        const diagnostics = getDiagnostics(state);
+        setLintIssuesCount(diagnostics.length);
       }
     },
-    [onEditorViewChange, editorViewInstance, language, filePath, basicLinter],
+    [onEditorViewChange, editorViewInstance, language, filePath], // basicLinter is not a dependency now
   );
 
   const extensions = React.useMemo(() => {
@@ -174,10 +187,10 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       createCodeMirrorTheme(muiTheme),
       EditorView.lineWrapping,
       lintGutter(), // Add lint gutter
-      basicLinter, // Add custom linter
+      basicLinterExtension, // Add custom linter extension
       ...(additionalExtensions || []),
     ];
-  }, [language, filePath, muiTheme, additionalExtensions, basicLinter]);
+  }, [language, filePath, muiTheme, additionalExtensions, basicLinterExtension]); // basicLinterExtension is a dependency now
 
   // Determine the build error message to display
   const buildErrorMessage = buildOutput?.stderr || saveFileContentError || null;
