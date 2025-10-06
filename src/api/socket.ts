@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { getToken } from '@/stores/authStore';
 import { atom } from 'nanostores';
+import { CopyResult, MoveResult } from '@/types/file';
 
 // Determine WebSocket URL based on environment variables
 const getWebSocketUrl = (): string => {
@@ -16,7 +17,7 @@ const getWebSocketUrl = (): string => {
   return 'http://localhost:5000/files';
 };
 
-// --- Interfaces and Types ---
+// --- Interfaces and Types --- 
 
 /**
  * Represents the payload structure for dynamic WebSocket events sent to the backend.
@@ -269,6 +270,38 @@ class SocketService {
       method: 'POST',
       body: { oldPath, newPath, projectId },
       event: 'fileRenameFileOrFolder',
+    });
+  }
+
+  /**
+   * Copies a file or folder from a source path to a destination path.
+   * @param sourcePath The path of the file/folder to copy.
+   * @param destinationPath The destination path for the copied item.
+   * @param projectId The ID of the project.
+   * @returns A Promise that resolves with the copy operation result.
+   */
+  public copyFileOrFolder(sourcePath: string, destinationPath: string, projectId: string): Promise<CopyResult> {
+    return this.emit<CopyResult>('fileCopyFileOrFolder', {
+      endpoint: '/api/file/copy',
+      method: 'POST',
+      body: { sourcePath, destinationPath, projectId },
+      event: 'fileCopyFileOrFolder',
+    });
+  }
+
+  /**
+   * Moves a file or folder from a source path to a destination path.
+   * @param sourcePath The path of the file/folder to move.
+   * @param destinationPath The destination path for the moved item.
+   * @param projectId The ID of the project.
+   * @returns A Promise that resolves with the move operation result.
+   */
+  public moveFileOrFolder(sourcePath: string, destinationPath: string, projectId: string): Promise<MoveResult> {
+    return this.emit<MoveResult>('fileMoveFileOrFolder', {
+      endpoint: '/api/file/move',
+      method: 'POST',
+      body: { sourcePath, destinationPath, projectId },
+      event: 'fileMoveFileOrFolder',
     });
   }
 
