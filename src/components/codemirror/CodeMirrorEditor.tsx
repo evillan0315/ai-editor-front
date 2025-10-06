@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import { EditorView } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
@@ -6,9 +6,12 @@ import CodeMirror from '@uiw/react-codemirror';
 import { getCodeMirrorLanguage, createCodeMirrorTheme, getFileExtension } from '@/utils/index';
 import { Box, useTheme } from '@mui/material';
 import { themeStore } from '@/stores/themeStore';
-import { LanguageSupport } from '@codemirror/language';
+import { LanguageSupport, syntaxTree } from '@codemirror/language';
 import CodeMirrorStatus from './CodeMirrorStatus';
-import { Extension } from '@codemirror/state'; // Import Extension type
+import { Extension, EditorState } from '@codemirror/state';
+import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
+import { llmStore } from '@/stores/llmStore';
+import { fileStore } from '@/stores/fileStore';
 
 interface CodeMirrorEditorProps {
   value: string;
@@ -20,7 +23,7 @@ interface CodeMirrorEditorProps {
   height?: string;
   width?: string;
   onEditorViewChange?: (view: EditorView) => void;
-  additionalExtensions?: Extension[]; // New prop for additional CodeMirror extensions
+  additionalExtensions?: Extension[];
 }
 
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
@@ -33,17 +36,20 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   height,
   width,
   onEditorViewChange,
-  additionalExtensions, // Destructure new prop
+  additionalExtensions,
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
+  const { buildOutput } = useStore(llmStore); // Get buildOutput from llmStore
+  const { saveFileContentError } = useStore(fileStore); // Get saveFileContentError from fileStore
+
   const [editorViewInstance, setEditorViewInstance] = useState<EditorView | null>(null);
 
   // State for CodeMirrorStatus
   const [currentLine, setCurrentLine] = useState(1);
   const [currentColumn, setCurrentColumn] = useState(1);
   const [currentLanguageName, setCurrentLanguageName] = useState('Plain Text');
-  const lintStatus = 'No issues'; // Placeholder for actual linting status
+  const [lintIssuesCount, setLintIssuesCount] = useState(0); // State for lint issues count
 
   const handleChange = React.useCallback(
     (val: string) => {
@@ -52,9 +58,50 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     [onChange],
   );
 
+  // Basic linter: can be expanded with more sophisticated checks or integrated with a language server
+  const basicLinter = React.useCallback(linter((view: EditorView) => {
+    const diagnostics: Diagnostic[] = [];
+    const tree = syntaxTree(view.state);
+
+    // Example: Find lines containing "TODO" and mark them as warnings
+    view.state.doc.iterLines((line: string, i: number) => {
+      const todoMatch = line.match(/TODO/i);
+      if (todoMatch) {
+        diagnostics.push({
+          from: view.state.doc.line(i + 1).from + (todoMatch.index || 0),
+          to: view.state.doc.line(i + 1).from + (todoMatch.index || 0) + todoMatch[0].length,
+          severity: 'warning',
+          message: 'Todo item found',
+          source: 'custom-linter',
+        });
+      }
+    });
+
+    // Example: Find basic syntax errors if the language support provides them
+    // This part requires specific language package integration to get syntax errors
+    // For now, it's mostly reliant on CodeMirror's own syntax parsing to identify "error" nodes
+    tree.iterate({
+      enter: (node) => {
+        if (node.type.name === '⚠') { // CodeMirror's generic error node type
+          diagnostics.push({
+            from: node.from,
+            to: node.to,
+            severity: 'error',
+            message: `Syntax Error: ${view.state.doc.sliceString(node.from, node.to)}`,
+            source: 'codemirror-syntax',
+          });
+        }
+      },
+    });
+
+    setLintIssuesCount(diagnostics.length);
+    return diagnostics;
+  }), []);
+
+
   const handleUpdate = React.useCallback(
-    (viewUpdate: { view: EditorView }) => {
-      const { view } = viewUpdate;
+    (viewUpdate: { view: EditorView; state: EditorState }) => {
+      const { view, state } = viewUpdate;
 
       // Pass the EditorView to the parent component via callback on every update
       if (onEditorViewChange && view) {
@@ -73,7 +120,6 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         setCurrentColumn(selection.head - line.from + 1);
 
         // Update language name for status bar
-        // Prioritize language detected by CodeMirror extensions
         const languageData = view.state.languageDataAt(selection.head);
         const detectedLangName = languageData.find((data: any) => data.name)?.name;
 
@@ -82,33 +128,30 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
             detectedLangName.charAt(0).toUpperCase() + detectedLangName.slice(1),
           );
         } else if (language) {
-          // Fallback to explicit language prop
           setCurrentLanguageName(language.charAt(0).toUpperCase() + language.slice(1));
         } else if (filePath) {
-          // Fallback to file extension
           const ext = getFileExtension(filePath);
           setCurrentLanguageName(ext ? ext.toUpperCase() : 'Plain Text');
         } else {
           setCurrentLanguageName('Plain Text');
         }
+
+        // Update lint issues count on every update
+        // The linter extension itself (basicLinter) will update setLintIssuesCount
       }
     },
-    [onEditorViewChange, editorViewInstance, language, filePath],
+    [onEditorViewChange, editorViewInstance, language, filePath, basicLinter],
   );
 
   const extensions = React.useMemo(() => {
-    // Determine language support based on filePath or explicit language prop
     const langExtensions: LanguageSupport[] = [];
     if (language) {
-      // Explicit language prop takes precedence
       if (language === 'typescript') {
         langExtensions.push(javascript({ jsx: true, typescript: true }));
       } else if (language === 'javascript') {
         langExtensions.push(javascript({ jsx: true }));
       }
-      // Add more explicit language string mappings here if needed (e.g., 'json', 'markdown', 'html', 'css')
     } else if (filePath) {
-      // Fallback to utility function if no explicit language and filePath is available
       langExtensions.push(...getCodeMirrorLanguage(filePath, false));
     }
 
@@ -116,9 +159,14 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       ...langExtensions,
       createCodeMirrorTheme(muiTheme),
       EditorView.lineWrapping,
-      ...(additionalExtensions || []), // Include additional extensions passed via props
+      lintGutter(), // Add lint gutter
+      basicLinter, // Add custom linter
+      ...(additionalExtensions || []),
     ];
-  }, [language, filePath, muiTheme, additionalExtensions]); // Add additionalExtensions to dependencies
+  }, [language, filePath, muiTheme, additionalExtensions, basicLinter]);
+
+  // Determine the build error message to display
+  const buildErrorMessage = buildOutput?.stderr || saveFileContentError || null;
 
   return (
     <Box
@@ -144,8 +192,9 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         languageName={currentLanguageName}
         line={currentLine}
         column={currentColumn}
-        lintStatus={lintStatus}
-        filePath={filePath} // Pass filePath to CodeMirrorStatus
+        lintIssuesCount={lintIssuesCount}
+        buildErrorMessage={buildErrorMessage}
+        filePath={filePath}
       />
     </Box>
   );
