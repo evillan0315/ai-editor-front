@@ -3,11 +3,12 @@ import { useStore } from '@nanostores/react';
 import { EditorView } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
-import { getCodeMirrorLanguage, createCodeMirrorTheme, getFileExtension } from '@/utils/index'; // Added getFileExtension
+import { getCodeMirrorLanguage, createCodeMirrorTheme, getFileExtension } from '@/utils/index';
 import { Box, useTheme } from '@mui/material';
 import { themeStore } from '@/stores/themeStore';
 import { LanguageSupport } from '@codemirror/language';
 import CodeMirrorStatus from './CodeMirrorStatus';
+import { Extension } from '@codemirror/state'; // Import Extension type
 
 interface CodeMirrorEditorProps {
   value: string;
@@ -16,9 +17,10 @@ interface CodeMirrorEditorProps {
   filePath?: string;
   isDisabled?: boolean;
   classNames?: string;
-  height?: string; // This height now applies to the *entire* editor component, including status bar.
+  height?: string;
   width?: string;
-  onEditorViewChange?: (view: EditorView) => void; // New prop to pass EditorView
+  onEditorViewChange?: (view: EditorView) => void;
+  additionalExtensions?: Extension[]; // New prop for additional CodeMirror extensions
 }
 
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
@@ -31,6 +33,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   height,
   width,
   onEditorViewChange,
+  additionalExtensions, // Destructure new prop
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
@@ -106,31 +109,30 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       // Add more explicit language string mappings here if needed (e.g., 'json', 'markdown', 'html', 'css')
     } else if (filePath) {
       // Fallback to utility function if no explicit language and filePath is available
-      langExtensions.push(...getCodeMirrorLanguage(filePath, false)); // Pass filePath correctly
+      langExtensions.push(...getCodeMirrorLanguage(filePath, false));
     }
-    // If no specific language is determined by 'language' prop or 'filePath',
-    // CodeMirror will treat it as plain text.
 
     return [
       ...langExtensions,
       createCodeMirrorTheme(muiTheme),
       EditorView.lineWrapping,
+      ...(additionalExtensions || []), // Include additional extensions passed via props
     ];
-  }, [language, filePath, muiTheme]); // Added filePath to dependencies for language detection
+  }, [language, filePath, muiTheme, additionalExtensions]); // Add additionalExtensions to dependencies
 
   return (
     <Box
       className={`flex flex-col ${classNames || ''}`}
       sx={{
-        height: height || '100%', // Total height for the editor + status bar
+        height: height || '100%',
         width: width || '100%',
       }}
     >
       <Box className="flex-grow"> {/* This Box wraps CodeMirror and takes available space */}
         <CodeMirror
           value={value}
-          height="100%" // CodeMirror itself fills its parent flex-grow Box
-          width="100%" // CodeMirror itself fills its parent flex-grow Box
+          height="100%"
+          width="100%"
           theme={mode}
           extensions={extensions}
           onChange={handleChange}
@@ -138,14 +140,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           editable={!isDisabled}
         />
       </Box>
-      {/* CodeMirrorStatus component at the bottom, automatically sticky due to flex-col and flex-grow on editor */}
-      <CodeMirrorStatus
-        languageName={currentLanguageName}
-        line={currentLine}
-        column={currentColumn}
-        lintStatus={lintStatus}
-        filePath={filePath}
-      />
+ 
     </Box>
   );
 };

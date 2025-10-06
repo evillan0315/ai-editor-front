@@ -14,19 +14,18 @@ import {
   openedFile,
 } from '@/stores/fileStore';
 import { readFileContent } from '@/api/file';
-import CodeMirror from '@uiw/react-codemirror';
 import { Box, Typography, CircularProgress, Alert, Paper } from '@mui/material';
 
-import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
-import { keymap, EditorView } from '@codemirror/view';
+import CodeMirrorEditor from './codemirror/CodeMirrorEditor'; // Import the shared CodeMirrorEditor
+import { keymap, EditorView } from '@codemirror/view'; // Keep keymap and EditorView for extensions
+import { Extension } from '@codemirror/state'; // Import Extension type for type safety
 import InitialEditorViewer from './InitialEditorViewer';
-import MarkdownEditor from '@/components/MarkdownEditor'; // ✅ NEW
+import MarkdownEditor from '@/components/MarkdownEditor';
 
 interface OpenedFileViewerProps {}
 
 const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   const {
-    //openedFile,
     initialFileContentSnapshot,
     isFetchingFileContent,
     fetchFileContentError,
@@ -36,7 +35,20 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   const $openedFileContent = useStore(openedFileContent);
   const $openedFile = useStore(openedFile);
   const muiTheme = useTheme();
-  const { mode } = useStore(themeStore);
+  // const { mode } = useStore(themeStore); // Not needed here, handled by CodeMirrorEditor
+
+  // Define the save keymap extension
+  const saveKeymapExtension: Extension = React.useMemo(() => {
+    return keymap.of([
+      {
+        key: 'Mod-s',
+        run: () => {
+          saveActiveFile();
+          return true;
+        },
+      },
+    ]);
+  }, []);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -81,7 +93,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
       if (isDirty !== isOpenedFileDirty) {
         setIsOpenedFileDirty(isDirty);
       }
-    } else if (!openedFile) {
+    } else if (!$openedFile) {
       setIsOpenedFileDirty(false);
     }
   }, [
@@ -101,7 +113,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   const isLoadingContent = isFetchingFileContent;
   const isDisabled = isLoadingContent || isSavingFileContent;
 
-  // ✅ Detect markdown files by extension
+  // Detect markdown files by extension
   const isMarkdownFile = $openedFile?.toLowerCase().endsWith('.md');
 
   return (
@@ -147,7 +159,6 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
           }}
         >
           {isMarkdownFile ? (
-            // ✅ Use MarkdownEditor for .md files
             <MarkdownEditor
               value={$openedFileContent || ''}
               onChange={handleContentChange}
@@ -155,28 +166,13 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
               onSave={() => saveActiveFile()}
             />
           ) : (
-            // ✅ Default: CodeMirror editor for other files
-            <CodeMirror
+            <CodeMirrorEditor // Use the new CodeMirrorEditor component
               value={$openedFileContent || ''}
               onChange={handleContentChange}
-              extensions={[
-                getCodeMirrorLanguage($openedFile),
-                createCodeMirrorTheme(muiTheme),
-                keymap.of([
-                  {
-                    key: 'Mod-s',
-                    run: () => {
-                      saveActiveFile();
-                      return true;
-                    },
-                  },
-                ]),
-                EditorView.lineWrapping,
-              ]}
-              theme={mode}
-              editable={!isDisabled}
-              minHeight="100%"
-              maxHeight="100%"
+              filePath={$openedFile || undefined} // Pass filePath for language detection
+              isDisabled={isDisabled}
+              height="100%" // Ensure it fills its container
+              additionalExtensions={[saveKeymapExtension]} // Pass the custom keymap
             />
           )}
         </Box>
