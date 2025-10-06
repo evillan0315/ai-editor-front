@@ -30,6 +30,15 @@ interface CodeMirrorEditorProps {
 const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
   const diagnostics: Diagnostic[] = [];
   try {
+    // === ADDED DEFENSIVE CHECK ===
+    // Ensure view.state.doc and its iterLines method are valid before attempting iteration.
+    // The 'child is undefined' error can originate from CodeMirror's internal Text object
+    // if it's in an inconsistent state, especially during rapid updates.
+    if (!view.state || !view.state.doc || typeof view.state.doc.iterLines !== 'function') {
+      console.warn("generateBasicDiagnostics: Invalid view.state.doc encountered, skipping linter pass.", view.state.doc);
+      return [];
+    }
+
     const tree = syntaxTree(view.state);
 
     view.state.doc.iterLines((lineObj: Line) => {
