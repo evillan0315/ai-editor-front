@@ -8,6 +8,7 @@ interface CodeMirrorStatusProps {
   line: number;
   column: number;
   lintStatus: string;
+  filePath?: string; // Kept for potential future context or more detailed parsing
 }
 
 const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({

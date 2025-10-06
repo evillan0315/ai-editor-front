@@ -140,7 +140,13 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           editable={!isDisabled}
         />
       </Box>
- 
+      <CodeMirrorStatus
+        languageName={currentLanguageName}
+        line={currentLine}
+        column={currentColumn}
+        lintStatus={lintStatus}
+        filePath={filePath}
+      />
     </Box>
   );
 };
