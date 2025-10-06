@@ -8,7 +8,6 @@ interface CodeMirrorStatusProps {
   line: number;
   column: number;
   lintStatus: string;
-  filePath?: string; // Kept for potential future context or more detailed parsing
 }
 
 const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
@@ -34,9 +33,9 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
 
   return (
     <Box
-      className="absolute bottom-0 left-0 right-0 flex items-center justify-end px-2 py-1 h-8 z-10" // Positioning is handled by parent, `absolute` here is relative to that parent
+      className="flex items-center justify-end px-2 py-1 h-8"
       sx={{
-        backgroundColor: muiTheme.palette.background.default,
+        backgroundColor: muiTheme.palette.background.paper,
         borderTop: `1px solid ${muiTheme.palette.divider}`,
       }}
     >
