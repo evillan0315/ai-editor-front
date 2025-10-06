@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { defaultScriptIcon, scriptIcons } from '@/constants/scriptIcons';
 import { ScriptStatus } from '@/types';
-import { addLog } from '@/stores/logStore'; // NEW: Import addLog
+import { addLog } from '@/stores/logStore';
 
 interface RunScriptMenuItemProps {
   name: string;
@@ -55,7 +55,7 @@ const RunScriptMenuItem: React.FC<RunScriptMenuItemProps> = ({
       'Script Runner',
       `Running script: \`${name}\``,
       'info',
-      `Command: ${rawScriptContent}`,
+      `Command: ${rawScriptContent}, Current UI Status: ${status}`,
     );
     onClick(name, rawScriptContent);
   };
