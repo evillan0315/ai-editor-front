@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { EditorView, keymap } from '@codemirror/view';
+import { EditorView } from '@codemirror/view'; // Removed keymap as it's not directly used here for state
 import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
-import { getCodeMirrorLanguage, createCodeMirrorTheme, getLanguageNameFromPath } from '@/utils/index';
+import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
 import { Box, useTheme } from '@mui/material';
 import { themeStore } from '@/stores/themeStore';
-import { LanguageSupport } from '@codemirror/language';
-import CodeMirrorStatus from './CodeMirrorStatus';
+import { LanguageSupport } from '@codemirror/language'; // Import LanguageSupport
+import CodeMirrorStatus from './CodeMirrorStatus'; // New import
 
 interface CodeMirrorEditorProps {
   value: string;
@@ -16,10 +16,9 @@ interface CodeMirrorEditorProps {
   filePath?: string;
   isDisabled?: boolean;
   classNames?: string;
-  height?: string;
+  height?: string; // This height now applies to the *entire* editor component, including status bar.
   width?: string;
-  onEditorViewChange?: (view: EditorView) => void;
-  onSave?: () => void; // New prop for save functionality
+  onEditorViewChange?: (view: EditorView) => void; // New prop to pass EditorView
 }
 
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
@@ -32,29 +31,10 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   height,
   width,
   onEditorViewChange,
-  onSave, // Destructure new prop
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
-  const [editorViewInstance, setEditorViewInstance] = useState<EditorView | null>(null);
-  const [currentLine, setCurrentLine] = useState(1);
-  const [currentColumn, setCurrentColumn] = useState(1);
-  const [currentLanguageName, setCurrentLanguageName] = useState('Plain Text');
-  const [currentLintStatus, setCurrentLintStatus] = useState('No issues');
-
-  // Effect to update language name when filePath or explicit language prop changes
-  React.useEffect(() => {
-    const newLanguageName = filePath
-      ? getLanguageNameFromPath(filePath)
-      : language === 'typescript'
-        ? 'TypeScript'
-        : language === 'json'
-          ? 'Json'
-        : language === 'javascript'
-          ? 'JavaScript'
-          : 'Plain Text'; // Fallback for explicit language prop or no path
-    setCurrentLanguageName(newLanguageName);
-  }, [language, filePath]);
+  const [editorViewInstance, setEditorViewInstance] = useState<EditorView | null>(null); // State to hold EditorView
 
   const handleChange = React.useCallback(
     (val: string) => {
@@ -64,30 +44,17 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   );
 
   const handleUpdate = React.useCallback(
-    (viewUpdate: { view: EditorView; changes: any; transactions: any }) => {
-      const view = viewUpdate.view;
-
-      if (onEditorViewChange && view) {
-        onEditorViewChange(view);
+    (viewUpdate: { view: EditorView }) => {
+      // Pass the EditorView to the parent component via callback on every update
+      if (onEditorViewChange && viewUpdate.view) {
+        onEditorViewChange(viewUpdate.view);
       }
-
-      // Only update editorViewInstance if it's a new instance to prevent unnecessary re-renders
-      if (view && view !== editorViewInstance) {
-        setEditorViewInstance(view);
+      // Also store it locally for CodeMirrorStatus if it's a new view instance
+      if (viewUpdate.view && viewUpdate.view !== editorViewInstance) {
+        setEditorViewInstance(viewUpdate.view);
       }
-
-      // Update line and column based on current selection
-      if (view) {
-        const head = view.state.selection.main.head;
-        const lineObj = view.state.doc.lineAt(head);
-        setCurrentLine(lineObj.number);
-        setCurrentColumn(head - lineObj.from + 1);
-      }
-
-      // Placeholder for lint status update. Real linting would involve CodeMirror lint extensions.
-      setCurrentLintStatus('No issues');
     },
-    [onEditorViewChange, editorViewInstance], // `editorViewInstance` added to dependencies to correctly detect changes in view instance.
+    [onEditorViewChange, editorViewInstance], // Add editorViewInstance to dependencies
   );
 
   const extensions = React.useMemo(() => {
@@ -103,39 +70,23 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       // Add more explicit language string mappings here if needed (e.g., 'json', 'markdown', 'html', 'css')
     } else if (filePath) {
       // Fallback to utility function if no explicit language and filePath is available
-      langExtensions.push(...getCodeMirrorLanguage(filePath, false));
+      langExtensions.push(...getCodeMirrorLanguage(filePath, false)); // Pass filePath correctly
     }
     // If no specific language is determined by 'language' prop or 'filePath',
     // CodeMirror will treat it as plain text.
 
-    const baseExtensions = [
+    return [
       ...langExtensions,
       createCodeMirrorTheme(muiTheme),
       EditorView.lineWrapping,
     ];
-
-    if (onSave) {
-      baseExtensions.push(
-        keymap.of([
-          {
-            key: 'Mod-s',
-            run: () => {
-              onSave();
-              return true;
-            },
-          },
-        ]),
-      );
-    }
-
-    return baseExtensions;
-  }, [language, filePath, muiTheme, onSave]); // Added onSave to dependencies
+  }, [language, filePath, muiTheme]); // Added filePath to dependencies for language detection
 
   return (
     <Box
       className={`flex flex-col ${classNames || ''}`}
       sx={{
-        height: height || '100%',
+        height: height || '100%', // Total height for the editor + status bar
         width: width || '100%',
       }}
     >
@@ -152,12 +103,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         />
       </Box>
       {/* CodeMirrorStatus component at the bottom, automatically sticky due to flex-col and flex-grow on editor */}
-      <CodeMirrorStatus
-        languageName={currentLanguageName}
-        line={currentLine}
-        column={currentColumn}
-        lintStatus={currentLintStatus}
-      />
+      <CodeMirrorStatus editorView={editorViewInstance} filePath={filePath} />
     </Box>
   );
 };

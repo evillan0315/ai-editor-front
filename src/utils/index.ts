@@ -91,4 +91,4 @@ export function getCodeMirrorLanguage(
 export * from './fileUtils';
 export * from './mediaUtils';
 export * from './persistentAtom';
-export { createCodeMirrorTheme };
+export * from './codemirrorTheme';

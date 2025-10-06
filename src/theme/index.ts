@@ -72,9 +72,7 @@ export const getAppTheme = (mode: PaletteMode) => {
           '.markdown-body': {
             backgroundColor: mode === 'dark' ? '#1d1d1d' : '#f5f5f5',
           },
-        },
-        styleOverrides: {
-          '.cm-editor .cm-gutters': {
+                    '.cm-editor .cm-gutters': {
             backgroundColor: mode === 'dark' ? '#1d1d1d' : '#f5f5f5',
           },
         },

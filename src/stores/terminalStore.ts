@@ -1,3 +1,10 @@
+/**
+ * FilePath: src/stores/terminalStore.ts
+ * Title: Terminal Store with WebGL Rendering and Deduplicated Output
+ * Reason: Enhance terminal responsiveness with @xterm/addon-webgl while maintaining
+ *         clean deduplication logic for spinner frames and repetitive socket output.
+ */
+
 import { map } from 'nanostores';
 import { socketService } from '@/services/socketService';
 import { persistentAtom } from '@/utils/persistentAtom';
@@ -5,19 +12,23 @@ import { SystemInfo, PromptData } from '@/types/terminal';
 import stripAnsi from 'strip-ansi';
 import { projectRootDirectoryStore } from './fileTreeStore';
 import { getToken } from './authStore';
+
+// ──────────────────────────────────────────────
+// State Definition
+// ──────────────────────────────────────────────
+
 export interface TerminalState {
   currentPath: string;
   systemInfo: string | null;
   isConnected: boolean;
   commandHistory: string[];
   historyIndex: number;
-  output: string[]; // Stores terminal output
+  output: string[];
 }
+
 export const isTerminalVisible = persistentAtom<boolean>('showTerminal', false);
-export const setShowTerminal = (show: boolean) => {
-  isTerminalVisible.set(show);
-};
-// Initialize with default values
+export const setShowTerminal = (show: boolean) => isTerminalVisible.set(show);
+
 export const terminalStore = map<TerminalState>({
   currentPath: '~',
   systemInfo: null,
@@ -27,7 +38,10 @@ export const terminalStore = map<TerminalState>({
   output: [],
 });
 
-// Actions
+// ──────────────────────────────────────────────
+// Basic Mutations
+// ──────────────────────────────────────────────
+
 export const setCurrentPath = (path: string) => {
   projectRootDirectoryStore.set(path);
 };
@@ -41,58 +55,89 @@ export const setConnected = (isConnected: boolean) => {
 };
 
 export const addCommandToHistory = (command: string) => {
-  const current = terminalStore.get();
-  const commandHistory = [...current.commandHistory, command];
+  const state = terminalStore.get();
+  const updatedHistory = [...state.commandHistory, command];
   terminalStore.set({
-    ...current,
-    commandHistory,
-    historyIndex: commandHistory.length,
+    ...state,
+    commandHistory: updatedHistory,
+    historyIndex: updatedHistory.length,
   });
 };
 
 export const browseHistory = (direction: 'up' | 'down') => {
-  const current = terminalStore.get();
-  let newIndex = current.historyIndex;
+  const state = terminalStore.get();
+  let newIndex = state.historyIndex;
 
-  if (direction === 'up') {
-    newIndex = Math.max(0, current.historyIndex - 1);
-  } else {
-    newIndex = Math.min(
-      current.commandHistory.length - 1,
-      current.historyIndex + 1,
-    );
-  }
+  newIndex =
+    direction === 'up'
+      ? Math.max(0, newIndex - 1)
+      : Math.min(state.commandHistory.length - 1, newIndex + 1);
 
   terminalStore.setKey('historyIndex', newIndex);
 };
 
-export const resetHistoryIndex = () => {
-  terminalStore.setKey('historyIndex', -1);
-};
+export const resetHistoryIndex = () => terminalStore.setKey('historyIndex', -1);
+
+// ──────────────────────────────────────────────
+// Output Deduplication (Spinner-Aware)
+// ──────────────────────────────────────────────
 
 export const appendOutput = (text: string) => {
-  const plainText = stripAnsi(text);
-  const current = terminalStore.get();
-  if (current.output[current.output.length - 1] === plainText) return; // skip duplicate
-  terminalStore.set({
-    ...current,
-    output: [...current.output, plainText],
-  });
-};
+  const plainText = stripAnsi(text).replace(/\r/g, '');
+  const trimmed = plainText.trim();
+  if (!trimmed) return;
 
-// Clear output
-export const clearOutput = () => {
-  terminalStore.setKey('output', []);
-};
+  const state = terminalStore.get();
+  const output = [...state.output];
+  const lastLine = output[output.length - 1]?.trim() ?? '';
 
-// Socket connection management
-export const connectTerminal = async () => {
-  const token = getToken();
-  if (!token) {
-    throw 'No authentication token.';
+  // Spinner frames
+  const spinnerFrames = [
+    '⠙',
+    '⠹',
+    '⠸',
+    '⠼',
+    '⠴',
+    '⠦',
+    '⠧',
+    '⠇',
+    '⠏',
+    '⠋',
+  ];
+
+  // Handle spinner animation
+  if (spinnerFrames.includes(trimmed)) {
+    if (spinnerFrames.includes(lastLine)) {
+      output[output.length - 1] = plainText;
+    } else {
+      output.push(plainText);
+    }
+  }
+  // Handle new, distinct output
+  else if (
+    trimmed !== lastLine &&
+    !lastLine.endsWith(trimmed) &&
+    !trimmed.endsWith(lastLine)
+  ) {
+    output.push(plainText);
   }
 
-  // Retrieve project root directory from store
+  // Keep terminal memory bounded
+  if (output.length > 5000) output.splice(0, output.length - 5000);
+
+  terminalStore.set({ ...state, output });
+};
+
+// ──────────────────────────────────────────────
+// Socket Lifecycle
+// ──────────────────────────────────────────────
+
+export const clearOutput = () => terminalStore.setKey('output', []);
+
+export const connectTerminal = async () => {
+  const token = getToken();
+  if (!token) throw new Error('No authentication token.');
+
   const projectRoot = projectRootDirectoryStore.get();
 
   try {
@@ -100,27 +145,26 @@ export const connectTerminal = async () => {
     setConnected(true);
     clearOutput();
 
-    // Listeners
-    socketService.on('output', (data: string) => appendOutput(data));
-    socketService.on('outputMessage', (data: string) => appendOutput(data));
-    socketService.on('error', (data: string) => appendOutput(`Error: ${data}`));
-    /*socketService.on('outputPath', (data: string) =>
-      setCurrentPath(`\x1b[31m${data}\x1b[0m`)
-    );*/
+    socketService.on('output', appendOutput);
+    socketService.on('outputMessage', appendOutput);
+    socketService.on('error', (data: string) =>
+      appendOutput(`Error: ${data}`),
+    );
+
     socketService.on('outputInfo', (data: SystemInfo) => {
-      const infoStr = Object.entries(data)
+      const formatted = Object.entries(data)
         .map(([k, v]) => `${k}: ${v}`)
         .join('\n');
-      setSystemInfo(`${infoStr}\n`);
-    });
-    socketService.on('prompt', (data: PromptData) => {
-      setCurrentPath(data.cwd);
-      //appendOutput(`\x1b[32m${data.cwd}\x1b[0m $ `);
+      setSystemInfo(`${formatted}\n`);
     });
 
-    appendOutput('Connected to terminal server.\n');
+    socketService.on('prompt', (data: PromptData) =>
+      setCurrentPath(data.cwd),
+    );
+
+    appendOutput('\x1b[32mConnected to terminal server.\x1b[0m\n');
   } catch (error) {
-    appendOutput(`Connection error: ${error}\n`);
+    appendOutput(`\x1b[31mConnection error:\x1b[0m ${error}\n`);
     throw error;
   }
 };
@@ -128,15 +172,13 @@ export const connectTerminal = async () => {
 export const disconnectTerminal = () => {
   socketService.disconnect();
   setConnected(false);
-  appendOutput('Disconnected from terminal server.\n');
+  appendOutput('\x1b[33mDisconnected from terminal server.\x1b[0m\n');
 };
 
 export const executeCommand = (command: string) => {
   if (!command.trim()) return;
-
   addCommandToHistory(command);
   socketService.execCommand(command);
-  //appendOutput(`$ ${command}\n`);
 };
 
 export const resizeTerminal = (cols: number, rows: number) => {
@@ -144,3 +186,4 @@ export const resizeTerminal = (cols: number, rows: number) => {
     socketService.resize(cols, rows);
   }
 };
+
