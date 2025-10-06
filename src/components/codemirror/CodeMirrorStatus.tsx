@@ -34,7 +34,7 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
 
   return (
     <Box
-      className="absolute bottom-0 left-0 right-0 flex items-center justify-end px-2 py-1 h-8 z-10" // Added positioning classes and z-index
+      className="absolute bottom-0 left-0 right-0 flex items-center justify-end px-2 py-1 h-8 z-10" // Positioning is handled by parent, `absolute` here is relative to that parent
       sx={{
         backgroundColor: muiTheme.palette.background.default,
         borderTop: `1px solid ${muiTheme.palette.divider}`,
