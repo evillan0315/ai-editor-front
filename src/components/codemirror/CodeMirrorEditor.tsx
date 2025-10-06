@@ -57,7 +57,32 @@ const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
           to: lineObj.from + (todoMatch.index || 0) + todoMatch[0].length,
           severity: 'warning',
           message: 'Todo item found',
-          source: 'custom-linter',
+          source: 'codejector-linter', // Changed source
+        });
+      }
+
+      // NEW: Check for console statements
+      const consoleLogMatch = lineText.match(/console\.(log|warn|error|info|debug)\s*\(/);
+      console.log(consoleLogMatch);
+      if (consoleLogMatch) {
+        diagnostics.push({
+          from: lineObj.from + (consoleLogMatch.index || 0),
+          to: lineObj.from + (consoleLogMatch.index || 0) + consoleLogMatch[0].length,
+          severity: 'warning',
+          message: 'Avoid console statements in production code',
+          source: 'codejector-linter',
+        });
+      }
+
+      // NEW: Check for debugger statements
+      const debuggerMatch = lineText.match(/\bdebugger\b/);
+      if (debuggerMatch) {
+        diagnostics.push({
+          from: lineObj.from + (debuggerMatch.index || 0),
+          to: lineObj.from + (debuggerMatch.index || 0) + debuggerMatch[0].length,
+          severity: 'error', // Often treated as an error in production environments
+          message: 'Debugger statement found',
+          source: 'codejector-linter',
         });
       }
 
@@ -74,7 +99,7 @@ const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
           to: lineObj.from + lineText.length,
           severity: 'info',
           message: 'Empty line',
-          source: 'custom-linter',
+          source: 'codejector-linter', // Changed source
         });
       }
     });
