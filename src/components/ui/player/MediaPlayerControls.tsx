@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useCallback, SyntheticEvent } from 'react';
 import {
   Box,
   IconButton,
   useTheme,
   CircularProgress,
   Tooltip,
+  Slider,
+  Typography,
 } from '@mui/material';
 import {
   PlayArrow,
@@ -29,7 +31,36 @@ import {
   setPlaying,
   showTranscriptionAtom,
   toggleShowTranscription,
+  progressAtom,
+  durationAtom,
+  setTrackProgress,
+  currentTrackAtom,
 } from '@/stores/mediaStore';
+
+// Define styles outside the component for memoization and clean JSX
+const progressContainerStyles = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 1,
+  width: '100%',
+};
+
+const progressSliderStyles = (theme: any) => ({
+  color: theme.palette.primary.main,
+  height: 3,
+  '& .MuiSlider-thumb': {
+    width: 8,
+    height: 8,
+  },
+});
+
+// Helper function to format time
+const formatTime = (time: number): string => {
+  if (isNaN(time) || time === Infinity) return '0:00';
+  const minutes = Math.floor(time / 60);
+  const seconds = Math.floor(time % 60);
+  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+};
 
 interface MediaPlayerControlsProps {
   // mediaElementRef is no longer directly used in this component after removing the progress slider.
@@ -37,13 +68,16 @@ interface MediaPlayerControlsProps {
   // The prop itself is now entirely removed for cleaner interface.
 }
 
-const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => { // Removed mediaElementRef from destructuring
+const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
   const theme = useTheme();
-  const { loading } = useStore($mediaStore);
+  const { loading, mediaElement } = useStore($mediaStore);
   const isPlaying = useStore(isPlayingAtom);
   const shuffle = useStore(shuffleAtom);
   const repeatMode = useStore(repeatModeAtom);
   const showTranscription = useStore(showTranscriptionAtom);
+  const trackProgress = useStore(progressAtom);
+  const duration = useStore(durationAtom);
+  const currentTrack = useStore(currentTrackAtom);
 
   const handlePlayPause = () => {
     setPlaying(!isPlaying);
@@ -61,7 +95,26 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => { // Remov
     toggleShowTranscription();
   };
 
-  const $isLoading = loading;
+  const handleTrackTimeChange = useCallback((_event: Event, newValue: number | number[]) => {
+    const newTime = typeof newValue === 'number' ? newValue : 0;
+    if (mediaElement) {
+      mediaElement.currentTime = newTime;
+      setTrackProgress(newTime); // Update store immediately for visual feedback
+    }
+  }, [mediaElement, setTrackProgress]);
+
+  const handleTrackTimeChangeCommitted = useCallback(
+    (_event: Event | SyntheticEvent, newValue: number | number[]) => {
+      const newTime = typeof newValue === 'number' ? newValue : 0;
+      if (mediaElement) {
+        mediaElement.currentTime = newTime;
+        setTrackProgress(newTime); // Ensure store is updated after commit
+      }
+    },
+    [mediaElement, setTrackProgress],
+  );
+
+  const isPlayerDisabled = !currentTrack || !mediaElement || loading;
 
   return (
     <Box
@@ -73,12 +126,16 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => { // Remov
         width: 'auto',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0, mt: 0 }}>
+      
+
+      {/* Control buttons row */}
+      <Box className='flex items-end justify-center gap-2'>
         <Tooltip title="Shuffle">
           <IconButton
             size="small"
             sx={{ color: theme.palette.text.primary }}
             onClick={toggleShuffle}
+            disabled={isPlayerDisabled}
           >
             <Shuffle fontSize="small" color={shuffle ? 'primary' : 'inherit'} />
           </IconButton>
@@ -88,6 +145,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => { // Remov
             size="small"
             sx={{ color: theme.palette.text.primary }}
             onClick={handlePrevious}
+            disabled={isPlayerDisabled}
           >
             <SkipPrevious fontSize="small" />
           </IconButton>
@@ -96,7 +154,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => { // Remov
           <IconButton
             size="small"
             onClick={handlePlayPause}
-            disabled={$isLoading}
+            disabled={isPlayerDisabled}
             sx={{
               color: theme.palette.text.primary,
               bgcolor: theme.palette.primary.main,
@@ -106,7 +164,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => { // Remov
               borderRadius: '50%',
             }}
           >
-            {$isLoading ? (
+            {loading ? (
               <CircularProgress size={20} color="inherit" />
             ) : isPlaying ? (
               <Pause fontSize="small" />
@@ -120,6 +178,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => { // Remov
             size="small"
             sx={{ color: theme.palette.text.primary }}
             onClick={handleNext}
+            disabled={isPlayerDisabled}
           >
             <SkipNext fontSize="small" />
           </IconButton>
@@ -137,6 +196,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => { // Remov
             size="small"
             sx={{ color: theme.palette.text.primary }}
             onClick={toggleRepeat}
+            disabled={isPlayerDisabled}
           >
             {repeatMode === 'track' ? (
               <RepeatOne fontSize="small" color="primary" />
@@ -154,6 +214,7 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => { // Remov
             size="small"
             sx={{ color: theme.palette.text.primary }}
             onClick={handleToggleTranscription}
+            disabled={isPlayerDisabled}
           >
             <Transcribe
               fontSize="small"
@@ -161,6 +222,27 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => { // Remov
             />
           </IconButton>
         </Tooltip>
+      </Box>
+      {/* Progress Slider (Moved here) */}
+      <Box sx={progressContainerStyles} className="w-full flex items-start gap-2">
+        <Typography variant="caption" color="text.secondary">
+          {formatTime(trackProgress)}
+        </Typography>
+        <Slider
+          size="small"
+          value={trackProgress ?? 0}
+          onChange={handleTrackTimeChange}
+          onChangeCommitted={handleTrackTimeChangeCommitted}
+          min={0}
+          max={duration ?? 0}
+          aria-label="Track progress"
+          sx={progressSliderStyles(theme)}
+          disabled={isPlayerDisabled}
+          className="flex-grow"
+        />
+        <Typography variant="caption" color="text.secondary">
+          {formatTime(duration)}
+        </Typography>
       </Box>
     </Box>
   );

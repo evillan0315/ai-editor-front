@@ -14,12 +14,10 @@ import {
 } from '@/stores/mediaStore';
 
 interface MediaPlayerProps {
-  mediaType: FileType.AUDIO | FileType.VIDEO;
   mediaElementRef: React.RefObject<HTMLMediaElement>;
 }
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({
-  mediaType,
   mediaElementRef,
 }) => {
   const theme = useTheme();
@@ -41,6 +39,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         bgcolor: theme.palette.background.paper,
         borderTop: theme.palette.divider,
         height: '49px',
+        maxWidth: '600px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -51,9 +50,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         px: 4,
       }}
     >
-      <MediaPlayerTrackInfo mediaType={mediaType} />
-      <MediaPlayerControls mediaElementRef={mediaElementRef} />
-      <MediaPlayerVolumeControl mediaRef={mediaElementRef} />
+      <MediaPlayerTrackInfo />
+      <MediaPlayerControls /* mediaElementRef={mediaElementRef} Removed */ />
+      <MediaPlayerVolumeControl />
     </Box>
   );
 };
