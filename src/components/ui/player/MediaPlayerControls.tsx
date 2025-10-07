@@ -34,9 +34,10 @@ import {
 interface MediaPlayerControlsProps {
   // mediaElementRef is no longer directly used in this component after removing the progress slider.
   // All playback controls interact with the global media element via the mediaStore.
+  // The prop itself is now entirely removed for cleaner interface.
 }
 
-const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
+const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => { // Removed mediaElementRef from destructuring
   const theme = useTheme();
   const { loading } = useStore($mediaStore);
   const isPlaying = useStore(isPlayingAtom);
