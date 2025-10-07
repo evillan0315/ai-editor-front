@@ -20,6 +20,7 @@ import {
   projectRootDirectoryStore,
 } from '@/stores/fileTreeStore';
 import { llmStore, showGlobalSnackbar } from '@/stores/llmStore';
+import { projectStore } from '@/stores/projectStore'; // New import
 
 import { ContextMenuItem } from '@/types/main';
 import { FileEntry } from '@/types/refactored/fileTree'; // Updated import path
@@ -76,6 +77,9 @@ const FileTree: React.FC<FileTreeProps> = () => {
   } = useStore(fileTreeStore);
   const { scanPathsInput } = useStore(llmStore);
   const projectRoot = useStore(projectRootDirectoryStore);
+  const { currentProject } = useStore(projectStore); // Retrieve current project
+  const projectId = currentProject?.id; // Get projectId
+
   const showTerminal = useStore(isTerminalVisible);
   const theme = useTheme();
 
@@ -86,7 +90,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [itemToRename, setItemToRename] = useState<FileEntry | null>(null);
 
-  const [isOperationPathDialogOpen, setIsOperationPathDialogOpen] =
+  const [isOperationPathDialogOpen, setIsOperationPathDialogOpen] = 
     useState(false);
   const [itemForOperation, setItemForOperation] = useState<FileEntry | null>(
     null,
@@ -128,13 +132,16 @@ const FileTree: React.FC<FileTreeProps> = () => {
   );
 
   useEffect(() => {
-    if (projectRoot) {
-      loadInitialTree(projectRoot);
+    if (projectRoot && projectId) {
+      loadInitialTree(projectRoot); // projectId is now handled internally by loadInitialTree from projectStore
+    } else if (projectRoot && !projectId) {
+      showGlobalSnackbar('No project selected. Cannot load file tree.', 'error');
+      clearFileTree(); // Clear existing tree if no project is selected
     }
     return () => {
       clearFileTree();
     };
-  }, [projectRoot]);
+  }, [projectRoot, projectId]); // Add projectId to dependency array
 
   // Effect to apply search filter whenever treeFiles or searchTerm changes
   useEffect(() => {
@@ -143,33 +150,46 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
   const refreshPath = useCallback(
     async (targetPath: string) => {
+      if (!projectId) {
+        console.error('Project ID is required to refresh path.');
+        showGlobalSnackbar('No project selected. Cannot refresh file tree.', 'error');
+        return;
+      }
+
       const parentDir = path.dirname(targetPath);
       const isRoot = parentDir === targetPath; // This means targetPath is the root itself or a root-level item
-      // If refreshing a root-level item, or the root itself, reload the initial tree.
-      // Otherwise, load children of its parent.
-      const pathToRefresh =
+      const pathToRefresh = 
         isRoot && parentDir === '/' ? targetPath : parentDir;
 
       if (pathToRefresh && pathToRefresh !== '.') {
-        await loadChildrenForDirectory(pathToRefresh);
+        const state = fileTreeStore.get();
+        const nodeToRefresh = findFileEntryInTree(state.files, pathToRefresh); // Ensure this helper exists or is imported
+
+        if (nodeToRefresh && nodeToRefresh.type === 'folder' && state.expandedDirs.has(pathToRefresh)) {
+          await loadChildrenForDirectory(pathToRefresh);
+        } else if (projectRoot) {
+          await loadInitialTree(projectRoot);
+        }
       } else if (projectRoot) {
         await loadInitialTree(projectRoot);
       }
     },
-    [projectRoot],
+    [projectRoot, projectId], // Add projectId to dependency array
   );
 
   const handleRefreshTree = () => {
-    if (projectRoot) {
+    if (projectRoot && projectId) {
       loadInitialTree(projectRoot);
       showGlobalSnackbar('File tree refreshed.', 'info');
+    } else {
+      showGlobalSnackbar('No project selected to refresh file tree.', 'warning');
     }
   };
 
   const handleCreateSuccess = useCallback(
     (newPath: string) => {
       const parentDir = path.dirname(newPath);
-      refreshPath(parentDir);
+      refreshPath(parentDir); // refreshPath now uses projectId internally
       showGlobalSnackbar(
         `${isCreatingFolder ? 'Folder' : 'File'} created successfully at ${newPath}`,
         'success',
@@ -180,19 +200,23 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
   const handleDeleteItem = useCallback(
     async (node: FileEntry) => {
+      if (!projectId) {
+        showGlobalSnackbar('No project selected. Cannot delete file.', 'error');
+        return;
+      }
       if (
         window.confirm(
           `Are you sure you want to delete ${node.name}? This action cannot be undone.`,
         )
       ) {
         try {
-          const result = await apiDeleteFile(node.path);
+          const result = await apiDeleteFile(node.path, projectId); // Pass projectId
           if (result.success) {
             showGlobalSnackbar(result.message, 'success');
             refreshPath(node.path);
           } else {
             showGlobalSnackbar(result.message || 'Failed to delete.', 'error');
-          }
+          } 
         } catch (err: any) {
           showGlobalSnackbar(
             `Error deleting: ${err.message || String(err)}`,
@@ -201,7 +225,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
         }
       }
     },
-    [refreshPath],
+    [refreshPath, projectId], // Add projectId to dependency array
   );
 
   const handleRenameSuccess = useCallback(
@@ -327,7 +351,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
                 : file.path;
               llmStore.setKey('scanPathsInput', newScanPaths);
               showGlobalSnackbar(
-                `Added ${file.name} to AI scan paths.`,
+                `Added ${file.name} to AI scan paths.`, 
                 'success',
               );
             } else {
@@ -349,7 +373,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
       return items;
     },
-    [handleDeleteItem, scanPathsInput],
+    [handleDeleteItem, scanPathsInput], // handleDeleteItem depends on projectId already
   );
 
   const handleNodeContextMenu = useCallback(
@@ -392,6 +416,20 @@ const FileTree: React.FC<FileTreeProps> = () => {
     }
   };
 
+  // Helper function for finding a file entry in the tree, assumed to exist or provided by `fileTreeStore`
+  const findFileEntryInTree = (nodes: FileEntry[], targetPath: string): FileEntry | undefined => {
+    for (const node of nodes) {
+      if (node.path === targetPath) {
+        return node;
+      }
+      if (node.children && node.children.length > 0) {
+        const found = findFileEntryInTree(node.children, targetPath);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };
+
   return (
     <Box
       sx={{
@@ -409,6 +447,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
         onGoUpDirectory={handleGoUpDirectory}
         onRefreshTree={handleRefreshTree}
         onSearchChange={handleSearchChange}
+        //onAddFileFolder={handleAddFileFolder}
       />
 
       {/* File List or Status Messages */}
@@ -437,6 +476,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
         parentPath={pathForNewItem}
         isFolder={isCreatingFolder}
         onCreateSuccess={handleCreateSuccess}
+        projectId={projectId} // Pass projectId
       />
 
       <RenameDialog
@@ -445,6 +485,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
         item={itemToRename}
         onRenameSuccess={handleRenameSuccess}
         snackbar={{ show: showGlobalSnackbar }}
+        projectId={projectId} // Pass projectId
       />
 
       <OperationPathDialog
@@ -455,6 +496,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
         onOperationSuccess={handleOperationSuccess}
         snackbar={{ show: showGlobalSnackbar }}
         projectRoot={projectRoot}
+        projectId={projectId} // Pass projectId
       />
     </Box>
   );
