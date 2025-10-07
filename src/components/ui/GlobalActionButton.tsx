@@ -8,13 +8,15 @@ export interface GlobalAction {
   icon?: React.ElementType;
   color?: ButtonColor;
   variant?: ButtonVariant;
+
 }
 
 interface GlobalActionButtonProps {
   globalActions: GlobalAction[];
+  iconOnly?: boolean;
 }
 
-function GlobalActionButton({ globalActions }: GlobalActionButtonProps) {
+function GlobalActionButton({ globalActions, iconOnly }: GlobalActionButtonProps) {
   const theme = useTheme();
 
   const boxSx = {
