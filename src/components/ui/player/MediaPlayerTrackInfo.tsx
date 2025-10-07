@@ -50,9 +50,7 @@ const MediaPlayerTrackInfo: React.FC = () => {
         >
           {titleText}
         </Typography>
-        <Typography variant="caption" color="text.secondary" noWrap>
-          {artistText}
-        </Typography>
+        {/*TODO: Add the progress slider here*/}
       </Box>
       <IconButton
         size="small"
