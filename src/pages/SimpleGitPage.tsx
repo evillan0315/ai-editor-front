@@ -1,537 +1,927 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useStore } from '@nanostores/react';
-import { gitStore } from '@/stores/gitStore';
-import { GitBranch, GitCommit, GitStatusResult } from '@/types/git';
 import {
   Box,
-  Button,
-  TextField,
   Typography,
+  Button,
+  Paper,
   List,
   ListItem,
+  ListItemIcon,
   ListItemText,
   Divider,
-  CircularProgress,
-  Snackbar,
-  Alert,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
+  TextField,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  Checkbox,
-  FormControlLabel,
+  DialogContent,
+  DialogTitle,
+  CircularProgress,
+  Alert,
+  IconButton,
+  Chip,
+  Tooltip,
+  Tabs,
+  Tab,
+  Menu,
+  MenuItem,
 } from '@mui/material';
-import RunScriptMenuItem from '@/components/RunScriptMenuItem';
+import { useTheme } from '@mui/material/styles';
+
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import CommitIcon from '@mui/icons-material/Commit';
+import GitBranchIcon from '@mui/icons-material/CallSplit';
+import HistoryIcon from '@mui/icons-material/History';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import RestoreIcon from '@mui/icons-material/Restore';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
+import SaveIcon from '@mui/icons-material/Save';
+import CodeIcon from '@mui/icons-material/Code';
+
+import  CodeMirrorEditor  from '@/components/codemirror/CodeMirrorEditor';
+import { getCodeMirrorLanguage } from '@/utils';
 import {
-  gitGetBranches,
-  gitGetStatus,
   gitCommit,
-  gitCreateBranch,
-  gitCheckoutBranch,
-  gitDeleteBranch,
-  gitRevertCommit,
-  gitUndoFileChanges,
   gitStageFiles,
   gitUnstageFiles,
-  gitResetStagedChanges,
+  getGitStatus,
+  gitGetBranches,
+  gitCheckoutBranch,
+  gitCreateBranch,
+  gitDeleteBranch,
+  gitGetCommitLog,
   gitCreateSnapshot,
   gitRestoreSnapshot,
   gitListSnapshots,
   gitDeleteSnapshot,
-  gitGetCommitLog,
+  gitUndoFileChanges,
 } from '@/api/git';
-import { useUiStore } from '@/stores/uiStore';
-import { useFileStore } from '@/stores/fileStore';
+import { getGitDiff } from '@/api/llm';
 
-interface StatusState {
-  branch: string;
-  modifiedFiles: string[];
-  stagedFiles: string[];
+import {
+  gitStore,
+  GitBranch,
+  GitCommit,
+  GitStatusResult,
+  setLoading,
+} from '@/stores/gitStore';
+import { projectStore } from '@/stores/projectStore';
+
+import { showGlobalSnackbar } from '@/stores/snackbarStore';
+import { terminalStore, executeCommand } from '@/stores/terminalStore';
+import { themeStore } from '@/stores/themeStore';
+import { fileStore } from '@/stores/fileStore'; // To use setOpenedFile and fetchFileContent for diff
+import { fileTreeStore, projectRootDirectoryStore } from '@/stores/fileTreeStore';
+// Helper for consistent styling using MUI's sx prop
+const sectionPaperSx = {
+  p: 2,
+  mb: 3,
+  borderRadius: 2,
+  backgroundColor: (theme: any) =>
+    theme.palette.mode === 'dark' ? '#2c2c2c' : '#f0f0f0',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+  minHeight: '200px',
+  display: 'flex',
+  flexDirection: 'column',
+};
+
+const statusItemTextSx = {
+  fontSize: '0.9rem',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  flexWrap: 'wrap',
+};
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
 }
 
-const SimpleGitPage = () => {
-  const { showSnackbar } = useUiStore();
-  const { currentProject } = useFileStore();
-  const currentProjectRoot = currentProject?.projectPath;
-
-  const [status, setStatus] = useState<StatusState>({
-    branch: 'main',
-    modifiedFiles: [],
-    stagedFiles: [],
-  });
-  const [commitMessage, setCommitMessage] = useState('');
-  const [branches, setBranches] = useState<GitBranch[]>([]);
-  const [newBranchName, setNewBranchName] = useState('');
-  const [checkoutBranchName, setCheckoutBranchName] = useState('');
-  const [isRemoteCheckout, setIsRemoteCheckout] = useState(false);
-  const [deleteBranchName, setDeleteBranchName] = useState('');
-  const [forceDeleteBranch, setForceDeleteBranch] = useState(false);
-  const [revertCommitHash, setRevertCommitHash] = useState('HEAD');
-  const [snapshots, setSnapshots] = useState<string[]>([]);
-  const [newSnapshotName, setNewSnapshotName] = useState('');
-  const [newSnapshotMessage, setNewSnapshotMessage] = useState('');
-  const [restoreSnapshotName, setRestoreSnapshotName] = useState('');
-  const [deleteSnapshotName, setDeleteSnapshotName] = useState('');
-  const [commitLog, setCommitLog] = useState<GitCommit[]>([]);
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [statusResult, branchesResult, snapshotsResult, commitLogResult] = await Promise.all([
-        gitGetStatus(currentProjectRoot),
-        gitGetBranches(currentProjectRoot),
-        gitListSnapshots(currentProjectRoot),
-        gitGetCommitLog(currentProjectRoot),
-      ]);
-
-      setStatus({
-        branch: statusResult.current || 'main',
-        modifiedFiles: statusResult.modified,
-        stagedFiles: statusResult.staged,
-      });
-      setBranches(branchesResult);
-      setCheckoutBranchName(branchesResult.find(b => b.current)?.name || '');
-      setDeleteBranchName(branchesResult.find(b => b.current)?.name || '');
-      setSnapshots(snapshotsResult.tags);
-      setRestoreSnapshotName(snapshotsResult.tags[0] || '');
-      setDeleteSnapshotName(snapshotsResult.tags[0] || '');
-      setCommitLog(commitLogResult);
-    } catch (err: any) {
-      console.error('Failed to fetch Git data:', err);
-      setError(err.message || 'Failed to fetch Git data.');
-      showSnackbar('error', err.message || 'Failed to fetch Git data.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (currentProjectRoot) {
-      fetchData();
-    } else {
-        setError('No project root specified. Please open a project to enable Git functionality.');
-    }
-  }, [currentProjectRoot]);
-
-  const handleAction = async (action: () => Promise<any>, successMessage: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await action();
-      showSnackbar('success', successMessage);
-      await fetchData(); // Refresh all data after action
-    } catch (err: any) {
-      console.error('Git action failed:', err);
-      setError(err.message || 'Git action failed.');
-      showSnackbar('error', err.message || 'Git action failed.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStage = (file: string) => handleAction(
-    () => gitStageFiles([file], currentProjectRoot),
-    `Staged ${file}`,
-  );
-
-  const handleUnstage = (file: string) => handleAction(
-    () => gitUnstageFiles([file], currentProjectRoot),
-    `Unstaged ${file}`,
-  );
-
-  const handleResetStagedChanges = () => handleAction(
-    () => gitResetStagedChanges(undefined, currentProjectRoot),
-    'All staged changes have been reset.',
-  );
-
-  const handleResetFileStagedChanges = (file: string) => handleAction(
-    () => gitResetStagedChanges(file, currentProjectRoot),
-    `Staged changes for ${file} reset.`,
-  );
-
-  const handleCommit = () => handleAction(
-    () => gitCommit(commitMessage, currentProjectRoot),
-    `Committed with message: ${commitMessage}`,
-  );
-
-  const handleCreateBranch = () => handleAction(
-    () => gitCreateBranch(newBranchName, currentProjectRoot),
-    `Created branch: ${newBranchName}`,
-  );
-
-  const handleCheckoutBranch = () => handleAction(
-    () => gitCheckoutBranch(checkoutBranchName, isRemoteCheckout, currentProjectRoot),
-    `Checked out branch: ${checkoutBranchName}`,
-  );
-
-  const handleDeleteBranch = () => handleAction(
-    () => gitDeleteBranch(deleteBranchName, forceDeleteBranch, currentProjectRoot),
-    `Deleted branch: ${deleteBranchName}`,
-  );
-
-  const handleRevertCommit = () => handleAction(
-    () => gitRevertCommit(revertCommitHash, currentProjectRoot),
-    `Reverted commit: ${revertCommitHash}`,
-  );
-
-  const handleUndoFileChanges = (file: string) => handleAction(
-    () => gitUndoFileChanges(file, currentProjectRoot),
-    `Changes undone for ${file}`,
-  );
-
-  const handleCreateSnapshot = () => handleAction(
-    () => gitCreateSnapshot(newSnapshotName, newSnapshotMessage, currentProjectRoot),
-    `Snapshot '${newSnapshotName}' created.`,
-  );
-
-  const handleRestoreSnapshot = () => handleAction(
-    () => gitRestoreSnapshot(restoreSnapshotName, currentProjectRoot),
-    `Restored to snapshot '${restoreSnapshotName}'.`,
-  );
-
-  const handleDeleteSnapshot = () => handleAction(
-    () => gitDeleteSnapshot(deleteSnapshotName, currentProjectRoot),
-    `Snapshot '${deleteSnapshotName}' deleted.`,
-  );
+function CustomTabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
 
   return (
-    <Box className="p-4 max-w-full overflow-x-auto">
-      <Typography variant="h4" component="h1" className="mb-4">
-        Simple Git Management
-      </Typography>
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+      className="w-full"
+    >
+      {value === index && <Box sx={{ p: 0 }}>{children}</Box>}
+    </div>
+  );
+}
+
+function a11yProps(index: number) {
+  return {
+    id: `simple-tab-${index}`,
+    'aria-controls': `simple-tabpanel-${index}`,
+  };
+}
+
+export default function SimpleGitPage() {
+  const theme = useTheme();
+  const { mode } = useStore(themeStore);
+
+
+  const projectRoot = useStore(projectRootDirectoryStore) || '/';
+
+  const { status, branches, commits, snapshots, loading, error } = useStore(gitStore);
+
+  const [commitMessage, setCommitMessage] = useState('');
+  const [newBranchName, setNewBranchName] = useState('');
+  const [checkoutBranchName, setCheckoutBranchName] = useState('');
+  const [snapshotName, setSnapshotName] = useState('');
+  const [revertCommitHash, setRevertCommitHash] = useState('');
+
+  const [openCommitDialog, setOpenCommitDialog] = useState(false);
+  const [openBranchDialog, setOpenBranchDialog] = useState(false);
+  const [openCheckoutDialog, setOpenCheckoutDialog] = useState(false);
+  const [openSnapshotDialog, setOpenSnapshotDialog] = useState(false);
+  const [openRevertDialog, setOpenRevertDialog] = useState(false);
+  const [openRestoreSnapshotDialog, setOpenRestoreSnapshotDialog] = useState(false);
+  const [openDeleteSnapshotDialog, setOpenDeleteSnapshotDialog] = useState(false);
+  const [snapshotToDelete, setSnapshotToDelete] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState(0);
+  const [selectedStagedFiles, setSelectedStagedFiles] = useState<string[]>([]);
+  const [selectedUnstagedFiles, setSelectedUnstagedFiles] = useState<string[]>([]);
+
+  const [currentDiff, setCurrentDiff] = useState<string | null>(null);
+  const [diffFilePath, setDiffFilePath] = useState<string | null>(null);
+  const [openDiffViewer, setOpenDiffViewer] = useState(false);
+
+  const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number; file: string } | null>(null);
+  const [contextMenuBranch, setContextMenuBranch] = useState<{ mouseX: number; mouseY: number; branch: GitBranch } | null>(null);
+  const [contextMenuCommit, setContextMenuCommit] = useState<{ mouseX: number; mouseY: number; commit: GitCommit } | null>(null);
+  const [contextMenuSnapshot, setContextMenuSnapshot] = useState<{ mouseX: number; mouseY: number; snapshot: string } | null>(null);
+
+  const fetchAllGitData = useCallback(async () => {
+    if (!projectRoot) return;
+    setLoading(true);
+    try {
+      await Promise.all([
+        getGitStatus(projectRoot),
+        gitGetBranches(projectRoot),
+        gitGetCommitLog(projectRoot),
+        gitListSnapshots(projectRoot),
+      ]);
+    } catch (err: any) {
+      showGlobalSnackbar(
+        `Failed to fetch Git data: ${err.message || 'Unknown error'}`, 'error'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [projectRoot]);
+
+  useEffect(() => {
+    fetchAllGitData();
+  }, [fetchAllGitData]);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+
+  const handleRefresh = () => {
+    fetchAllGitData();
+    console.log(status, 'status');
+    showGlobalSnackbar('Git data refreshed', 'info');
+  };
+
+  const handleFileSelection = (filePath: string, type: 'staged' | 'unstaged') => {
+    if (type === 'staged') {
+      setSelectedStagedFiles((prev) =>
+        prev.includes(filePath) ? prev.filter((f) => f !== filePath) : [...prev, filePath]
+      );
+    } else {
+      setSelectedUnstagedFiles((prev) =>
+        prev.includes(filePath) ? prev.filter((f) => f !== filePath) : [...prev, filePath]
+      );
+    }
+  };
+
+  const handleStageSelected = async () => {
+    if (selectedUnstagedFiles.length === 0 || !projectRoot) return;
+    setLoading(true);
+    try {
+      await gitStageFiles(selectedUnstagedFiles, projectRoot);
+      showGlobalSnackbar('Files staged successfully', 'success');
+      setSelectedUnstagedFiles([]);
+      await getGitStatus(projectRoot);
+    } catch (err: any) {
+      showGlobalSnackbar(`Error staging files: ${err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleUnstageSelected = async () => {
+    if (selectedStagedFiles.length === 0 || !projectRoot) return;
+    setLoading(true);
+    try {
+      await gitUnstageFiles(selectedStagedFiles, projectRoot);
+      showGlobalSnackbar('Files unstaged successfully', 'success');
+      setSelectedStagedFiles([]);
+      await getGitStatus(projectRoot);
+    } catch (err: any) {
+      showGlobalSnackbar(`Error unstaging files: ${err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleCommit = async () => {
+    if (!commitMessage.trim() || !projectRoot) return;
+    setOpenCommitDialog(false);
+    setLoading(true);
+    try {
+      await gitCommit(commitMessage, projectRoot);
+      showGlobalSnackbar('Changes committed successfully', 'success');
+      setCommitMessage('');
+      await fetchAllGitData();
+    } catch (err: any) {
+      showGlobalSnackbar(`Error committing changes: ${err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleCreateBranch = async () => {
+    if (!newBranchName.trim() || !projectRoot) return;
+    setOpenBranchDialog(false);
+    setGitLoading(true);
+    try {
+      await gitCreateBranch(newBranchName, projectRoot);
+      showGlobalSnackbar(`Branch '${newBranchName}' created successfully`, 'success');
+      setNewBranchName('');
+      await fetchAllGitData();
+    } catch (err: any) {
+      showGlobalSnackbar(`Error creating branch: ${err.message}`, 'error');
+    }
+    setGitLoading(false);
+  };
+
+  const handleCheckoutBranch = async () => {
+    if (!checkoutBranchName.trim() || !projectRoot) return;
+    setOpenCheckoutDialog(false);
+    setLoading(true);
+    try {
+      await gitCheckoutBranch(checkoutBranchName, false, projectRoot);
+      showGlobalSnackbar(`Checked out branch '${checkoutBranchName}'`, 'success');
+      setCheckoutBranchName('');
+      await fetchAllGitData();
+    } catch (err: any) {
+      showGlobalSnackbar(`Error checking out branch: ${err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteBranch = async (branchName: string, force: boolean = false) => {
+    if (!branchName || !projectRoot) return;
+    if (!window.confirm(`Are you sure you want to delete branch '${branchName}'? ${force ? '(Force delete)' : ''}`)) return;
+    setLoading(true);
+    try {
+      await gitDeleteBranch(branchName, force, projectRoot);
+      showGlobalSnackbar(`Branch '${branchName}' deleted successfully`, 'success');
+      await fetchAllGitData();
+    } catch (err: any) {
+      showGlobalSnackbar(`Error deleting branch: ${err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleRevertCommit = async () => {
+    if (!revertCommitHash.trim() || !projectRoot) return;
+    setOpenRevertDialog(false);
+    setLoading(true);
+    try {
+      await gitRevertCommit(revertCommitHash, projectRoot);
+      showGlobalSnackbar(`Commit '${revertCommitHash}' reverted successfully`, 'success');
+      setRevertCommitHash('');
+      await fetchAllGitData();
+    } catch (err: any) {
+      showGlobalSnackbar(`Error reverting commit: ${err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleUndoFileChanges = async (filePath: string) => {
+    if (!filePath || !projectRoot) return;
+    if (!window.confirm(`Are you sure you want to discard changes in '${filePath}'? This cannot be undone.`)) return;
+    setLoading(true);
+    try {
+      await gitUndoFileChanges(filePath, projectRoot);
+      showGlobalSnackbar(`Changes in '${filePath}' discarded`, 'success');
+      await getGitStatus(projectRoot);
+    } catch (err: any) {
+      showGlobalSnackbar(`Error discarding changes: ${err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleCreateSnapshot = async () => {
+    if (!snapshotName.trim() || !projectRoot) return;
+    setOpenSnapshotDialog(false);
+    setLoading(true);
+    try {
+      await gitCreateSnapshot(snapshotName, `Snapshot created by Codejector: ${snapshotName}`, projectRoot);
+      showGlobalSnackbar(`Snapshot '${snapshotName}' created`, 'success');
+      setSnapshotName('');
+      await fetchAllGitData();
+    } catch (err: any) {
+      showGlobalSnackbar(`Error creating snapshot: ${err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleRestoreSnapshot = async (name: string) => {
+    if (!name || !projectRoot) return;
+    setOpenRestoreSnapshotDialog(false);
+    if (!window.confirm(`Restoring snapshot '${name}' will revert your repository to that state. Are you sure?`)) return;
+    setLoading(true);
+    try {
+      await gitRestoreSnapshot(name, projectRoot);
+      showGlobalSnackbar(`Snapshot '${name}' restored`, 'success');
+      await fetchAllGitData();
+    } catch (err: any) {
+      showGlobalSnackbar(`Error restoring snapshot: ${err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteSnapshot = async () => {
+    if (!snapshotToDelete || !projectRoot) return;
+    setOpenDeleteSnapshotDialog(false);
+    setLoading(true);
+    try {
+      await gitDeleteSnapshot(snapshotToDelete, projectRoot);
+      showGlobalSnackbar(`Snapshot '${snapshotToDelete}' deleted`, 'success');
+      setSnapshotToDelete(null);
+      await fetchAllGitData();
+    } catch (err: any) {
+      showGlobalSnackbar(`Error deleting snapshot: ${err.message}`, 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleViewDiff = async (filePath: string) => {
+    if (!projectRoot) return;
+    setLoading(true);
+    try {
+      const diffContent = await getGitDiff(filePath, projectRoot);
+      setCurrentDiff(diffContent);
+      setDiffFilePath(filePath);
+      setOpenDiffViewer(true);
+    } catch (err: any) {
+      showGlobalSnackbar(`Error fetching diff: ${err.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleContextMenu = (event: React.MouseEvent, file: string) => {
+    event.preventDefault();
+    setContextMenu(
+      contextMenu === null
+        ? { mouseX: event.clientX + 2, mouseY: event.clientY - 6, file }
+        : null,
+    );
+  };
+
+  const handleContextMenuBranch = (event: React.MouseEvent, branch: GitBranch) => {
+    event.preventDefault();
+    setContextMenuBranch(
+      contextMenuBranch === null
+        ? { mouseX: event.clientX + 2, mouseY: event.clientY - 6, branch }
+        : null,
+    );
+  };
+
+  const handleContextMenuCommit = (event: React.MouseEvent, commit: GitCommit) => {
+    event.preventDefault();
+    setContextMenuCommit(
+      contextMenuCommit === null
+        ? { mouseX: event.clientX + 2, mouseY: event.clientY - 6, commit }
+        : null,
+    );
+  };
+
+  const handleContextMenuSnapshot = (event: React.MouseEvent, snapshot: string) => {
+    event.preventDefault();
+    setContextMenuSnapshot(
+      contextMenuSnapshot === null
+        ? { mouseX: event.clientX + 2, mouseY: event.clientY - 6, snapshot }
+        : null,
+    );
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
+    setContextMenuBranch(null);
+    setContextMenuCommit(null);
+    setContextMenuSnapshot(null);
+  };
+
+  if (!projectRoot) {
+    return (
+      <Box className="p-4 flex flex-col items-center justify-center h-full">
+        <Alert severity="info" className="mb-4">No project root directory selected. Please select a project to view Git status.</Alert>
+        <Typography variant="h6">Go to the 'AI Editor' page to select a project.</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box className="p-4 flex flex-col h-full bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-gray-100">
+      <Typography variant="h4" component="h1" className="mb-4 font-bold text-center">Git Version Control</Typography>
+      <Typography variant="subtitle1" className="mb-4 text-center">Project Root: {projectRoot}</Typography>
 
       {loading && (
         <Box className="flex items-center justify-center p-4">
-          <CircularProgress />
-          <Typography className="ml-2">Loading Git data...</Typography>
+          <CircularProgress size={24} sx={{ mr: 2 }} />
+          <Typography>Loading Git data...</Typography>
         </Box>
       )}
-
       {error && (
-        <Alert severity="error" className="mb-4">
-          {error}
-        </Alert>
+        <Alert severity="error" className="mb-4">{error}</Alert>
       )}
 
-      {!currentProjectRoot && !loading && !error && (
-        <Alert severity="info" className="mb-4">
-          Please open a project to enable Git functionality.
-        </Alert>
-      )}
+      <Box className="flex justify-between items-center mb-4">
+        <Button variant="contained" startIcon={<RefreshIcon />} onClick={handleRefresh}>
+          Refresh Git Data
+        </Button>
+        <Button variant="contained" startIcon={<CommitIcon />} onClick={() => setOpenCommitDialog(true)} disabled={status?.staged.length === 0}>
+          Commit Staged
+        </Button>
+      </Box>
 
-      {currentProjectRoot && !loading && !error && (
-        <>
-          <Typography variant="h6" className="mt-4">Project Root:</Typography>
-          <Typography className="mb-4 font-mono break-all">{currentProjectRoot}</Typography>
+      <Paper sx={sectionPaperSx} className="flex-grow overflow-auto">
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={activeTab} onChange={handleTabChange} aria-label="git tabs" textColor="primary" indicatorColor="primary">
+            <Tab label="Status" {...a11yProps(0)} />
+            <Tab label="Branches" {...a11yProps(1)} />
+            <Tab label="Commits" {...a11yProps(2)} />
+            <Tab label="Snapshots" {...a11yProps(3)} />
+          </Tabs>
+        </Box>
 
-          <Box className="mb-4 p-4 border rounded-md shadow-sm">
-            <Typography variant="h6">Status</Typography>
-            <Typography>Current Branch: {status.branch}</Typography>
-
-            <Box className="mt-2">
-              <Typography variant="subtitle1">Modified Files:</Typography>
-              <List dense>
-                {status.modifiedFiles.length === 0 ? (
-                  <ListItem><ListItemText secondary="No modified files" /></ListItem>
-                ) : (
-                  status.modifiedFiles.map((file) => (
-                    <ListItem key={file}>
-                      <ListItemText primary={file} />
-                      <Button size="small" onClick={() => handleStage(file)}>Stage</Button>
-                      <Button size="small" color="warning" onClick={() => handleUndoFileChanges(file)}>Undo Changes</Button>
-                    </ListItem>
-                  ))
-                )}
+        <CustomTabPanel value={activeTab} index={0}>
+          <Box className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {/* Staged Files */}
+            <Paper sx={sectionPaperSx}>
+              <Typography variant="h6" className="flex items-center gap-2 mb-2">Staged Changes <CheckCircleIcon color="success" fontSize="small" /></Typography>
+              <List dense className="flex-grow overflow-auto border rounded-md border-gray-300 dark:border-gray-700">
+                {status?.staged.length === 0 && <ListItem><ListItemText primary="No staged changes" /></ListItem>}
+                {status?.staged.map((file) => (
+                  <ListItem
+                    key={file}
+                    className={`${selectedStagedFiles.includes(file) ? 'bg-blue-100 dark:bg-blue-900' : ''} hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer`}
+                    onClick={() => handleFileSelection(file, 'staged')}
+                    onContextMenu={(e) => handleContextMenu(e, file)}
+                  >
+                    <ListItemIcon>
+                      <RemoveIcon color="error" fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={file}
+                      primaryTypographyProps={{ sx: statusItemTextSx }}
+                    />
+                  </ListItem>
+                ))}
               </List>
-            </Box>
-
-            <Box className="mt-2">
-              <Typography variant="subtitle1">Staged Files:</Typography>
-              <List dense>
-                {status.stagedFiles.length === 0 ? (
-                  <ListItem><ListItemText secondary="No staged files" /></ListItem>
-                ) : (
-                  status.stagedFiles.map((file) => (
-                    <ListItem key={file}>
-                      <ListItemText primary={file} />
-                      <Button size="small" onClick={() => handleUnstage(file)}>Unstage</Button>
-                      <Button size="small" color="warning" onClick={() => handleResetFileStagedChanges(file)}>Reset File</Button>
-                    </ListItem>
-                  ))
-                )}
-              </List>
-              {status.stagedFiles.length > 0 && (
+              <Box className="flex justify-end gap-2 mt-2">
                 <Button
                   variant="outlined"
                   color="warning"
-                  size="small"
-                  onClick={handleResetStagedChanges}
-                  className="mt-2"
+                  startIcon={<RemoveIcon />}
+                  onClick={handleUnstageSelected}
+                  disabled={selectedStagedFiles.length === 0 || loading}
                 >
-                  Reset All Staged
+                  Unstage Selected
                 </Button>
-              )}
-            </Box>
-          </Box>
+              </Box>
+            </Paper>
 
-          <Box className="mb-4 p-4 border rounded-md shadow-sm">
-            <Typography variant="h6">Commit Changes</Typography>
-            <TextField
-              label="Commit Message"
-              variant="outlined"
-              fullWidth
-              multiline
-              rows={2}
-              value={commitMessage}
-              onChange={(e) => setCommitMessage(e.target.value)}
-              className="mb-2"
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleCommit}
-              disabled={!commitMessage || status.stagedFiles.length === 0 || loading}
-            >
-              Commit
-            </Button>
-          </Box>
-
-          <Box className="mb-4 p-4 border rounded-md shadow-sm">
-            <Typography variant="h6">Revert Commit</Typography>
-            <FormControl fullWidth className="mb-2">
-              <InputLabel id="revert-commit-label">Select Commit</InputLabel>
-              <Select
-                labelId="revert-commit-label"
-                value={revertCommitHash}
-                label="Select Commit"
-                onChange={(e) => setRevertCommitHash(e.target.value)}
-              >
-                <MenuItem value="HEAD">Last Commit (HEAD)</MenuItem>
-                {commitLog.map((commit) => (
-                  <MenuItem key={commit.hash} value={commit.hash}>
-                    {commit.hash.substring(0, 7)} - {commit.message} ({commit.author_name})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleRevertCommit}
-              disabled={!revertCommitHash || loading}
-            >
-              Revert Selected Commit
-            </Button>
-          </Box>
-
-          <Box className="mb-4 p-4 border rounded-md shadow-sm">
-            <Typography variant="h6">Branches</Typography>
-            <List dense>
-              {branches.length === 0 ? (
-                <ListItem><ListItemText secondary="No branches found" /></ListItem>
-              ) : (
-                branches.map((branch) => (
-                  <ListItem key={branch.name}>
+            {/* Unstaged Files */}
+            <Paper sx={sectionPaperSx}>
+              <Typography variant="h6" className="flex items-center gap-2 mb-2">Unstaged Changes <CancelIcon color="warning" fontSize="small" /></Typography>
+              <List dense className="flex-grow overflow-auto border rounded-md border-gray-300 dark:border-gray-700">
+                {status?.modified.length === 0 && status?.not_added.length === 0 && status?.deleted.length === 0 && <ListItem><ListItemText primary="No unstaged changes" /></ListItem>}
+                {status?.modified.map((file) => (
+                  <ListItem
+                    key={file}
+                    className={`${selectedUnstagedFiles.includes(file) ? 'bg-blue-100 dark:bg-blue-900' : ''} hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer`}
+                    onClick={() => handleFileSelection(file, 'unstaged')}
+                    onContextMenu={(e) => handleContextMenu(e, file)}
+                  >
+                    <ListItemIcon>
+                      <DriveFileMoveIcon color="info" fontSize="small" />
+                    </ListItemIcon>
                     <ListItemText
-                      primary={branch.name}
-                      secondary={branch.current ? 'Current' : ''}
+                      primary={`${file} (Modified)`}
+                      primaryTypographyProps={{ sx: statusItemTextSx }}
                     />
-                    <Button size="small" onClick={() => setCheckoutBranchName(branch.name)}>
-                      Select to Checkout
-                    </Button>
+                  </ListItem>
+                ))}
+                {status?.not_added.map((file) => (
+                  <ListItem
+                    key={file}
+                    className={`${selectedUnstagedFiles.includes(file) ? 'bg-blue-100 dark:bg-blue-900' : ''} hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer`}
+                    onClick={() => handleFileSelection(file, 'unstaged')}
+                    onContextMenu={(e) => handleContextMenu(e, file)}
+                  >
+                    <ListItemIcon>
+                      <AddIcon color="primary" fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={`${file} (Untracked)`}
+                      primaryTypographyProps={{ sx: statusItemTextSx }}
+                    />
+                  </ListItem>
+                ))}
+                {status?.deleted.map((file) => (
+                  <ListItem
+                    key={file.path}
+                    className={`${selectedUnstagedFiles.includes(file.path) ? 'bg-blue-100 dark:bg-blue-900' : ''} hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer`}
+                    onClick={() => handleFileSelection(file.path, 'unstaged')}
+                    onContextMenu={(e) => handleContextMenu(e, file.path)}
+                  >
+                    <ListItemIcon>
+                      <DeleteForeverIcon color="error" fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={`${file.path} (Deleted)`}
+                      primaryTypographyProps={{ sx: statusItemTextSx }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+              <Box className="flex justify-end gap-2 mt-2">
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleStageSelected}
+                  disabled={selectedUnstagedFiles.length === 0 || loading}
+                >
+                  Stage Selected
+                </Button>
+              </Box>
+            </Paper>
+          </Box>
+        </CustomTabPanel>
+
+        <CustomTabPanel value={activeTab} index={1}>
+          <Box className="flex flex-col gap-4 mt-4">
+            <Paper sx={sectionPaperSx}>
+              <Box className="flex justify-between items-center mb-2">
+                <Typography variant="h6">Branches</Typography>
+                <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setOpenBranchDialog(true)}>
+                  New Branch
+                </Button>
+              </Box>
+              <List dense className="flex-grow overflow-auto border rounded-md border-gray-300 dark:border-gray-700">
+                {branches.length === 0 && <ListItem><ListItemText primary="No branches found" /></ListItem>}
+                {branches.map((branch) => (
+                  <ListItem
+                    key={branch.name}
+                    className={`${branch.current ? 'bg-green-100 dark:bg-green-900' : ''} hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer`}
+                    onContextMenu={(e) => handleContextMenuBranch(e, branch)}
+                  >
+                    <ListItemIcon>
+                      <GitBranchIcon color={branch.current ? 'success' : 'action'} fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={`${branch.name}${branch.current ? ' (current)' : ''}`}
+                      secondary={branch.commit}
+                    />
                     {!branch.current && (
-                       <Button size="small" color="error" onClick={() => {setDeleteBranchName(branch.name); setForceDeleteBranch(false)}}>Delete</Button>
+                      <Button size="small" onClick={() => setCheckoutBranchName(branch.name) || setOpenCheckoutDialog(true)}>
+                        Checkout
+                      </Button>
                     )}
                   </ListItem>
-                ))
-              )}
-            </List>
-
-            <FormControl fullWidth className="mb-2">
-              <InputLabel id="checkout-branch-label">Checkout Branch</InputLabel>
-              <Select
-                labelId="checkout-branch-label"
-                value={checkoutBranchName}
-                label="Checkout Branch"
-                onChange={(e) => setCheckoutBranchName(e.target.value)}
-                className="mb-2"
-              >
-                {branches.map((branch) => (
-                  <MenuItem key={branch.name} value={branch.name}>
-                    {branch.name} {branch.current && '(Current)'}
-                  </MenuItem>
                 ))}
-              </Select>
-            </FormControl>
-            <FormControlLabel
-              control={<Checkbox checked={isRemoteCheckout} onChange={(e) => setIsRemoteCheckout(e.target.checked)} />}
-              label="Checkout remote branch"
-              className="mb-2"
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleCheckoutBranch}
-              disabled={!checkoutBranchName || loading}
-              className="mb-4"
-            >
-              Checkout
-            </Button>
-
-            <TextField
-              label="New Branch Name"
-              variant="outlined"
-              fullWidth
-              value={newBranchName}
-              onChange={(e) => setNewBranchName(e.target.value)}
-              className="mb-2"
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleCreateBranch}
-              disabled={!newBranchName || loading}
-            >
-              Create Branch
-            </Button>
-
-            <FormControl fullWidth className="mt-4 mb-2">
-              <InputLabel id="delete-branch-label">Delete Branch</InputLabel>
-              <Select
-                labelId="delete-branch-label"
-                value={deleteBranchName}
-                label="Delete Branch"
-                onChange={(e) => setDeleteBranchName(e.target.value)}
-              >
-                {branches.filter(b => !b.current).map((branch) => (
-                  <MenuItem key={branch.name} value={branch.name}>
-                    {branch.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControlLabel
-              control={<Checkbox checked={forceDeleteBranch} onChange={(e) => setForceDeleteBranch(e.target.checked)} />}
-              label="Force delete (even if not merged)"
-              className="mb-2"
-            />
-            <Button
-              variant="contained"
-              color="error"
-              onClick={handleDeleteBranch}
-              disabled={!deleteBranchName || loading}
-            >
-              Delete Branch
-            </Button>
+              </List>
+            </Paper>
           </Box>
+        </CustomTabPanel>
 
-          <Box className="mb-4 p-4 border rounded-md shadow-sm">
-            <Typography variant="h6">Snapshots (Tags)</Typography>
-            <List dense>
-              {snapshots.length === 0 ? (
-                <ListItem><ListItemText secondary="No snapshots (tags) found" /></ListItem>
-              ) : (
-                snapshots.map((snapshot) => (
-                  <ListItem key={snapshot}>
-                    <ListItemText primary={snapshot} />
-                    <Button size="small" onClick={() => setRestoreSnapshotName(snapshot)}>Select to Restore</Button>
-                    <Button size="small" color="error" onClick={() => setDeleteSnapshotName(snapshot)}>Delete</Button>
+        <CustomTabPanel value={activeTab} index={2}>
+          <Box className="flex flex-col gap-4 mt-4">
+            <Paper sx={sectionPaperSx}>
+              <Typography variant="h6" className="mb-2">Commit History</Typography>
+              <List dense className="flex-grow overflow-auto border rounded-md border-gray-300 dark:border-gray-700">
+                {commits.length === 0 && <ListItem><ListItemText primary="No commits found" /></ListItem>}
+                {Object.keys(commits).map((commit) => (
+                  <ListItem
+                    key={commit.hash}
+                    onContextMenu={(e) => handleContextMenuCommit(e, commit)}
+                  >
+                    <ListItemIcon>
+                      <HistoryIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={commit.message}
+                      secondary={
+                        <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Chip label={commit.hash.substring(0, 7)} size="small" />
+                          <Typography variant="caption">{commit.author_name}</Typography>
+                          <Typography variant="caption">{new Date(commit.date).toLocaleString()}</Typography>
+                        </Box>
+                      }
+                    />
+                    <Button size="small" onClick={() => setRevertCommitHash(commit.hash) || setOpenRevertDialog(true)}>
+                      Revert
+                    </Button>
                   </ListItem>
-                ))
-              )}
-            </List>
-
-            <TextField
-              label="New Snapshot Name"
-              variant="outlined"
-              fullWidth
-              value={newSnapshotName}
-              onChange={(e) => setNewSnapshotName(e.target.value)}
-              className="mb-2"
-            />
-            <TextField
-              label="Snapshot Message (Optional)"
-              variant="outlined"
-              fullWidth
-              value={newSnapshotMessage}
-              onChange={(e) => setNewSnapshotMessage(e.target.value)}
-              className="mb-2"
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleCreateSnapshot}
-              disabled={!newSnapshotName || loading}
-              className="mb-4"
-            >
-              Create Snapshot
-            </Button>
-
-            <FormControl fullWidth className="mb-2">
-              <InputLabel id="restore-snapshot-label">Restore Snapshot</InputLabel>
-              <Select
-                labelId="restore-snapshot-label"
-                value={restoreSnapshotName}
-                label="Restore Snapshot"
-                onChange={(e) => setRestoreSnapshotName(e.target.value)}
-              >
-                {snapshots.map((snapshot) => (
-                  <MenuItem key={snapshot} value={snapshot}>
-                    {snapshot}
-                  </MenuItem>
                 ))}
-              </Select>
-            </FormControl>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleRestoreSnapshot}
-              disabled={!restoreSnapshotName || loading}
-            >
-              Restore Snapshot
-            </Button>
+              </List>
+            </Paper>
+          </Box>
+        </CustomTabPanel>
 
-            <FormControl fullWidth className="mt-4 mb-2">
-              <InputLabel id="delete-snapshot-label">Delete Snapshot</InputLabel>
-              <Select
-                labelId="delete-snapshot-label"
-                value={deleteSnapshotName}
-                label="Delete Snapshot"
-                onChange={(e) => setDeleteSnapshotName(e.target.value)}
-              >
+        <CustomTabPanel value={activeTab} index={3}>
+          <Box className="flex flex-col gap-4 mt-4">
+            <Paper sx={sectionPaperSx}>
+              <Box className="flex justify-between items-center mb-2">
+                <Typography variant="h6">Snapshots</Typography>
+                <Button variant="outlined" startIcon={<SaveIcon />} onClick={() => setOpenSnapshotDialog(true)}>
+                  Create Snapshot
+                </Button>
+              </Box>
+              <List dense className="flex-grow overflow-auto border rounded-md border-gray-300 dark:border-gray-700">
+                {snapshots.length === 0 && <ListItem><ListItemText primary="No snapshots found" /></ListItem>}
                 {snapshots.map((snapshot) => (
-                  <MenuItem key={snapshot} value={snapshot}>
-                    {snapshot}
-                  </MenuItem>
+                  <ListItem
+                    key={snapshot}
+                    onContextMenu={(e) => handleContextMenuSnapshot(e, snapshot)}
+                  >
+                    <ListItemIcon>
+                      <BookmarkIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary={snapshot} />
+                    <Button size="small" color="primary" onClick={() => handleRestoreSnapshot(snapshot)}>
+                      Restore
+                    </Button>
+                    <Button size="small" color="error" onClick={() => { setSnapshotToDelete(snapshot); setOpenDeleteSnapshotDialog(true); }}>
+                      Delete
+                    </Button>
+                  </ListItem>
                 ))}
-              </Select>
-            </FormControl>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={handleDeleteSnapshot}
-              disabled={!deleteSnapshotName || loading}
-            >
-              Delete Snapshot
-            </Button>
+              </List>
+            </Paper>
           </Box>
+        </CustomTabPanel>
+      </Paper>
 
-          <Box className="mt-4">
-            <Typography variant="h6">Run Script</Typography>
-            <RunScriptMenuItem />
+      {/* Context Menu for Files */}
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleCloseContextMenu}
+        anchorReference="point"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem onClick={() => { handleViewDiff(contextMenu?.file || ''); handleCloseContextMenu(); }}>
+          <ListItemIcon><CodeIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>View Diff</ListItemText>
+        </MenuItem>
+        {(status?.modified.includes(contextMenu?.file || '') || status?.not_added.includes(contextMenu?.file || '')) && (
+          <MenuItem onClick={() => { handleStageSelected(); handleCloseContextMenu(); setSelectedUnstagedFiles([contextMenu?.file || '']); }}>
+            <ListItemIcon><AddIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Stage File</ListItemText>
+          </MenuItem>
+        )}
+        {status?.staged.includes(contextMenu?.file || '') && (
+          <MenuItem onClick={() => { handleUnstageSelected(); handleCloseContextMenu(); setSelectedStagedFiles([contextMenu?.file || '']); }}>
+            <ListItemIcon><RemoveIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Unstage File</ListItemText>
+          </MenuItem>
+        )}
+        {(status?.modified.includes(contextMenu?.file || '') || status?.deleted.map(f => f.path).includes(contextMenu?.file || '')) && (
+          <MenuItem onClick={() => { handleUndoFileChanges(contextMenu?.file || ''); handleCloseContextMenu(); }}>
+            <ListItemIcon><UndoIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Discard Changes</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
+
+      {/* Context Menu for Branches */}
+      <Menu
+        open={contextMenuBranch !== null}
+        onClose={handleCloseContextMenu}
+        anchorReference="point"
+        anchorPosition={
+          contextMenuBranch !== null
+            ? { top: contextMenuBranch.mouseY, left: contextMenuBranch.mouseX }
+            : undefined
+        }
+      >
+        {!contextMenuBranch?.branch.current && (
+          <MenuItem onClick={() => { setCheckoutBranchName(contextMenuBranch?.branch.name || ''); setOpenCheckoutDialog(true); handleCloseContextMenu(); }}>
+            <ListItemIcon><GitBranchIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Checkout</ListItemText>
+          </MenuItem>
+        )}
+        <MenuItem onClick={() => { handleDeleteBranch(contextMenuBranch?.branch.name || ''); handleCloseContextMenu(); }}>
+          <ListItemIcon><DeleteForeverIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Delete Branch</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { handleDeleteBranch(contextMenuBranch?.branch.name || '', true); handleCloseContextMenu(); }}>
+          <ListItemIcon><DeleteForeverIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Force Delete Branch</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* Context Menu for Commits */}
+      <Menu
+        open={contextMenuCommit !== null}
+        onClose={handleCloseContextMenu}
+        anchorReference="point"
+        anchorPosition={
+          contextMenuCommit !== null
+            ? { top: contextMenuCommit.mouseY, left: contextMenuCommit.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem onClick={() => { setRevertCommitHash(contextMenuCommit?.commit.hash || ''); setOpenRevertDialog(true); handleCloseContextMenu(); }}>
+          <ListItemIcon><RestoreIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Revert Commit</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* Context Menu for Snapshots */}
+      <Menu
+        open={contextMenuSnapshot !== null}
+        onClose={handleCloseContextMenu}
+        anchorReference="point"
+        anchorPosition={
+          contextMenuSnapshot !== null
+            ? { top: contextMenuSnapshot.mouseY, left: contextMenuSnapshot.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem onClick={() => { handleRestoreSnapshot(contextMenuSnapshot?.snapshot || ''); handleCloseContextMenu(); }}>
+          <ListItemIcon><RestoreIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Restore Snapshot</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { setSnapshotToDelete(contextMenuSnapshot?.snapshot || null); setOpenDeleteSnapshotDialog(true); handleCloseContextMenu(); }}>
+          <ListItemIcon><DeleteForeverIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Delete Snapshot</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* Dialogs */}
+      <Dialog open={openCommitDialog} onClose={() => setOpenCommitDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Commit Changes</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Commit Message"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={commitMessage}
+            onChange={(e) => setCommitMessage(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCommit(); }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenCommitDialog(false)}>Cancel</Button>
+          <Button onClick={handleCommit} disabled={!commitMessage.trim()}>Commit</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openBranchDialog} onClose={() => setOpenBranchDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Create New Branch</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="New Branch Name"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={newBranchName}
+            onChange={(e) => setNewBranchName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCreateBranch(); }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenBranchDialog(false)}>Cancel</Button>
+          <Button onClick={handleCreateBranch} disabled={!newBranchName.trim()}>Create</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openCheckoutDialog} onClose={() => setOpenCheckoutDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Checkout Branch</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Branch Name to Checkout"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={checkoutBranchName}
+            onChange={(e) => setCheckoutBranchName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCheckoutBranch(); }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenCheckoutDialog(false)}>Cancel</Button>
+          <Button onClick={handleCheckoutBranch} disabled={!checkoutBranchName.trim()}>Checkout</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openRevertDialog} onClose={() => setOpenRevertDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Revert Commit</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Commit Hash to Revert"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={revertCommitHash}
+            onChange={(e) => setRevertCommitHash(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleRevertCommit(); }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenRevertDialog(false)}>Cancel</Button>
+          <Button onClick={handleRevertCommit} disabled={!revertCommitHash.trim()}>Revert</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openSnapshotDialog} onClose={() => setOpenSnapshotDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Create Repository Snapshot</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Snapshot Name (e.g., 'pre-refactor')"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={snapshotName}
+            onChange={(e) => setSnapshotName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCreateSnapshot(); }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenSnapshotDialog(false)}>Cancel</Button>
+          <Button onClick={handleCreateSnapshot} disabled={!snapshotName.trim()}>Create</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openDeleteSnapshotDialog} onClose={() => setOpenDeleteSnapshotDialog(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Confirm Delete Snapshot</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete snapshot '<b>{snapshotToDelete}</b>'? This cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteSnapshotDialog(false)}>Cancel</Button>
+          <Button onClick={handleDeleteSnapshot} color="error">Delete</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openDiffViewer} onClose={() => setOpenDiffViewer(false)} fullWidth maxWidth="md">
+        <DialogTitle>Diff Viewer: {diffFilePath}</DialogTitle>
+        <DialogContent className="p-0">
+          <Box className="h-[60vh] w-full border border-gray-300 dark:border-gray-700 rounded-md overflow-hidden">
+            {currentDiff ? (
+              <CodeMirrorEditor
+                value={currentDiff}
+                filePath={diffFilePath || 'diff.diff'}
+                readOnly={true}
+                height="100%"
+               // isDiffView={true}
+              />
+            ) : (
+              <Box className="flex items-center justify-center h-full">
+                <CircularProgress />
+              </Box>
+            )}
           </Box>
-        </>
-      )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDiffViewer(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
-};
-
-export default SimpleGitPage;
+}
