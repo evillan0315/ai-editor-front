@@ -70,7 +70,7 @@
 [Demo](https://drive.google.com/file/d/1qGrp-Vjhf5ETz0--gWJSlwbsf7OjMi2N/view?usp=sharing)
 
 [LLM Generator Demo](https://drive.google.com/file/d/1XF_cFR-0G8DjLIZ8qwkPmoK9-V30_YdP/view?usp=sharing)
-
+[Git Management Demo](https://drive.google.com/file/d/12GiVs0Ht2kFXnOKCaWsKEIxIH3MTmYBm/view?usp=sharing)
 
 
 ---
