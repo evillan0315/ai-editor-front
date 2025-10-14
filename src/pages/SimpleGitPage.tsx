@@ -43,7 +43,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 import SaveIcon from '@mui/icons-material/Save';
 import CodeIcon from '@mui/icons-material/Code';
-import UndoIcon from '@mui/icons-material/Undo'; // Added missing import
+import UndoIcon from '@mui/icons-material/Undo';
 
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { getCodeMirrorLanguage } from '@/utils';
@@ -62,6 +62,8 @@ import {
   gitListSnapshots,
   gitDeleteSnapshot,
   gitUndoFileChanges,
+  gitRevertCommit,
+  gitResetHard, // Import new git reset hard
 } from '@/api/git';
 import { getGitDiff } from '@/api/llm';
 
@@ -70,12 +72,13 @@ import {
   GitBranch,
   GitCommit,
   GitStatusResult,
-} from '@/stores/gitStore'; // Removed setLoading, will use gitStore.setKey directly
+} from '@/stores/gitStore';
 import { projectStore } from '@/stores/projectStore';
 
 import { showGlobalSnackbar } from '@/stores/snackbarStore';
 import { themeStore } from '@/stores/themeStore';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
+import { GitResetHardDto } from '@/types'; // Import GitResetHardDto
 
 // Helper for consistent styling using MUI's sx prop
 const sectionPaperSx = {
@@ -141,12 +144,14 @@ export default function SimpleGitPage() {
   const [checkoutBranchName, setCheckoutBranchName] = useState('');
   const [snapshotName, setSnapshotName] = useState('');
   const [revertCommitHash, setRevertCommitHash] = useState('');
+  const [resetHardCommitHash, setResetHardCommitHash] = useState(''); // New state for reset hard
 
   const [openCommitDialog, setOpenCommitDialog] = useState(false);
   const [openBranchDialog, setOpenBranchDialog] = useState(false);
   const [openCheckoutDialog, setOpenCheckoutDialog] = useState(false);
   const [openSnapshotDialog, setOpenSnapshotDialog] = useState(false);
   const [openRevertDialog, setOpenRevertDialog] = useState(false);
+  const [openResetHardDialog, setOpenResetHardDialog] = useState(false); // New state for reset hard dialog
   const [openRestoreSnapshotDialog, setOpenRestoreSnapshotDialog] = useState(false);
   const [openDeleteSnapshotDialog, setOpenDeleteSnapshotDialog] = useState(false);
   const [snapshotToDelete, setSnapshotToDelete] = useState<string | null>(null);
@@ -166,7 +171,7 @@ export default function SimpleGitPage() {
 
   const fetchAllGitData = useCallback(async () => {
     if (!projectRoot) return;
-    gitStore.setKey('loading', true); // Use gitStore.setKey for loading
+    gitStore.setKey('loading', true);
     try {
       const [statusResult, branchesResult, commitsResult, snapshotsResult] = await Promise.all([
         getGitStatus(projectRoot),
@@ -174,20 +179,20 @@ export default function SimpleGitPage() {
         gitGetCommitLog(projectRoot),
         gitListSnapshots(projectRoot),
       ]);
-      gitStore.set({ // Update multiple keys at once
+      gitStore.set({
         status: statusResult,
         branches: branchesResult,
         commits: commitsResult,
-        snapshots: snapshotsResult.tags, // Correctly access .tags
-        loading: false, // Ensure loading is reset
-        error: null, // Clear any previous errors on successful fetch
+        snapshots: snapshotsResult.tags,
+        loading: false,
+        error: null,
       });
     } catch (err: any) {
       showGlobalSnackbar(
         `Failed to fetch Git data: ${err.message || 'Unknown error'}`, 'error'
       );
-      gitStore.setKey('error', err.message || 'Unknown error'); // Set error in store
-      gitStore.setKey('loading', false); // Ensure loading is reset
+      gitStore.setKey('error', err.message || 'Unknown error');
+      gitStore.setKey('loading', false);
     }
   }, [projectRoot]);
 
@@ -221,37 +226,37 @@ export default function SimpleGitPage() {
   const handleStageSelected = async (filesToStage?: string[]) => {
     const files = filesToStage || selectedUnstagedFiles;
     if (files.length === 0 || !projectRoot) return;
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       await gitStageFiles(files, projectRoot);
       showGlobalSnackbar('Files staged successfully', 'success');
       setSelectedUnstagedFiles([]);
-      await getGitStatus(projectRoot); // Refresh status after action
+      await getGitStatus(projectRoot);
     } catch (err: any) {
       showGlobalSnackbar(`Error staging files: ${err.message}`, 'error');
     }
-    gitStore.setKey('loading', false); // Use gitStore.setKey
+    gitStore.setKey('loading', false);
   };
 
   const handleUnstageSelected = async (filesToUnstage?: string[]) => {
     const files = filesToUnstage || selectedStagedFiles;
     if (files.length === 0 || !projectRoot) return;
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       await gitUnstageFiles(files, projectRoot);
       showGlobalSnackbar('Files unstaged successfully', 'success');
       setSelectedStagedFiles([]);
-      await getGitStatus(projectRoot); // Refresh status after action
+      await getGitStatus(projectRoot);
     } catch (err: any) {
       showGlobalSnackbar(`Error unstaging files: ${err.message}`, 'error');
     }
-    gitStore.setKey('loading', false); // Use gitStore.setKey
+    gitStore.setKey('loading', false);
   };
 
   const handleCommit = async () => {
     if (!commitMessage.trim() || !projectRoot) return;
     setOpenCommitDialog(false);
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       await gitCommit(commitMessage, projectRoot);
       showGlobalSnackbar('Changes committed successfully', 'success');
@@ -260,13 +265,13 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error committing changes: ${err.message}`, 'error');
     }
-    gitStore.setKey('loading', false); // Use gitStore.setKey
+    gitStore.setKey('loading', false);
   };
 
   const handleCreateBranch = async () => {
     if (!newBranchName.trim() || !projectRoot) return;
     setOpenBranchDialog(false);
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       await gitCreateBranch(newBranchName, projectRoot);
       showGlobalSnackbar(`Branch '${newBranchName}' created successfully`, 'success');
@@ -275,13 +280,13 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error creating branch: ${err.message}`, 'error');
     }
-    gitStore.setKey('loading', false); // Use gitStore.setKey
+    gitStore.setKey('loading', false);
   };
 
   const handleCheckoutBranch = async () => {
     if (!checkoutBranchName.trim() || !projectRoot) return;
     setOpenCheckoutDialog(false);
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       await gitCheckoutBranch(checkoutBranchName, false, projectRoot);
       showGlobalSnackbar(`Checked out branch '${checkoutBranchName}'`, 'success');
@@ -290,13 +295,13 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error checking out branch: ${err.message}`, 'error');
     }
-    gitStore.setKey('loading', false); // Use gitStore.setKey
+    gitStore.setKey('loading', false);
   };
 
   const handleDeleteBranch = async (branchName: string, force: boolean = false) => {
     if (!branchName || !projectRoot) return;
     if (!window.confirm(`Are you sure you want to delete branch '${branchName}'? ${force ? '(Force delete)' : ''}`)) return;
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       await gitDeleteBranch(branchName, force, projectRoot);
       showGlobalSnackbar(`Branch '${branchName}' deleted successfully`, 'success');
@@ -304,13 +309,13 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error deleting branch: ${err.message}`, 'error');
     }
-    gitStore.setKey('loading', false); // Use gitStore.setKey
+    gitStore.setKey('loading', false);
   };
 
   const handleRevertCommit = async () => {
     if (!revertCommitHash.trim() || !projectRoot) return;
     setOpenRevertDialog(false);
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       await gitRevertCommit(revertCommitHash, projectRoot);
       showGlobalSnackbar(`Commit '${revertCommitHash}' reverted successfully`, 'success');
@@ -319,27 +324,44 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error reverting commit: ${err.message}`, 'error');
     }
-    gitStore.setKey('loading', false); // Use gitStore.setKey
+    gitStore.setKey('loading', false);
+  };
+
+  // New function for git reset --hard
+  const handleGitResetHard = async () => {
+    if (!resetHardCommitHash.trim() || !projectRoot) return;
+    setOpenResetHardDialog(false);
+    gitStore.setKey('loading', true);
+    try {
+      const dto: GitResetHardDto = { commitHash: resetHardCommitHash, projectRoot };
+      await gitResetHard(dto);
+      showGlobalSnackbar(`Repository reset hard to commit '${resetHardCommitHash}'`, 'success');
+      setResetHardCommitHash('');
+      await fetchAllGitData(); // Refresh all data as reset hard changes everything
+    } catch (err: any) {
+      showGlobalSnackbar(`Error performing hard reset: ${err.message}`, 'error');
+    }
+    gitStore.setKey('loading', false);
   };
 
   const handleUndoFileChanges = async (filePath: string) => {
     if (!filePath || !projectRoot) return;
     if (!window.confirm(`Are you sure you want to discard changes in '${filePath}'? This cannot be undone.`)) return;
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       await gitUndoFileChanges(filePath, projectRoot);
       showGlobalSnackbar(`Changes in '${filePath}' discarded`, 'success');
-      await getGitStatus(projectRoot); // Refresh status after action
+      await getGitStatus(projectRoot);
     } catch (err: any) {
       showGlobalSnackbar(`Error discarding changes: ${err.message}`, 'error');
     }
-    gitStore.setKey('loading', false); // Use gitStore.setKey
+    gitStore.setKey('loading', false);
   };
 
   const handleCreateSnapshot = async () => {
     if (!snapshotName.trim() || !projectRoot) return;
     setOpenSnapshotDialog(false);
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       await gitCreateSnapshot(snapshotName, `Snapshot created by Codejector: ${snapshotName}`, projectRoot);
       showGlobalSnackbar(`Snapshot '${snapshotName}' created`, 'success');
@@ -348,14 +370,14 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error creating snapshot: ${err.message}`, 'error');
     }
-    gitStore.setKey('loading', false); // Use gitStore.setKey
+    gitStore.setKey('loading', false);
   };
 
   const handleRestoreSnapshot = async (name: string) => {
     if (!name || !projectRoot) return;
     setOpenRestoreSnapshotDialog(false);
     if (!window.confirm(`Restoring snapshot '${name}' will revert your repository to that state. Are you sure?`)) return;
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       await gitRestoreSnapshot(name, projectRoot);
       showGlobalSnackbar(`Snapshot '${name}' restored`, 'success');
@@ -363,13 +385,13 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error restoring snapshot: ${err.message}`, 'error');
     }
-    gitStore.setKey('loading', false); // Use gitStore.setKey
+    gitStore.setKey('loading', false);
   };
 
   const handleDeleteSnapshot = async () => {
     if (!snapshotToDelete || !projectRoot) return;
     setOpenDeleteSnapshotDialog(false);
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       await gitDeleteSnapshot(snapshotToDelete, projectRoot);
       showGlobalSnackbar(`Snapshot '${snapshotToDelete}' deleted`, 'success');
@@ -378,12 +400,12 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error deleting snapshot: ${err.message}`, 'error');
     }
-    gitStore.setKey('loading', false); // Use gitStore.setKey
+    gitStore.setKey('loading', false);
   };
 
   const handleViewDiff = async (filePath: string) => {
     if (!projectRoot) return;
-    gitStore.setKey('loading', true); // Use gitStore.setKey
+    gitStore.setKey('loading', true);
     try {
       const diffContent = await getGitDiff(filePath, projectRoot);
       setCurrentDiff(diffContent);
@@ -392,7 +414,7 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error fetching diff: ${err.message}`, 'error');
     } finally {
-      gitStore.setKey('loading', false); // Use gitStore.setKey
+      gitStore.setKey('loading', false);
     }
   };
 
@@ -558,7 +580,7 @@ export default function SimpleGitPage() {
                 ))}
                 {status?.deleted.map((file) => (
                   <ListItem
-                    key={file.path} // Correctly access file.path
+                    key={file.path}
                     className={`${selectedUnstagedFiles.includes(file.path) ? 'bg-blue-100 dark:bg-blue-900' : ''} hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer`}
                     onClick={() => handleFileSelection(file.path, 'unstaged')}
                     onContextMenu={(e) => handleContextMenu(e, file.path)}
@@ -629,7 +651,7 @@ export default function SimpleGitPage() {
               <Typography variant="h6" className="mb-2">Commit History</Typography>
               <List dense className="flex-grow overflow-auto border rounded-md border-gray-300 dark:border-gray-700">
                 {commits.length === 0 && <ListItem><ListItemText primary="No commits found" /></ListItem>}
-                {commits.map((commit) => ( // Directly map over commits array
+                {commits.map((commit) => (
                   <ListItem
                     key={commit.hash}
                     onContextMenu={(e) => handleContextMenuCommit(e, commit)}
@@ -706,13 +728,13 @@ export default function SimpleGitPage() {
           <ListItemIcon><CodeIcon fontSize="small" /></ListItemIcon>
           <ListItemText>View Diff</ListItemText>
         </MenuItem>
-        {status?.not_added.includes(contextMenu?.file || '') && ( // Only show stage if untracked or modified
+        {status?.not_added.includes(contextMenu?.file || '') && (
           <MenuItem onClick={() => { handleStageSelected([contextMenu?.file || '']); handleCloseContextMenu(); }}>
             <ListItemIcon><AddIcon fontSize="small" /></ListItemIcon>
             <ListItemText>Stage File</ListItemText>
           </MenuItem>
         )}
-        {status?.modified.includes(contextMenu?.file || '') && ( // Only show stage if untracked or modified
+        {status?.modified.includes(contextMenu?.file || '') && (
           <MenuItem onClick={() => { handleStageSelected([contextMenu?.file || '']); handleCloseContextMenu(); }}>
             <ListItemIcon><AddIcon fontSize="small" /></ListItemIcon>
             <ListItemText>Stage File</ListItemText>
@@ -725,7 +747,10 @@ export default function SimpleGitPage() {
           </MenuItem>
         )}
         {(status?.modified.includes(contextMenu?.file || '') || status?.deleted.map(f => f.path).includes(contextMenu?.file || '')) && (
-          <MenuItem onClick={() => { handleUndoFileChanges(contextMenu?.file || ''); handleCloseContextMenu(); }} disabled={loading}>
+          <MenuItem onClick={() => {
+            handleUndoFileChanges(contextMenu?.file || '');
+            handleCloseContextMenu();
+          }} disabled={loading}>
             <ListItemIcon><UndoIcon fontSize="small" /></ListItemIcon>
             <ListItemText>Discard Changes</ListItemText>
           </MenuItem>
@@ -773,6 +798,10 @@ export default function SimpleGitPage() {
         <MenuItem onClick={() => { setRevertCommitHash(contextMenuCommit?.commit.hash || ''); setOpenRevertDialog(true); handleCloseContextMenu(); }} disabled={loading}>
           <ListItemIcon><RestoreIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Revert Commit</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { setResetHardCommitHash(contextMenuCommit?.commit.hash || ''); setOpenResetHardDialog(true); handleCloseContextMenu(); }} disabled={loading}>
+          <ListItemIcon><DeleteForeverIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Reset (Hard)</ListItemText>
         </MenuItem>
       </Menu>
 
@@ -883,6 +912,30 @@ export default function SimpleGitPage() {
         <DialogActions>
           <Button onClick={() => setOpenRevertDialog(false)} disabled={loading}>Cancel</Button>
           <Button onClick={handleRevertCommit} disabled={!revertCommitHash.trim() || loading}>Revert</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* New Dialog for Git Reset Hard */}
+      <Dialog open={openResetHardDialog} onClose={() => setOpenResetHardDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Confirm Git Reset (Hard)</DialogTitle>
+        <DialogContent>
+          <Alert severity="error" className="mb-4">
+            WARNING: This will discard ALL uncommitted changes AND force the repository to the state of commit \'{resetHardCommitHash.substring(0, 7)}\'. This action is irreversible. Are you absolutely sure?
+          </Alert>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Commit Hash (for confirmation)"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={resetHardCommitHash}
+            InputProps={{ readOnly: true }} // Display hash, but prevent editing
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenResetHardDialog(false)} disabled={loading}>Cancel</Button>
+          <Button onClick={handleGitResetHard} color="error" disabled={!resetHardCommitHash.trim() || loading}>Reset Hard</Button>
         </DialogActions>
       </Dialog>
 
