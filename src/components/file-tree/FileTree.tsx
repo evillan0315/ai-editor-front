@@ -18,6 +18,7 @@ import {
   loadChildrenForDirectory,
   setSelectedFile,
   projectRootDirectoryStore,
+  setCurrentProjectPath, // Import setCurrentProjectPath
 } from '@/stores/fileTreeStore';
 import { llmStore, showGlobalSnackbar } from '@/stores/llmStore';
 import { projectStore } from '@/stores/projectStore'; // New import
@@ -37,11 +38,11 @@ import {
   DriveFileMove as DriveFileMoveIcon,
   FileCopy as FileCopyIcon,
   ArrowUpward as ArrowUpwardIcon, // Icon for going up a directory
+  Source as SourceFolderIcon, // New import for 'Set as Project Root'
 } from '@mui/icons-material';
 import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined';
 import { MaterialIconThemeFolderUtils } from '@/components/icons/MaterialIconThemeFolderUtils';
 import { MaterialIconThemeFolderPrompts } from '@/components/icons/MaterialIconThemeFolderPrompts';
-import { MaterialIconThemeFolderResource } from '@/components/icons/MaterialIconThemeFolderResource';
 import { MdiRenameBox } from '@/components/icons/MdiRenameBox';
 import { MdiTerminalNetworkOutline } from '@/components/icons/MdiTerminalNetworkOutline';
 import { LineMdFileDocumentPlusFilled } from '@/components/icons/LineMdFileDocumentPlusFilled';
@@ -122,7 +123,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
           results.push({
             ...node,
             collapsed: false, // Ensure path to match is expanded
-            children: childrenMatches, // Only include filtered children
+            children: childrenMatches,
           });
         }
       }
@@ -279,9 +280,18 @@ const FileTree: React.FC<FileTreeProps> = () => {
             }
           },
         },
+        {
+          label: 'Set as Project Root',
+          icon: <SourceFolderIcon fontSize="small" />,
+          action: (file) => {
+            setCurrentProjectPath(file.path);
+            showGlobalSnackbar(`Project root set to: ${file.path}`, 'success');
+          },
+          disabled: isFile, // Only enable for folders
+        },
         { type: 'divider' },
         {
-          label: 'New File...',
+          label: 'New File...', 
           icon: <LineMdFileDocumentPlusFilled fontSize="1.4em" />,
           action: (file) => {
             const targetPath = file.type === 'folder' ? file.path : parentPath;
@@ -289,7 +299,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
           },
         },
         {
-          label: 'New Folder...',
+          label: 'New Folder...', 
           icon: <MaterialIconThemeFolderUtils fontSize="1.2em" />,
           action: (file) => {
             const targetPath = file.type === 'folder' ? file.path : parentPath;
