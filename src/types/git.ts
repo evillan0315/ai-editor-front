@@ -13,11 +13,6 @@ export interface GitCommit {
   author_email: string;
 }
 
-export interface GitStatusRenamed {
-  from: string;
-  to: string;
-}
-
 export interface GitStatusResult {
   current: string | null;
   detached: boolean;
@@ -39,4 +34,13 @@ export interface GitStatusFile {
   path: string;
   index: string;
   working_dir: string;
+}
+
+export interface GitStatusRenamed {
+  from: string;
+  to: string;
+}
+
+export interface GitDiffResponseDto {
+  diff: string;
 }

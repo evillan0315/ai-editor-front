@@ -1,5 +1,5 @@
 import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
-import { GitBranch, GitStatusResult, GitCommit } from '@/types/git';
+import { GitBranch, GitStatusResult, GitCommit, GitDiffResponseDto } from '@/types/git';
 
 export const getGitStatus = async (projectRoot?: string): Promise<GitStatusResult> => {
   try {
@@ -203,6 +203,23 @@ export const gitGetCommitLog = async (projectRoot?: string): Promise<GitCommit[]
     return await handleResponse(response);
   } catch (error) {
     console.error('Error fetching commit log:', error);
+    throw error;
+  }
+};
+
+export const getGitDiff = async (
+  filePath: string,
+  projectRoot: string,
+): Promise<string> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/git/diff`, {
+      method: 'POST',
+      body: JSON.stringify({ filePath, projectRoot }),
+    });
+    const data = await handleResponse<GitDiffResponseDto>(response);
+    return data.diff;
+  } catch (error) {
+    console.error(`Error fetching git diff for ${filePath}:`, error);
     throw error;
   }
 };
