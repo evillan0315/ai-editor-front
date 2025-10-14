@@ -48,7 +48,7 @@ const LlmGenerationPage = lazy(() => import('./pages/LlmGenerationPage'));
 const ResumeBuilderPage = lazy(() => import('./pages/ResumeBuilderPage'));
 const RecordingPage = lazy(() => import('./pages/RecordingPage'));
 const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage'));
-const SimpleGitPage = lazy(() => import('./pages/SimpleGitPage'));
+const GitPage = lazy(() =>  import('@/components/git/GitPage'));
 const AIChatPage = lazy(() => import('./pages/AIChatPage'));
 const SchemeGeneratorPage = lazy(() => import('./pages/SchemeGeneratorPage')); // New: Lazy load SchemeGeneratorPage
 
@@ -245,7 +245,7 @@ const router = createBrowserRouter(
           <RequireAuth>
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
-                <SimpleGitPage />
+                <GitPage />
               </ErrorBoundary>
             </Suspense>
           </RequireAuth>
