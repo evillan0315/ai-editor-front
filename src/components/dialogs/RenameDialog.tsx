@@ -1,191 +1,94 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Typography,
-  IconButton,
-  useTheme,
-  CircularProgress,
-  Alert,
-  InputAdornment, // Added InputAdornment import
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import FolderIcon from '@mui/icons-material/FolderOutlined';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import * as path from 'path-browserify';
-import { FileEntry, RenameResult } from '@/types'; // Fixed import
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Typography, CircularProgress } from '@mui/material';
 import { renameFile as apiRenameFile } from '@/api/file';
+import { FileEntry } from '@/types/refactored/fileTree';
+import * as path from 'path-browserify';
 
 interface RenameDialogProps {
   open: boolean;
   onClose: () => void;
-  item: FileEntry | null; // The file/folder being renamed
+  item: FileEntry | null; // The file or folder to rename
   onRenameSuccess: (oldPath: string, newPath: string) => void;
-  snackbar: {
-    show: (message: string, severity: 'success' | 'error' | 'info') => void;
-  };
+  snackbar: { show: (message: string, severity: 'success' | 'error' | 'info' | 'warning') => void };
+  projectId: string | undefined; // Add projectId
 }
 
-const RenameDialog: React.FC<RenameDialogProps> = ({
-  open,
-  onClose,
-  item,
-  onRenameSuccess,
-  snackbar,
-}) => {
-  const theme = useTheme();
+export const RenameDialog: React.FC<RenameDialogProps> = ({ open, onClose, item, onRenameSuccess, snackbar, projectId }) => {
   const [newName, setNewName] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const currentParentPath = useMemo(() => {
-    if (!item) return '';
-    return item.isDirectory ? path.dirname(item.path) : path.dirname(item.path);
-  }, [item]);
 
   useEffect(() => {
     if (open && item) {
       setNewName(item.name);
-      setError(null);
+      setError('');
       setLoading(false);
-    } else if (!open) {
-      setNewName(''); // Clear input when closing
     }
   }, [open, item]);
 
-  const handleSubmit = async () => {
+  const handleRename = async () => {
     if (!item) return;
-
-    const trimmedNewName = newName.trim();
-    if (!trimmedNewName) {
-      setError('New name cannot be empty.');
+    if (!newName.trim()) {
+      setError('Name cannot be empty.');
       return;
     }
-    if (trimmedNewName === item.name) {
-      snackbar.show('No change detected. Renaming cancelled.', 'info');
-      onClose();
+    if (newName.trim() === item.name) {
+      onClose(); // No change, just close
+      return;
+    }
+    if (!projectId) {
+      snackbar.show('No project selected. Cannot rename file/folder.', 'error');
       return;
     }
 
     setLoading(true);
-    setError(null);
-
-    const oldPath = item.path;
-    const newPath = path.join(currentParentPath, trimmedNewName);
-
+    setError('');
     try {
-      const result: RenameResult = await apiRenameFile(oldPath, newPath);
+      const parentDir = path.dirname(item.path);
+      const newPath = path.join(parentDir, newName);
+      const result = await apiRenameFile(item.path, newPath, projectId); // Pass projectId
       if (result.success) {
-        snackbar.show(result.message, 'success');
-        onRenameSuccess(oldPath, newPath); // Trigger tree refresh
+        onRenameSuccess(item.path, newPath);
+        snackbar.show(result.message || 'Item renamed successfully!', 'success');
         onClose();
       } else {
-        setError(result.message || 'Failed to rename.');
-        snackbar.show(result.message || 'Failed to rename.', 'error');
+        setError(result.message || 'Failed to rename item.');
+        snackbar.show(result.message || 'Failed to rename item.', 'error');
       }
     } catch (err: any) {
-      setError(`Failed to rename: ${err.message || String(err)}`);
-      snackbar.show(`Error renaming: ${err.message || String(err)}`, 'error');
+      setError(err.message || 'An unexpected error occurred.');
+      snackbar.show(`Error renaming: ${err.message || 'Unknown error'}`, 'error');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: theme.palette.background.paper,
-          color: theme.palette.text.primary,
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{
-          borderBottom: `1px solid ${theme.palette.divider}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          pr: 1,
-        }}
-      >
-        <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
-          Rename {item?.type === 'folder' ? 'Folder' : 'File'}
-        </Typography>
-        <IconButton
-          onClick={onClose}
-          size="small"
-          sx={{ color: theme.palette.text.secondary }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent sx={{ p: 2 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Rename {item?.type === 'folder' ? 'Folder' : 'File'}</DialogTitle>
+      <DialogContent>
         {item && (
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            Current Path: <strong>{item.path}</strong>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Current Path: {item.path}
           </Typography>
         )}
         <TextField
           autoFocus
           margin="dense"
-          id="newName"
-          label={`New ${item?.type === 'folder' ? 'Folder' : 'File'} Name`}
+          label="New Name"
           type="text"
           fullWidth
-          variant="outlined"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          disabled={loading}
-          sx={{ mt: 2 }}
-          InputLabelProps={{ shrink: true }}
-          InputProps={{
-            style: { color: theme.palette.text.primary },
-            startAdornment: (
-              <InputAdornment position="start">
-                {item?.type === 'folder' ? (
-                  <FolderIcon sx={{ color: theme.palette.warning.main }} />
-                ) : (
-                  <InsertDriveFileIcon
-                    sx={{ color: theme.palette.info.main }}
-                  />
-                )}
-              </InputAdornment>
-            ),
-          }}
+          error={!!error}
+          helperText={error}
+          sx={{ mb: 2 }}
         />
       </DialogContent>
-      <DialogActions
-        sx={{
-          borderTop: `1px solid ${theme.palette.divider}`,
-          p: 2,
-          justifyContent: 'flex-end',
-        }}
-      >
-        <Button onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          color="primary"
-          variant="contained"
-          disabled={loading || !newName.trim()}
-          startIcon={loading && <CircularProgress size={20} />}
-        >
-          Rename
+      <DialogActions>
+        <Button onClick={onClose} disabled={loading}>Cancel</Button>
+        <Button onClick={handleRename} disabled={loading} variant="contained" color="primary">
+          {loading ? <CircularProgress size={24} /> : 'Rename'}
         </Button>
       </DialogActions>
     </Dialog>

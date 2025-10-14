@@ -16,13 +16,15 @@ body {
   /* apply the GitHub dark theme */
   background: none !important;
 }
-
+.cm-theme-light, .cm-theme-dark {
+  height: 100% !important;
+}
 .cm-editor {
-  height: '100%';
+  height: 100%;
   background-color: #1d1d1d  !important;
 }
 .cm-scroller {
-  height: '100%' !important;
+  height: 100% !important;
 }
 
 

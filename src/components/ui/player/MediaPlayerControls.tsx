@@ -36,6 +36,7 @@ import {
   setTrackProgress,
   currentTrackAtom,
 } from '@/stores/mediaStore';
+import MediaPlayerVolumeControl from './MediaPlayerVolumeControl'; // Added import
 
 // Define styles outside the component for memoization and clean JSX
 const progressContainerStyles = {
@@ -120,130 +121,148 @@ const MediaPlayerControls: React.FC<MediaPlayerControlsProps> = () => {
     <Box
       sx={{
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row', // Changed to row to accommodate volume control
         alignItems: 'center',
         flexGrow: 1,
         width: 'auto',
+        justifyContent: 'space-between', // Distribute space between volume and main controls
+        px: { xs: 1, sm: 2 }, // Added padding for better spacing
       }}
     >
-      
+      {/* Volume control, aligned to the left within MediaPlayerControls */}
+     
 
-      {/* Control buttons row */}
-      <Box className='flex items-end justify-center gap-2'>
-        <Tooltip title="Shuffle">
-          <IconButton
-            size="small"
-            sx={{ color: theme.palette.text.primary }}
-            onClick={toggleShuffle}
-            disabled={isPlayerDisabled}
+      {/* Existing playback controls (buttons and progress bar), now grouped */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          flexGrow: 1,
+          maxWidth: '400px', // Limit width to prevent stretching too much
+          mx: 2, // Horizontal margin to separate from volume control
+        }}
+      >
+         
+        {/* Control buttons row */}
+        <Box className='flex items-center justify-center gap-2 mt-1'>
+          <MediaPlayerVolumeControl />
+          <Tooltip title="Shuffle">
+            <IconButton
+              size="small"
+              sx={{ color: theme.palette.text.primary }}
+              onClick={toggleShuffle}
+              disabled={isPlayerDisabled}
+            >
+              <Shuffle fontSize="small" color={shuffle ? 'primary' : 'inherit'} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Previous Track">
+            <IconButton
+              size="small"
+              sx={{ color: theme.palette.text.primary }}
+              onClick={handlePrevious}
+              disabled={isPlayerDisabled}
+            >
+              <SkipPrevious fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={isPlaying ? 'Pause' : 'Play'}>
+            <IconButton
+              size="small"
+              onClick={handlePlayPause}
+              disabled={isPlayerDisabled}
+              sx={{
+                color: theme.palette.text.primary,
+                bgcolor: theme.palette.primary.main,
+                '&:hover': {
+                  bgcolor: theme.palette.primary.dark,
+                },
+                borderRadius: '50%',
+              }}
+            >
+              {loading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : isPlaying ? (
+                <Pause fontSize="small" />
+              ) : (
+                <PlayArrow fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Next Track">
+            <IconButton
+              size="small"
+              sx={{ color: theme.palette.text.primary }}
+              onClick={handleNext}
+              disabled={isPlayerDisabled}
+            >
+              <SkipNext fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip
+            title={
+              repeatMode === 'off'
+                ? 'Repeat All'
+                : repeatMode === 'context'
+                  ? 'Repeat One'
+                  : 'Repeat Off'
+            }
           >
-            <Shuffle fontSize="small" color={shuffle ? 'primary' : 'inherit'} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Previous Track">
-          <IconButton
-            size="small"
-            sx={{ color: theme.palette.text.primary }}
-            onClick={handlePrevious}
-            disabled={isPlayerDisabled}
-          >
-            <SkipPrevious fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={isPlaying ? 'Pause' : 'Play'}>
-          <IconButton
-            size="small"
-            onClick={handlePlayPause}
-            disabled={isPlayerDisabled}
-            sx={{
-              color: theme.palette.text.primary,
-              bgcolor: theme.palette.primary.main,
-              '&:hover': {
-                bgcolor: theme.palette.primary.dark,
-              },
-              borderRadius: '50%',
-            }}
-          >
-            {loading ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : isPlaying ? (
-              <Pause fontSize="small" />
-            ) : (
-              <PlayArrow fontSize="small" />
-            )}
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Next Track">
-          <IconButton
-            size="small"
-            sx={{ color: theme.palette.text.primary }}
-            onClick={handleNext}
-            disabled={isPlayerDisabled}
-          >
-            <SkipNext fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip
-          title={
-            repeatMode === 'off'
-              ? 'Repeat All'
-              : repeatMode === 'context'
-                ? 'Repeat One'
-                : 'Repeat Off'
-          }
-        >
-          <IconButton
-            size="small"
-            sx={{ color: theme.palette.text.primary }}
-            onClick={toggleRepeat}
-            disabled={isPlayerDisabled}
-          >
-            {repeatMode === 'track' ? (
-              <RepeatOne fontSize="small" color="primary" />
-            ) : (
-              <Repeat
+            <IconButton
+              size="small"
+              sx={{ color: theme.palette.text.primary }}
+              onClick={toggleRepeat}
+              disabled={isPlayerDisabled}
+            >
+              {repeatMode === 'track' ? (
+                <RepeatOne fontSize="small" color="primary" />
+              ) : (
+                <Repeat
+                  fontSize="small"
+                  color={repeatMode === 'context' ? 'primary' : 'inherit'}
+                />
+              )}
+            </IconButton>
+          </Tooltip>
+          {/* New Transcription Toggle Button */}
+          <Tooltip title="Toggle Transcription">
+            <IconButton
+              size="small"
+              sx={{ color: theme.palette.text.primary }}
+              onClick={handleToggleTranscription}
+              disabled={isPlayerDisabled}
+            >
+              <Transcribe
                 fontSize="small"
-                color={repeatMode === 'context' ? 'primary' : 'inherit'}
+                color={showTranscription ? 'primary' : 'inherit'}
               />
-            )}
-          </IconButton>
-        </Tooltip>
-        {/* New Transcription Toggle Button */}
-        <Tooltip title="Toggle Transcription">
-          <IconButton
-            size="small"
-            sx={{ color: theme.palette.text.primary }}
-            onClick={handleToggleTranscription}
-            disabled={isPlayerDisabled}
-          >
-            <Transcribe
-              fontSize="small"
-              color={showTranscription ? 'primary' : 'inherit'}
-            />
-          </IconButton>
-        </Tooltip>
+            </IconButton>
+          </Tooltip>
+        </Box>
+        
       </Box>
       {/* Progress Slider (Moved here) */}
-      <Box sx={progressContainerStyles} className="w-full flex items-start gap-2">
-        <Typography variant="caption" color="text.secondary">
-          {formatTime(trackProgress)}
-        </Typography>
-        <Slider
-          size="small"
-          value={trackProgress ?? 0}
-          onChange={handleTrackTimeChange}
-          onChangeCommitted={handleTrackTimeChangeCommitted}
-          min={0}
-          max={duration ?? 0}
-          aria-label="Track progress"
-          sx={progressSliderStyles(theme)}
-          disabled={isPlayerDisabled}
-          className="flex-grow"
-        />
-        <Typography variant="caption" color="text.secondary">
-          {formatTime(duration)}
-        </Typography>
-      </Box>
+        <Box sx={progressContainerStyles} className="w-full flex items-start gap-2">
+          <Typography variant="caption" color="text.secondary">
+            {formatTime(trackProgress)}
+          </Typography>
+          <Slider
+            size="small"
+            value={trackProgress ?? 0}
+            onChange={handleTrackTimeChange}
+            onChangeCommitted={handleTrackTimeChangeCommitted}
+            min={0}
+            max={duration ?? 0}
+            aria-label="Track progress"
+            sx={progressSliderStyles(theme)}
+            disabled={isPlayerDisabled}
+            className="flex-grow"
+          />
+          <Typography variant="caption" color="text.secondary">
+            {formatTime(duration)}
+          </Typography>
+        </Box>
     </Box>
   );
 };

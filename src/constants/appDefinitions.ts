@@ -54,15 +54,6 @@ export const appDefinitions: AppDefinition[] = [
     category: 'Management',
   },
   {
-    id: 'resume-builder',
-    title: 'Resume Builder',
-    description: 'Create professional resumes with AI assistance.',
-    link: '/apps/resume-builder',
-    linkText: 'Open Resume Builder',
-    icon: DescriptionIcon,
-    category: 'AI Tools',
-  },
-  {
     id: 'media-player',
     title: 'Media Player',
     description: 'Explore and enjoy a simulated music streaming experience.',
@@ -70,16 +61,6 @@ export const appDefinitions: AppDefinition[] = [
     linkText: 'Open Music Player',
     icon: LibraryMusicIcon,
     category: 'Entertainment',
-  },
-  {
-    id: 'translator',
-    title: 'AI Translator',
-    description:
-      'Translate text content or uploaded files into any language using AI.',
-    link: '/apps/translator',
-    linkText: 'Open Translator',
-    icon: TranslateIcon,
-    category: 'AI Tools',
   },
   {
     id: 'terminal',

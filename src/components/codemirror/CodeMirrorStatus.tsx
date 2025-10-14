@@ -8,16 +8,18 @@ interface CodeMirrorStatusProps {
   languageName: string;
   line: number;
   column: number;
-  lintStatus: string;
-  filePath?: string; // Add filePath prop
+  filePath?: string;
+  lintIssuesCount: number; // New prop for number of lint issues
+  buildErrorMessage: string | null; // New prop for build error message
 }
 
 const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
   languageName,
   line,
   column,
-  lintStatus,
   filePath,
+  lintIssuesCount,
+  buildErrorMessage,
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
@@ -35,28 +37,46 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
       borderRight: `1px solid ${muiTheme.palette.divider}`,
       pr: 1,
     },
+    // Conditional styles for error messages
+    ...(buildErrorMessage && {
+      color: muiTheme.palette.error.main,
+      fontWeight: 'bold',
+      // flexGrow: 1, // Uncomment if build error should take up maximum space
+    }),
   };
+
+  const lintStatusText = lintIssuesCount > 0 ? `Issues: ${lintIssuesCount}` : 'No issues';
 
   return (
     <Box
-      className="flex items-center justify-end px-2 py-1 h-8"
+      className="flex items-center justify-between px-2 py-1 h-8" // Use justify-between to push status to ends
       sx={{
         backgroundColor: muiTheme.palette.background.paper,
         borderTop: `1px solid ${muiTheme.palette.divider}`,
       }}
     >
-      <Typography sx={sxStatusText}>
-        File: {filename}
-      </Typography>
-      <Typography sx={sxStatusText}>
-        Language: {languageName}
-      </Typography>
-      <Typography sx={sxStatusText}>
-        Ln {line}, Col {column}
-      </Typography>
-      <Typography sx={sxStatusText}>
-        {lintStatus}
-      </Typography>
+      <Box className="flex items-center">
+        <Typography sx={sxStatusText}>
+          File: {filename}
+        </Typography>
+        <Typography sx={sxStatusText}>
+          Language: {languageName}
+        </Typography>
+        <Typography sx={sxStatusText}>
+          Ln {line}, Col {column}
+        </Typography>
+      </Box>
+      <Box className="flex items-center">
+        {buildErrorMessage ? (
+          <Typography sx={sxStatusText}>
+            Build Error: {buildErrorMessage}
+          </Typography>
+        ) : (
+          <Typography sx={sxStatusText}>
+            {lintStatusText}
+          </Typography>
+        )}
+      </Box>
     </Box>
   );
 };

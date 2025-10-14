@@ -1,8 +1,10 @@
 import { map } from 'nanostores';
 import { FileTreeState, FileEntry } from '@/types/refactored/fileTree'; // Updated import
 import { fetchDirectoryContents, fetchScannedFilesForAI } from '@/api/file';
+import { socketService, isConnected } from '@/api/socket';
 import { fileStore, setOpenedFile, setIsOpenedFileDirty } from './fileStore';
 import { llmStore } from './llmStore';
+import { getToken } from './authStore';
 import { getRelativePath, persistentAtom } from '@/utils';
 
 export const projectRootDirectoryStore = persistentAtom<string>(
@@ -126,8 +128,10 @@ export const loadInitialTree = async (projectRoot: string) => {
   fileTreeStore.setKey('lastFetchedProjectRoot', projectRoot); // Set this immediately to indicate a fetch is in progress for this root
 
   try {
+     if (!isConnected.get()) socketService.connect(getToken(), projectRoot);
     // Fetch top-level directories and files
     const apiNodes = await fetchDirectoryContents(projectRoot);
+
     const initialTreeNodes: FileEntry[] = apiNodes.map((node) => ({
       ...node,
       depth: 0,
@@ -177,6 +181,7 @@ export const loadInitialTree = async (projectRoot: string) => {
  * Loads children for a given directory path and updates the tree state.
  */
 export const loadChildrenForDirectory = async (parentPath: string) => {
+  if (!isConnected.get()) socketService.connect(getToken(), parentPath);
   const state = fileTreeStore.get();
   const newLoadingChildren = new Set(state.loadingChildren);
 

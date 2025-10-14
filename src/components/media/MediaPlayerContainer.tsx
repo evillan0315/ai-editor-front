@@ -316,7 +316,7 @@ const MediaPlayerContainer: React.FC = () => {
 
 
   return (
-    <Box className="flex justify-center items-center flex-col w-full"> { /* Fixed height for consistency, removed sticky for parent control */ }
+    <Box className="flex justify-start items-center flex-col"> { /* Fixed height for consistency, removed sticky for parent control */ }
       {/* Transcription Highlights (conditionally rendered at the top) */}
       {showTranscription && (
         <Paper
@@ -324,7 +324,7 @@ const MediaPlayerContainer: React.FC = () => {
           sx={transcriptionPanelSx}
         >
           {isTranscribing && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
+            <Box className='flex justify-center items-center gap-2'>
               <CircularProgress size={20} />
             </Box>
           )}

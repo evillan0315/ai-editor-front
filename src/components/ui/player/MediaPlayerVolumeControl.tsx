@@ -5,28 +5,14 @@ import { useStore } from '@nanostores/react';
 import {
   volumeAtom,
   setVolume,
-  progressAtom,
-  durationAtom,
-  setTrackProgress,
-  currentTrackAtom,
   $mediaStore, // Import the global media store
 } from '@/stores/mediaStore';
 
-// Helper function to format time
-const formatTime = (time: number): string => {
-  const minutes = Math.floor(time / 60);
-  const seconds = Math.floor(time % 60);
-  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-};
-
-const MediaPlayerVolumeControl: React.FC = () => { // Removed mediaRef prop
+const MediaPlayerVolumeControl: React.FC = () => {
   const theme = useTheme();
 
   // State from global media store
   const globalVolume = useStore(volumeAtom); // 0-100 percentage
-  const trackProgress = useStore(progressAtom);
-  const duration = useStore(durationAtom);
-  const currentTrack = useStore(currentTrackAtom);
   const { mediaElement } = useStore($mediaStore); // Access mediaElement from global store
 
   // Local state for mute status and to remember volume before muting
@@ -42,15 +28,12 @@ const MediaPlayerVolumeControl: React.FC = () => { // Removed mediaRef prop
       if (!mediaElement.muted && mediaElement.volume > 0) {
         setLastVolumeBeforeMute(Math.round(mediaElement.volume * 100));
       } else if (mediaElement.muted) {
-        setLastVolumeBeforeMute(globalVolume > 0 ? globalVolume : 70); // If muted, remember actual set volume or default
+        setLastVolumeBeforeMute(globalVolume > 0 ? globalVolume : 70);
       }
     }
   }, [mediaElement, globalVolume]);
 
   // Effect to apply local mute state to the actual media element
-  // This is now largely redundant as setVolume handles mediaElement.volume, and toggleMute
-  // directly sets volume to 0 or lastVolumeBeforeMute, which then syncs mediaElement.volume.
-  // It's kept for direct control over `mediaElement.muted` property if needed for other reasons.
   useEffect(() => {
     if (mediaElement) {
       mediaElement.muted = isMutedLocally;
@@ -69,7 +52,7 @@ const MediaPlayerVolumeControl: React.FC = () => { // Removed mediaRef prop
     }
   }, [isMutedLocally, setVolume]);
 
-  const toggleMute = useCallback(() => { // Renamed from handleMuteToggle
+  const toggleMute = useCallback(() => {
     if (!mediaElement) return;
 
     if (isMutedLocally) {
@@ -90,66 +73,47 @@ const MediaPlayerVolumeControl: React.FC = () => { // Removed mediaRef prop
     setShowVolumeSlider((prev) => !prev);
   }, []);
 
-  const handleTrackTimeChange = useCallback((_event: Event, newValue: number | number[]) => {
-    const newTime = typeof newValue === 'number' ? newValue : 0;
-    if (mediaElement) {
-      mediaElement.currentTime = newTime;
-      setTrackProgress(newTime);
-    }
-  }, [mediaElement, setTrackProgress]);
-
-  const handleTrackTimeChangeCommitted = useCallback(
-    (_event: Event | SyntheticEvent, newValue: number | number[]) => {
-      const newTime = typeof newValue === 'number' ? newValue : 0;
-      if (mediaElement) {
-        mediaElement.currentTime = newTime;
-        setTrackProgress(newTime);
-      }
-    },
-    [mediaElement, setTrackProgress],
-  );
-
   const getVolumeIcon = () => {
     if (isMutedLocally || globalVolume === 0) {
-      return <VolumeOff  />;
+      return <VolumeOff />;
     } else if (globalVolume < 50) {
-      return <VolumeDown  />;
+      return <VolumeDown />;
     } else {
-      return <VolumeUp  />;
+      return <VolumeUp />;
     }
   };
 
   const verticalSliderContainerSx = {
     position: 'absolute',
-    bottom: '50px', // Position above the volume icon
+    bottom: '36px', // Position above the volume icon
     left: '50%',
     transform: 'translateX(-50%)',
     display: showVolumeSlider ? 'flex' : 'none',
     flexDirection: 'column',
     alignItems: 'center',
-    bgcolor: theme.palette.background.paper,
+    bgcolor: theme.palette.background.default,
     p: 1,
     borderRadius: theme.shape.borderRadius,
     boxShadow: theme.shadows[3],
-    zIndex: theme.zIndex.tooltip, // Ensure it's above other elements
+    zIndex: theme.zIndex.tooltip,
     gap: 1,
-    height: '120px', // Height of the slider area
+    height: '120px',
   };
 
   const volumeSliderSx = {
     color: theme.palette.primary.main,
     '& .MuiSlider-track': {
-      width: '3px', // Thinner track
+      width: '3px',
     },
     '& .MuiSlider-rail': {
-      width: '3px', // Thinner rail
+      width: '3px',
     },
     '& .MuiSlider-thumb': {
       width: '10px',
       height: '10px',
       transition: '0.2s',
       '&:hover, &.Mui-focusVisible': {
-        boxShadow: `0px 0px 0px 8px ${theme.palette.action.hover}`, // Adjust hover effect
+        boxShadow: `0px 0px 0px 8px ${theme.palette.action.hover}`,
       },
       '&.Mui-active': {
         width: '12px',
@@ -160,24 +124,15 @@ const MediaPlayerVolumeControl: React.FC = () => { // Removed mediaRef prop
 
   return (
     <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'row', // Main container remains row to place track progress and volume controls side-by-side
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        flexGrow: 1,
-        minWidth: '180px',
-        width: 'auto',
-        position: 'relative', // For positioning the absolute volume slider
-      }}
+      className='flex items-center justify-end relative gap-1 flex-grow'
     >
       {/* Volume Controls (icon + vertical slider) */}
       <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
         <IconButton
           size="medium"
           sx={{ color: theme.palette.text.primary }}
-          onClick={toggleVolumeSliderVisibility} // Single click to toggle slider visibility
-          onDoubleClick={toggleMute} // Double click to toggle mute
+          onClick={toggleVolumeSliderVisibility}
+          onDoubleClick={toggleMute}
         >
           {getVolumeIcon()}
         </IconButton>
@@ -190,51 +145,13 @@ const MediaPlayerVolumeControl: React.FC = () => { // Removed mediaRef prop
             onChange={handleVolumeChange}
             min={0}
             max={100}
-            orientation="vertical" // Make it vertical
+            orientation="vertical"
             aria-label="Volume"
             sx={volumeSliderSx}
-            // `height` of the slider itself
-            style={{ height: '100px' }} // Explicitly set height for vertical orientation
+            style={{ height: '100px' }}
           />
         </Box>
       </Box>
-      {/* Track Progress Slider (horizontal, remains as is) */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          flexGrow: 1, // Allows track progress to take available space
-          mr: 2, // Margin right to separate from volume control
-        }}
-      >
-        <Typography variant="caption" color="text.secondary">
-          {formatTime(trackProgress)}
-        </Typography>
-        <Slider
-          size="small"
-          value={trackProgress ?? 0}
-          onChange={handleTrackTimeChange}
-          onChangeCommitted={handleTrackTimeChangeCommitted}
-          min={0}
-          max={duration ?? 0}
-          aria-label="Track progress"
-          sx={{
-            color: theme.palette.primary.main,
-            height: 3,
-            '& .MuiSlider-thumb': {
-              width: 8,
-              height: 8,
-            },
-          }}
-          disabled={!currentTrack} // Disable if no track is loaded
-        />
-        <Typography variant="caption" color="text.secondary">
-          {formatTime(duration)}
-        </Typography>
-      </Box>
-
-      
     </Box>
   );
 };

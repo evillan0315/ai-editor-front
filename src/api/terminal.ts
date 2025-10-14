@@ -1,5 +1,13 @@
+/**
+ * FilePath: src/api/terminal.ts
+ * Title: Terminal API Client (JSON Output Support)
+ * Reason: Update logging and response handling to support JSON-based stdout/stderr
+ *         structure from TerminalCommandResponse.
+ */
+
 import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
 import { TerminalCommandResponse, ProjectScriptsResponse } from '@/types';
+import { addLog } from '@/stores/logStore';
 
 /**
  * Executes a terminal command on the backend.
@@ -11,14 +19,39 @@ export const runTerminalCommand = async (
   command: string,
   cwd: string,
 ): Promise<TerminalCommandResponse> => {
+  addLog('Terminal API', `Executing command: \`${command}\` in \`${cwd}\``, 'info');
+
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/terminal/run`, {
       method: 'POST',
       body: JSON.stringify({ command, cwd }),
     });
-    return handleResponse<TerminalCommandResponse>(response);
+
+    const result = await handleResponse<TerminalCommandResponse>(response);
+
+    const formattedStdout =
+      result.stdout.length > 0
+        ? JSON.stringify(result.stdout, null, 2)
+        : '(no stdout)';
+    const formattedStderr =
+      result.stderr.length > 0
+        ? JSON.stringify(result.stderr, null, 2)
+        : '(no stderr)';
+
+    addLog(
+      'Terminal API',
+      `Command executed successfully: \`${command}\``,
+      'success',
+      `Stdout: ${formattedStdout}\nStderr: ${formattedStderr}\nExit Code: ${result.exitCode}`,
+      result,
+    );
+
+    return result;
   } catch (error) {
-    console.error(`Error running terminal command '${command}':`, error);
+    const errorMessage = `Failed to execute command: \`${command}\`\nError: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+    addLog('Terminal API', errorMessage, 'error');
     throw error;
   }
 };
@@ -32,6 +65,12 @@ export const runTerminalCommand = async (
 export const fetchProjectScripts = async (
   projectRoot: string,
 ): Promise<ProjectScriptsResponse> => {
+  addLog(
+    'Terminal API',
+    `Fetching package scripts for project root: \`${projectRoot}\``,
+    'info',
+  );
+
   try {
     const response = await fetchWithAuth(
       `${API_BASE_URL}/terminal/package-scripts`,
@@ -40,9 +79,23 @@ export const fetchProjectScripts = async (
         body: JSON.stringify({ projectRoot }),
       },
     );
-    return handleResponse<ProjectScriptsResponse>(response);
+
+    const result = await handleResponse<ProjectScriptsResponse>(response);
+
+    addLog(
+      'Terminal API',
+      `Successfully fetched package scripts for \`${projectRoot}\``,
+      'success',
+      `Manager: ${result.packageManager}, Scripts found: ${result.scripts.length}`,
+    );
+
+    return result;
   } catch (error) {
-    console.error(`Error fetching package scripts for ${projectRoot}:`, error);
+    const errorMessage = `Failed to fetch package scripts for \`${projectRoot}\`\nError: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+    addLog('Terminal API', errorMessage, 'error');
     throw error;
   }
 };
+

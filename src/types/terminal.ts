@@ -1,11 +1,18 @@
+/**
+ * FilePath: src/interfaces/terminal.interface.ts
+ * Title: Terminal Command Response Interface (JSON-based Output)
+ * Reason: Update stdout and stderr types from string to structured JSON arrays
+ *         to align with enhanced runCommandOnce() response format.
+ */
+
 // =========================================================================
 // Terminal & Build Related Types
 // =========================================================================
 
 export interface TerminalCommandResponse {
-  stdout: string;
-  stderr: string;
-  exitCode: number;
+  stdout: Array<Record<string, any>>; // Structured JSON output from command
+  stderr: Array<Record<string, any>>; // Structured JSON error output
+  exitCode: number;                   // Process exit code
 }
 
 export type PackageManager = 'npm' | 'yarn' | 'pnpm' | null;
@@ -93,3 +100,4 @@ export interface SSHConnectPayload {
   password?: string;
   privateKeyPath?: string;
 }
+

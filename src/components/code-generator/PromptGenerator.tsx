@@ -17,12 +17,13 @@ import {
   AccordionSummary,
   AccordionDetails,
   useTheme,
+  Alert
 } from '@mui/material';
 import {
   Send as SendIcon,
   ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
-import { setError } from '@/stores/errorStore';
+import { setError, errorStore } from '@/stores/errorStore';
 import { aiEditorStore, showGlobalSnackbar } from '@/stores/aiEditorStore';
 import {
   llmStore,
@@ -68,6 +69,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   const { loading, isBuilding, lastLlmResponse } = useStore(llmStore);
   const { isLoggedIn } = useStore(authStore);
   const { flatFileList } = useStore(fileTreeStore);
+  const { message } = useStore(errorStore);
 
   const { uploadedFileData, uploadedFileMimeType } = useStore(llmStore);
   const { 
@@ -298,6 +300,7 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
   // ---- render ----
   return (
     <Box className="flex flex-col gap-2 w-full relative ">
+     
       <Box
         position="relative"
         className="mt-2 px-2 pr-12 overflow-auto max-h-[80px] items-end h-full"
@@ -345,12 +348,21 @@ const PromptGenerator: React.FC<PromptGeneratorProps> = () => {
         </Tooltip>
         
       </Box>
-      {loading && (
+      
         <Box className="mt-2 flex items-center">
+        {message && (
+        <>
+          <Typography variant="body2" color='error'>{message}</Typography>
+          </>
+        )}
+        {loading && (
+        <>
           <CircularProgress size={20} className="mr-1" />
-          <Typography variant="body2">Generating...</Typography>
+          <Typography variant="body2" color='info'>Generating...</Typography>
+          </>
+        )}
         </Box>
-      )}
+      
       <BottomToolbar
         scanPathAutocompleteOptions={scanPathAutocompleteOptions}
         currentScanPathsArray={currentScanPathsArray}

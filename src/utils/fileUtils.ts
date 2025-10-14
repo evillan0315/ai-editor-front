@@ -1,17 +1,10 @@
-import * as path from 'path-browserify';
+import path from 'path-browserify'; // Assuming path-browserify is used for cross-platform path handling
+
 import {
   FileTreeNode as ApiFileTreeNode,
   FileEntry,
 } from '@/types/refactored/fileTree'; // Corrected import path for FileEntry
 
-export function joinPaths(...paths: string[]): string {
-  // Basic join for web paths. Not as robust as node's path.join across all OS.
-  // Assumes forward slashes for internal consistency.
-  return paths
-    .filter((p) => p !== '')
-    .join('/')
-    .replace(/\/\/+/g, '/');
-}
 export const truncateFilePath = (filePath: string, maxLength = 30): string => {
   if (filePath.length <= maxLength) {
     return filePath;
@@ -213,4 +206,56 @@ export function buildFileTree(
     if (a.type !== 'folder' && b.type === 'folder') return 1; // Corrected 'directory' to 'folder'
     return a.name.localeCompare(b.name);
   });
+}
+
+/**
+ * Normalizes a path to ensure consistency (e.g., removes redundant slashes, resolves '..').
+ * This is primarily for consistent display and comparison, not for actual file system operations.
+ */
+export function normalizePath(filePath: string): string {
+  if (!filePath) return '';
+  return path.normalize(filePath);
+}
+
+/**
+ * Extracts the file name from a given path.
+ */
+export function getFileName(filePath: string): string {
+  if (!filePath) return '';
+  return path.basename(filePath);
+}
+
+/**
+ * Extracts the directory path from a given file path.
+ */
+export function getDirectoryPath(filePath: string): string {
+  if (!filePath) return '';
+  return path.dirname(filePath);
+}
+
+/**
+ * Joins multiple path segments into a single path.
+ */
+export function joinPaths(...segments: string[]): string {
+  return path.join(...segments);
+}
+
+/**
+ * Determines if a given path represents a file or a directory based on its extension.
+ * This is a heuristic and might not be perfectly accurate without backend validation.
+ */
+export function isFile(filePath: string): boolean {
+  if (!filePath) return false;
+  // A simple heuristic: if it has an extension, it's likely a file.
+  // This might need refinement for files without extensions or directories with dots.
+  return path.extname(filePath) !== '';
+}
+
+
+/**
+ * Extracts the file extension from a given file path.
+ * Returns an empty string if no extension is found or if it's a directory.
+ */
+export function getFileExtension(filePath: string): string {
+  return path.extname(filePath).slice(1); // slice(1) to remove the leading dot
 }

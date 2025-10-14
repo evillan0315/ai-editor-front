@@ -2,6 +2,7 @@ import { map } from 'nanostores';
 import { writeFileContent, readFileContent } from '@/api/file';
 import { addLog } from './logStore';
 import { persistentAtom } from '@/utils/persistentAtom';
+import { projectStore } from '@/stores/projectStore'; // New import
 
 export interface FileStoreState {
   uploadedFileData: string | null;
@@ -152,6 +153,7 @@ export const removeOpenedTab = (filePath: string) => {
 export const saveActiveFile = async () => {
   const currentOpenedFile = openedFile.get();
   const fileContent = openedFileContent.get();
+  const projectId = projectStore.get().currentProject?.id; // Retrieve projectId
 
   if (!currentOpenedFile || fileContent === null) {
     addLog(
@@ -165,11 +167,17 @@ export const saveActiveFile = async () => {
     return;
   }
 
+  if (!projectId) {
+    addLog('File Editor', 'No project selected. Cannot save file.', 'error', undefined, undefined, true);
+    setSaveFileContentError('No project selected. Cannot save file.');
+    return;
+  }
+
   setIsSavingFileContent(true);
   setSaveFileContentError(null); // Clear previous error
 
   try {
-    const result = await writeFileContent(currentOpenedFile, fileContent);
+    const result = await writeFileContent(currentOpenedFile, fileContent, projectId); // Pass projectId
     if (result.success) {
       setInitialFileContentSnapshot(fileContent);
       setIsOpenedFileDirty(false);
@@ -233,11 +241,19 @@ export const discardActiveFileChanges = () => {
 };
 
 export const fetchFileContent = async (filePath: string) => {
+  const projectId = projectStore.get().currentProject?.id; // Retrieve projectId
+
+  if (!projectId) {
+    setFetchFileContentError('No project selected. Cannot fetch file content.');
+    setIsFetchingFileContent(false);
+    return;
+  }
+
   setIsFetchingFileContent(true);
   setFetchFileContentError(null);
 
   try {
-    const content = await readFileContent(filePath);
+    const content = await readFileContent(filePath, projectId); // Pass projectId
     setOpenedFileContent(content);
     setInitialFileContentSnapshot(content);
     setIsOpenedFileDirty(false);

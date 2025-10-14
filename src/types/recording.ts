@@ -39,6 +39,7 @@ export interface RecordingDataDto {
   stoppedAt?: string;
   capturedAt?: string;
   animatedGif?: string;
+  [key: string]: any; // Allow other properties
 }
 export interface TranscodeToGifDto {
   inputFilename: string;
@@ -53,8 +54,8 @@ export interface TranscodeToGifResult {
 }
 
 export interface StartCameraRecordingDto {
-  audioDevice?: string;
-  cameraDevice?: string;
+  audioDevice?: string[];
+  cameraDevice?: string[];
   resolution?: string;
   framerate?: number;
   duration?: number; // In seconds
@@ -69,5 +70,20 @@ export interface CameraRecordingResponseDto {
 }
 
 export interface UpdateRecordingDto {
-  data: any;
+  data?: any;
+  name?: string;
+  type?: string; // Allow updating type
+}
+
+/**
+ * Interface for recorder settings, intended for persistent storage.
+ */
+export interface IRecorderSettings {
+  namePrefix: string;
+  screenResolution: string; // e.g., '1920x1080'
+  screenFramerate: number; // e.g., 30
+  cameraResolution: string; // e.g., '1280x720'
+  cameraFramerate: number; // e.g., 30
+  cameraAudioDevice: string; // e.g., 'alsa_input.pci-0000_00_1b.0.analog-stereo'
+  cameraVideoDevice: string; // e.g., '/dev/video0'
 }

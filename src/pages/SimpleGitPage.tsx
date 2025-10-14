@@ -43,8 +43,9 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 import SaveIcon from '@mui/icons-material/Save';
 import CodeIcon from '@mui/icons-material/Code';
+import UndoIcon from '@mui/icons-material/Undo'; // Added missing import
 
-import  CodeMirrorEditor  from '@/components/codemirror/CodeMirrorEditor';
+import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import { getCodeMirrorLanguage } from '@/utils';
 import {
   gitCommit,
@@ -69,15 +70,13 @@ import {
   GitBranch,
   GitCommit,
   GitStatusResult,
-  setLoading,
-} from '@/stores/gitStore';
+} from '@/stores/gitStore'; // Removed setLoading, will use gitStore.setKey directly
 import { projectStore } from '@/stores/projectStore';
 
 import { showGlobalSnackbar } from '@/stores/snackbarStore';
-import { terminalStore, executeCommand } from '@/stores/terminalStore';
 import { themeStore } from '@/stores/themeStore';
-import { fileStore } from '@/stores/fileStore'; // To use setOpenedFile and fetchFileContent for diff
-import { fileTreeStore, projectRootDirectoryStore } from '@/stores/fileTreeStore';
+import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
+
 // Helper for consistent styling using MUI's sx prop
 const sectionPaperSx = {
   p: 2,
@@ -133,7 +132,6 @@ export default function SimpleGitPage() {
   const theme = useTheme();
   const { mode } = useStore(themeStore);
 
-
   const projectRoot = useStore(projectRootDirectoryStore) || '/';
 
   const { status, branches, commits, snapshots, loading, error } = useStore(gitStore);
@@ -168,20 +166,28 @@ export default function SimpleGitPage() {
 
   const fetchAllGitData = useCallback(async () => {
     if (!projectRoot) return;
-    setLoading(true);
+    gitStore.setKey('loading', true); // Use gitStore.setKey for loading
     try {
-      await Promise.all([
+      const [statusResult, branchesResult, commitsResult, snapshotsResult] = await Promise.all([
         getGitStatus(projectRoot),
         gitGetBranches(projectRoot),
         gitGetCommitLog(projectRoot),
         gitListSnapshots(projectRoot),
       ]);
+      gitStore.set({ // Update multiple keys at once
+        status: statusResult,
+        branches: branchesResult,
+        commits: commitsResult,
+        snapshots: snapshotsResult.tags, // Correctly access .tags
+        loading: false, // Ensure loading is reset
+        error: null, // Clear any previous errors on successful fetch
+      });
     } catch (err: any) {
       showGlobalSnackbar(
         `Failed to fetch Git data: ${err.message || 'Unknown error'}`, 'error'
       );
-    } finally {
-      setLoading(false);
+      gitStore.setKey('error', err.message || 'Unknown error'); // Set error in store
+      gitStore.setKey('loading', false); // Ensure loading is reset
     }
   }, [projectRoot]);
 
@@ -204,45 +210,48 @@ export default function SimpleGitPage() {
       setSelectedStagedFiles((prev) =>
         prev.includes(filePath) ? prev.filter((f) => f !== filePath) : [...prev, filePath]
       );
-    } else {
+    }
+    if (type === 'unstaged') {
       setSelectedUnstagedFiles((prev) =>
         prev.includes(filePath) ? prev.filter((f) => f !== filePath) : [...prev, filePath]
       );
     }
   };
 
-  const handleStageSelected = async () => {
-    if (selectedUnstagedFiles.length === 0 || !projectRoot) return;
-    setLoading(true);
+  const handleStageSelected = async (filesToStage?: string[]) => {
+    const files = filesToStage || selectedUnstagedFiles;
+    if (files.length === 0 || !projectRoot) return;
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
-      await gitStageFiles(selectedUnstagedFiles, projectRoot);
+      await gitStageFiles(files, projectRoot);
       showGlobalSnackbar('Files staged successfully', 'success');
       setSelectedUnstagedFiles([]);
-      await getGitStatus(projectRoot);
+      await getGitStatus(projectRoot); // Refresh status after action
     } catch (err: any) {
       showGlobalSnackbar(`Error staging files: ${err.message}`, 'error');
     }
-    setLoading(false);
+    gitStore.setKey('loading', false); // Use gitStore.setKey
   };
 
-  const handleUnstageSelected = async () => {
-    if (selectedStagedFiles.length === 0 || !projectRoot) return;
-    setLoading(true);
+  const handleUnstageSelected = async (filesToUnstage?: string[]) => {
+    const files = filesToUnstage || selectedStagedFiles;
+    if (files.length === 0 || !projectRoot) return;
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
-      await gitUnstageFiles(selectedStagedFiles, projectRoot);
+      await gitUnstageFiles(files, projectRoot);
       showGlobalSnackbar('Files unstaged successfully', 'success');
       setSelectedStagedFiles([]);
-      await getGitStatus(projectRoot);
+      await getGitStatus(projectRoot); // Refresh status after action
     } catch (err: any) {
       showGlobalSnackbar(`Error unstaging files: ${err.message}`, 'error');
     }
-    setLoading(false);
+    gitStore.setKey('loading', false); // Use gitStore.setKey
   };
 
   const handleCommit = async () => {
     if (!commitMessage.trim() || !projectRoot) return;
     setOpenCommitDialog(false);
-    setLoading(true);
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
       await gitCommit(commitMessage, projectRoot);
       showGlobalSnackbar('Changes committed successfully', 'success');
@@ -251,13 +260,13 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error committing changes: ${err.message}`, 'error');
     }
-    setLoading(false);
+    gitStore.setKey('loading', false); // Use gitStore.setKey
   };
 
   const handleCreateBranch = async () => {
     if (!newBranchName.trim() || !projectRoot) return;
     setOpenBranchDialog(false);
-    setGitLoading(true);
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
       await gitCreateBranch(newBranchName, projectRoot);
       showGlobalSnackbar(`Branch '${newBranchName}' created successfully`, 'success');
@@ -266,13 +275,13 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error creating branch: ${err.message}`, 'error');
     }
-    setGitLoading(false);
+    gitStore.setKey('loading', false); // Use gitStore.setKey
   };
 
   const handleCheckoutBranch = async () => {
     if (!checkoutBranchName.trim() || !projectRoot) return;
     setOpenCheckoutDialog(false);
-    setLoading(true);
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
       await gitCheckoutBranch(checkoutBranchName, false, projectRoot);
       showGlobalSnackbar(`Checked out branch '${checkoutBranchName}'`, 'success');
@@ -281,13 +290,13 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error checking out branch: ${err.message}`, 'error');
     }
-    setLoading(false);
+    gitStore.setKey('loading', false); // Use gitStore.setKey
   };
 
   const handleDeleteBranch = async (branchName: string, force: boolean = false) => {
     if (!branchName || !projectRoot) return;
     if (!window.confirm(`Are you sure you want to delete branch '${branchName}'? ${force ? '(Force delete)' : ''}`)) return;
-    setLoading(true);
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
       await gitDeleteBranch(branchName, force, projectRoot);
       showGlobalSnackbar(`Branch '${branchName}' deleted successfully`, 'success');
@@ -295,13 +304,13 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error deleting branch: ${err.message}`, 'error');
     }
-    setLoading(false);
+    gitStore.setKey('loading', false); // Use gitStore.setKey
   };
 
   const handleRevertCommit = async () => {
     if (!revertCommitHash.trim() || !projectRoot) return;
     setOpenRevertDialog(false);
-    setLoading(true);
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
       await gitRevertCommit(revertCommitHash, projectRoot);
       showGlobalSnackbar(`Commit '${revertCommitHash}' reverted successfully`, 'success');
@@ -310,27 +319,27 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error reverting commit: ${err.message}`, 'error');
     }
-    setLoading(false);
+    gitStore.setKey('loading', false); // Use gitStore.setKey
   };
 
   const handleUndoFileChanges = async (filePath: string) => {
     if (!filePath || !projectRoot) return;
     if (!window.confirm(`Are you sure you want to discard changes in '${filePath}'? This cannot be undone.`)) return;
-    setLoading(true);
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
       await gitUndoFileChanges(filePath, projectRoot);
       showGlobalSnackbar(`Changes in '${filePath}' discarded`, 'success');
-      await getGitStatus(projectRoot);
+      await getGitStatus(projectRoot); // Refresh status after action
     } catch (err: any) {
       showGlobalSnackbar(`Error discarding changes: ${err.message}`, 'error');
     }
-    setLoading(false);
+    gitStore.setKey('loading', false); // Use gitStore.setKey
   };
 
   const handleCreateSnapshot = async () => {
     if (!snapshotName.trim() || !projectRoot) return;
     setOpenSnapshotDialog(false);
-    setLoading(true);
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
       await gitCreateSnapshot(snapshotName, `Snapshot created by Codejector: ${snapshotName}`, projectRoot);
       showGlobalSnackbar(`Snapshot '${snapshotName}' created`, 'success');
@@ -339,14 +348,14 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error creating snapshot: ${err.message}`, 'error');
     }
-    setLoading(false);
+    gitStore.setKey('loading', false); // Use gitStore.setKey
   };
 
   const handleRestoreSnapshot = async (name: string) => {
     if (!name || !projectRoot) return;
     setOpenRestoreSnapshotDialog(false);
     if (!window.confirm(`Restoring snapshot '${name}' will revert your repository to that state. Are you sure?`)) return;
-    setLoading(true);
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
       await gitRestoreSnapshot(name, projectRoot);
       showGlobalSnackbar(`Snapshot '${name}' restored`, 'success');
@@ -354,13 +363,13 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error restoring snapshot: ${err.message}`, 'error');
     }
-    setLoading(false);
+    gitStore.setKey('loading', false); // Use gitStore.setKey
   };
 
   const handleDeleteSnapshot = async () => {
     if (!snapshotToDelete || !projectRoot) return;
     setOpenDeleteSnapshotDialog(false);
-    setLoading(true);
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
       await gitDeleteSnapshot(snapshotToDelete, projectRoot);
       showGlobalSnackbar(`Snapshot '${snapshotToDelete}' deleted`, 'success');
@@ -369,12 +378,12 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error deleting snapshot: ${err.message}`, 'error');
     }
-    setLoading(false);
+    gitStore.setKey('loading', false); // Use gitStore.setKey
   };
 
   const handleViewDiff = async (filePath: string) => {
     if (!projectRoot) return;
-    setLoading(true);
+    gitStore.setKey('loading', true); // Use gitStore.setKey
     try {
       const diffContent = await getGitDiff(filePath, projectRoot);
       setCurrentDiff(diffContent);
@@ -383,7 +392,7 @@ export default function SimpleGitPage() {
     } catch (err: any) {
       showGlobalSnackbar(`Error fetching diff: ${err.message}`, 'error');
     } finally {
-      setLoading(false);
+      gitStore.setKey('loading', false); // Use gitStore.setKey
     }
   };
 
@@ -430,7 +439,7 @@ export default function SimpleGitPage() {
     setContextMenuSnapshot(null);
   };
 
-  if (!projectRoot) {
+  if (!projectRoot || projectRoot === '/') {
     return (
       <Box className="p-4 flex flex-col items-center justify-center h-full">
         <Alert severity="info" className="mb-4">No project root directory selected. Please select a project to view Git status.</Alert>
@@ -458,7 +467,7 @@ export default function SimpleGitPage() {
         <Button variant="contained" startIcon={<RefreshIcon />} onClick={handleRefresh}>
           Refresh Git Data
         </Button>
-        <Button variant="contained" startIcon={<CommitIcon />} onClick={() => setOpenCommitDialog(true)} disabled={status?.staged.length === 0}>
+        <Button variant="contained" startIcon={<CommitIcon />} onClick={() => setOpenCommitDialog(true)} disabled={status?.staged.length === 0 || loading}>
           Commit Staged
         </Button>
       </Box>
@@ -502,7 +511,7 @@ export default function SimpleGitPage() {
                   variant="outlined"
                   color="warning"
                   startIcon={<RemoveIcon />}
-                  onClick={handleUnstageSelected}
+                  onClick={() => handleUnstageSelected()}
                   disabled={selectedStagedFiles.length === 0 || loading}
                 >
                   Unstage Selected
@@ -549,7 +558,7 @@ export default function SimpleGitPage() {
                 ))}
                 {status?.deleted.map((file) => (
                   <ListItem
-                    key={file.path}
+                    key={file.path} // Correctly access file.path
                     className={`${selectedUnstagedFiles.includes(file.path) ? 'bg-blue-100 dark:bg-blue-900' : ''} hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer`}
                     onClick={() => handleFileSelection(file.path, 'unstaged')}
                     onContextMenu={(e) => handleContextMenu(e, file.path)}
@@ -568,7 +577,7 @@ export default function SimpleGitPage() {
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
-                  onClick={handleStageSelected}
+                  onClick={() => handleStageSelected()}
                   disabled={selectedUnstagedFiles.length === 0 || loading}
                 >
                   Stage Selected
@@ -583,7 +592,7 @@ export default function SimpleGitPage() {
             <Paper sx={sectionPaperSx}>
               <Box className="flex justify-between items-center mb-2">
                 <Typography variant="h6">Branches</Typography>
-                <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setOpenBranchDialog(true)}>
+                <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setOpenBranchDialog(true)} disabled={loading}>
                   New Branch
                 </Button>
               </Box>
@@ -603,7 +612,7 @@ export default function SimpleGitPage() {
                       secondary={branch.commit}
                     />
                     {!branch.current && (
-                      <Button size="small" onClick={() => setCheckoutBranchName(branch.name) || setOpenCheckoutDialog(true)}>
+                      <Button size="small" onClick={() => { setCheckoutBranchName(branch.name); setOpenCheckoutDialog(true); }} disabled={loading}>
                         Checkout
                       </Button>
                     )}
@@ -620,7 +629,7 @@ export default function SimpleGitPage() {
               <Typography variant="h6" className="mb-2">Commit History</Typography>
               <List dense className="flex-grow overflow-auto border rounded-md border-gray-300 dark:border-gray-700">
                 {commits.length === 0 && <ListItem><ListItemText primary="No commits found" /></ListItem>}
-                {Object.keys(commits).map((commit) => (
+                {commits.map((commit) => ( // Directly map over commits array
                   <ListItem
                     key={commit.hash}
                     onContextMenu={(e) => handleContextMenuCommit(e, commit)}
@@ -638,7 +647,7 @@ export default function SimpleGitPage() {
                         </Box>
                       }
                     />
-                    <Button size="small" onClick={() => setRevertCommitHash(commit.hash) || setOpenRevertDialog(true)}>
+                    <Button size="small" onClick={() => { setRevertCommitHash(commit.hash); setOpenRevertDialog(true); }} disabled={loading}>
                       Revert
                     </Button>
                   </ListItem>
@@ -653,7 +662,7 @@ export default function SimpleGitPage() {
             <Paper sx={sectionPaperSx}>
               <Box className="flex justify-between items-center mb-2">
                 <Typography variant="h6">Snapshots</Typography>
-                <Button variant="outlined" startIcon={<SaveIcon />} onClick={() => setOpenSnapshotDialog(true)}>
+                <Button variant="outlined" startIcon={<SaveIcon />} onClick={() => setOpenSnapshotDialog(true)} disabled={loading}>
                   Create Snapshot
                 </Button>
               </Box>
@@ -668,10 +677,10 @@ export default function SimpleGitPage() {
                       <BookmarkIcon fontSize="small" />
                     </ListItemIcon>
                     <ListItemText primary={snapshot} />
-                    <Button size="small" color="primary" onClick={() => handleRestoreSnapshot(snapshot)}>
+                    <Button size="small" color="primary" onClick={() => handleRestoreSnapshot(snapshot)} disabled={loading}>
                       Restore
                     </Button>
-                    <Button size="small" color="error" onClick={() => { setSnapshotToDelete(snapshot); setOpenDeleteSnapshotDialog(true); }}>
+                    <Button size="small" color="error" onClick={() => { setSnapshotToDelete(snapshot); setOpenDeleteSnapshotDialog(true); }} disabled={loading}>
                       Delete
                     </Button>
                   </ListItem>
@@ -693,24 +702,30 @@ export default function SimpleGitPage() {
             : undefined
         }
       >
-        <MenuItem onClick={() => { handleViewDiff(contextMenu?.file || ''); handleCloseContextMenu(); }}>
+        <MenuItem onClick={() => { handleViewDiff(contextMenu?.file || ''); handleCloseContextMenu(); }} disabled={loading}>
           <ListItemIcon><CodeIcon fontSize="small" /></ListItemIcon>
           <ListItemText>View Diff</ListItemText>
         </MenuItem>
-        {(status?.modified.includes(contextMenu?.file || '') || status?.not_added.includes(contextMenu?.file || '')) && (
-          <MenuItem onClick={() => { handleStageSelected(); handleCloseContextMenu(); setSelectedUnstagedFiles([contextMenu?.file || '']); }}>
+        {status?.not_added.includes(contextMenu?.file || '') && ( // Only show stage if untracked or modified
+          <MenuItem onClick={() => { handleStageSelected([contextMenu?.file || '']); handleCloseContextMenu(); }}>
+            <ListItemIcon><AddIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>Stage File</ListItemText>
+          </MenuItem>
+        )}
+        {status?.modified.includes(contextMenu?.file || '') && ( // Only show stage if untracked or modified
+          <MenuItem onClick={() => { handleStageSelected([contextMenu?.file || '']); handleCloseContextMenu(); }}>
             <ListItemIcon><AddIcon fontSize="small" /></ListItemIcon>
             <ListItemText>Stage File</ListItemText>
           </MenuItem>
         )}
         {status?.staged.includes(contextMenu?.file || '') && (
-          <MenuItem onClick={() => { handleUnstageSelected(); handleCloseContextMenu(); setSelectedStagedFiles([contextMenu?.file || '']); }}>
+          <MenuItem onClick={() => { handleUnstageSelected([contextMenu?.file || '']); handleCloseContextMenu(); }}>
             <ListItemIcon><RemoveIcon fontSize="small" /></ListItemIcon>
             <ListItemText>Unstage File</ListItemText>
           </MenuItem>
         )}
         {(status?.modified.includes(contextMenu?.file || '') || status?.deleted.map(f => f.path).includes(contextMenu?.file || '')) && (
-          <MenuItem onClick={() => { handleUndoFileChanges(contextMenu?.file || ''); handleCloseContextMenu(); }}>
+          <MenuItem onClick={() => { handleUndoFileChanges(contextMenu?.file || ''); handleCloseContextMenu(); }} disabled={loading}>
             <ListItemIcon><UndoIcon fontSize="small" /></ListItemIcon>
             <ListItemText>Discard Changes</ListItemText>
           </MenuItem>
@@ -729,16 +744,16 @@ export default function SimpleGitPage() {
         }
       >
         {!contextMenuBranch?.branch.current && (
-          <MenuItem onClick={() => { setCheckoutBranchName(contextMenuBranch?.branch.name || ''); setOpenCheckoutDialog(true); handleCloseContextMenu(); }}>
+          <MenuItem onClick={() => { setCheckoutBranchName(contextMenuBranch?.branch.name || ''); setOpenCheckoutDialog(true); handleCloseContextMenu(); }} disabled={loading}>
             <ListItemIcon><GitBranchIcon fontSize="small" /></ListItemIcon>
             <ListItemText>Checkout</ListItemText>
           </MenuItem>
         )}
-        <MenuItem onClick={() => { handleDeleteBranch(contextMenuBranch?.branch.name || ''); handleCloseContextMenu(); }}>
+        <MenuItem onClick={() => { handleDeleteBranch(contextMenuBranch?.branch.name || ''); handleCloseContextMenu(); }} disabled={loading}>
           <ListItemIcon><DeleteForeverIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Delete Branch</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { handleDeleteBranch(contextMenuBranch?.branch.name || '', true); handleCloseContextMenu(); }}>
+        <MenuItem onClick={() => { handleDeleteBranch(contextMenuBranch?.branch.name || '', true); handleCloseContextMenu(); }} disabled={loading}>
           <ListItemIcon><DeleteForeverIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Force Delete Branch</ListItemText>
         </MenuItem>
@@ -755,7 +770,7 @@ export default function SimpleGitPage() {
             : undefined
         }
       >
-        <MenuItem onClick={() => { setRevertCommitHash(contextMenuCommit?.commit.hash || ''); setOpenRevertDialog(true); handleCloseContextMenu(); }}>
+        <MenuItem onClick={() => { setRevertCommitHash(contextMenuCommit?.commit.hash || ''); setOpenRevertDialog(true); handleCloseContextMenu(); }} disabled={loading}>
           <ListItemIcon><RestoreIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Revert Commit</ListItemText>
         </MenuItem>
@@ -772,11 +787,11 @@ export default function SimpleGitPage() {
             : undefined
         }
       >
-        <MenuItem onClick={() => { handleRestoreSnapshot(contextMenuSnapshot?.snapshot || ''); handleCloseContextMenu(); }}>
+        <MenuItem onClick={() => { handleRestoreSnapshot(contextMenuSnapshot?.snapshot || ''); handleCloseContextMenu(); }} disabled={loading}>
           <ListItemIcon><RestoreIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Restore Snapshot</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { setSnapshotToDelete(contextMenuSnapshot?.snapshot || null); setOpenDeleteSnapshotDialog(true); handleCloseContextMenu(); }}>
+        <MenuItem onClick={() => { setSnapshotToDelete(contextMenuSnapshot?.snapshot || null); setOpenDeleteSnapshotDialog(true); handleCloseContextMenu(); }} disabled={loading}>
           <ListItemIcon><DeleteForeverIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Delete Snapshot</ListItemText>
         </MenuItem>
@@ -796,11 +811,12 @@ export default function SimpleGitPage() {
             value={commitMessage}
             onChange={(e) => setCommitMessage(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleCommit(); }}
+            disabled={loading}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenCommitDialog(false)}>Cancel</Button>
-          <Button onClick={handleCommit} disabled={!commitMessage.trim()}>Commit</Button>
+          <Button onClick={() => setOpenCommitDialog(false)} disabled={loading}>Cancel</Button>
+          <Button onClick={handleCommit} disabled={!commitMessage.trim() || loading}>Commit</Button>
         </DialogActions>
       </Dialog>
 
@@ -817,11 +833,12 @@ export default function SimpleGitPage() {
             value={newBranchName}
             onChange={(e) => setNewBranchName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleCreateBranch(); }}
+            disabled={loading}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenBranchDialog(false)}>Cancel</Button>
-          <Button onClick={handleCreateBranch} disabled={!newBranchName.trim()}>Create</Button>
+          <Button onClick={() => setOpenBranchDialog(false)} disabled={loading}>Cancel</Button>
+          <Button onClick={handleCreateBranch} disabled={!newBranchName.trim() || loading}>Create</Button>
         </DialogActions>
       </Dialog>
 
@@ -838,11 +855,12 @@ export default function SimpleGitPage() {
             value={checkoutBranchName}
             onChange={(e) => setCheckoutBranchName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleCheckoutBranch(); }}
+            disabled={loading}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenCheckoutDialog(false)}>Cancel</Button>
-          <Button onClick={handleCheckoutBranch} disabled={!checkoutBranchName.trim()}>Checkout</Button>
+          <Button onClick={() => setOpenCheckoutDialog(false)} disabled={loading}>Cancel</Button>
+          <Button onClick={handleCheckoutBranch} disabled={!checkoutBranchName.trim() || loading}>Checkout</Button>
         </DialogActions>
       </Dialog>
 
@@ -859,11 +877,12 @@ export default function SimpleGitPage() {
             value={revertCommitHash}
             onChange={(e) => setRevertCommitHash(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleRevertCommit(); }}
+            disabled={loading}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenRevertDialog(false)}>Cancel</Button>
-          <Button onClick={handleRevertCommit} disabled={!revertCommitHash.trim()}>Revert</Button>
+          <Button onClick={() => setOpenRevertDialog(false)} disabled={loading}>Cancel</Button>
+          <Button onClick={handleRevertCommit} disabled={!revertCommitHash.trim() || loading}>Revert</Button>
         </DialogActions>
       </Dialog>
 
@@ -880,11 +899,12 @@ export default function SimpleGitPage() {
             value={snapshotName}
             onChange={(e) => setSnapshotName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleCreateSnapshot(); }}
+            disabled={loading}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenSnapshotDialog(false)}>Cancel</Button>
-          <Button onClick={handleCreateSnapshot} disabled={!snapshotName.trim()}>Create</Button>
+          <Button onClick={() => setOpenSnapshotDialog(false)} disabled={loading}>Cancel</Button>
+          <Button onClick={handleCreateSnapshot} disabled={!snapshotName.trim() || loading}>Create</Button>
         </DialogActions>
       </Dialog>
 
@@ -894,8 +914,8 @@ export default function SimpleGitPage() {
           <Typography>Are you sure you want to delete snapshot '<b>{snapshotToDelete}</b>'? This cannot be undone.</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDeleteSnapshotDialog(false)}>Cancel</Button>
-          <Button onClick={handleDeleteSnapshot} color="error">Delete</Button>
+          <Button onClick={() => setOpenDeleteSnapshotDialog(false)} disabled={loading}>Cancel</Button>
+          <Button onClick={handleDeleteSnapshot} color="error" disabled={loading}>Delete</Button>
         </DialogActions>
       </Dialog>
 
@@ -909,7 +929,7 @@ export default function SimpleGitPage() {
                 filePath={diffFilePath || 'diff.diff'}
                 readOnly={true}
                 height="100%"
-               // isDiffView={true}
+                isDiffView={true}
               />
             ) : (
               <Box className="flex items-center justify-center h-full">
@@ -919,7 +939,7 @@ export default function SimpleGitPage() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDiffViewer(false)}>Close</Button>
+          <Button onClick={() => setOpenDiffViewer(false)} disabled={loading}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>

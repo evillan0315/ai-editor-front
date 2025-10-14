@@ -28,7 +28,6 @@ const headerPaperSx = (
   theme: ReturnType<typeof useTheme>,
   sticky: boolean,
 ): SxProps => ({
-  px: 2,
   borderRadius: 0,
   backgroundColor: theme.palette.background.paper,
   color: theme.palette.text.primary,
@@ -64,7 +63,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   const theme = useTheme();
 
   return (
-    <Paper sx={(t) => ({ ...headerPaperSx(t, sticky), ...sx })}>
+    <Paper className='gap-2' sx={(t) => ({ ...headerPaperSx(t, sticky), ...sx })}>
       <Box className="flex-grow">
         {typeof title === 'string' ? (
           <Typography

@@ -19,7 +19,7 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined'; // For file
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'; // For file upload
 import EditNoteIcon from '@mui/icons-material/EditNote'; // For instructions
 import { APP_NAME, APP_DESCRIPTION } from '@/constants'; // Import APP_NAME and APP_DESCRIPTION
-
+import  WebSocketDemo  from '@/components/Websocket'; 
 interface FeatureCardProps {
   title: string;
   description: string;
@@ -87,7 +87,7 @@ const HomePage: React.FC = () => {
       description:
         'Generate new files, modify existing ones, and repair code with intelligent AI assistance.',
       icon: AutoAwesomeIcon,
-      link: '/editor',
+      link: '/ai-editor',
       linkText: 'Start Building',
     },
     {
@@ -178,7 +178,7 @@ const HomePage: React.FC = () => {
             color="primary"
             size="large"
             component={Link}
-            to="/editor"
+            to="/ai-editor"
             startIcon={<TerminalIcon />}
             sx={{ py: 1.5, px: 3, fontSize: '1.1rem' }}
           >
@@ -222,6 +222,7 @@ const HomePage: React.FC = () => {
             </div>
           ))}
         </div>
+        <WebSocketDemo />
       </Container>
     </Box>
   );

@@ -43,7 +43,7 @@ const DirectoryPickerDialog: React.FC<DirectoryPickerDialogProps> = ({
   open,
   onClose,
   onSelect,
-  initialPath = '/',
+  initialPath = '/media/eddie/Data/projects',
   allowExternalPaths = false,
 }) => {
   const theme = useTheme();

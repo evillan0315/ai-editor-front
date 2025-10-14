@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import {
   Box,
   CircularProgress,
@@ -13,8 +14,10 @@ import {
   Videocam,
   CameraAlt,
   StopCircle,
-  ScreenshotMonitor, // Changed from PhotoCamera
+  ScreenshotMonitor,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
+import { RecordingSettingsDialog } from './RecordingSettingsDialog';
 
 export interface RecordingControlsProps {
   isScreenRecording: boolean;
@@ -62,6 +65,15 @@ export function RecordingControls({
   onCapture,
 }: RecordingControlsProps) {
   const theme = useTheme();
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+
+  const handleOpenSettings = () => {
+    setIsSettingsDialogOpen(true);
+  };
+
+  const handleCloseSettings = () => {
+    setIsSettingsDialogOpen(false);
+  };
 
   return (
     <Box className="flex items-center gap-4">
@@ -124,6 +136,21 @@ export function RecordingControls({
           )}
         </IconButton>
       </Tooltip>
+
+      <Tooltip title="Recorder Settings">
+        <IconButton
+          aria-label="recorder settings"
+          onClick={handleOpenSettings}
+          sx={{ ...commonIconButtonSx(theme), color: theme.palette.text.secondary }}
+        >
+          <SettingsIcon fontSize="inherit" />
+        </IconButton>
+      </Tooltip>
+
+      <RecordingSettingsDialog
+        open={isSettingsDialogOpen}
+        onClose={handleCloseSettings}
+      />
     </Box>
   );
 }

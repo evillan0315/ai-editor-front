@@ -1,8 +1,8 @@
 import { io, Socket } from 'socket.io-client';
 import { getToken } from '@/stores/authStore';
 import { atom } from 'nanostores';
-import { CopyResult, MoveResult } from '@/types/file';
-
+import { FileOperationResult, CopyResult, MoveResult } from '@/types/file'; // Import FileOperationResult
+import { projectRootDirectoryStore, isConnected } from '@/stores/fileTreeStore';
 // Determine WebSocket URL based on environment variables
 const getWebSocketUrl = (): string => {
   if (import.meta.env.VITE_WS_URL) {
@@ -62,14 +62,14 @@ class SocketService {
   private wsUrl: string;
 
   constructor() {
-    this.wsUrl = getWebSocketUrl();
+    this.wsUrl = '/files';
   }
 
   /**
    * Connects to the WebSocket server.
    * @param token Optional JWT token for authentication.
    */
-  public connect(token?: string): void {
+  public connect(token?: string, initialCwd?:string): void {
     if (this.socket && this.socket.connected) {
       console.warn('Socket already connected.');
       return;
@@ -80,14 +80,19 @@ class SocketService {
       console.error('No authentication token available for WebSocket connection.');
       // Attempt to connect without token, may be rejected by gateway
     }
+    const initialCwdFromEnv =
+          projectRootDirectoryStore.get() || import.meta.env.VITE_BASE_DIR;
 
-    this.socket = io(this.wsUrl, {
-      transports: ['websocket'],
-      autoConnect: true,
-      auth: {
-        token: `Bearer ${authToken}`,
-      },
-    });
+        this.socket = io(`${this.wsUrl}`, {
+          auth: {
+            token: `Bearer ${authToken}`,
+          },
+          query:
+            initialCwd || initialCwdFromEnv
+              ? { initialCwd: initialCwd || initialCwdFromEnv }
+              : undefined,
+        });
+
 
     this.socket.on('connect', () => {
       console.log('WebSocket connected:', this.socket?.id);
@@ -141,7 +146,7 @@ class SocketService {
         this.socket?.on(progressEvent, onProgress);
       }
 
-      this.socket?.emit('dynamicFileEvent', data, (response: WsResponse<T> | { message: string }) => {
+      this.socket?.emit('dynamicFileEvent', data, (response: WsResponse<T> | { message: string; data?: any }) => { // Adjusted response type for error handling
         // Unregister progress listener after the main response is received
         if (onProgress) {
           this.socket?.off(progressEvent, onProgress);
@@ -150,7 +155,7 @@ class SocketService {
         if (response && 'event' in response && response.event === responseEvent) {
           resolve(response.data);
         } else if (response && 'event' in response && response.event === errorEvent) {
-          reject(new Error(response.data?.message || 'An unknown error occurred.'));
+          reject(new Error(response.data?.message || response.message || 'An unknown error occurred.'));
         } else if (response && 'message' in response) {
           reject(new Error(response.message));
         } else {
@@ -217,8 +222,8 @@ class SocketService {
    * @param onProgress Optional callback for progress updates during upload.
    * @returns A Promise that resolves when the file is written.
    */
-  public writeFile(filePath: string, content: string, projectId: string, onProgress?: (progress: ProgressEventPayload) => void): Promise<void> {
-    return this.emit<void>('fileWriteFileContent', {
+  public writeFile(filePath: string, content: string, projectId: string, onProgress?: (progress: ProgressEventPayload) => void): Promise<FileOperationResult> { // Changed return type
+    return this.emit<FileOperationResult>('fileWriteFileContent', {
       endpoint: '/api/file/write',
       method: 'POST',
       body: { path: filePath, content, projectId },
@@ -233,8 +238,8 @@ class SocketService {
    * @param projectId The ID of the project.
    * @returns A Promise that resolves with the operation result.
    */
-  public createFileOrFolder(filePath: string, type: 'file' | 'folder', projectId: string): Promise<{ message: string; path: string }> {
-    return this.emit<{ message: string; path: string }>('fileCreateFileOrFolder', {
+  public createFileOrFolder(filePath: string, type: 'file' | 'folder', projectId: string): Promise<FileOperationResult & { path: string }> { // Changed return type
+    return this.emit<FileOperationResult & { path: string }>('fileCreateFileOrFolder', {
       endpoint: '/api/file/create',
       method: 'POST',
       body: { path: filePath, type, projectId },
@@ -248,8 +253,8 @@ class SocketService {
    * @param projectId The ID of the project.
    * @returns A Promise that resolves with the operation result.
    */
-  public deleteFileOrFolder(filePath: string, projectId: string): Promise<{ message: string }> {
-    return this.emit<{ message: string }>('fileDeleteFileOrFolder', {
+  public deleteFileOrFolder(filePath: string, projectId: string): Promise<FileOperationResult> {
+    return this.emit<FileOperationResult>('fileDeleteFileOrFolder', {
       endpoint: '/api/file/delete',
       method: 'POST',
       body: { path: filePath, projectId },
@@ -264,8 +269,8 @@ class SocketService {
    * @param projectId The ID of the project.
    * @returns A Promise that resolves with the operation result.
    */
-  public renameFileOrFolder(oldPath: string, newPath: string, projectId: string): Promise<{ message: string }> {
-    return this.emit<{ message: string }>('fileRenameFileOrFolder', {
+  public renameFileOrFolder(oldPath: string, newPath: string, projectId: string): Promise<FileOperationResult> {
+    return this.emit<FileOperationResult>('fileRenameFileOrFolder', {
       endpoint: '/api/file/rename',
       method: 'POST',
       body: { oldPath, newPath, projectId },
@@ -307,16 +312,18 @@ class SocketService {
 
   /**
    * Scans a directory and returns its contents.
+   * This method typically returns a flat list of files/folders for AI context or similar.
+   * For hierarchical tree display, a different endpoint/method might be more suitable.
    * @param directoryPath The path to the directory.
    * @param projectId The ID of the project.
-   * @returns A Promise that resolves with the directory contents.
+   * @returns A Promise that resolves with the directory contents (likely `ApiFileScanResult[]` or `FileTreeNode[]` depending on backend implementation of `/api/file/scan`).
    */
   public scanDirectory(directoryPath: string, projectId: string): Promise<any> {
     return this.emit<any>('fileScanDirectory', {
-      endpoint: '/api/file/scan',
+      endpoint: '/api/file/list',
       method: 'POST',
-      body: { path: directoryPath, projectId },
-      event: 'fileScanDirectory',
+      body: { directory: directoryPath, recursive: false },
+      event: 'listDirectory',
     });
   }
 

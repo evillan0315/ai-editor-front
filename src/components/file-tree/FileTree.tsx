@@ -29,8 +29,8 @@ import {
   ContentCopy as ContentCopyIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  NoteAdd as NoteAddIcon,
-  CreateNewFolder as CreateNewFolderIcon,
+  NoteAdd as NoteAddIcon, // Used for new file
+  CreateNewFolder as CreateNewFolderIcon, // Used for new folder
   Terminal as TerminalIcon,
   OpenInNew as OpenInNewIcon,
   Refresh as RefreshIcon,
@@ -170,11 +170,9 @@ const FileTree: React.FC<FileTreeProps> = () => {
         } else if (projectRoot) {
           await loadInitialTree(projectRoot);
         }
-      } else if (projectRoot) {
-        await loadInitialTree(projectRoot);
       }
-    },
-    [projectRoot, projectId], // Add projectId to dependency array
+    }, // Removed explicit projectRoot dependency here as it's passed as an arg now if applicable
+    [projectId], // Add projectId to dependency array
   );
 
   const handleRefreshTree = () => {
@@ -185,6 +183,16 @@ const FileTree: React.FC<FileTreeProps> = () => {
       showGlobalSnackbar('No project selected to refresh file tree.', 'warning');
     }
   };
+
+  // Handler for adding new file/folder, called by FileTreeHeader or context menu
+  const handleAddFileFolder = useCallback(
+    (type: 'file' | 'folder', targetPath: string) => {
+      setPathForNewItem(targetPath);
+      setIsCreatingFolder(type === 'folder');
+      setIsCreateDialogOpen(true);
+    },
+    [],
+  );
 
   const handleCreateSuccess = useCallback(
     (newPath: string) => {
@@ -240,7 +248,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
   const handleOperationSuccess = useCallback(
     (sourcePath: string, destinationPath: string) => {
       if (operationMode === 'move') {
-        refreshPath(sourcePath); // Remove from source if moved
+        refreshPath(sourcePath);
       }
       refreshPath(destinationPath); // Add to destination
       showGlobalSnackbar(
@@ -277,9 +285,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
           icon: <LineMdFileDocumentPlusFilled fontSize="1.4em" />,
           action: (file) => {
             const targetPath = file.type === 'folder' ? file.path : parentPath;
-            setPathForNewItem(targetPath);
-            setIsCreatingFolder(false);
-            setIsCreateDialogOpen(true);
+            handleAddFileFolder('file', targetPath);
           },
         },
         {
@@ -287,9 +293,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
           icon: <MaterialIconThemeFolderUtils fontSize="1.2em" />,
           action: (file) => {
             const targetPath = file.type === 'folder' ? file.path : parentPath;
-            setPathForNewItem(targetPath);
-            setIsCreatingFolder(true);
-            setIsCreateDialogOpen(true);
+            handleAddFileFolder('folder', targetPath);
           },
         },
         { type: 'divider' },
@@ -351,7 +355,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
                 : file.path;
               llmStore.setKey('scanPathsInput', newScanPaths);
               showGlobalSnackbar(
-                `Added ${file.name} to AI scan paths.`, 
+                `Added ${file.name} to AI scan paths.`,
                 'success',
               );
             } else {
@@ -373,7 +377,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
       return items;
     },
-    [handleDeleteItem, scanPathsInput], // handleDeleteItem depends on projectId already
+    [handleDeleteItem, scanPathsInput, handleAddFileFolder], // Add handleAddFileFolder dependency
   );
 
   const handleNodeContextMenu = useCallback(
@@ -417,7 +421,10 @@ const FileTree: React.FC<FileTreeProps> = () => {
   };
 
   // Helper function for finding a file entry in the tree, assumed to exist or provided by `fileTreeStore`
-  const findFileEntryInTree = (nodes: FileEntry[], targetPath: string): FileEntry | undefined => {
+  const findFileEntryInTree = (
+    nodes: FileEntry[],
+    targetPath: string,
+  ): FileEntry | undefined => {
     for (const node of nodes) {
       if (node.path === targetPath) {
         return node;
@@ -446,8 +453,8 @@ const FileTree: React.FC<FileTreeProps> = () => {
         searchTerm={searchTerm}
         onGoUpDirectory={handleGoUpDirectory}
         onRefreshTree={handleRefreshTree}
+        onAddFileFolder={handleAddFileFolder} // Pass the new handler
         onSearchChange={handleSearchChange}
-        //onAddFileFolder={handleAddFileFolder}
       />
 
       {/* File List or Status Messages */}

@@ -9,7 +9,7 @@ import { themeStore } from '@/stores/themeStore';
 import { LanguageSupport, syntaxTree } from '@codemirror/language';
 import CodeMirrorStatus from './CodeMirrorStatus';
 import { Extension, EditorState } from '@codemirror/state';
-import { linter, lintGutter, Diagnostic, getDiagnostics } from '@codemirror/lint';
+import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
 import { llmStore } from '@/stores/llmStore';
 import { fileStore } from '@/stores/fileStore';
 
@@ -49,9 +49,10 @@ const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
       }
       const lineText = lineObj.text;
       const lineNumber = lineObj.number; // Use lineObj.number directly for 1-based line number
-
+      console.log(lineText);
       const todoMatch = lineText.match(/TODO/i);
       if (todoMatch) {
+        
         diagnostics.push({
           from: lineObj.from + (todoMatch.index || 0),
           to: lineObj.from + (todoMatch.index || 0) + todoMatch[0].length,
@@ -213,8 +214,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
         // --- CORRECTED: Update lint issues count from the editor state's diagnostics --- 
         // Get all diagnostics currently in the editor state, managed by lint extensions.
-        const diagnostics = getDiagnostics(state);
-        setLintIssuesCount(diagnostics.length);
+        //const diagnostics = getDiagnostics(state);
+        //setLintIssuesCount(diagnostics.length);
       }
     },
     [onEditorViewChange, editorViewInstance, language, filePath], // basicLinter is not a dependency now
@@ -236,8 +237,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       ...langExtensions,
       createCodeMirrorTheme(muiTheme),
       EditorView.lineWrapping,
-      lintGutter(), // Add lint gutter
-      basicLinterExtension, // Add custom linter extension
+      //lintGutter(), // Add lint gutter
+      //basicLinterExtension, // Add custom linter extension
       ...(additionalExtensions || []),
     ];
   }, [language, filePath, muiTheme, additionalExtensions, basicLinterExtension]); // basicLinterExtension is a dependency now
@@ -253,7 +254,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         width: width || '100%',
       }}
     >
-      <Box className="flex-grow overflow-auto"> {/* This Box wraps CodeMirror and takes available space */}
+      <Box className="flex-grow overflow-auto">
         <CodeMirror
           value={value}
           height="100%"
