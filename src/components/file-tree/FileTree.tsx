@@ -38,7 +38,9 @@ import {
   DriveFileMove as DriveFileMoveIcon,
   FileCopy as FileCopyIcon,
   ArrowUpward as ArrowUpwardIcon, // Icon for going up a directory
-  Source as SourceFolderIcon, // New import for 'Set as Project Root'
+  Source as SourceFolderIcon, 
+ CreateNewFolder as MaterialIconThemeFolderResource
+  // New import for 'Set as Project Root'
 } from '@mui/icons-material';
 import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined';
 import { MaterialIconThemeFolderUtils } from '@/components/icons/MaterialIconThemeFolderUtils';
