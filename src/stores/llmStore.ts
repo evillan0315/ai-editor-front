@@ -56,7 +56,7 @@ const INITIAL_LLM_STORE_STATE: LlmStoreState = {
   diffFilePath: null,
   applyingChanges: false,
   gitInstructions: null,
-  isBuilding: false,
+  isBuilding: false
 };
 
 export const llmStore = map<LlmStoreState>(INITIAL_LLM_STORE_STATE);
@@ -143,16 +143,35 @@ export const setLastLlmResponse = (response: ModelResponse | null) => {
 // ────────────────────────────
 // Change selection and diff
 // ────────────────────────────
+export const selectChange = (change: FileChange) => {
+  llmStore.setKey('selectedChanges', {
+    ...llmStore.get().selectedChanges,
+    [change.filePath]: change,
+  });
+  addLog('Proposed Change Card', `Selected change for: ${change.filePath}`, 'debug');
+};
+
+export const deselectChange = (change: FileChange) => {
+  const newSelectedChanges = { ...llmStore.get().selectedChanges };
+  delete newSelectedChanges[change.filePath];
+  llmStore.setKey('selectedChanges', newSelectedChanges);
+  addLog('Proposed Change Card', `Deselected change for: ${change.filePath}`, 'debug');
+};
+
 export const selectAllChanges = () => {
   const state = llmStore.get();
   if (state.lastLlmResponse?.changes) {
     const all: Record<string, FileChange> = {};
     state.lastLlmResponse.changes.forEach((c) => (all[c.filePath] = c));
     llmStore.setKey('selectedChanges', all);
+    addLog('Proposed Changes', 'Selected all proposed changes.', 'info');
   }
 };
 
-export const deselectAllChanges = () => llmStore.setKey('selectedChanges', {});
+export const deselectAllChanges = () => {
+  llmStore.setKey('selectedChanges', {});
+  addLog('Proposed Changes', 'Deselected all proposed changes.', 'info');
+};
 
 export const setCurrentDiff = (
   filePath: string | null,
@@ -270,7 +289,30 @@ export const performPostApplyActions = async (
   changes: FileChange[],
   llmGeneratePayload: LlmGeneratePayload,
   llmResponse: ModelResponse,
-) => {
+): Promise<{ success: boolean; messages: string[] }> => {
+  let overallSuccess = true;
+  const messages: string[] = [];
+
+  // First, apply the proposed file system changes
+  try {
+    const fileApplyResult = await applyProposedChanges(changes, projectRoot);
+    messages.push(...fileApplyResult.messages);
+    if (fileApplyResult.success) {
+      addLog('Post Apply', 'Proposed changes applied to file system.', 'success');
+    } else {
+      overallSuccess = false;
+      const errorMsg = 'Failed to apply some file system changes.';
+      addLog('Post Apply', errorMsg, 'error', fileApplyResult.messages.join('\n'), undefined, true);
+    }
+  } catch (err) {
+    overallSuccess = false;
+    const errMsg = `Error applying file system changes: ${err instanceof Error ? err.message : String(err)}`;
+    messages.push(errMsg);
+    addLog('Post Apply', errMsg, 'error', String(err), undefined, true);
+    return { success: false, messages: [errMsg] }; // Return early if file changes fail at this stage
+  }
+
+  // Then, execute AI-suggested git instructions
   if (llmResponse?.gitInstructions?.length) {
     addLog(
       'Git Automation',
@@ -288,6 +330,7 @@ export const performPostApplyActions = async (
           addLog('Git Automation', errMsg, 'error');
           setError(errMsg);
           gitCommandsSuccessful = false;
+          messages.push(errMsg);
           break;
         } else {
           addLog(
@@ -301,31 +344,18 @@ export const performPostApplyActions = async (
         addLog('Git Automation ', errMsg, 'error');
         setError(errMsg);
         gitCommandsSuccessful = false;
+        messages.push(errMsg);
         break;
       }
     }
 
-    if (gitCommandsSuccessful) {
-      addLog(
-        'Git Automation',
-        'All git instructions executed successfully.',
-        'success',
-      );
+    if (!gitCommandsSuccessful) {
+      overallSuccess = false; // Mark overall process as failed if git commands failed
+      messages.push('Some Git commands failed.');
     }
   }
-
-  // Apply proposed changes via API
-  try {
-    await applyProposedChanges(changes, projectRoot);
-    addLog(
-      'Post Apply',
-      'Proposed changes applied and scan completed.',
-      'success',
-    );
-  } catch (err) {
-    const errMsg = `Failed to apply proposed changes: ${err instanceof Error ? err.message : String(err)}`;
-    addLog('Post Apply', errMsg, 'error');
-    setError(errMsg);
-  }
+  
+  // Return the result of the file application, potentially updated by git command status
+  return { success: overallSuccess, messages };
 };
 export * from './snackbarStore';

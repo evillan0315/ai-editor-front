@@ -91,13 +91,16 @@ export const gitGetBranches = async (projectRoot?: string): Promise<GitBranch[]>
   }
 };
 
-export const gitCreateBranch = async (newBranchName: string, projectRoot?: string) => {
+export const gitCreateBranch = async (
+  newBranchName: string,
+  projectRoot?: string,
+): Promise<{ message: string }> => {
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/git/branch`, {
       method: 'POST',
       body: JSON.stringify({ newBranchName, projectRoot }),
     });
-    return await handleResponse(response);
+    return await handleResponse<{ message: string }>(response);
   } catch (error) {
     console.error('Error creating branch', error);
     throw error;
