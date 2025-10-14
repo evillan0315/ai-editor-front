@@ -1,4 +1,4 @@
-export const APP_NAME = 'Project Board';
+export const APP_NAME = 'CodeJector';
 export const APP_DESCRIPTION =
   'Your AI-Powered Development Partner to manage and build projects.';
 export const APP_VERSION = '1.0.0';
