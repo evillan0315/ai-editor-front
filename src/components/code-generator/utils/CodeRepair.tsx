@@ -1,6 +1,7 @@
 import React from 'react';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
-import { Box } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 interface CodeRepairProps {
   value: string;
@@ -8,6 +9,8 @@ interface CodeRepairProps {
   filePath: string;
   height?: string;
   width?: string;
+  /** Optional: Callback to open the import drawer with the current content of CodeRepair */
+  onOpenImportDrawerWithContent?: (content: string) => void;
 }
 
 export const CodeRepair: React.FC<CodeRepairProps> = ({
@@ -16,7 +19,14 @@ export const CodeRepair: React.FC<CodeRepairProps> = ({
   filePath,
   height,
   width,
+  onOpenImportDrawerWithContent,
 }) => {
+  const handleExport = () => {
+    if (onOpenImportDrawerWithContent) {
+      onOpenImportDrawerWithContent(value);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -26,6 +36,22 @@ export const CodeRepair: React.FC<CodeRepairProps> = ({
         position: 'relative',
       }}
     >
+      {onOpenImportDrawerWithContent && ( // Only render button if prop is provided
+        <Tooltip title="Export current content to Import Data drawer">
+          <IconButton
+            onClick={handleExport}
+            disabled={!value} // Disable if no content to export
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              zIndex: 10, // Ensure it's above CodeMirror
+            }}
+          >
+            <UploadFileIcon />
+          </IconButton>
+        </Tooltip>
+      )}
       <CodeMirrorEditor
         value={value}
         onChange={onChange}
