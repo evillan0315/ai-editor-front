@@ -1,9 +1,9 @@
 import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
-import { GitBranch, GitStatusResult, GitCommit, GitDiffResponseDto } from '@/types/git';
+import { GitBranch, GitStatusResult, GitCommit, GitDiffResponseDto, GitResetHardDto } from '@/types/git';
 
 export const getGitStatus = async (projectRoot?: string): Promise<GitStatusResult> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/git/status?projectRoot=${projectRoot}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/git/status` + (projectRoot ? `?projectRoot=${projectRoot}` : ''), {
       method: 'GET'
     });
     return await handleResponse(response);
@@ -65,9 +65,22 @@ export const gitResetStagedChanges = async (filePath?: string, projectRoot?: str
   }
 };
 
+export const gitResetHard = async (dto: GitResetHardDto) => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/git/reset-hard`, {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error(`Error performing hard reset to ${dto.commitHash}`, error);
+    throw error;
+  }
+};
+
 export const gitGetBranches = async (projectRoot?: string): Promise<GitBranch[]> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/git/branches?projectRoot=${projectRoot}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/git/branches` + (projectRoot ? `?projectRoot=${projectRoot}` : ''), {
       method: 'GET'
     });
     return await handleResponse(response);
@@ -172,7 +185,7 @@ export const gitRestoreSnapshot = async (snapshotName: string, projectRoot?: str
 export const gitListSnapshots = async (projectRoot?: string): Promise<{ tags: string[] }> => {
   try {
 
-    const response = await fetchWithAuth(`${API_BASE_URL}/git/snapshots?projectRoot=${projectRoot}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/git/snapshots` + (projectRoot ? `?projectRoot=${projectRoot}` : ''), {
       method: 'GET',
     });
     return await handleResponse(response);
@@ -184,7 +197,7 @@ export const gitListSnapshots = async (projectRoot?: string): Promise<{ tags: st
 
 export const gitDeleteSnapshot = async (snapshotName: string, projectRoot?: string) => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/git/snapshot/${snapshotName}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/git/snapshot/${snapshotName}` + (projectRoot ? `?projectRoot=${projectRoot}` : ''), {
       method: 'DELETE',
     });
     return await handleResponse(response);
@@ -197,7 +210,7 @@ export const gitDeleteSnapshot = async (snapshotName: string, projectRoot?: stri
 export const gitGetCommitLog = async (projectRoot?: string): Promise<GitCommit[]> => {
   try {
 
-    const response = await fetchWithAuth(`${API_BASE_URL}/git/commits?projectRoot=${projectRoot}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/git/commits` + (projectRoot ? `?projectRoot=${projectRoot}` : ''), {
       method: 'GET',
     });
     return await handleResponse(response);

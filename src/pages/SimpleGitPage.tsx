@@ -166,7 +166,12 @@ export default function SimpleGitPage() {
 
   const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number; file: string } | null>(null);
   const [contextMenuBranch, setContextMenuBranch] = useState<{ mouseX: number; mouseY: number; branch: GitBranch } | null>(null);
-  const [contextMenuCommit, setContextMenuCommit] = useState<{ mouseX: number; mouseY: number; commit: GitCommit } | null>(null);
+
+  // New state for commit context menu
+  const [commitMenuAnchorEl, setCommitMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [openCommitMenu, setOpenCommitMenu] = useState(false);
+  const [selectedCommitForMenu, setSelectedCommitForMenu] = useState<GitCommit | null>(null);
+
   const [contextMenuSnapshot, setContextMenuSnapshot] = useState<{ mouseX: number; mouseY: number; snapshot: string } | null>(null);
 
   const fetchAllGitData = useCallback(async () => {
@@ -438,11 +443,9 @@ export default function SimpleGitPage() {
 
   const handleContextMenuCommit = (event: React.MouseEvent, commit: GitCommit) => {
     event.preventDefault();
-    setContextMenuCommit(
-      contextMenuCommit === null
-        ? { mouseX: event.clientX + 2, mouseY: event.clientY - 6, commit }
-        : null,
-    );
+    setCommitMenuAnchorEl(event.currentTarget as HTMLElement);
+    setSelectedCommitForMenu(commit);
+    setOpenCommitMenu(true);
   };
 
   const handleContextMenuSnapshot = (event: React.MouseEvent, snapshot: string) => {
@@ -457,8 +460,12 @@ export default function SimpleGitPage() {
   const handleCloseContextMenu = () => {
     setContextMenu(null);
     setContextMenuBranch(null);
-    setContextMenuCommit(null);
     setContextMenuSnapshot(null);
+
+    // Close commit menu
+    setOpenCommitMenu(false);
+    setCommitMenuAnchorEl(null);
+    setSelectedCommitForMenu(null);
   };
 
   if (!projectRoot || projectRoot === '/') {
@@ -669,6 +676,7 @@ export default function SimpleGitPage() {
                         </Box>
                       }
                     />
+                    {/* The revert button here is for direct interaction, not context menu */}
                     <Button size="small" onClick={() => { setRevertCommitHash(commit.hash); setOpenRevertDialog(true); }} disabled={loading}>
                       Revert
                     </Button>
@@ -786,20 +794,23 @@ export default function SimpleGitPage() {
 
       {/* Context Menu for Commits */}
       <Menu
-        open={contextMenuCommit !== null}
+        open={openCommitMenu}
         onClose={handleCloseContextMenu}
-        anchorReference="point"
-        anchorPosition={
-          contextMenuCommit !== null
-            ? { top: contextMenuCommit.mouseY, left: contextMenuCommit.mouseX }
-            : undefined
-        }
+        anchorEl={commitMenuAnchorEl}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
       >
-        <MenuItem onClick={() => { setRevertCommitHash(contextMenuCommit?.commit.hash || ''); setOpenRevertDialog(true); handleCloseContextMenu(); }} disabled={loading}>
+        <MenuItem onClick={() => { setRevertCommitHash(selectedCommitForMenu?.hash || ''); setOpenRevertDialog(true); handleCloseContextMenu(); }} disabled={loading}>
           <ListItemIcon><RestoreIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Revert Commit</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { setResetHardCommitHash(contextMenuCommit?.commit.hash || ''); setOpenResetHardDialog(true); handleCloseContextMenu(); }} disabled={loading}>
+        <MenuItem onClick={() => { setResetHardCommitHash(selectedCommitForMenu?.hash || ''); setOpenResetHardDialog(true); handleCloseContextMenu(); }} disabled={loading}>
           <ListItemIcon><DeleteForeverIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Reset (Hard)</ListItemText>
         </MenuItem>
