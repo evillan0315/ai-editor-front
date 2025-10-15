@@ -1,4 +1,3 @@
-// src/appDefinitions.ts
 import { AppDefinition } from '@/types';
 import AppsIcon from '@mui/icons-material/Apps';
 import TerminalIcon from '@mui/icons-material/Terminal';
@@ -15,6 +14,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import GitHubIcon from '@mui/icons-material/GitHub'; // for Simple Git
 import ForumIcon from '@mui/icons-material/Forum';
 import DataObjectIcon from '@mui/icons-material/DataObject'; // For Schema Generator
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // NEW: For ChatApp (Direct)
 
 export const appDefinitions: AppDefinition[] = [
   {
@@ -34,6 +34,16 @@ export const appDefinitions: AppDefinition[] = [
     linkText: 'Open AI Chat',
     icon: ForumIcon,
     category: 'AI Tools',
+  },
+  // NEW: App Definition for direct ChatApp component
+  {
+    id: 'chat-component-test',
+    title: 'Chat App (Direct)',
+    description: 'Direct access to the ChatApp component for testing or specific use.',
+    link: '/apps/chat-component-test',
+    linkText: 'Open Direct Chat',
+    icon: ChatBubbleOutlineIcon,
+    category: 'Development',
   },
   {
     id: 'schema-generator',

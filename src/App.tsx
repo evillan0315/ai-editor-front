@@ -51,6 +51,7 @@ const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage'));
 const GitPage = lazy(() =>  import('@/components/git/GitPage'));
 const AIChatPage = lazy(() => import('./pages/AIChatPage'));
 const SchemeGeneratorPage = lazy(() => import('./pages/SchemeGeneratorPage')); // New: Lazy load SchemeGeneratorPage
+const ChatAppComponent = lazy(() => import('./components/chat/ChatApp')); // NEW: Lazy load ChatApp
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -114,6 +115,19 @@ const router = createBrowserRouter(
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 <AIChatPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+      {/* NEW: Route for direct ChatApp component */}
+      <Route
+        path="/apps/chat-component-test"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <ChatAppComponent />
               </ErrorBoundary>
             </Suspense>
           </RequireAuth>
