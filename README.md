@@ -162,6 +162,7 @@ project-board-front/
 │   ├── components/     # Reusable React components
 │   │   ├── ai-tools/   # Components for AI prompt generation and interaction (e.g., `AIPromptGenerator.tsx`)
 │   │   ├── board/      # Components for the Kanban board (`KanbanBoard.tsx`)
+│   │   ├── chat/       # Components for the AI Chat feature (`ChatApp.tsx`)
 │   │   ├── code-generator/ # Core components for AI code generation, diffing, and applying changes (`ChangesList.tsx`, `PromptGenerator.tsx`, `CodeGeneratorMain.tsx`, `ChangeItem.tsx`, `GitInstructions.tsx`, `DocumentationViewer.tsx`, `ImportJson.tsx`, `ThoughtProcess.tsx`, `CodeRepair.tsx`)
 │   │   ├── dialogs/    # Modal dialog components (e.g., `CreateFileOrFolderDialog.tsx`, `DirectoryPickerDialog.tsx`, `FileUploaderDialog.tsx`, `InstructionEditorDialog.tsx`, `OperationPathDialog.tsx`, `RenameDialog.tsx`, `ScanPathsDialog.tsx`, `TerminalSettingsDialog.tsx`, `index.ts` for exports)
 │   │   ├── file-tree/  # Components for rendering and interacting with the project's file tree (`FileTree.tsx`, `FileTreeItem.tsx`, `FileTreeContextMenuRenderer.tsx`, `index.ts` for exports)
@@ -302,6 +303,7 @@ VITE_WS_URL=ws://localhost:3000             # The URL of your Project Board back
 VITE_FRONTEND_URL=http://localhost:3001     # The URL where your frontend is hosted (e.g., for OAuth redirects from backend)
 VITE_BASE_DIR=/path/to/your/project/root    # **Optional**: Default project root to pre-fill in the editor's project path input. Can be overridden in the UI. If not set, the user must provide one. This variable is useful for local development to avoid repeatedly typing the project path.
 VITE_PREVIEW_APP_URL=http://localhost:8080  # **Optional**: URL of a built frontend application to preview in an iframe. e.g., points to a server serving /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/dist
+VITE_GEMINI_API_KEY=YOUR_GEMINI_API_KEY     # **Required for AI Chat**: Your Google Gemini API key to enable AI responses.
 ```
 
 ---
@@ -430,6 +432,7 @@ Distributed under the MIT License. See [LICENSE](https://github.com/evillan0315/
 - [ESLint (Flat Config)](https://eslint.org/)
 - [TailwindCSS Vite Plugin](https://tailwindcss.com/docs/guides/vite)
 - [Prettier](https://prettier.io/)
+- [lucide-react](https://lucide.dev/)
 
 ---
 
