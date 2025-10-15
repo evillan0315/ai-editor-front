@@ -3,7 +3,7 @@
  */
 
 import React, { useRef, useEffect } from 'react';
-import { Box, List, ListItem, Typography } from '@mui/material';
+import { Box, List, ListItem, Typography, useTheme } from '@mui/material';
 
 import { MessageListProps } from './types';
 import MessageBubble from './MessageBubble';
@@ -13,6 +13,7 @@ import MessageBubble from './MessageBubble';
  */
 const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const theme = useTheme();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -23,7 +24,10 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId }) =>
   }, [messages]);
 
   return (
-    <Box className="flex-grow overflow-y-auto p-4 bg-gray-50 rounded-t-lg">
+    <Box
+      className="flex-grow overflow-y-auto p-4 rounded-t-lg"
+      sx={{ backgroundColor: theme.palette.background.default }}
+    >
       <List className="flex flex-col">
         {messages.map((message) => (
           <ListItem key={message.id} className="p-0">
@@ -34,7 +38,9 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId }) =>
       </List>
       {messages.length === 0 && (
         <Box className="flex items-center justify-center h-full text-gray-500">
-          <Typography variant="subtitle1">Start the conversation...</Typography>
+          <Typography variant="subtitle1" sx={{ color: theme.palette.text.secondary }}>
+            Start the conversation...
+          </Typography>
         </Box>
       )}
     </Box>

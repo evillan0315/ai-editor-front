@@ -20,12 +20,18 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUserId })
   const isBot = message.userId === BOT_USER_ID;
   const theme = useTheme();
 
-  // Determine colors and alignment
-  const bubbleClass = isCurrentUser
-    ? 'bg-blue-500 text-white self-end rounded-br-none'
-    : isBot
-    ? 'bg-gray-200 text-gray-800 self-start rounded-tl-none'
-    : 'bg-green-100 text-gray-800 self-start rounded-tl-none';
+  // Determine colors and alignment using theme palette
+  const bubbleSx = {
+    backgroundColor: isCurrentUser
+      ? theme.palette.primary.main
+      : isBot
+        ? theme.palette.action.selected // A subtle background for bot messages
+        : theme.palette.success.light, // Example for other users, could be another theme color
+    color: isCurrentUser ? theme.palette.primary.contrastText : theme.palette.text.primary,
+    borderRadius: '12px',
+    ...(isCurrentUser && { borderBottomRightRadius: '2px' }), // Adjust corner for current user
+    ...(!isCurrentUser && { borderBottomLeftRadius: '2px' }), // Adjust corner for bot/other user
+  };
 
   const alignmentClass = isCurrentUser ? 'justify-end' : 'justify-start';
 
@@ -44,12 +50,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUserId })
       {!isCurrentUser && avatar}
       <Paper
         elevation={1}
-        className={`max-w-xs md:max-w-md p-3 rounded-xl shadow-md ${bubbleClass}`}"
+        className={`max-w-xs md:max-w-md p-3 rounded-xl shadow-md`}
+        sx={bubbleSx}
       >
         <Typography variant="body1" className="whitespace-pre-wrap">
           {message.text}
         </Typography>
-        <Typography variant="caption" className="opacity-70 mt-1 block text-right">
+        <Typography variant="caption" sx={{ opacity: 0.7, mt: 1, display: 'block', textAlign: 'right' }}>
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Typography>
       </Paper>

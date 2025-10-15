@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, TextField, Button } from '@mui/material';
+import { Box, TextField, Button, useTheme } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 
 import { MessageInputProps } from './types';
@@ -17,6 +17,7 @@ const BOT_USER_ID = 'user-bot';
 const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
   const [inputText, setInputText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const theme = useTheme();
 
   // Placeholder for the actual API key. The Canvas environment will inject this if needed.
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string; // Access API key from environment variables
@@ -108,7 +109,11 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
     <Box
       component="form"
       onSubmit={handleSend}
-      className="flex p-4 border-t border-gray-200 bg-white rounded-b-lg shadow-inner"
+      className="flex p-4 mr-2 rounded-b-lg shadow-inner"
+      sx={{
+        borderTop: `1px solid ${theme.palette.divider}`,
+        backgroundColor: theme.palette.background.paper,
+      }}
     >
       <TextField
         fullWidth
