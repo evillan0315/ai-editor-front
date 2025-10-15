@@ -9,15 +9,15 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 
 import { MessageBubbleProps } from './types';
 
-// Mock User ID for demonstration (Replace with actual authenticated user ID)
-const MOCK_BOT_USER_ID = 'user-bot';
+// Bot User ID (remains constant for bot messages)
+const BOT_USER_ID = 'user-bot';
 
 /**
  * Renders a single chat message bubble, styling it based on the sender.
  */
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUserId }) => {
   const isCurrentUser = message.userId === currentUserId;
-  const isBot = message.userId === MOCK_BOT_USER_ID;
+  const isBot = message.userId === BOT_USER_ID;
   const theme = useTheme();
 
   // Determine colors and alignment

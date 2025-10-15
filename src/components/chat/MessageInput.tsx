@@ -8,8 +8,8 @@ import SendIcon from '@mui/icons-material/Send';
 
 import { MessageInputProps } from './types';
 
-// Mock User ID for demonstration (Replace with actual authenticated user ID)
-const MOCK_BOT_USER_ID = 'user-bot';
+// Bot User ID for bot-generated messages
+const BOT_USER_ID = 'user-bot';
 
 /**
  * Provides the text input and send button functionality.
@@ -96,7 +96,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
     // 3. Send Bot Message (Delayed to simulate processing)
     if (botResponseText) {
       setTimeout(() => {
-        onSendMessage(botResponseText, MOCK_BOT_USER_ID);
+        onSendMessage(botResponseText, BOT_USER_ID);
         setIsLoading(false);
       }, 500); // 500ms delay to visually separate user and bot messages
     } else {
