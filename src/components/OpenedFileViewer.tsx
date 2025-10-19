@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { useStore } from '@nanostores/react';
-import { themeStore } from '@/stores/themeStore';
 import { useTheme } from '@mui/material';
 import {
   fileStore,
@@ -21,6 +20,7 @@ import { keymap, EditorView } from '@codemirror/view'; // Keep keymap and Editor
 import { Extension } from '@codemirror/state'; // Import Extension type for type safety
 import InitialEditorViewer from './InitialEditorViewer';
 import MarkdownEditor from '@/components/MarkdownEditor';
+import { projectStore } from '@/stores/projectStore'; // <-- NEW IMPORT
 
 interface OpenedFileViewerProps {}
 
@@ -35,7 +35,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   const $openedFileContent = useStore(openedFileContent);
   const $openedFile = useStore(openedFile);
   const muiTheme = useTheme();
-  // const { mode } = useStore(themeStore); // Not needed here, handled by CodeMirrorEditor
+  const $projectStore = useStore(projectStore); // <-- Use projectStore
 
   // Define the save keymap extension
   const saveKeymapExtension: Extension = React.useMemo(() => {
@@ -60,11 +60,21 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
         return;
       }
 
+      const projectId = $projectStore.currentProject?.id; // <-- Get projectId from store
+
+      if (!projectId) {
+        setFetchFileContentError('No project selected. Cannot fetch file content.');
+        setIsFetchingFileContent(false);
+        setOpenedFileContent(null);
+        setInitialFileContentSnapshot(null);
+        return;
+      }
+
       setIsFetchingFileContent(true);
       setFetchFileContentError(null);
 
       try {
-        const content = await readFileContent($openedFile);
+        const content = await readFileContent($openedFile, projectId); // <-- Pass projectId
         setOpenedFileContent(content);
         setInitialFileContentSnapshot(content);
         setIsOpenedFileDirty(false);
@@ -81,7 +91,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
     };
 
     fetchContent();
-  }, [$openedFile]);
+  }, [$openedFile, $projectStore.currentProject?.id]); // <-- Add projectId to dependencies
 
   useEffect(() => {
     if (
@@ -149,7 +159,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
           </Typography>
         </Box>
       ) : (
-       <>
+        <>
           {isMarkdownFile ? (
             <MarkdownEditor
               value={$openedFileContent || ''}
@@ -167,7 +177,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
               additionalExtensions={[saveKeymapExtension]} // Pass the custom keymap
             />
           )}
-       </>
+        </>
       )}
     </Box>
   );
