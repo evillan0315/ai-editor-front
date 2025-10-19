@@ -3,14 +3,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, useTheme, CircularProgress } from '@mui/material';
+import { Box, Typography, Paper, useTheme, CircularProgress, Button } from '@mui/material';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import { useStore } from '@nanostores/react';
-import { authStore } from '@/stores/authStore';
-import { checkAuthStatus } from '@/api/auth';
+import { authStore, user } from '@/stores/authStore';
+import { nanoid } from 'nanoid';
 
 import { Message } from './types';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
+import VideoChatComponent from './VideoChatComponent';
 
 // Bot User ID (remains constant)
 const BOT_USER_ID = 'user-bot';
@@ -21,20 +24,11 @@ const BOT_USER_ID = 'user-bot';
  */
 const ChatApp: React.FC = () => {
   const $auth = useStore(authStore);
+  const $user = useStore(user);
   const theme = useTheme();
 
-  // On component mount, ensure authentication status is checked.
-  // This will update the authStore's isLoggedIn, user, loading, and error states.
-  useEffect(() => {
-    // Only initiate checkAuthStatus if no user is loaded AND an auth check is not already in progress.
-    // This prevents redundant API calls if a parent component already triggered it or if user is genuinely logged out.
-    if (!$auth.user && !$auth.loading) {
-      console.log('ChatApp: Initiating auth status check as user is not loaded.');
-      checkAuthStatus();
-    }
-  }, [$auth.user, $auth.loading]); // Depend on user and loading state to re-evaluate
 
-  const currentUserActualId = $auth.user?.id || 'guest-user';
+  const currentUserActualId = $user?.id || 'guest-user';
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -44,6 +38,10 @@ const ChatApp: React.FC = () => {
       timestamp: new Date(),
     },
   ]);
+  const [showVideoChat, setShowVideoChat] = useState(false);
+  // Generate a fixed roomId for the lifetime of this ChatApp component
+  // In a real app, this might come from a conversation ID or be user-defined.
+  const [videoChatRoomId] = useState(() => nanoid(10));
 
   const handleSendMessage = (text: string, userId: string = currentUserActualId) => {
     const newMessage: Message = {
@@ -53,6 +51,10 @@ const ChatApp: React.FC = () => {
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, newMessage]);
+  };
+
+  const toggleVideoChat = () => {
+    setShowVideoChat(prev => !prev);
   };
 
   // Show loading indicator while authentication status is being determined
@@ -97,25 +99,42 @@ const ChatApp: React.FC = () => {
     >
       <Paper elevation={3} className="flex flex-col h-full rounded-xl overflow-hidden shadow-2xl">
         <Box
-          className="p-4 shadow-lg"
+          className="p-4 shadow-lg flex justify-between items-center"
           sx={{
             backgroundColor: theme.palette.primary.main,
             color: theme.palette.primary.contrastText,
           }}
         >
-          <Typography variant="h5" component="h1" className="font-bold">
-            Gemini AI Chat
-          </Typography>
-          <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>
-            Current User: {$auth.user?.name || 'Guest User'} {(!$auth.user?.id && '(Guest Mode)') || ''}
-          </Typography>
+          <div>
+            <Typography variant="h5" component="h1" className="font-bold">
+              Gemini AI Chat
+            </Typography>
+            <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>
+              Current User: {$user?.name || 'Guest User'} {(!$user?.id && '(Guest Mode)') || ''}
+            </Typography>
+          </div>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={toggleVideoChat}
+            startIcon={showVideoChat ? <VideocamOffIcon /> : <VideocamIcon />}
+            sx={{ ml: 2 }}
+          >
+            {showVideoChat ? 'Exit Video' : 'Join Video'}
+          </Button>
         </Box>
 
-        {/* Message List Area */}
-        <MessageList messages={messages} currentUserId={currentUserActualId} />
+        {showVideoChat ? (
+          <VideoChatComponent roomId={videoChatRoomId} onClose={() => setShowVideoChat(false)} />
+        ) : (
+          <>
+            {/* Message List Area */}
+            <MessageList messages={messages} currentUserId={currentUserActualId} />
 
-        {/* Message Input Area */}
-        <MessageInput onSendMessage={handleSendMessage} />
+            {/* Message Input Area */}
+            <MessageInput onSendMessage={handleSendMessage} />
+          </>
+        )}
       </Paper>
     </Box>
   );
