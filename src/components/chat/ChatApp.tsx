@@ -36,7 +36,7 @@ const ChatApp: React.FC = () => {
     []
   ); // messages now fully managed here, including history
   const [showVideoChat, setShowVideoChat] = useState(false);
-  const [videoChatRoomId] = useState(() => crypto.randomUUID()); // Use UUID for video room ID
+  // Removed: const [videoChatRoomId] = useState(() => crypto.randomUUID()); // Use UUID for video room ID
   const [conversationLoading, setConversationLoading] = useState(false);
   const [conversationError, setConversationError] = useState<string | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true); // New state for history loading
@@ -277,8 +277,8 @@ const ChatApp: React.FC = () => {
           </Button>
         </Box>
 
-        {showVideoChat ? (
-          <VideoChatComponent roomId={videoChatRoomId} onClose={() => setShowVideoChat(false)} />
+        {showVideoChat && $activeConversationId ? (
+          <VideoChatComponent roomId={$activeConversationId} onClose={() => setShowVideoChat(false)} />
         ) : (
           <>
             {/* Message List Area */}
