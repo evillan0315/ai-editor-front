@@ -14,8 +14,6 @@ interface ReactMarkdownWithCodeCopyProps {
 // Define consistent sx styles at the top for maintainability
 const codeBlockContainerSx = {
   position: 'relative',
-  my: 2, // Margin top/bottom for spacing between markdown elements
-  // Tailwind classes will handle other layout/spacing outside MUI components
 };
 
 const getLanguageLabelSx = (theme: ReturnType<typeof useTheme>) => ({
@@ -42,15 +40,6 @@ const getCopyButtonSx = (theme: ReturnType<typeof useTheme>) => ({
   '&:hover': {
     backgroundColor: theme.palette.action.hover,
   },
-});
-
-const getInlineCodeSx = (theme: ReturnType<typeof useTheme>) => ({
-  backgroundColor: theme.palette.action.hover,
-  borderRadius: 0.5,
-  px: 0.5,
-  py: 0.125,
-  fontFamily: 'monospace',
-  fontSize: '0.875em',
 });
 
 const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
@@ -99,7 +88,10 @@ const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
           const language = languageMatch ? languageMatch[1] : '';
 
           return (
-            <Box sx={codeBlockContainerSx} className="group">
+            <Box
+              sx={codeBlockContainerSx} // Retain for 'position: relative' only
+              className="group my-4 rounded-md bg-gray-800 dark:bg-gray-900 p-4 overflow-x-auto"
+            >
               {language && (
                 <Typography variant="caption" sx={getLanguageLabelSx(theme)}>
                   {language}
@@ -125,11 +117,26 @@ const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
         // For block code, the 'pre' override handles the wrapping around the highlighted <code>.
         code: ({ node, inline, className, children, ...props }) => {
           if (inline) {
-            return <Box component="code" sx={getInlineCodeSx(theme)}>{children}</Box>;
+            return (
+              <Box
+                component="code"
+                className="bg-gray-200 dark:bg-gray-700 rounded-sm px-1 py-0.5 font-mono text-sm"
+              >
+                {children}
+              </Box>
+            );
           }
           // For block code, let ReactMarkdown render the <code> tag as it would normally,
-          // ensuring rehypeHighlight can process it. The 'pre' component will then wrap it.
-          return <code className={className} {...props}>{children}</code>;
+          // ensuring rehypeHighlight can process it.
+          // Add Tailwind classes for block display, whitespace handling, and font size.
+          return (
+            <code
+              className={`${className || ''} block whitespace-pre text-sm`}
+              {...props}
+            >
+              {children}
+            </code>
+          );
         },
       }}
     >
