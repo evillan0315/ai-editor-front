@@ -154,13 +154,23 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
     console.log(`Received answer from ${senderSocketId}`);
 
     const pc = peerConnections.current.get(senderSocketId)?.connection;
-    if (pc && pc.localDescription) {
-      try {
-        await pc.setRemoteDescription(new RTCSessionDescription(answer));
-        console.log(`Remote description set for ${senderSocketId}`);
-      } catch (err) {
-        console.error(`Error handling answer from ${senderSocketId}:`, err);
-        setError(`Failed to process answer from ${senderSocketId}.`);
+    if (pc) {
+      // CRITICAL FIX: Prevent setting remote answer if signalingState is already 'stable'.
+      // This avoids DOMException: Cannot set remote answer in state stable.
+      if (pc.signalingState === 'stable') {
+        console.warn(`Ignoring answer from ${senderSocketId}: signalingState is already 'stable'.`);
+        return;
+      }
+      if (pc.localDescription) { // Ensure we have a local offer set to which this is an answer
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          console.log(`Remote description set for ${senderSocketId}`);
+        } catch (err) {
+          console.error(`Error handling answer from ${senderSocketId}:`, err);
+          setError(`Failed to process answer from ${senderSocketId}. DOMException: Cannot set remote answer in state stable.`);
+        }
+      } else {
+        console.warn(`Received answer from ${senderSocketId} but no local description (offer) was set.`);
       }
     }
   }, [currentUserId]);

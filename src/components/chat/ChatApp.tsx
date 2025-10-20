@@ -282,7 +282,7 @@ const ChatApp: React.FC = () => {
         backgroundColor: theme.palette.background.default,
       }}
     >
-      <Paper elevation={3} className="flex flex-col h-full rounded-xl overflow-hidden shadow-2xl">
+      <Paper elevation={1} className="flex flex-col h-full rounded-xl overflow-hidden shadow-2xl">
         <Box
           className="p-4 shadow-lg flex justify-between items-center z-10"
           sx={headerSx(theme)}
