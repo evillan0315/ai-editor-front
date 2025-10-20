@@ -9,6 +9,7 @@ import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import { useStore } from '@nanostores/react';
 import { authStore, user, getToken } from '@/stores/authStore';
 import { activeConversationId, setActiveConversationId, showVideoChat, setShowVideoChat } from '@/stores/conversationStore';
+import { motion, AnimatePresence } from 'framer-motion'; // Import framer-motion
 
 import { chatSocketService } from './chatSocketService';
 import { Message, SendMessageDto, Sender } from './types'; // Import Sender enum
@@ -21,6 +22,15 @@ import { conversationApi } from '@/api/conversation'; // Import the new API serv
 const BOT_USER_ID = 'user-bot';
 
 /**
+ * Styles for the chat header box.
+ * @param theme The Material UI theme object.
+ */
+const headerSx = (theme: any) => ({
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
+});
+
+/**
  * Main component for the chat application, handling global state and layout.
  * Ensures user authentication status is loaded and reflects the current user.
  */
@@ -30,14 +40,10 @@ const ChatApp: React.FC = () => {
   const $activeConversationId = useStore(activeConversationId);
   const $showVideoChat = useStore(showVideoChat);
   const theme = useTheme();
-  const token = getToken()
+  const token = getToken();
   const currentUserActualId = $user?.id || 'guest-user';
 
-  const [messages, setMessages] = useState<Message[]>(
-    []
-  ); // messages now fully managed here, including history
-  // Removed: const [showVideoChat, setShowVideoChat] = useState(false);
-  // Removed: const [videoChatRoomId] = useState(() => crypto.randomUUID()); // Use UUID for video room ID
+  const [messages, setMessages] = useState<Message[]>([]); // messages now fully managed here, including history
   const [conversationLoading, setConversationLoading] = useState(false);
   const [conversationError, setConversationError] = useState<string | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true); // New state for history loading
@@ -51,15 +57,17 @@ const ChatApp: React.FC = () => {
         setConversationLoading(true);
         setConversationError(null);
         try {
-
           if (!token) {
             throw new Error('Authentication token not available.');
           }
           // Create a new conversation on the backend
-          const newConversation = await conversationApi.createConversation({
-            title: `Chat Session - ${new Date().toLocaleString()}`,
-            createdById: $user.id,
-          }, token);
+          const newConversation = await conversationApi.createConversation(
+            {
+              title: `Chat Session - ${new Date().toLocaleString()}`,
+              createdById: $user.id,
+            },
+            token,
+          );
           setActiveConversationId(newConversation.id);
           console.log('New conversation created:', newConversation.id);
         } catch (err) {
@@ -73,13 +81,13 @@ const ChatApp: React.FC = () => {
     };
 
     initializeConversation();
-  }, [$auth.isLoggedIn, $user?.id, $activeConversationId]);
+  }, [$auth.isLoggedIn, $user?.id, $activeConversationId, token]);
 
   // Callback to handle incoming messages from WebSocket (for both new messages and history)
   const handleReceiveMessage = useCallback((receivedMessage: Message) => {
     setMessages((prev) => {
       // Prevent duplicates if the server echoes the sender's message (by comparing unique IDs)
-      if (prev.some(msg => msg.id === receivedMessage.id)) {
+      if (prev.some((msg) => msg.id === receivedMessage.id)) {
         return prev;
       }
       return [...prev, receivedMessage];
@@ -111,7 +119,7 @@ const ChatApp: React.FC = () => {
               // The handleSendMessage logic will ensure it's marked as 'BOT' but uses the actual user's ID for persistence.
               handleSendMessage(
                 'Hello! I am your friendly AI chat assistant. What can I help you with today?',
-                BOT_USER_ID
+                BOT_USER_ID,
               );
             }
             chatSocketService.off('conversation_history'); // Remove listener after receiving history
@@ -256,11 +264,8 @@ const ChatApp: React.FC = () => {
     >
       <Paper elevation={3} className="flex flex-col h-full rounded-xl overflow-hidden shadow-2xl">
         <Box
-          className="p-4 shadow-lg flex justify-between items-center"
-          sx={{
-            backgroundColor: theme.palette.primary.main,
-            color: theme.palette.primary.contrastText,
-          }}
+          className="p-4 shadow-lg flex justify-between items-center z-10" // z-index to keep header on top
+          sx={headerSx(theme)}
         >
           <div>
             <Typography variant="h5" component="h1" className="font-bold">
@@ -281,17 +286,38 @@ const ChatApp: React.FC = () => {
           </Button>
         </Box>
 
-        {$showVideoChat && $activeConversationId ? (
-          <VideoChatComponent roomId={$activeConversationId} onClose={() => setShowVideoChat(false)} />
-        ) : (
-          <>
-            {/* Message List Area */}
-            <MessageList messages={messages} currentUserId={currentUserActualId} />
+        {/* Content Area - where the animation happens */}
+        <Box className="relative flex-grow overflow-hidden">
+          <AnimatePresence initial={false}>
+            {$showVideoChat && $activeConversationId ? (
+              <motion.div
+                key="video-chat"
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="absolute inset-0 flex flex-col"
+              >
+                <VideoChatComponent roomId={$activeConversationId} onClose={() => setShowVideoChat(false)} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="chat-messages"
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="absolute inset-0 flex flex-col"
+              >
+                {/* Message List Area */}
+                <MessageList messages={messages} currentUserId={currentUserActualId} />
 
-            {/* Message Input Area */}
-            <MessageInput onSendMessage={handleSendMessage} />
-          </>
-        )}
+                {/* Message Input Area */}
+                <MessageInput onSendMessage={handleSendMessage} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Box>
       </Paper>
     </Box>
   );
