@@ -102,12 +102,25 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
 
   const handleUserJoined = useCallback(async ({ socketId, userId }: { socketId: string, userId?: string }) => {
     if (socketId === currentUserId) return; // Don't connect to self
-    if (peerConnections.current.has(socketId)) return; // Already connected
 
     console.log(`User ${userId} (${socketId}) joined the room.`);
 
-    const pc = createPeerConnection(socketId);
-    if (!pc) return; // Should not happen with createPeerConnection logic
+    let pcState = peerConnections.current.get(socketId);
+    let pc: RTCPeerConnection;
+
+    if (pcState) {
+      pc = pcState.connection;
+      // If a peer connection already exists, check its signaling state.
+      // If it's not stable, it means an offer/answer exchange is already in progress.
+      // We should not create another offer in this state to avoid 'Failed to create offer' errors.
+      if (pc.signalingState !== 'stable') {
+        console.warn(`Peer connection for ${socketId} is in state '${pc.signalingState}', not creating a new offer.`);
+        return;
+      }
+    } else {
+      // If no peer connection exists, create a new one.
+      pc = createPeerConnection(socketId); // This function will add it to the map
+    }
 
     try {
       const offer = await pc.createOffer();
@@ -120,7 +133,7 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
       console.log(`Offer sent to ${socketId}`);
     } catch (err) {
       console.error(`Error creating offer for ${socketId}:`, err);
-      setError(`Failed to create offer for ${userId}.`);
+      setError(`Failed to create offer for ${userId || socketId}.`);
     }
   }, [currentUserId, createPeerConnection]);
 
@@ -201,24 +214,37 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
     console.log('Existing users in room:', users);
     // For each existing user, if we are not already connected, create an offer
     for (const user of users) {
-      if (user.socketId !== currentUserId && !peerConnections.current.has(user.socketId)) {
-        console.log(`Connecting to existing user: ${user.socketId}`);
-        const pc = createPeerConnection(user.socketId);
-        if (!pc) continue;
+      if (user.socketId === currentUserId) continue; // Don't connect to self
 
-        try {
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          chatSocketService.sendOffer({
-            roomId: roomIdRef.current!,
-            targetUserId: user.socketId,
-            payload: pc.localDescription
-          });
-          console.log(`Offer sent to ${user.socketId}`);
-        } catch (err) {
-          console.error(`Error creating offer for existing user ${user.socketId}:`, err);
-          setError(`Failed to create offer for ${user.socketId}.`);
+      let pcState = peerConnections.current.get(user.socketId);
+      let pc: RTCPeerConnection;
+
+      if (pcState) {
+        pc = pcState.connection;
+        // If a peer connection already exists, check its signaling state.
+        // If it's not stable, it means an offer/answer exchange is already in progress.
+        // We should not create another offer in this state to avoid 'Failed to create offer' errors.
+        if (pc.signalingState !== 'stable') {
+          console.warn(`Peer connection for existing user ${user.socketId} is in state '${pc.signalingState}', not creating a new offer.`);
+          continue; // Skip this user for now, or handle later if state changes
         }
+      } else {
+        // If no peer connection exists, create a new one.
+        pc = createPeerConnection(user.socketId); // This function will add it to the map
+      }
+      
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        chatSocketService.sendOffer({
+          roomId: roomIdRef.current!,
+          targetUserId: user.socketId,
+          payload: pc.localDescription
+        });
+        console.log(`Offer sent to ${user.socketId}`);
+      } catch (err) {
+        console.error(`Error creating offer for existing user ${user.socketId}:`, err);
+        setError(`Failed to create offer for ${user.socketId}.`);
       }
     }
   }, [currentUserId, createPeerConnection]);
