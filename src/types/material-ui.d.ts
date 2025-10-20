@@ -18,18 +18,20 @@ declare module '@mui/material/styles' {
   }
 
   /**
-   * Augment the Palette interface to include a custom 'outerSpace' color.
-   * This makes `theme.palette.outerSpace` available with type safety.
+   * Augment the Palette interface to include custom color palettes.
+   * This makes `theme.palette.outerSpace` and `theme.palette.denim` available with type safety.
    */
   interface Palette {
     outerSpace: PaletteColor;
+    denim: PaletteColor;
   }
 
   /**
-   * Augment the PaletteOptions interface to allow defining 'outerSpace'
+   * Augment the PaletteOptions interface to allow defining custom palettes
    * in `createTheme` options.
    */
   interface PaletteOptions {
     outerSpace?: SimplePaletteColorOptions;
+    denim?: SimplePaletteColorOptions;
   }
 }

@@ -12,8 +12,8 @@ const customBlackPalette = {
   600: '#5d5d5d',
   700: '#4f4f4f',
   800: '#454545',
-  900: '#3d3d3d',
-  950: '#000000', // This is a custom addition beyond standard MUI grey 900
+  900: '#1d1d1d',
+  950: '#121212', // This is a custom addition beyond standard MUI grey 900
 };
 
 // Define the new custom outer-space palette
@@ -31,6 +31,21 @@ const outerSpacePalette = {
   950: '#22282a',
 };
 
+// Define the new custom denim palette
+const denimPalette = {
+  50: '#f4f6fb',
+  100: '#e7edf7',
+  200: '#cad9ed',
+  300: '#9bb9de',
+  400: '#6595cb',
+  500: '#4277b5',
+  600: '#3465a4',
+  700: '#284b7c',
+  800: '#254167',
+  900: '#233857',
+  950: '#17243a',
+};
+
 export const getAppTheme = (mode: PaletteMode) => {
   const themeOptions: ThemeOptions = {
     palette: {
@@ -39,11 +54,13 @@ export const getAppTheme = (mode: PaletteMode) => {
       grey: customBlackPalette,
       // Add the new outerSpace palette
       outerSpace: outerSpacePalette,
+      // Add the new denim palette
+      denim: denimPalette,
       primary: {
-        main: mode === 'dark' ? '#90caf9' : '#1976d2',
+        main: mode === 'dark' ? denimPalette[950] : denimPalette[50],
         light: mode === 'dark' ? '#e3f2fd' : '#42a5f5',
         dark: mode === 'dark' ? '#42a5f5' : '#1565c0',
-        contrastText: mode === 'dark' ? customBlackPalette[950] : customBlackPalette[50],
+        contrastText: mode === 'dark' ? denimPalette[50] : denimPalette[950],
       },
       secondary: {
         main: mode === 'dark' ? '#f48fb1' : '#dc004e',
@@ -199,7 +216,7 @@ export const getAppTheme = (mode: PaletteMode) => {
       MuiDialog: {
         styleOverrides: {
           paper: ({ theme }) => ({
-            backgroundColor: theme.palette.background.default,
+            //backgroundColor: theme.palette.background.default,
             borderRadius: 6,
           }),
         },
