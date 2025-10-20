@@ -1,6 +1,38 @@
+export interface IRecorderSettings {
+  namePrefix: string;
+  screenResolution: string;
+  screenFramerate: number;
+  cameraResolution: string;
+  cameraFramerate: number;
+  cameraVideoDevice: string;
+  cameraAudioDevice: string;
+}
+
+export interface RecordingItem {
+  id: string;
+  name: string;
+  createdAt: string;
+  sizeBytes: number;
+  type: string;
+  status: string;
+  path: string;
+  createdById: string;
+  data: {
+    duration?: number;
+    fileSize?: number;
+    animatedGif?: string;
+    [key: string]: any;
+  };
+}
+
 export interface PaginationRecordingQueryDto {
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  search?: string;
+  type?: string;
+  pageSize?: number;
 }
 
 export interface PaginationRecordingResultDto {
@@ -8,7 +40,7 @@ export interface PaginationRecordingResultDto {
   total: number;
   page: number;
   limit: number;
-  totalPages: number; // Ensure totalPages is defined here
+  totalPages: number;
 }
 export interface RecordingStartResponse {
   id: string;
@@ -53,11 +85,11 @@ export interface TranscodeToGifResult {
 }
 
 export interface StartCameraRecordingDto {
-  audioDevice?: string;
-  cameraDevice?: string;
+  audioDevice?: string[];
+  cameraDevice?: string[];
   resolution?: string;
   framerate?: number;
-  duration?: number; // In seconds
+  duration?: number;
   name?: string;
 }
 
@@ -69,5 +101,7 @@ export interface CameraRecordingResponseDto {
 }
 
 export interface UpdateRecordingDto {
-  data: any;
+  name?: string;
+  type?: string;
+  data?: any;
 }

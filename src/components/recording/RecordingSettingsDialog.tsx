@@ -11,8 +11,8 @@ import {
   Box,
 } from '@mui/material';
 import { useStore } from '@nanostores/react';
-import { IRecorderSettings } from '@/types';
-import { recorderSettingsStore } from '@/stores/recordingStore';
+import { IRecorderSettings } from './types/recording';
+import { recorderSettingsStore } from './stores/recordingStore';
 
 interface RecordingSettingsDialogProps {
   open: boolean;

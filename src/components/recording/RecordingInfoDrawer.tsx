@@ -8,7 +8,7 @@ import {
   Divider,
 } from '@mui/material';
 import CustomDrawer from '../Drawer/CustomDrawer';
-import { RecordingItem } from './RecordingsTable';
+import { RecordingItem } from './types/recording';
 
 interface RecordingInfoDrawerProps {
   open: boolean;
@@ -64,6 +64,7 @@ export const RecordingInfoDrawer: React.FC<RecordingInfoDrawerProps> = ({
           label="Name"
           value={editable.name || ''}
           onChange={(e) => setEditable({ ...editable, name: e.target.value })}
+          fullWidth
           size="small"
         />
         <TextField
@@ -71,6 +72,7 @@ export const RecordingInfoDrawer: React.FC<RecordingInfoDrawerProps> = ({
           select
           value={editable.type || ''}
           onChange={(e) => setEditable({ ...editable, type: e.target.value })}
+          fullWidth
           size="small"
         >
           {RECORDING_TYPES.map((t) => (

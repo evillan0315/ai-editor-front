@@ -19,7 +19,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
 import GifIcon from '@mui/icons-material/Gif';
 
-import { RecordingItem } from './Recording'; // Re-exporting RecordingItem as RecordingItem
+import { RecordingItem } from './types/recording'; // Re-exporting RecordingItem as RecordingItem
 
 interface RecordingsTableProps {
   recordings: RecordingItem[];

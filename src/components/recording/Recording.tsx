@@ -13,32 +13,15 @@ import {
   isCameraRecordingStore,
   currentCameraRecordingIdStore,
   setIsCameraRecording,
-} from '@/stores/recordingStore';
+} from './stores/recordingStore';
 import { useStore } from '@nanostores/react';
 
 import { getFileStreamUrl } from '@/api/media';
-import { recordingApi } from '@/api/recording';
+import { recordingApi } from './api/recording';
 import { setLoading, isLoading } from '@/stores/loadingStore';
-import { StartCameraRecordingDto } from '@/types';
+import { StartCameraRecordingDto, RecordingItem } from './types/recording';
 import VideoModal from '@/components/VideoModal'; // Import VideoModal
 import path from 'path-browserify';
-
-export interface RecordingItem {
-  id: string;
-  name: string;
-  createdAt: string;
-  sizeBytes: number;
-  type: string;
-  status: string;
-  path: string;
-  createdById: string;
-  data: {
-    duration?: number;
-    fileSize?: number;
-    animatedGif?: string; // Added animatedGif property
-    [key: string]: any; // Allow other properties
-  };
-}
 
 type SortOrder = 'asc' | 'desc';
 type SortField = 'name' | 'createdAt' | 'type' | 'status';
@@ -64,8 +47,7 @@ export function Recording() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedRecording, setSelectedRecording] =
-    useState<RecordingItem | null>(null);
+  const [selectedRecording, setSelectedRecording] = useState<RecordingItem | null>(null);
   const [editableRecording, setEditableRecording] = useState<
     Partial<RecordingItem>
   >({});
@@ -73,9 +55,7 @@ export function Recording() {
 
   // State for VideoModal / MediaModal
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-  const [currentPlayingVideoSrc, setCurrentPlayingVideoSrc] = useState<
-    string | null
-  >(null);
+  const [currentPlayingVideoSrc, setCurrentPlayingVideoSrc] = useState<string | null>(null);
   const [currentPlayingMediaType, setCurrentPlayingMediaType] = useState<
     'video' | 'gif' | 'image'
   >('video'); // MODIFIED: Added 'image' type
