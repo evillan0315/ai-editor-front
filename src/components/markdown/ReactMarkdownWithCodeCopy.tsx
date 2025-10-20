@@ -4,16 +4,60 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import rehypeHighlight from 'rehype-highlight';
-import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography, useTheme } from '@mui/material';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
 
 interface ReactMarkdownWithCodeCopyProps {
   children: string;
 }
 
+// Define consistent sx styles at the top for maintainability
+const codeBlockContainerSx = {
+  position: 'relative',
+  my: 2, // Margin top/bottom for spacing between markdown elements
+  // Tailwind classes will handle other layout/spacing outside MUI components
+};
+
+const getLanguageLabelSx = (theme: ReturnType<typeof useTheme>) => ({
+  position: 'absolute',
+  top: theme.spacing(1),
+  left: theme.spacing(1.5),
+  px: 1,
+  py: 0.5,
+  borderRadius: 1,
+  backgroundColor: theme.palette.action.selected,
+  color: theme.palette.text.secondary,
+  fontSize: '0.75rem',
+  zIndex: 1,
+  opacity: 0.8,
+  pointerEvents: 'none', // Prevent label from interfering with selection
+});
+
+const getCopyButtonSx = (theme: ReturnType<typeof useTheme>) => ({
+  position: 'absolute',
+  top: theme.spacing(0.5),
+  right: theme.spacing(0.5),
+  color: theme.palette.action.active,
+  zIndex: 1,
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+});
+
+const getInlineCodeSx = (theme: ReturnType<typeof useTheme>) => ({
+  backgroundColor: theme.palette.action.hover,
+  borderRadius: 0.5,
+  px: 0.5,
+  py: 0.125,
+  fontFamily: 'monospace',
+  fontSize: '0.875em',
+});
+
 const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
   children,
 }) => {
+  const theme = useTheme();
+
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
   };
@@ -23,38 +67,69 @@ const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
       remarkPlugins={[remarkGfm]}
       rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeHighlight]}
       components={{
-        code: ({ node, inline, className, children, ...props }) => {
-          const text = String(children).replace(/\n$/, '');
-          const language = className ? className.replace('language-', '') : '';
-          return inline ? (
-            <Box className={className}>{children}</Box>
-          ) : (
-            <Box
-              className={`${language ? 'relative' : 'inline-block'} ${className}`}
-            >
+        // Override 'pre' to add the language label and copy button around the highlighted code block
+        // The 'children' here will be the <code> element already processed by rehype-highlight
+        pre: ({ node, children: preChildren, ...props }) => {
+          // preChildren will typically be a single <code> element
+          const codeElement = React.Children.toArray(preChildren)[0];
+
+          // Safely extract raw text for copying
+          // This handles cases where children might be string, or array of string/elements
+          const rawCodeText = (
+            codeElement &&
+            typeof codeElement === 'object' &&
+            'props' in codeElement &&
+            typeof codeElement.props === 'object' &&
+            'children' in codeElement.props
+              ? String(codeElement.props.children || '')
+              : ''
+          ).replace(/\n$/, '');
+
+          // Extract language from the className of the <code> element
+          const codeClassName = (
+            codeElement &&
+            typeof codeElement === 'object' &&
+            'props' in codeElement &&
+            typeof codeElement.props === 'object' &&
+            'className' in codeElement.props
+              ? String(codeElement.props.className)
+              : ''
+          );
+          const languageMatch = codeClassName.match(/language-(\w+)/);
+          const language = languageMatch ? languageMatch[1] : '';
+
+          return (
+            <Box sx={codeBlockContainerSx} className="group">
               {language && (
-                <Typography
-                  variant="caption"
-                  className="language-btn absolute top-2 left-0 rounded-md z-1"
-                >
+                <Typography variant="caption" sx={getLanguageLabelSx(theme)}>
                   {language}
                 </Typography>
               )}
-              <Box>{children}</Box>
-
-              {className && (
+              {preChildren}
+              {language && (
                 <Tooltip title="Copy code to clipboard">
                   <IconButton
-                    aria-label="copy"
-                    onClick={() => handleCopy(text)}
-                    className={`${className} absolute top-1 right-1`}
+                    aria-label="copy code"
+                    onClick={() => handleCopy(rawCodeText)}
+                    sx={getCopyButtonSx(theme)}
+                    size="small"
                   >
-                    <FileCopyIcon />
+                    <FileCopyIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
             </Box>
           );
+        },
+        // Override 'code' for inline code styling only.
+        // For block code, the 'pre' override handles the wrapping around the highlighted <code>.
+        code: ({ node, inline, className, children, ...props }) => {
+          if (inline) {
+            return <Box component="code" sx={getInlineCodeSx(theme)}>{children}</Box>;
+          }
+          // For block code, let ReactMarkdown render the <code> tag as it would normally,
+          // ensuring rehypeHighlight can process it. The 'pre' component will then wrap it.
+          return <code className={className} {...props}>{children}</code>;
         },
       }}
     >
