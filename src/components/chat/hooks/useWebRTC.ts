@@ -146,9 +146,28 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
     if (!pc) return;
 
     try {
+      // 1. Set Remote Description (the received offer)
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      console.log(`Remote description (offer) set for ${senderSocketId}. Signaling state: ${pc.signalingState}`);
+
+      // Crucial: Check signalingState before creating an answer.
+      // It should be 'have-remote-offer' after successfully setting the remote offer.
+      // If it's not, it implies an issue or an unexpected state (e.g., renegotiation already in progress).
+      if (pc.signalingState !== 'have-remote-offer' && pc.signalingState !== 'have-local-pranswer') {
+        console.warn(`Signaling state for ${senderSocketId} is ${pc.signalingState} after setting remote offer. Expected 'have-remote-offer'. Aborting answer creation.`);
+        setError(`Failed to create answer for ${senderSocketId}: unexpected signaling state (${pc.signalingState}).`);
+        return;
+      }
+
+      // 2. Create Answer
       const answer = await pc.createAnswer();
+      console.log(`Created answer for ${senderSocketId}.`);
+
+      // 3. Set Local Description (the created answer)
       await pc.setLocalDescription(answer);
+      console.log(`Local description (answer) set for ${senderSocketId}. Signaling state: ${pc.signalingState}`);
+
+      // 4. Send Answer via WebSocket
       chatSocketService.sendAnswer({
         roomId: roomIdRef.current!,
         targetUserId: senderSocketId,
@@ -157,7 +176,14 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
       console.log(`Answer sent to ${senderSocketId}`);
     } catch (err) {
       console.error(`Error handling offer from ${senderSocketId}:`, err);
-      setError(`Failed to process offer from ${senderSocketId}.`);
+      // More specific error message for the DOMException related to setLocalDescription(answer)
+      if (err instanceof DOMException && err.name === 'InvalidStateError') {
+        setError(`Failed to process offer from ${senderSocketId}: Invalid WebRTC state while creating/setting answer. Details: ${err.message}`);
+      } else if (err instanceof DOMException && err.message.includes('Cannot set local answer when createAnswer has not been called')) {
+        setError(`Failed to process offer from ${senderSocketId}: Internal WebRTC error during answer creation. Details: ${err.message}`);
+      } else {
+        setError(`Failed to process offer from ${senderSocketId}.`);
+      }
     }
   }, [currentUserId, createPeerConnection]);
 
@@ -180,7 +206,14 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
           console.log(`Remote description set for ${senderSocketId}`);
         } catch (err) {
           console.error(`Error handling answer from ${senderSocketId}:`, err);
-          setError(`Failed to process answer from ${senderSocketId}. DOMException: Cannot set remote answer in state stable.`);
+          // More specific error message for DOMException: Cannot set remote answer in state stable.
+          if (err instanceof DOMException && err.name === 'InvalidStateError') {
+            setError(`Failed to process answer from ${senderSocketId}: Invalid WebRTC state. Details: ${err.message}`);
+          } else if (err instanceof DOMException && err.message.includes('Cannot set remote answer in state stable')) {
+            setError(`Failed to process answer from ${senderSocketId}: Internal WebRTC error setting remote answer. Details: ${err.message}`);
+          } else {
+            setError(`Failed to process answer from ${senderSocketId}.`);
+          }
         }
       } else {
         console.warn(`Received answer from ${senderSocketId} but no local description (offer) was set.`);
