@@ -6,6 +6,7 @@ import { RecordingsTable } from './RecordingsTable';
 import { RecordingsPagination } from './RecordingsPagination';
 import { RecordingSearchBar } from './RecordingSearchBar';
 import { RecordingInfoDrawer } from './RecordingInfoDrawer';
+import { RecordingSettingsDialog } from './RecordingSettingsDialog'; // Import RecordingSettingsDialog
 import {
   isScreenRecordingStore,
   currentRecordingIdStore,
@@ -20,7 +21,7 @@ import { getFileStreamUrl } from '@/api/media';
 import { recordingApi } from './api/recording';
 import { setLoading, isLoading } from '@/stores/loadingStore';
 import { StartCameraRecordingDto, RecordingItem } from './types/recording';
-import VideoModal from '@/components/VideoModal'; // Import VideoModal
+import VideoModal from '@/components/VideoModal';
 import path from 'path-browserify';
 
 type SortOrder = 'asc' | 'desc';
@@ -52,6 +53,9 @@ export function Recording() {
     Partial<RecordingItem>
   >({});
   const [typeFilter, setTypeFilter] = useState<string>('');
+
+  // State for RecordingSettingsDialog
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
 
   // State for VideoModal / MediaModal
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -286,6 +290,15 @@ export function Recording() {
     }
   };
 
+  // Settings Dialog handlers
+  const handleOpenSettingsDialog = () => {
+    setIsSettingsDialogOpen(true);
+  };
+
+  const handleCloseSettingsDialog = () => {
+    setIsSettingsDialogOpen(false);
+  };
+
   return (
     <Box className="flex flex-col gap-6 p-6">
       {(isLoading('recordingsList') ||
@@ -307,6 +320,7 @@ export function Recording() {
           onStartCameraRecording={handleStartCameraRecording}
           onStopCameraRecording={handleStopCameraRecording}
           onCapture={() => {}}
+          onOpenSettings={handleOpenSettingsDialog} // Pass the new handler
         />
         <RecordingStatus />
       </Box>
@@ -345,6 +359,12 @@ export function Recording() {
         onClose={closeDrawer}
         recording={selectedRecording}
         onUpdate={handleUpdateRecording}
+      />
+
+      {/* Recording Settings Dialog */}
+      <RecordingSettingsDialog
+        open={isSettingsDialogOpen}
+        onClose={handleCloseSettingsDialog}
       />
 
       {currentPlayingVideoSrc && (
