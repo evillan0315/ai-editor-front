@@ -8,6 +8,8 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ReactMarkdownWithCodeCopy from '@/components/markdown/ReactMarkdownWithCodeCopy';
 import { MessageBubbleProps, Sender } from './types'; // Import Sender enum
+import { useStore } from '@nanostores/react';
+import { user } from '@/stores/authStore';
 
 // Bot User ID (remains constant for bot messages)
 const BOT_USER_ID = 'user-bot';
@@ -16,7 +18,7 @@ const BOT_USER_ID = 'user-bot';
  * Renders a single chat message bubble, styling it based on the sender.
  */
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUserId }) => {
-
+  const $user = useStore(user);
   const isCurrentUser = message.sender === Sender.USER && message.createdById === currentUserId;
   const theme = useTheme();
 
@@ -38,10 +40,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUserId })
 
   const alignmentClass = isCurrentUser ? 'justify-end' : 'justify-start';
 
-  const avatar = isCurrentUser ? (
-    <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 32, height: 32, ml: 1 }}>
-      <AccountCircleIcon fontSize="small" />
-    </Avatar>
+  const userAvatar = isCurrentUser ? (
+    $user?.image ? (
+      <Avatar src={$user.image} alt={$user.name || 'User Avatar'} sx={{ width: 32, height: 32, ml: 1 }} />
+    ) : (
+      <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 32, height: 32, ml: 1 }}>
+        <AccountCircleIcon fontSize="small" />
+      </Avatar>
+    )
   ) : (
     <Avatar sx={{ bgcolor: isBot ? theme.palette.background.main : theme.palette.success.main, width: 32, height: 32, mr: 1 }}>
       {isBot ? <SmartToyIcon fontSize="small" /> : <AccountCircleIcon fontSize="small" />}
@@ -50,10 +56,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUserId })
 
   return (
     <Box className={`flex w-full my-2 ${alignmentClass}`}>
-      {!isCurrentUser && avatar}
+      {!isCurrentUser && userAvatar}
       <Paper
         elevation={1}
-        className={`max-w-xs md:max-w-md p-3 rounded-xl shadow-md`}
+        className={`max-w-sm md:max-w-lg p-3 rounded-xl shadow-md overflow-auto`}
         sx={bubbleSx}
       >
         <Typography className="whitespace-pre-wrap">
@@ -68,7 +74,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUserId })
           {message.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Typography>
       </Paper>
-      {isCurrentUser && avatar}
+      {isCurrentUser && userAvatar}
     </Box>
   );
 };

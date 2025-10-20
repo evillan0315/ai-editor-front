@@ -5,7 +5,7 @@
 [![Test Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://example.com/coverage)
 [![Last Commit](https://img.shields.io/github/last-commit/evillan0315/ai-editor-front)](https://github.com/evillan0315/ai-editor-front/commits)
 
-> A React frontend for the Project Board server backend, built with **Vite 7**, **React 19**, Nanostores, **Tailwind CSS 4**, and **Material UI 6**, focusing on intelligent code assistance and a broader range of AI-powered applications. This application extensively leverages AI tools for development and project management.
+> A React frontend for the Project Board server backend, built with **Vite**, React, Nanostores, Tailwind CSS, and Material UI, focusing on intelligent code assistance and a broader range of AI-powered applications. This application extensively leverages AI tools for development and project management.
 
 ---
 
@@ -19,6 +19,7 @@
 - [⚙️ Usage](#️-usage)
 - [🔍 API Reference](#-api-reference)
 - [🔑 Environment Variables](#-environment-variables)
+- [🧪 Testing](#-testing)
 - [📦 Deployment](#-deployment)
 - [🌳 Git Workflow](#-git-workflow)
 - [🗂️ Detailed Documentation](#️-detailed-documentation)
@@ -34,7 +35,7 @@
 - 🤖 **AI-Powered Code Generation & Modification**: Interact with a powerful AI to generate new files, modify existing ones, repair code, or delete files based on natural language instructions. Supports advanced `CODE_GENERATION`, `CODE_MODIFICATION`, `CODE_REPAIR`, and `CODE_ANALYSIS` request types.
 - 💡 **Interactive Proposed Changes**: View AI's proposed changes with detailed file paths, action types (ADD, MODIFY, DELETE, REPAIR, ANALYZE), and AI-generated reasons. Selectively apply or discard individual changes, and even edit the proposed content before application.
 - 📊 **Git Diff Visualization**: Inspect detailed git diffs for proposed modifications and deletions directly within the editor before applying changes, ensuring transparency and control.
-- 🏃 **Direct Terminal Command Execution**: Execute AI-generated `git` instructions (e.g., `git add .`, `git commit`) directly from the UI, with immediate display of terminal output and errors. Also, run project-specific `pnpm`, `npm`, or `yarn` scripts directly from the Navbar.
+- 🏃 **Direct Terminal Command Execution**: Execute AI-generated `git` instructions (e.g., `git add .`, `git commit`) directly from the UI, with immediate display of terminal output and errors. Also, run project-specific `npm`, `yarn`, or `pnpm` scripts directly from the Navbar.
 - 🔒 **Secure Authentication**: Seamlessly log in using Google or GitHub OAuth2, or with standard email/password, for secure access to the editor, with user session management handled by the backend.
 - 📂 **Project Context & Scanning**: Specify a project root path and relevant scan paths for the AI to analyze, providing crucial context for intelligent code suggestions and understanding project structure. Includes an interactive file picker dialog for easy path selection and an interactive directory picker dialog for choosing the project root.
 - 🚀 **File Tree Navigation & Content Viewing with Tabs**: Browse your project's file structure with an interactive file tree. Open multiple files into tabs, switch between them, and view/edit their content in a dedicated editor panel. You can manually edit the content of proposed AI changes, and the file viewer remains editable when AI responses are active to allow for manual adjustments alongside AI suggestions.
@@ -162,7 +163,6 @@ project-board-front/
 │   ├── components/     # Reusable React components
 │   │   ├── ai-tools/   # Components for AI prompt generation and interaction (e.g., `AIPromptGenerator.tsx`)
 │   │   ├── board/      # Components for the Kanban board (`KanbanBoard.tsx`)
-│   │   ├── chat/       # Components for the AI Chat feature (`ChatApp.tsx`)
 │   │   ├── code-generator/ # Core components for AI code generation, diffing, and applying changes (`ChangesList.tsx`, `PromptGenerator.tsx`, `CodeGeneratorMain.tsx`, `ChangeItem.tsx`, `GitInstructions.tsx`, `DocumentationViewer.tsx`, `ImportJson.tsx`, `ThoughtProcess.tsx`, `CodeRepair.tsx`)
 │   │   ├── dialogs/    # Modal dialog components (e.g., `CreateFileOrFolderDialog.tsx`, `DirectoryPickerDialog.tsx`, `FileUploaderDialog.tsx`, `InstructionEditorDialog.tsx`, `OperationPathDialog.tsx`, `RenameDialog.tsx`, `ScanPathsDialog.tsx`, `TerminalSettingsDialog.tsx`, `index.ts` for exports)
 │   │   ├── file-tree/  # Components for rendering and interacting with the project's file tree (`FileTree.tsx`, `FileTreeItem.tsx`, `FileTreeContextMenuRenderer.tsx`, `index.ts` for exports)
@@ -250,9 +250,6 @@ pnpm run build
 
 # Start production build (requires a build first)
 pnpm run preview
-
-# Format code with Prettier
-pnpm run format
 ```
 
 ---
@@ -283,10 +280,8 @@ This frontend interacts with the Project Board backend. Key endpoints and WebSoc
 - **`/api/organization`**: CRUD operations for organizations.
 - **`/api/project`**: CRUD operations for projects, linked to organizations.
 - **`/api/schema/generate`**: To generate JSON schemas from natural language prompts.
-- **`/api/media`**: To access media resources like extracted audio/video files.
-- **`/api/recording`**: To access screen recording and screenshot captures.
-- **`/api/playlist`**: For managing user playlists and media.
-- **`/api/user`**: For managing user profiles and settings.
+- **`/media`**: To download extracted audio/video files and other media resources.
+- **`/recording`**: To access screen recording and screenshot captures.
 - **`/gemini` (WebSocket)**: For real-time Gemini Live Audio interactions (starting sessions, sending audio, receiving AI responses).
 
 Please refer to the backend documentation for detailed API schemas and additional endpoints for authentication, AI generation, and file/terminal operations.
@@ -303,7 +298,18 @@ VITE_WS_URL=ws://localhost:3000             # The URL of your Project Board back
 VITE_FRONTEND_URL=http://localhost:3001     # The URL where your frontend is hosted (e.g., for OAuth redirects from backend)
 VITE_BASE_DIR=/path/to/your/project/root    # **Optional**: Default project root to pre-fill in the editor's project path input. Can be overridden in the UI. If not set, the user must provide one. This variable is useful for local development to avoid repeatedly typing the project path.
 VITE_PREVIEW_APP_URL=http://localhost:8080  # **Optional**: URL of a built frontend application to preview in an iframe. e.g., points to a server serving /media/eddie/Data/projects/nestJS/nest-modules/project-board-server/apps/project-board-front/dist
-VITE_GEMINI_API_KEY=YOUR_GEMINI_API_KEY     # **Required for AI Chat**: Your Google Gemini API key to enable AI responses.
+```
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run all tests (currently placeholder, update as testing framework is integrated)
+npm test
+
+# With coverage
+npm run test:coverage
 ```
 
 ---
@@ -321,29 +327,28 @@ This section outlines a basic Git workflow for contributing to the project. Alwa
 
 ### 👯‍♀️ Branching Strategy
 
-We recommend a feature-branch workflow. All new features, bug fixes, or improvements should be developed on a dedicated branch created from `main`.
+We recommend a feature-branch workflow. All new features, bug fixes, or improvements should be developed on a dedicated branch created from `main` (or `develop` if applicable).
 
-1.  **Synchronize your local `main` branch with the remote:**
+1.  **Update your local `main` branch:**
 
 ```bash
 git checkout main
-git fetch origin
 git pull origin main
 ```
 
-2.  **Create a new feature or bugfix branch from `main`:**
+2.  **Create a new feature branch:**
 
 ```bash
-git checkout -b feature/your-feature-name-or-issue-id
-# For bug fixes:
-git checkout -b bugfix/issue-description-or-issue-id
+git checkout -b feature/your-feature-name
+# or for bug fixes:
+git checkout -b bugfix/issue-description
 ```
 
 ### 📝 Making Changes and Committing
 
 As you make changes, frequently stage and commit your work with clear, concise messages.
 
-1.  **Check the status of your working directory:**
+1.  **Check your current changes:**
 
 ```bash
 git status
@@ -353,41 +358,40 @@ git status
 
 ```bash
 git add .
-# Or to add specific files:
+# or to add specific files:
 git add src/path/to/your/file.ts src/other/file.tsx
 ```
 
-3.  **Commit your staged changes with a descriptive message:**
+3.  **Commit your staged changes:**
 
 ```bash
 git commit -m 'feat: Add new user authentication component'
-# For a bug fix:
+# or for a bug fix:
 git commit -m 'fix: Resolve navigation issue in Navbar'
-# Follow Conventional Commits: Use imperative mood, start with a type (feat, fix, docs, chore, style, refactor, test, build, ci, perf).
+# Use imperative mood, start with type (feat, fix, docs, chore, style, refactor, test, build, ci, perf)
 ```
 
 4.  **Push your branch to the remote repository:**
 
 ```bash
-git push origin feature/your-feature-name-or-issue-id
+git push origin feature/your-feature-name
 ```
 
 ### 🚀 Submitting a Pull Request (PR)
 
 Once your feature branch is ready and pushed, you can open a Pull Request.
 
-1.  **Before creating a PR, ensure your branch is up-to-date with `main` to minimize conflicts:**
+1.  **Ensure your branch is up-to-date with `main`:**
 
 ```bash
-git checkout feature/your-feature-name-or-issue-id
-git fetch origin
-git rebase origin/main # Or git merge origin/main if you prefer merge commits
-git push origin feature/your-feature-name-or-issue-id --force # Use --force only after rebase to overwrite remote history if you are sure.
+git checkout feature/your-feature-name
+git pull origin main # This will pull changes from main into your branch. Resolve any conflicts.
+git push origin feature/your-feature-name
 ```
 
 2.  **Go to the GitHub repository and open a new Pull Request** from your feature branch to the `main` branch.
 
-3.  **Provide a clear title and description** for your PR, referencing any related issues or tasks.
+3.  **Provide a clear title and description** for your PR, referencing any related issues.
 
 ---
 
@@ -419,11 +423,11 @@ Distributed under the MIT License. See [LICENSE](https://github.com/evillan0315/
 
 ## 🙌 Acknowledgements
 
-- [React 19](https://react.dev/)
-- [Vite 7](https://vitejs.dev/)
+- [React](https://react.dev/)
+- [Vite](https://vitejs.dev/)
 - [Nanostores](https://nanostores.github.io/)
-- [Tailwind CSS 4](https://tailwindcss.com/)
-- [Material-UI 6](https://mui.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Material-UI](https://mui.com/)
 - [@uiw/react-codemirror](https://uiwjs.github.io/react-codemirror/)
 - [CodeMirror](https://codemirror.net/)
 - [path-browserify](https://www.npmjs.com/package/path-browserify)
@@ -431,8 +435,6 @@ Distributed under the MIT License. See [LICENSE](https://github.com/evillan0315/
 - [React Router DOM](https://reactrouter.com/en/main)
 - [ESLint (Flat Config)](https://eslint.org/)
 - [TailwindCSS Vite Plugin](https://tailwindcss.com/docs/guides/vite)
-- [Prettier](https://prettier.io/)
-- [lucide-react](https://lucide.dev/)
 
 ---
 

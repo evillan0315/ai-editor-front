@@ -1,125 +1,113 @@
 import { createTheme, ThemeOptions } from '@mui/material/styles';
 import { PaletteMode } from '@mui/material';
 
-// Define the custom grayscale palette based on user request
-const customBlackPalette = {
-  50: '#f6f6f6',
-  100: '#e7e7e7',
-  200: '#d1d1d1',
-  300: '#b0b0b0',
-  400: '#888888',
-  500: '#6d6d6d',
-  600: '#5d5d5d',
-  700: '#4f4f4f',
-  800: '#454545',
-  900: '#1d1d1d',
-  950: '#121212', // This is a custom addition beyond standard MUI grey 900
+// Define a comprehensive grayscale palette inspired by VS Code dark and light themes.
+// This ensures a consistent set of neutral tones for backgrounds, text, and borders.
+const vsCodeGrayscale = {
+  // Dark mode shades (D_ prefix)
+  D_950: '#121212', // Deepest background, for maximum contrast (e.g., active elements)
+  D_900: '#1E1E1E', // Editor background, default app background
+  D_800: '#252526', // Sidebar, panel, paper background
+  D_700: '#333333', // Activity bar, some toolbar backgrounds
+  D_600: '#3C3C3C', // Slightly lighter borders, disabled elements
+  D_500: '#444444', // Main borders, dividers
+  D_400: '#606060', // Disabled text
+  D_300: '#808080', // Secondary text
+  D_200: '#A7A7A7', // Muted elements, very light secondary text
+  D_100: '#D4D4D4', // Primary text
+  D_50: '#FFFFFF', // Pure white, for highest contrast elements
+
+  // Light mode shades (L_ prefix)
+  L_50: '#FFFFFF', // Pure white, for light mode default background
+  L_100: '#F3F3F3', // Light mode paper background
+  L_200: '#E0E0E0', // Light mode borders/dividers
+  L_300: '#CCCCCC', // Muted light mode elements
+  L_400: '#A0A0A0', // Disabled text light
+  L_500: '#808080', // Secondary text light
+  L_600: '#606060', // Darker secondary text
+  L_700: '#404040', // Dark text for light mode
+  L_800: '#333333', // Primary text light
+  L_900: '#222222', // Very dark for light mode (e.g., strong borders)
+  L_950: '#000000', // Black, for highest contrast text
 };
 
-// Define the new custom outer-space palette
-const outerSpacePalette = {
-  50: '#f4f7f7',
-  100: '#e4e9e9',
-  200: '#cbd5d6',
-  300: '#a7b7b9',
-  400: '#7b9295',
-  500: '#60777a',
-  600: '#526468',
-  700: '#475457',
-  800: '#3f484b',
-  900: '#2e3436',
-  950: '#22282a',
-};
-
-// Define the new custom denim palette
-const denimPalette = {
-  50: '#f4f6fb',
-  100: '#e7edf7',
-  200: '#cad9ed',
-  300: '#9bb9de',
-  400: '#6595cb',
-  500: '#4277b5',
-  600: '#3465a4',
-  700: '#284b7c',
-  800: '#254167',
-  900: '#233857',
-  950: '#17243a',
-};
-
-// Define the new custom congress-blue palette
-const congressBluePalette = {
-  50: '#eff8ff',
-  100: '#dceffd',
-  200: '#c0e4fd',
-  300: '#95d4fb',
-  400: '#63bbf7',
-  500: '#3f9ef2',
-  600: '#2981e7',
-  700: '#216bd4',
-  800: '#2157ac',
-  900: '#204a87',
-  950: '#182f53',
-};
+// Maps the custom VS Code grayscale to MUI's `palette.grey`
+const getMuiGreyPalette = (mode: PaletteMode) => ({
+  50: mode === 'dark' ? vsCodeGrayscale.D_100 : vsCodeGrayscale.L_50,
+  100: mode === 'dark' ? vsCodeGrayscale.D_100 : vsCodeGrayscale.L_100,
+  200: mode === 'dark' ? vsCodeGrayscale.D_200 : vsCodeGrayscale.L_200,
+  300: mode === 'dark' ? vsCodeGrayscale.D_300 : vsCodeGrayscale.L_300,
+  400: mode === 'dark' ? vsCodeGrayscale.D_400 : vsCodeGrayscale.L_400,
+  500: mode === 'dark' ? vsCodeGrayscale.D_500 : vsCodeGrayscale.L_500,
+  600: mode === 'dark' ? vsCodeGrayscale.D_600 : vsCodeGrayscale.L_600,
+  700: mode === 'dark' ? vsCodeGrayscale.D_700 : vsCodeGrayscale.L_700,
+  800: mode === 'dark' ? vsCodeGrayscale.D_800 : vsCodeGrayscale.L_800,
+  900: mode === 'dark' ? vsCodeGrayscale.D_900 : vsCodeGrayscale.L_900,
+  950: mode === 'dark' ? vsCodeGrayscale.D_950 : vsCodeGrayscale.L_950,
+});
 
 export const getAppTheme = (mode: PaletteMode) => {
+  const muiGrey = getMuiGreyPalette(mode);
+
   const themeOptions: ThemeOptions = {
     palette: {
       mode,
-      // Apply custom black palette to MUI grey shades
-      grey: customBlackPalette,
-      // Add the new outerSpace palette
-      outerSpace: outerSpacePalette,
-      // Add the new denim palette
-      denim: denimPalette,
-      // Add the new congressBlue palette
-      congressBlue: congressBluePalette,
+      grey: muiGrey, // Apply the VS Code inspired grayscale palette
       primary: {
-        main: mode === 'dark' ? congressBluePalette[900] : congressBluePalette[100],
-        light: mode === 'dark' ? '#e3f2fd' : '#42a5f5',
-        dark: mode === 'dark' ? '#42a5f5' : '#1565c0',
-        contrastText: mode === 'dark' ? congressBluePalette[200] : congressBluePalette[800],
+        // VS Code's accent blue
+        main: '#007ACC',
+        light: mode === 'dark' ? '#ADD6FF' : '#B3D9FF',
+        dark: mode === 'dark' ? '#005F99' : '#005F99',
+        contrastText: mode === 'dark' ? muiGrey[950] : muiGrey[50],
       },
       secondary: {
-        main: mode === 'dark' ? denimPalette[600] : denimPalette[300],
-        light: mode === 'dark' ? '#ffc1e3' : '#ff4081',
-        dark: mode === 'dark' ? '#c75a85' : '#c51162',
-        contrastText: mode === 'dark' ? denimPalette[100] : denimPalette[900],
+        // A subtle neutral or muted blue for secondary actions
+        main: mode === 'dark' ? muiGrey[300] : muiGrey[600],
+        light: mode === 'dark' ? muiGrey[200] : muiGrey[400],
+        dark: mode === 'dark' ? muiGrey[500] : muiGrey[800],
+        contrastText: mode === 'dark' ? muiGrey[950] : muiGrey[50],
       },
       error: {
-        main: mode === 'dark' ? '#ef9a9a' : '#d32f2f',
-        light: mode === 'dark' ? '#ffcdd2' : '#e57373',
-        dark: mode === 'dark' ? '#c62828' : '#c62828',
-        contrastText: mode === 'dark' ? customBlackPalette[950] : customBlackPalette[50],
+        // VS Code-like red
+        main: mode === 'dark' ? '#F44747' : '#D32F2F',
+        light: mode === 'dark' ? '#FE7676' : '#E57373',
+        dark: mode === 'dark' ? '#C23737' : '#C62828',
+        contrastText: mode === 'dark' ? muiGrey[950] : muiGrey[50],
       },
       warning: {
-        main: mode === 'dark' ? '#ffb74d' : '#ff9800',
-        light: mode === 'dark' ? '#ffecb3' : '#ffb74d',
-        dark: mode === 'dark' ? '#c67b00' : '#f57c00',
-        contrastText: mode === 'dark' ? customBlackPalette[950] : customBlackPalette[50],
+        // VS Code-like yellow-orange
+        main: mode === 'dark' ? '#DDA020' : '#ED6C02',
+        light: mode === 'dark' ? '#FFD700' : '#FF9800',
+        dark: mode === 'dark' ? '#B58B1B' : '#E65100',
+        contrastText: mode === 'dark' ? muiGrey[950] : muiGrey[50],
       },
       info: {
-        main: mode === 'dark' ? '#64b5f6' : '#2196f3',
-        light: mode === 'dark' ? '#bbdefb' : '#64b5f6',
-        dark: mode === 'dark' ? '#0d47a1' : '#1976d2',
-        contrastText: mode === 'dark' ? customBlackPalette[950] : customBlackPalette[50],
+        // A standard vibrant blue for info messages
+        main: mode === 'dark' ? '#318CE7' : '#0288D1',
+        light: mode === 'dark' ? '#6BA8ED' : '#2196F3',
+        dark: mode === 'dark' ? '#246BB3' : '#01579B',
+        contrastText: mode === 'dark' ? muiGrey[950] : muiGrey[50],
       },
       success: {
-        main: mode === 'dark' ? '#81c784' : '#4caf50',
-        light: mode === 'dark' ? '#c8e6c9' : '#81c784',
-        dark: mode === 'dark' ? '#2e7d32' : '#388e3c',
-        contrastText: mode === 'dark' ? customBlackPalette[950] : customBlackPalette[50],
+        // VS Code-like green
+        main: mode === 'dark' ? '#37944F' : '#2E7D32',
+        light: mode === 'dark' ? '#5CB86D' : '#4CAF50',
+        dark: mode === 'dark' ? '#2B703C' : '#1B5E20',
+        contrastText: mode === 'dark' ? muiGrey[950] : muiGrey[50],
       },
       background: {
-        default: mode === 'dark' ? customBlackPalette[950] : customBlackPalette[50],
-        paper: mode === 'dark' ? customBlackPalette[900] : customBlackPalette[100],
+        // Default background maps to editor background
+        default: mode === 'dark' ? muiGrey[900] : muiGrey[50],
+        // Paper background maps to sidebar/panel background
+        paper: mode === 'dark' ? muiGrey[800] : muiGrey[100],
       },
       text: {
-        primary: mode === 'dark' ? customBlackPalette[50] : customBlackPalette[950],
-        secondary: mode === 'dark' ? customBlackPalette[300] : customBlackPalette[600],
-        disabled: customBlackPalette[400],
+        primary: mode === 'dark' ? muiGrey[100] : muiGrey[800],
+        secondary: mode === 'dark' ? muiGrey[300] : muiGrey[600],
+        disabled: muiGrey[400],
       },
       divider:
-        mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+        mode === 'dark' ? muiGrey[500] : muiGrey[200],
     },
     typography: {
       fontFamily: ['Inter', 'sans-serif'].join(','),
@@ -136,104 +124,109 @@ export const getAppTheme = (mode: PaletteMode) => {
     components: {
       MuiCssBaseline: {
         styleOverrides: {
+          // Adjust markdown body background and border colors for theme consistency
           '.markdown-body': {
-            backgroundColor: mode === 'dark' ? customBlackPalette[900] : customBlackPalette[100],
+            backgroundColor: mode === 'dark' ? muiGrey[800] : muiGrey[100],
           },
           '.markdown-body hr': {
-            borderColor:  mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+            borderColor:  mode === 'dark' ? muiGrey[500] : muiGrey[200],
           },
           '.markdown-body pre > div': {
-            backgroundColor: mode === 'dark' ? customBlackPalette[950] : customBlackPalette[50],
+            backgroundColor: mode === 'dark' ? muiGrey[900] : muiGrey[50],
             padding: '1rem'
           },
           '.markdown-body pre .language-btn': {
-            backgroundColor: mode === 'dark' ? '#90caf9' : '#1976d2',
+            backgroundColor: mode === 'dark' ? muiGrey[600] : muiGrey[700],
+            color: mode === 'dark' ? muiGrey[100] : muiGrey[50],
             padding: '.5rem'
           },
+          // Adjust CodeMirror gutter background for theme consistency
           '.cm-editor .cm-gutters': {
-            backgroundColor: mode === 'dark' ? customBlackPalette[900] : customBlackPalette[100],
+            backgroundColor: mode === 'dark' ? muiGrey[900] : muiGrey[100],
           },
         },
       },
       MuiIconButton: {
         styleOverrides: {
           root: {
-            color: mode === 'dark' ? customBlackPalette[300] : customBlackPalette[600],
+            color: mode === 'dark' ? muiGrey[200] : muiGrey[700],
             '&:hover': {
               backgroundColor:
                 mode === 'dark'
-                  ? 'rgba(255, 255, 255, 0.04)'
-                  : 'rgba(0, 0, 0, 0.04)',
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.08)',
             },
           },
+          // Ensure icon button colors use the new palette
           colorPrimary: {
-            color: mode === 'dark' ? '#90caf9' : '#1976d2',
+            color: '#007ACC',
             '&:hover': {
               backgroundColor:
                 mode === 'dark'
-                  ? 'rgba(144, 202, 249, 0.08)'
-                  : 'rgba(25, 118, 210, 0.08)',
+                  ? 'rgba(0, 122, 204, 0.08)'
+                  : 'rgba(0, 122, 204, 0.08)',
             },
           },
           colorSecondary: {
-            color: mode === 'dark' ? '#f48fb1' : '#dc004e',
+            color: mode === 'dark' ? muiGrey[300] : muiGrey[600],
             '&:hover': {
               backgroundColor:
                 mode === 'dark'
-                  ? 'rgba(244, 143, 177, 0.08)'
-                  : 'rgba(220, 0, 78, 0.08)',
+                  ? 'rgba(128, 128, 128, 0.08)' // Using muiGrey[300] equivalent with alpha
+                  : 'rgba(96, 96, 96, 0.08)', // Using muiGrey[600] equivalent with alpha
             },
           },
           colorError: {
-            color: mode === 'dark' ? '#ef9a9a' : '#d32f2f',
+            color: mode === 'dark' ? '#F44747' : '#D32F2F',
             '&:hover': {
               backgroundColor:
                 mode === 'dark'
-                  ? 'rgba(239, 154, 154, 0.08)'
+                  ? 'rgba(244, 71, 71, 0.08)'
                   : 'rgba(211, 47, 47, 0.08)',
             },
           },
           colorWarning: {
-            color: mode === 'dark' ? '#ffb74d' : '#ff9800',
+            color: mode === 'dark' ? '#DDA020' : '#ED6C02',
             '&:hover': {
               backgroundColor:
                 mode === 'dark'
-                  ? 'rgba(255, 183, 77, 0.08)'
-                  : 'rgba(255, 152, 0, 0.08)',
+                  ? 'rgba(221, 160, 32, 0.08)'
+                  : 'rgba(237, 108, 2, 0.08)',
             },
           },
           colorInfo: {
-            color: mode === 'dark' ? '#64b5f6' : '#2196f3',
+            color: mode === 'dark' ? '#318CE7' : '#0288D1',
             '&:hover': {
               backgroundColor:
                 mode === 'dark'
-                  ? 'rgba(100, 181, 246, 0.08)'
-                  : 'rgba(33, 150, 243, 0.08)',
+                  ? 'rgba(49, 140, 231, 0.08)'
+                  : 'rgba(2, 136, 209, 0.08)',
             },
           },
           colorSuccess: {
-            color: mode === 'dark' ? '#81c784' : '#4caf50',
+            color: mode === 'dark' ? '#37944F' : '#2E7D32',
             '&:hover': {
               backgroundColor:
                 mode === 'dark'
-                  ? 'rgba(129, 199, 132, 0.08)'
-                  : 'rgba(76, 175, 80, 0.08)',
+                  ? 'rgba(55, 148, 79, 0.08)'
+                  : 'rgba(46, 125, 50, 0.08)',
             },
           },
         },
       },
       MuiTextField: {
         styleOverrides: {
-          root: ({ theme }) => ({
-            //border: `1px solid ${theme.palette.divider}`,
+          root: {
+            // Uncommented and updated for theme consistency
+            //border: `1px solid ${muiGrey[500]}`,
             //backgroundColor: theme.palette.background.paper,
-          }),
+          },
         },
       },
       MuiDialog: {
         styleOverrides: {
           paper: ({ theme }) => ({
-            //backgroundColor: theme.palette.background.default,
+            backgroundColor: theme.palette.background.paper,
             borderRadius: 6,
           }),
         },

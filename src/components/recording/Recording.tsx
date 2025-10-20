@@ -13,7 +13,6 @@ import {
   isCameraRecordingStore,
   currentCameraRecordingIdStore,
   setIsCameraRecording,
-  recorderSettingsStore,
 } from '@/stores/recordingStore';
 import { useStore } from '@nanostores/react';
 
@@ -52,7 +51,6 @@ export function Recording() {
 
   const isCameraRecording = useStore(isCameraRecordingStore); // Use new camera store
   const currentCameraRecordingId = useStore(currentCameraRecordingIdStore);
-  const recorderSettings = useStore(recorderSettingsStore);
 
   const [recordings, setRecordings] = useState<RecordingItem[]>([]);
   const [totalRecordings, setTotalRecordings] = useState(0);
@@ -66,7 +64,8 @@ export function Recording() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedRecording, setSelectedRecording] = useState<RecordingItem | null>(null);
+  const [selectedRecording, setSelectedRecording] =
+    useState<RecordingItem | null>(null);
   const [editableRecording, setEditableRecording] = useState<
     Partial<RecordingItem>
   >({});
@@ -74,8 +73,12 @@ export function Recording() {
 
   // State for VideoModal / MediaModal
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-  const [currentPlayingVideoSrc, setCurrentPlayingVideoSrc] = useState<string | null>(null);
-  const [currentPlayingMediaType, setCurrentPlayingMediaType] = useState<"video" | "gif" | "image">('video'); // MODIFIED: Added 'image' type
+  const [currentPlayingVideoSrc, setCurrentPlayingVideoSrc] = useState<
+    string | null
+  >(null);
+  const [currentPlayingMediaType, setCurrentPlayingMediaType] = useState<
+    'video' | 'gif' | 'image'
+  >('video'); // MODIFIED: Added 'image' type
   const mediaElementRef = useRef<HTMLVideoElement | HTMLImageElement>(null); // Ref can be either
 
   // Fetch recordings from API
@@ -153,11 +156,11 @@ export function Recording() {
     setLoading('startCameraRecording', true);
     try {
       const dto: StartCameraRecordingDto = {
-        cameraDevice: [recorderSettings.cameraVideoDevice],
-        audioDevice: [recorderSettings.cameraAudioDevice],
-        resolution: recorderSettings.cameraResolution,
-        framerate: recorderSettings.cameraFramerate,
-        name: `${recorderSettings.namePrefix}-${Date.now()}`,
+        cameraDevice: ['/dev/video0'],
+        audioDevice: ['alsa_input.pci-0000_00_1b.0.analog-stereo'],
+        resolution: '1280x720',
+        framerate: 30,
+        name: `camera-record-${Date.now()}`,
       };
       const res = await recordingApi.startCameraRecording(dto);
       setIsCameraRecording(true);

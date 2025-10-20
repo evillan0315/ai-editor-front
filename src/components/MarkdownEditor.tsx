@@ -28,9 +28,9 @@ import { markdown } from '@codemirror/lang-markdown';
 import { themeStore } from '@/stores/themeStore';
 import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
 // ✅ GitHub markdown light & dark styles
-import 'github-markdown-css/github-markdown.css';
-import 'github-markdown-css/github-markdown-dark.css';
-//import '@/styles/markdown.css';
+//import 'github-markdown-css/github-markdown.css';
+//import 'github-markdown-css/github-markdown-dark.css';
+import '@/styles/markdown.css';
 import ReactMarkdownWithCodeCopy from '@/components/markdown/ReactMarkdownWithCodeCopy';
 import EditIcon from '@mui/icons-material/Edit';
 import VisibilityIcon from '@mui/icons-material/Visibility';

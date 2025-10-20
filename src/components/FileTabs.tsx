@@ -1,4 +1,4 @@
-import React, { SyntheticEvent, useEffect } from 'react';
+import React, { SyntheticEvent } from 'react';
 import { useStore } from '@nanostores/react';
 
 import {
@@ -41,16 +41,9 @@ import {
 } from '@/stores/fileStore';
 import * as path from 'path-browserify';
 
-interface FileTabsProps extends BoxProps {
-  /**
-   * Optional prop to programmatically set or override the currently active file tab.
-   * If provided and different from the current `$openedFile` in the store,
-   * it will trigger `setOpenedFile` to update the global state.
-   */
-  activeFilePathOverride?: string | null;
-}
+interface FileTabsProps extends BoxProps {}
 
-const FileTabs: React.FC<FileTabsProps> = ({ sx, activeFilePathOverride, ...otherProps }) => {
+const FileTabs: React.FC<FileTabsProps> = ({ sx, ...otherProps }) => {
   const {
     //openedTabs,
     //openedFile,
@@ -68,17 +61,6 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, activeFilePathOverride, ...othe
   const theme = useTheme();
   const showTerminal = useStore(isTerminalVisible);
   const activeTabIndex = $openedTabs.indexOf($openedFile || '');
-
-  // Effect to handle activeFilePathOverride prop
-  useEffect(() => {
-    // If an override path is provided and it's different from the currently opened file in the store
-    if (activeFilePathOverride && activeFilePathOverride !== $openedFile) {
-      setOpenedFile(activeFilePathOverride);
-      // No need to explicitly call fetchFileContent here;
-      // the component responsible for displaying content (e.g., OpenedFileViewer)
-      // will observe the change in $openedFile and trigger content fetching.
-    }
-  }, [activeFilePathOverride, $openedFile]); // Depend on both to avoid infinite loops and unnecessary updates
 
   const handleTabChange = (_event: SyntheticEvent, newValue: string) => {
     // newValue is the file path of the selected tab
@@ -116,7 +98,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, activeFilePathOverride, ...othe
         },
         display: 'flex', // Enable flexbox for positioning buttons
         alignItems: 'center', // Align items vertically in the center
-        justifyContent: 'left',
+        justifyContent: 'start',
         height: '60px',
         ...sx, // Merge the passed sx prop
       }}
@@ -255,7 +237,7 @@ const FileTabs: React.FC<FileTabsProps> = ({ sx, activeFilePathOverride, ...othe
               <span>
                 <IconButton
                   disabled={isDisabled}
-                  onClick={discardActiveFileChanges} // Corrected: This should be discardActiveFileChanges
+                  onClick={saveActiveFile}
                   size="small"
                   sx={{
                     color: theme.palette.error.main,

@@ -9,7 +9,6 @@ import {
   SchemaResponse,
   RequestType,
 } from '@/types'; // Import new LLM types and FileChange, RequestType, LlmOutputFormat, LlmGeneratePayload, LlmReportErrorApiPayload
-import { getGitDiff as fetchGitDiffApi } from './git'; // Import the new getGitDiff from git.ts
 
 interface ConvertYamlResponse {
   json: {};
@@ -167,8 +166,16 @@ export const getGitDiff = async (
   try {
     // filePath should already be relative to projectRoot from the frontend's getRelativePath call.
     // Do NOT prepend projectRoot here, as it would create an incorrect absolute path for the backend.
-    const response = await fetchGitDiffApi(filePath, projectRoot); // Use the imported function
-    return response; // fetchGitDiffApi already returns the diff string directly
+    const response = await fetchWithAuth(`${API_BASE_URL}/file/git-diff`, {
+      method: 'POST',
+      body: JSON.stringify({
+        filePath: `${projectRoot}/${filePath}`,
+        projectRoot,
+      }),
+    });
+    const data = await handleResponse<{ diff: string }>(response);
+
+    return data.diff;
   } catch (error) {
     console.error(`Error fetching git diff for ${filePath}:`, error);
     throw error;

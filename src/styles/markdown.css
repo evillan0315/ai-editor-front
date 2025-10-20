@@ -127,7 +127,7 @@
 }
 
 .markdown-body hr {
-  border-color: var(--color-border);
+  border-color: var(--mui-palette-primary-main);
 }
 
 .markdown-body table {
@@ -148,7 +148,6 @@
 }
 
 .markdown-body hr {
-  border-color: var(--color-border);
   @apply my-6;
 }
 

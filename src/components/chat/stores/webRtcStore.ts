@@ -4,7 +4,7 @@
 
 import { atom } from 'nanostores';
 import adapter from 'webrtc-adapter'; // For browser compatibility
-import { chatSocketService } from '../chatSocketService';
+import { webRtcSignalingSocketService } from '../webRtcSignalingSocketService'; // Import the new signaling service
 import { PeerConnectionState, RemoteVideoFeed, PeerInfo } from '../types';
 import { getToken } from '@/stores/authStore';
 
@@ -58,7 +58,7 @@ class WebRtcStore {
     pc.onicecandidate = (event) => {
       if (event.candidate && this.currentRoomId) {
         console.log(`[WebRTC Store] Sending ICE candidate to ${peerId}`);
-        chatSocketService.sendCandidate({
+        webRtcSignalingSocketService.sendCandidate({
           roomId: this.currentRoomId,
           targetUserId: peerId,
           payload: event.candidate,
@@ -106,16 +106,27 @@ class WebRtcStore {
 
     pc.oniceconnectionstatechange = () => {
       console.log(
-        `[WebRTC Store] ICE connection state for ${peerId}: ${pc.iceConnectionState}`,
+        `[WebRTC Store] ICE connection state for ${peerId}: ${pc.iceConnectionstate}`,
       );
     };
 
     // Add local tracks to the new peer connection
-    this.localStreamRef?.getTracks().forEach((track) => {
-      if (this.localStreamRef) {
-        pc.addTrack(track, this.localStreamRef);
-      }
-    });
+    // Ensure tracks are only added if they are not already part of a sender on this peer connection.
+    if (this.localStreamRef) {
+      const existingSenders = pc.getSenders();
+      this.localStreamRef.getTracks().forEach((track) => {
+        // Check if a sender for this track already exists on this RTCPeerConnection
+        const hasSenderForTrack = existingSenders.some(
+          (sender) => sender.track && sender.track.id === track.id,
+        );
+        if (!hasSenderForTrack) {
+          pc.addTrack(track, this.localStreamRef!);
+          console.log(`[WebRTC Store] Added track ${track.kind} (${track.id}) to peer connection for ${peerId}`);
+        } else {
+          console.log(`[WebRTC Store] Track ${track.kind} (${track.id}) already managed by a sender on PC, skipping addTrack.`);
+        }
+      });
+    }
 
     this.peerConnections.set(peerId, {
       peerId,
@@ -149,7 +160,7 @@ class WebRtcStore {
     socketId,
     userId,
   }: {socketId: string; userId?: string}) => {
-    if (socketId === this.currentUserId) return; // Don't connect to self
+    //if (socketId === this.currentUserId) return; // Don't connect to self
 
     console.log(`[WebRTC Store] User ${userId} (${socketId}) joined the room.`);
 
@@ -177,7 +188,7 @@ class WebRtcStore {
       console.log(
         `[WebRTC Store] Local offer set for ${socketId}. Signaling state: ${pc.signalingState}`,
       );
-      chatSocketService.sendOffer({
+      webRtcSignalingSocketService.sendOffer({
         roomId: this.currentRoomId!,
         targetUserId: socketId,
         payload: pc.localDescription,
@@ -249,7 +260,7 @@ class WebRtcStore {
         `[WebRTC Store] Local description (answer) set for ${senderSocketId}. Signaling state: ${pc.signalingState}`,
       );
 
-      chatSocketService.sendAnswer({
+      webRtcSignalingSocketService.sendAnswer({
         roomId: this.currentRoomId!,
         targetUserId: senderSocketId,
         payload: pc.localDescription,
@@ -389,7 +400,7 @@ class WebRtcStore {
         console.log(
           `[WebRTC Store] Local offer set for existing user ${user.socketId}. Signaling state: ${pc.signalingState}`,
         );
-        chatSocketService.sendOffer({
+        webRtcSignalingSocketService.sendOffer({
           roomId: this.currentRoomId!,
           targetUserId: user.socketId,
           payload: pc.localDescription,
@@ -481,12 +492,14 @@ class WebRtcStore {
     this.currentRoomId = null;
 
     // Remove WebRTC-specific socket listeners
-    chatSocketService.off('user_joined');
-    chatSocketService.off('receive_offer');
-    chatSocketService.off('receive_answer');
-    chatSocketService.off('receive_candidate');
-    chatSocketService.off('user_left');
-    chatSocketService.off('existing_users_in_room');
+    webRtcSignalingSocketService.off('user_joined');
+    webRtcSignalingSocketService.off('receive_offer');
+    webRtcSignalingSocketService.off('receive_answer');
+    webRtcSignalingSocketService.off('receive_candidate');
+    webRtcSignalingSocketService.off('user_left');
+    webRtcSignalingSocketService.off('existing_users_in_room');
+
+    webRtcSignalingSocketService.disconnect(); // Disconnect the signaling socket
 
     console.log('[WebRTC Store] Disconnected from video chat.');
   };
@@ -515,27 +528,26 @@ class WebRtcStore {
       this.isLoading.set(true);
       this.error.set(null);
 
-      // Ensure chat socket is connected. This is critical for signaling.
-      // ChatApp handles the primary connection, but this ensures it's active.
-      if (!chatSocketService.isConnected()) {
-        await chatSocketService.connect(token);
-        console.log('[WebRTC Store] chatSocketService re-connected for video signaling');
+      // Ensure WebRTC signaling socket is connected.
+      if (!webRtcSignalingSocketService.isConnected()) {
+        await webRtcSignalingSocketService.connect(token);
+        console.log('[WebRTC Store] webRtcSignalingSocketService connected for video signaling');
       }
 
       await this.getLocalMedia();
 
-      chatSocketService.joinVideoRoom({
+      webRtcSignalingSocketService.joinRoom({
         roomId: roomId,
         userId: this.currentUserId, // Backend expects userId
       });
 
       // Register WebSocket listeners for WebRTC signaling
-      chatSocketService.on('user_joined', this.handleUserJoined);
-      chatSocketService.on('receive_offer', this.handleReceiveOffer);
-      chatSocketService.on('receive_answer', this.handleReceiveAnswer);
-      chatSocketService.on('receive_candidate', this.handleReceiveCandidate);
-      chatSocketService.on('user_left', this.handleUserLeft);
-      chatSocketService.on('existing_users_in_room', this.handleExistingUsersInRoom);
+      webRtcSignalingSocketService.on('user_joined', this.handleUserJoined);
+      webRtcSignalingSocketService.on('receive_offer', this.handleReceiveOffer);
+      webRtcSignalingSocketService.on('receive_answer', this.handleReceiveAnswer);
+      webRtcSignalingSocketService.on('receive_candidate', this.handleReceiveCandidate);
+      webRtcSignalingSocketService.on('user_left', this.handleUserLeft);
+      webRtcSignalingSocketService.on('existing_users_in_room', this.handleExistingUsersInRoom);
 
       console.log(`[WebRTC Store] Attempting to join video room: ${roomId}`);
     } catch (err) {

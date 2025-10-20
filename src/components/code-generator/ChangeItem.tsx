@@ -8,7 +8,7 @@ import {
 } from '@/stores/llmStore';
 import { addLog } from '@/stores/logStore';
 import { setError } from '@/stores/errorStore';
-import { getGitDiff } from '@/api/git'; // Import getGitDiff from the correct API file
+import { getGitDiff } from '@/api/llm';
 import { FileChange } from '@/types';
 import { truncateFilePath } from '@/utils/fileUtils';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
@@ -119,11 +119,9 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
 
     try {
       const relPath = getRelativePath(change.filePath, currentProjectPath);
-      const diffContent = await (
-        change.action === 'add'
-          ? createAddDiff(change.newContent, relPath)
-          : getGitDiff(relPath, currentProjectPath)
-      ); // Use the imported getGitDiff
+      const diffContent = await (change.action === 'add'
+        ? createAddDiff(change.newContent, relPath)
+        : getGitDiff(relPath, currentProjectPath));
 
       setCurrentDiff(change.filePath, diffContent);
       addLog(

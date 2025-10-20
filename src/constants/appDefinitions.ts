@@ -37,10 +37,10 @@ export const appDefinitions: AppDefinition[] = [
   },
   // NEW: App Definition for direct ChatApp component
   {
-    id: 'chat-component-test',
+    id: 'chat-component',
     title: 'Chat App (Direct)',
     description: 'Direct access to the ChatApp component for testing or specific use.',
-    link: '/apps/chat-component-test',
+    link: '/apps/chat-component',
     linkText: 'Open Direct Chat',
     icon: ChatBubbleOutlineIcon,
     category: 'Development',

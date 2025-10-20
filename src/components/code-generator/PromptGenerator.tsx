@@ -266,10 +266,6 @@ const promptTextFieldStyles = {
             addLog('Prompt Generator', applyErr, 'error');
           }
         }
-      } else {
-        setError(errorMessage);
-        addLog('Prompt Generator', errorMessage, 'error');
-        showGlobalSnackbar(errorMessage, 'error');
       }
     } catch (err) {
       const msg = `Failed to generate code: ${err instanceof Error ? err.message : String(err)}`;
@@ -304,12 +300,7 @@ const promptTextFieldStyles = {
       <Box
         position="relative"
         className="mt-2 px-2 pr-14 overflow-auto max-h-[80px] items-end h-full"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            handleGenerateCode();
-          }
-        }}
+        // Removed onKeyDown from here
       >
         <Box className="mb-0">
           <TextField
@@ -320,6 +311,13 @@ const promptTextFieldStyles = {
             onChange={(e) => {
               setLocalInstruction(e.target.value); // Update local state immediately
               debouncedSetInstruction(e.target.value); // Debounce update to global store
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleGenerateCode();
+              }
+              // If Shift + Enter, do nothing, allow default browser behavior (insert newline)
             }}
             variant="standard"
             InputProps={{

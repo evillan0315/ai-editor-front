@@ -19,11 +19,12 @@ declare module '@mui/material/styles' {
 
   /**
    * Augment the Palette interface to include custom color palettes.
-   * This makes `theme.palette.outerSpace` and `theme.palette.denim` available with type safety.
+   * This makes `theme.palette.outerSpace`, `theme.palette.denim`, and `theme.palette.congressBlue` available with type safety.
    */
   interface Palette {
     outerSpace: PaletteColor;
     denim: PaletteColor;
+    congressBlue: PaletteColor;
   }
 
   /**
@@ -33,5 +34,6 @@ declare module '@mui/material/styles' {
   interface PaletteOptions {
     outerSpace?: SimplePaletteColorOptions;
     denim?: SimplePaletteColorOptions;
+    congressBlue?: SimplePaletteColorOptions;
   }
 }

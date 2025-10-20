@@ -15,7 +15,7 @@ import { VideoChatComponentProps } from './types';
  * The main component for the video chat. It manages the WebRTC lifecycle,
  * displays local and remote video feeds, and provides call controls.
  */
-const VideoChatComponent: React.FC<VideoChatComponentProps> = ({ roomId, onClose }) => {
+export default function VideoChatComponent({ roomId, onClose }: VideoChatComponentProps) {
   const $auth = useStore(authStore);
   const $user = useStore(user);
   const theme = useTheme();
@@ -114,6 +114,4 @@ const VideoChatComponent: React.FC<VideoChatComponentProps> = ({ roomId, onClose
       />
     </Box>
   );
-};
-
-export default VideoChatComponent;
+}

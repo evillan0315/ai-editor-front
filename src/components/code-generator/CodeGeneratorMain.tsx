@@ -13,6 +13,7 @@ import {
   Box,
   Grid,
   CardActionArea,
+  Tooltip,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -34,7 +35,7 @@ export interface CodeGeneratorData {
   summary: string;
   thoughtProcess: string;
   documentation: string;
-  gitInstructions: string[]; // ← change from string to string[]
+  gitInstructions: string[];
   changes: FileChange[];
 }
 
@@ -48,10 +49,10 @@ const AIToolsView: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <Grid container spacing={3} justifyContent="center">
+    <Grid container spacing={3} justifyContent="center" alignItems="stretch"> {/* Added alignItems="stretch" */}
       {aiTools.map((tool: AppDefinition) => (
         <Grid item key={tool.id} xs={12} sm={6} md={6} lg={6}>
-          <CardActionArea onClick={() => navigate(tool.link)}>
+          <CardActionArea onClick={() => navigate(tool.link)} sx={{ height: '100%' }}> {/* Ensure CardActionArea takes full height */}
             <Card
               variant="outlined"
               sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
@@ -59,9 +60,11 @@ const AIToolsView: React.FC = () => {
               <CardContent sx={{ flexGrow: 1 }}>
                 <Box display="flex" alignItems="center" gap={1}>
                   <tool.icon color="primary" />
-                  <Typography variant="h6" component="div">
-                    {tool.title}
-                  </Typography>
+                  <Tooltip title={tool.description} arrow>
+                    <Typography variant="h6" component="div" className='truncate'>
+                      {tool.title}
+                    </Typography>
+                  </Tooltip>
                 </Box>
                 <Typography color="text.secondary">
                   {tool.description}

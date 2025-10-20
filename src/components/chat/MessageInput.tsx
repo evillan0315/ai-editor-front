@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, TextField, Button, useTheme } from '@mui/material';
+import { Box, TextField, Button, useTheme, IconButton } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 
 import { MessageInputProps } from './types';
@@ -109,7 +109,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
     <Box
       component="form"
       onSubmit={handleSend}
-      className="flex p-4 mr-2 rounded-b-lg shadow-inner"
+      className="flex p-4 rounded-b-lg shadow-inner gap-2"
       sx={{
         borderTop: `1px solid ${theme.palette.divider}`,
         backgroundColor: theme.palette.background.paper,
@@ -136,17 +136,15 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
             },
         }}
       />
-      <Button
+      <IconButton
         type="submit"
-        variant="contained"
         color="primary"
         disabled={!inputText.trim() || isLoading}
-        endIcon={<SendIcon fontSize="small" />}
-        className="rounded-full px-6 py-2 transition-all duration-300 transform hover:scale-[1.03]"
-        sx={{ minWidth: '40px' }}
+        className="rounded-full transition-all duration-300 transform hover:scale-[1.03]"
+        sx={{ p: '8px' }} // Adjusted padding for IconButton
       >
-        {isLoading ? '...' : 'Send'}
-      </Button>
+        <SendIcon fontSize="small" />
+      </IconButton>
     </Box>
   );
 };

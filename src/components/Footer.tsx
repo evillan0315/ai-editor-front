@@ -7,7 +7,6 @@ import {
   isCameraRecordingStore,
   currentCameraRecordingIdStore,
   setIsCameraRecording,
-  recorderSettingsStore,
 } from '@/stores/recordingStore';
 import { recordingApi } from '@/api/recording';
 import { setSnackbarState } from '@/stores/snackbarStore';
@@ -29,7 +28,6 @@ const Footer = () => {
 
   const isCameraRecording = useStore(isCameraRecordingStore);
   const currentCameraRecordingId = useStore(currentCameraRecordingIdStore);
-  const recorderSettings = useStore(recorderSettingsStore); // Get recorder settings
 
   const [isCapturing, setIsCapturing] = useState(false);
   const [logDrawerOpen, setLogDrawerOpen] = useState(false);
@@ -72,11 +70,11 @@ const Footer = () => {
   const handleStartCameraRecording = async () => {
     try {
       const dto: StartCameraRecordingDto = {
-        cameraDevice: [recorderSettings.cameraVideoDevice],
-        audioDevice: [recorderSettings.cameraAudioDevice],
-        resolution: recorderSettings.cameraResolution,
-        framerate: recorderSettings.cameraFramerate,
-        name: `${recorderSettings.namePrefix}-${Date.now()}`,
+        cameraDevice: ['/dev/video0'],
+        audioDevice: ['alsa_input.pci-0000_00_1b.0.analog-stereo'],
+        resolution: '1280x720',
+        framerate: 30,
+        name: `camera-record-${Date.now()}`,
       };
       const recordingData = await recordingApi.startCameraRecording(dto);
       if (recordingData?.id) {
@@ -151,8 +149,14 @@ const Footer = () => {
           
         </Box>
         {/* Right Section: Output Logger Button */}
-        <Box className="flex justify-center items-center w-1/4 max-w-[600px]">
-          
+        <Box className="flex justify-center items-center w-1/2 max-w-[600px]">
+          <IconButton
+            color="inherit"
+            aria-label="open output logger"
+            onClick={handleOpenLogDrawer}
+          >
+            <DynamicIcon iconName="CarbonTerminal" />
+          </IconButton>
            <Box className='flex items-center flex-shrink'>
           <RecordingControls
             isScreenRecording={isScreenRecording}
@@ -166,15 +170,7 @@ const Footer = () => {
           />
      
             <RecordingStatus />
-            
          </Box>
-          <IconButton
-            color="inherit"
-            aria-label="open output logger"
-            onClick={handleOpenLogDrawer}
-          >
-            <DynamicIcon iconName="CarbonTerminal" />
-          </IconButton>
         </Box>
       </Box>
 

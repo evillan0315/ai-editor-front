@@ -7,7 +7,6 @@ import { Box, Typography, Paper, useTheme, CircularProgress, Button } from '@mui
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import { useStore } from '@nanostores/react';
-import { authStore, user, getToken } from '@/stores/authStore';
 import {
   activeConversationId,
   setActiveConversationId,
@@ -26,6 +25,7 @@ import {
 } from '@/components/chat/stores/conversationStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { authStore, user, getToken } from '@/stores/authStore';
 import { chatSocketService } from './chatSocketService';
 import { Message, SendMessageDto, Sender } from './types';
 import MessageList from './MessageList';
@@ -276,7 +276,7 @@ const ChatApp: React.FC = () => {
 
   return (
     <Box
-      className="max-w-3xl mx-auto h-[90vh] flex flex-col"
+      className="w-full max-w-7xl mx-auto h-[85vh] flex flex-col"
       sx={{
         fontFamily: 'Inter, sans-serif',
         backgroundColor: theme.palette.background.default,
@@ -326,10 +326,10 @@ const ChatApp: React.FC = () => {
             {$showVideoChat && $activeConversationId ? (
               <motion.div
                 key="video-chat-container"
-                // Removed initial={{ x: '100%' }}
-                // Removed animate={{ x: 0 }}
-                // Removed exit={{ x: '100%' }}
-                // Removed transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                initial={{ x: '100%' }} // Start off-screen to the right
+                animate={{ x: 0 }} // Slide into view
+                exit={{ x: '100%' }} // Slide out to the right
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }} // Smooth spring animation
                 className="flex flex-col flex-shrink-0 w-1/2 overflow-hidden"
               >
                 <VideoChatComponent roomId={$activeConversationId} onClose={() => setShowVideoChat(false)} />

@@ -122,7 +122,7 @@ const router = createBrowserRouter(
       />
       {/* NEW: Route for direct ChatApp component */}
       <Route
-        path="/apps/chat-component-test"
+        path="/apps/chat-component"
         element={
           <RequireAuth>
             <Suspense fallback={<Loading />}>
