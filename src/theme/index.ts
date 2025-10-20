@@ -72,7 +72,18 @@ export const getAppTheme = (mode: PaletteMode) => {
           '.markdown-body': {
             backgroundColor: mode === 'dark' ? '#1d1d1d' : '#f5f5f5',
           },
-                    '.cm-editor .cm-gutters': {
+          '.markdown-body hr': {
+            borderColor:  mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+          },
+          '.markdown-body pre > div': {
+            backgroundColor: mode === 'dark' ? '#121212' : '#f9f9f9',
+            padding: '1rem'
+          },
+          '.markdown-body pre .language-btn': {
+            backgroundColor: mode === 'dark' ? '#90caf9' : '#1976d2',
+            padding: '.5rem'
+          },
+          '.cm-editor .cm-gutters': {
             backgroundColor: mode === 'dark' ? '#1d1d1d' : '#f5f5f5',
           },
         },
