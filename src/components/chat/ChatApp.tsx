@@ -326,11 +326,11 @@ const ChatApp: React.FC = () => {
             {$showVideoChat && $activeConversationId ? (
               <motion.div
                 key="video-chat-container"
-                initial={{ x: '100%' }} // Starts off-screen to the right
-                animate={{ x: 0 }} // Slides into its position within the flex container
-                exit={{ x: '100%' }} // Slides off-screen to the right
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="flex flex-col flex-shrink-0 w-1/2 overflow-hidden" // Video chat occupies 50% width, prevents shrinking
+                // Removed initial={{ x: '100%' }}
+                // Removed animate={{ x: 0 }}
+                // Removed exit={{ x: '100%' }}
+                // Removed transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="flex flex-col flex-shrink-0 w-1/2 overflow-hidden"
               >
                 <VideoChatComponent roomId={$activeConversationId} onClose={() => setShowVideoChat(false)} />
               </motion.div>
