@@ -104,10 +104,6 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
     try {
       const parsedData: CodeGeneratorData = JSON.parse(importContentString);
       setLastLlmResponse(parsedData as any); // Type assertion needed due to partial match with ModelResponse
-      // If the parsed data includes a rawResponse, also update the main LLM response editor
-      if (parsedData.rawResponse) {
-        setLlmResponse(parsedData.rawResponse);
-      }
       showGlobalSnackbar('Data imported successfully!', 'success');
       setIsImportDialogOpen(false);
     } catch (err) {
@@ -138,13 +134,6 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       disabled: !importContentString, // Disable if no content to import
     },
   ]; 
-
-  // Callback for CodeRepair to 'export' its content to the ImportJson drawer
-  const handleExportToImportDrawer = useCallback((content: string) => {
-    setImportContentString(content);
-    setIsImportDialogOpen(true);
-    showGlobalSnackbar('Content loaded into Import Data drawer.', 'info');
-  }, [setIsImportDialogOpen]);
   
   return (
     <Box className="flex items-center justify-between gap-2 ">
@@ -286,7 +275,6 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           onChange={setLlmResponse}
           filePath="temp.json"
           height="100%"
-          onOpenImportDrawerWithContent={handleExportToImportDrawer} // Pass the callback
         />
       </CustomDrawer>
     </Box>
