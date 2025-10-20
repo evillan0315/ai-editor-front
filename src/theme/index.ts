@@ -46,6 +46,21 @@ const denimPalette = {
   950: '#17243a',
 };
 
+// Define the new custom congress-blue palette
+const congressBluePalette = {
+  50: '#eff8ff',
+  100: '#dceffd',
+  200: '#c0e4fd',
+  300: '#95d4fb',
+  400: '#63bbf7',
+  500: '#3f9ef2',
+  600: '#2981e7',
+  700: '#216bd4',
+  800: '#2157ac',
+  900: '#204a87',
+  950: '#182f53',
+};
+
 export const getAppTheme = (mode: PaletteMode) => {
   const themeOptions: ThemeOptions = {
     palette: {
@@ -56,17 +71,19 @@ export const getAppTheme = (mode: PaletteMode) => {
       outerSpace: outerSpacePalette,
       // Add the new denim palette
       denim: denimPalette,
+      // Add the new congressBlue palette
+      congressBlue: congressBluePalette,
       primary: {
-        main: mode === 'dark' ? denimPalette[950] : denimPalette[50],
+        main: mode === 'dark' ? congressBluePalette[900] : congressBluePalette[100],
         light: mode === 'dark' ? '#e3f2fd' : '#42a5f5',
         dark: mode === 'dark' ? '#42a5f5' : '#1565c0',
-        contrastText: mode === 'dark' ? denimPalette[50] : denimPalette[950],
+        contrastText: mode === 'dark' ? congressBluePalette[200] : congressBluePalette[800],
       },
       secondary: {
-        main: mode === 'dark' ? '#f48fb1' : '#dc004e',
+        main: mode === 'dark' ? denimPalette[600] : denimPalette[300],
         light: mode === 'dark' ? '#ffc1e3' : '#ff4081',
         dark: mode === 'dark' ? '#c75a85' : '#c51162',
-        contrastText: mode === 'dark' ? customBlackPalette[950] : customBlackPalette[50],
+        contrastText: mode === 'dark' ? denimPalette[100] : denimPalette[900],
       },
       error: {
         main: mode === 'dark' ? '#ef9a9a' : '#d32f2f',
