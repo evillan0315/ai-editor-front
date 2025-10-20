@@ -51,11 +51,11 @@ import { useStore } from '@nanostores/react';
 import { getFileStreamUrl } from '@/api/media';
 import { recordingApi } from './api/recording';
 import { setLoading, isLoading } from '@/stores/loadingStore';
-import { StartCameraRecordingDto, RecordingItem, SortField, SortOrder } from './types/recording';
+import { StartCameraRecordingDto, RecordingItem, SortField, SortOrder, RecordingType } from './types/recording';
 import VideoModal from '@/components/VideoModal';
 import path from 'path-browserify';
 
-const RECORDING_TYPES = ['screenRecord', 'screenShot', 'cameraRecord'];
+const RECORDING_TYPES: RecordingType[] = ['screenRecord', 'screenShot', 'cameraRecord'];
 
 export function Recording() {
   // States from store
@@ -102,7 +102,7 @@ export function Recording() {
         name: r.path.split('/').pop() || r.id,
         createdAt: r.createdAt,
         sizeBytes: r.data.fileSize || 0,
-        type: r.type,
+        type: r.type as RecordingType, // Cast to RecordingType
         status: r.status,
         path: r.path,
         createdById: r.createdById,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -12,6 +12,12 @@ import {
   SxProps,
   Theme,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -76,6 +82,11 @@ const tableBodyCellSx: SxProps<Theme> = (theme) => ({
   textOverflow: 'ellipsis',
 });
 
+const dialogTitleSx: SxProps<Theme> = (theme) => ({
+  backgroundColor: theme.palette.error.main,
+  color: theme.palette.error.contrastText,
+});
+
 const getRecordingTypeIcon = (type: string) => {
   switch (type) {
     case 'screenRecord':
@@ -100,6 +111,10 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   const sortBy = useStore(recordingsSortByStore);
   const sortOrder = useStore(recordingsSortOrderStore);
 
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [recordingToDelete, setRecordingToDelete] = useState<string | null>(null);
+  const [recordingNameToDelete, setRecordingNameToDelete] = useState<string | null>(null);
+
   const formatBytes = (bytes: number, decimals = 2) => {
     if (!+bytes) return '0 Bytes';
     const k = 1024;
@@ -117,6 +132,27 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
       setRecordingsSortOrder('desc');
     }
     setRecordingsPage(0);
+  };
+
+  const handleDeleteClick = (id: string, name: string) => {
+    setRecordingToDelete(id);
+    setRecordingNameToDelete(name);
+    setOpenConfirmDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (recordingToDelete) {
+      onDelete(recordingToDelete);
+    }
+    setOpenConfirmDialog(false);
+    setRecordingToDelete(null);
+    setRecordingNameToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setOpenConfirmDialog(false);
+    setRecordingToDelete(null);
+    setRecordingNameToDelete(null);
   };
 
   return (
@@ -221,7 +257,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
                     <InfoIcon />
                   </IconButton>
                   <IconButton
-                    onClick={() => onDelete(recording.id)}
+                    onClick={() => handleDeleteClick(recording.id, recording.name)}
                     color="error"
                     title="Delete"
                   >
@@ -233,6 +269,30 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
           ))}
         </TableBody>
       </Table>
+
+      <Dialog
+        open={openConfirmDialog}
+        onClose={handleCancelDelete}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title" sx={dialogTitleSx(theme)}>
+          Confirm Deletion
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete the recording "{recordingNameToDelete}"? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} variant="outlined">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} variant="contained" color="error" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TableContainer>
   );
 };
