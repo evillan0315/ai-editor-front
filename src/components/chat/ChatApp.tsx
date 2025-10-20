@@ -15,23 +15,23 @@ import {
   setShowVideoChat,
   messages,
   setMessages,
-  conversationLoading, // NEW: Import conversationLoading atom
-  setConversationLoading, // NEW: Import setConversationLoading function
-  conversationError, // NEW: Import conversationError atom
-  setConversationError, // NEW: Import setConversationError function
-  isHistoryLoading, // NEW: Import isHistoryLoading atom
-  setIsHistoryLoading, // NEW: Import setIsHistoryLoading function
-  historyError, // NEW: Import historyError atom
-  setHistoryError, // NEW: Import setHistoryError function
+  conversationLoading,
+  setConversationLoading,
+  conversationError,
+  setConversationError,
+  isHistoryLoading,
+  setIsHistoryLoading,
+  historyError,
+  setHistoryError,
 } from '@/components/chat/stores/conversationStore';
-import { motion, AnimatePresence } from 'framer-motion'; // Import framer-motion
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { chatSocketService } from './chatSocketService';
-import { Message, SendMessageDto, Sender } from './types'; // Import Sender enum and Message type
+import { Message, SendMessageDto, Sender } from './types';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import VideoChatComponent from './VideoChatComponent';
-import { chatApi } from '@/components/chat/api/chat'; // UPDATED: Import the new chat API service
+import { chatApi } from '@/components/chat/api/chat';
 
 // Bot User ID (remains constant for client-side display)
 const BOT_USER_ID = 'user-bot';
@@ -54,7 +54,7 @@ const ChatApp: React.FC = () => {
   const $user = useStore(user);
   const $activeConversationId = useStore(activeConversationId);
   const $showVideoChat = useStore(showVideoChat);
-  const $messages = useStore(messages); // Use nanostore for messages
+  const $messages = useStore(messages);
   // NEW: Consume loading and error states from nanostore
   const $conversationLoading = useStore(conversationLoading);
   const $conversationError = useStore(conversationError);
@@ -212,9 +212,9 @@ const ChatApp: React.FC = () => {
     if (chatSocketService.isConnected()) {
       const sendMessageDto: SendMessageDto = {
         conversationId: $activeConversationId,
-        userId: backendUserId, // Use the authenticated user's ID for persistence
-        content: newMessage.content, // Use newMessage.content
-        sender: senderTypeForBackend, // Explicitly set sender type for backend
+        userId: backendUserId,
+        content: newMessage.content,
+        sender: senderTypeForBackend,
       };
       chatSocketService.sendMessage(sendMessageDto);
       console.log('Message sent via WebSocket:', sendMessageDto);
@@ -228,7 +228,7 @@ const ChatApp: React.FC = () => {
   };
 
   // Show loading indicator while authentication status, conversation, or history is being determined
-  if ($auth.loading || $conversationLoading || $isHistoryLoading) { // Use nanostore values
+  if ($auth.loading || $conversationLoading || $isHistoryLoading) {
     return (
       <Box className="flex items-center justify-center h-full">
         <CircularProgress />
@@ -253,7 +253,7 @@ const ChatApp: React.FC = () => {
   }
 
   // Display authentication, conversation creation, or history error if one exists
-  if ($auth.error || $conversationError || $historyError) { // Use nanostore values
+  if ($auth.error || $conversationError || $historyError) {
     return (
       <Box className="flex items-center justify-center h-full p-4">
         <Typography variant="h6" color="error">
@@ -284,7 +284,7 @@ const ChatApp: React.FC = () => {
     >
       <Paper elevation={3} className="flex flex-col h-full rounded-xl overflow-hidden shadow-2xl">
         <Box
-          className="p-4 shadow-lg flex justify-between items-center z-10" // z-index to keep header on top
+          className="p-4 shadow-lg flex justify-between items-center z-10"
           sx={headerSx(theme)}
         >
           <div>
@@ -307,35 +307,34 @@ const ChatApp: React.FC = () => {
         </Box>
 
         {/* Content Area - where the animation happens */}
-        <Box className="relative flex-grow overflow-hidden">
-          <AnimatePresence initial={false}>
+        <Box className="flex-grow flex overflow-hidden"> {/* Parent is now a flex container */}
+          <motion.div
+            key="chat-messages-container"
+            initial={{ flexBasis: '100%' }}
+            animate={{ flexBasis: $showVideoChat ? '50%' : '100%' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="flex flex-col flex-grow overflow-hidden" // Chat messages take available space, handle overflow
+          >
+            {/* Message List Area */}
+            <MessageList messages={$messages} currentUserId={currentUserActualId} />
+
+            {/* Message Input Area */}
+            <MessageInput onSendMessage={handleSendMessage} />
+          </motion.div>
+
+          <AnimatePresence>
             {$showVideoChat && $activeConversationId ? (
               <motion.div
-                key="video-chat"
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
+                key="video-chat-container"
+                initial={{ x: '100%' }} // Starts off-screen to the right
+                animate={{ x: 0 }} // Slides into its position within the flex container
+                exit={{ x: '100%' }} // Slides off-screen to the right
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="absolute inset-0 flex flex-col"
+                className="flex flex-col flex-shrink-0 w-1/2 overflow-hidden" // Video chat occupies 50% width, prevents shrinking
               >
                 <VideoChatComponent roomId={$activeConversationId} onClose={() => setShowVideoChat(false)} />
               </motion.div>
-            ) : (
-              <motion.div
-                key="chat-messages"
-                initial={{ x: '-100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '-100%' }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="absolute inset-0 flex flex-col"
-              >
-                {/* Message List Area */}
-                <MessageList messages={$messages} currentUserId={currentUserActualId} />
-
-                {/* Message Input Area */}
-                <MessageInput onSendMessage={handleSendMessage} />
-              </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
         </Box>
       </Paper>
