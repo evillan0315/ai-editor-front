@@ -8,7 +8,7 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import { useStore } from '@nanostores/react';
 import { authStore, user, getToken } from '@/stores/authStore';
-import { activeConversationId, setActiveConversationId } from '@/stores/conversationStore';
+import { activeConversationId, setActiveConversationId, showVideoChat, setShowVideoChat } from '@/stores/conversationStore';
 
 import { chatSocketService } from './chatSocketService';
 import { Message, SendMessageDto, Sender } from './types'; // Import Sender enum
@@ -28,6 +28,7 @@ const ChatApp: React.FC = () => {
   const $auth = useStore(authStore);
   const $user = useStore(user);
   const $activeConversationId = useStore(activeConversationId);
+  const $showVideoChat = useStore(showVideoChat);
   const theme = useTheme();
   const token = getToken()
   const currentUserActualId = $user?.id || 'guest-user';
@@ -35,7 +36,7 @@ const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>(
     []
   ); // messages now fully managed here, including history
-  const [showVideoChat, setShowVideoChat] = useState(false);
+  // Removed: const [showVideoChat, setShowVideoChat] = useState(false);
   // Removed: const [videoChatRoomId] = useState(() => crypto.randomUUID()); // Use UUID for video room ID
   const [conversationLoading, setConversationLoading] = useState(false);
   const [conversationError, setConversationError] = useState<string | null>(null);
@@ -192,7 +193,7 @@ const ChatApp: React.FC = () => {
   };
 
   const toggleVideoChat = () => {
-    setShowVideoChat(prev => !prev);
+    setShowVideoChat(!$showVideoChat);
   };
 
   // Show loading indicator while authentication status, conversation, or history is being determined
@@ -270,14 +271,14 @@ const ChatApp: React.FC = () => {
             variant="contained"
             color="secondary"
             onClick={toggleVideoChat}
-            startIcon={showVideoChat ? <VideocamOffIcon /> : <VideocamIcon />}
+            startIcon={$showVideoChat ? <VideocamOffIcon /> : <VideocamIcon />}
             sx={{ ml: 2 }}
           >
-            {showVideoChat ? 'Exit Video' : 'Join Video'}
+            {$showVideoChat ? 'Exit Video' : 'Join Video'}
           </Button>
         </Box>
 
-        {showVideoChat && $activeConversationId ? (
+        {$showVideoChat && $activeConversationId ? (
           <VideoChatComponent roomId={$activeConversationId} onClose={() => setShowVideoChat(false)} />
         ) : (
           <>
