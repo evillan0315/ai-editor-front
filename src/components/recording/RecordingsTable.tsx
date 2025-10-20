@@ -19,22 +19,26 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
 import GifIcon from '@mui/icons-material/Gif';
 
-// Import specific icons for recording types
 import VideocamIcon from '@mui/icons-material/Videocam';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import ImageIcon from '@mui/icons-material/Image';
 
-import { RecordingItem } from './types/recording'; // Re-exporting RecordingItem as RecordingItem
+import { RecordingItem, SortField, SortOrder } from './types/recording';
+import { useStore } from '@nanostores/react';
+import {
+  recordingsListStore,
+  recordingsSortByStore,
+  recordingsSortOrderStore,
+  setRecordingsSortBy,
+  setRecordingsSortOrder,
+  setRecordingsPage,
+} from './stores/recordingStore';
 
 interface RecordingsTableProps {
-  recordings: RecordingItem[];
   onPlay: (recording: RecordingItem) => void;
   onDelete: (id: string) => void;
   onView: (recording: RecordingItem) => void;
-  onSort: (field: keyof RecordingItem) => void;
-  sortBy: keyof RecordingItem;
-  sortOrder: 'asc' | 'desc';
-  onConvertToGif: (recording: RecordingItem) => void; // New prop
+  onConvertToGif: (recording: RecordingItem) => void;
 }
 
 const tableContainerSx: SxProps<Theme> = (theme) => ({
@@ -72,7 +76,6 @@ const tableBodyCellSx: SxProps<Theme> = (theme) => ({
   textOverflow: 'ellipsis',
 });
 
-// Helper function to get icon for recording type
 const getRecordingTypeIcon = (type: string) => {
   switch (type) {
     case 'screenRecord':
@@ -82,21 +85,20 @@ const getRecordingTypeIcon = (type: string) => {
     case 'screenShot':
       return <ImageIcon fontSize="small" />;
     default:
-      return null; // Or a default generic icon if needed
+      return null;
   }
 };
 
 const RecordingsTable: React.FC<RecordingsTableProps> = ({
-  recordings,
   onPlay,
   onDelete,
   onView,
-  onSort,
-  sortBy,
-  sortOrder,
   onConvertToGif,
 }) => {
   const theme = useTheme();
+  const recordings = useStore(recordingsListStore);
+  const sortBy = useStore(recordingsSortByStore);
+  const sortOrder = useStore(recordingsSortOrderStore);
 
   const formatBytes = (bytes: number, decimals = 2) => {
     if (!+bytes) return '0 Bytes';
@@ -107,6 +109,16 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   };
 
+  const handleSort = (field: SortField) => {
+    if (sortBy === field) {
+      setRecordingsSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setRecordingsSortBy(field);
+      setRecordingsSortOrder('desc');
+    }
+    setRecordingsPage(0);
+  };
+
   return (
     <TableContainer component={Paper} sx={tableContainerSx(theme)}>
       <Table className="min-w-full">
@@ -114,25 +126,25 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
           <TableRow>
             <TableCell
               sx={tableHeaderCellSx(theme)}
-              onClick={() => onSort('name')}
+              onClick={() => handleSort('name')}
             >
               Name {sortBy === 'name' && (sortOrder === 'asc' ? '▲' : '▼')}
             </TableCell>
             <TableCell
               sx={tableHeaderCellSx(theme)}
-              onClick={() => onSort('type')}
+              onClick={() => handleSort('type')}
             >
               Type {sortBy === 'type' && (sortOrder === 'asc' ? '▲' : '▼')}
             </TableCell>
             <TableCell
               sx={tableHeaderCellSx(theme)}
-              onClick={() => onSort('sizeBytes')}
+              onClick={() => handleSort('sizeBytes')}
             >
               Size {sortBy === 'sizeBytes' && (sortOrder === 'asc' ? '▲' : '▼')}
             </TableCell>
             <TableCell
               sx={tableHeaderCellSx(theme)}
-              onClick={() => onSort('createdAt')}
+              onClick={() => handleSort('createdAt')}
             >
               Created At{' '}
               {sortBy === 'createdAt' && (sortOrder === 'asc' ? '▲' : '▼')}
@@ -152,8 +164,6 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
                 <Tooltip title={recording.type}>
                   <Box className="flex items-center gap-1">
                     {getRecordingTypeIcon(recording.type)}
-                    {/* Optionally keep text for accessibility for screen readers or if icons are not enough */}
-                    {/* <Typography variant="body2">{recording.type}</Typography> */}
                   </Box>
                 </Tooltip>
               </TableCell>
@@ -191,8 +201,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
                       color="primary"
                       title="View Screenshot"
                     >
-                      <PlayArrowIcon />{' '}
-                      {/* Re-using PlayArrow for consistency, but means 'view' */}
+                      <PlayArrowIcon />
                     </IconButton>
                   )}
                   {recording.data?.animatedGif && (
