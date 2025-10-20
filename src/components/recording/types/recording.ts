@@ -24,6 +24,9 @@ export interface RecordingItem {
     [key: string]: any;
   };
 }
+export type RecordingType = 'screenShot' | 'screenRecord' | 'screenCapture';
+export type SortOrder = 'asc' | 'desc';
+export type SortField = 'name' | 'createdAt' | 'type' | 'sizeBytes';
 
 export interface PaginationRecordingQueryDto {
   page?: number;

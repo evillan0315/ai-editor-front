@@ -9,7 +9,7 @@ export interface RecordingSearchBarProps {
   typeFilter?: string;
   onTypeFilterChange?: (value: string) => void;
   typeOptions?: string[];
-  onRefresh: () => void; // New prop for refresh functionality
+  onRefresh: () => void;
 }
 
 export const RecordingSearchBar: React.FC<RecordingSearchBarProps> = ({
