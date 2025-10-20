@@ -14,7 +14,6 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
 import GifIcon from '@mui/icons-material/Gif';
@@ -24,7 +23,6 @@ import { RecordingItem } from './types/recording'; // Re-exporting RecordingItem
 interface RecordingsTableProps {
   recordings: RecordingItem[];
   onPlay: (recording: RecordingItem) => void;
-  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onView: (recording: RecordingItem) => void;
   onSort: (field: keyof RecordingItem) => void;
@@ -71,7 +69,6 @@ const tableBodyCellSx: SxProps<Theme> = (theme) => ({
 const RecordingsTable: React.FC<RecordingsTableProps> = ({
   recordings,
   onPlay,
-  onEdit,
   onDelete,
   onView,
   onSort,
@@ -109,12 +106,6 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
             </TableCell>
             <TableCell
               sx={tableHeaderCellSx(theme)}
-              onClick={() => onSort('status')}
-            >
-              Status {sortBy === 'status' && (sortOrder === 'asc' ? '▲' : '▼')}
-            </TableCell>
-            <TableCell
-              sx={tableHeaderCellSx(theme)}
               onClick={() => onSort('sizeBytes')}
             >
               Size {sortBy === 'sizeBytes' && (sortOrder === 'asc' ? '▲' : '▼')}
@@ -139,9 +130,6 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
               </TableCell>
               <TableCell sx={tableBodyCellSx(theme)}>
                 {recording.type}
-              </TableCell>
-              <TableCell sx={tableBodyCellSx(theme)}>
-                {recording.status}
               </TableCell>
               <TableCell sx={tableBodyCellSx(theme)}>
                 {formatBytes(recording.sizeBytes)}
@@ -181,7 +169,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
                       {/* Re-using PlayArrow for consistency, but means 'view' */}
                     </IconButton>
                   )}
-                  {recording.data?.animatedGif && ( // MODIFIED: Simplified onPlay call for GIF
+                  {recording.data?.animatedGif && (
                     <IconButton
                       onClick={() => onPlay(recording)}
                       color="primary"
@@ -196,13 +184,6 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
                     title="View Details"
                   >
                     <InfoIcon />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => onEdit(recording.id)}
-                    color="secondary"
-                    title="Edit"
-                  >
-                    <EditIcon />
                   </IconButton>
                   <IconButton
                     onClick={() => onDelete(recording.id)}
