@@ -27,43 +27,27 @@ const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
           const text = String(children).replace(/\n$/, '');
           const language = className ? className.replace('language-', '') : '';
           return inline ? (
-            <Box component="code">{children}</Box>
+            <Box className={className}>{children}</Box>
           ) : (
             <Box
-              className={language ? 'relative' : 'inline-block'}
-              sx={{ position: 'relative' }}
+              className={`${language ? 'relative' : 'inline-block'} ${className}`}
             >
               {language && (
                 <Typography
                   variant="caption"
-                  className="language-btn"
-                  sx={{
-                    position: 'absolute',
-                    top: -20,
-                    left: 0,
-                    px: 1,
-                    borderRadius: '4px',
-                    zIndex: 1,
-                    bgcolor: 'rgba(0,0,0,0.5)',
-                  }}
+                  className="language-btn absolute top-2 left-0 rounded-md z-1"
                 >
                   {language}
                 </Typography>
               )}
-              <Box component="code">{children}</Box>
+              <Box>{children}</Box>
 
               {className && (
                 <Tooltip title="Copy code to clipboard">
                   <IconButton
                     aria-label="copy"
                     onClick={() => handleCopy(text)}
-                    sx={{
-                      position: 'absolute',
-                      top: 2,
-                      right: 2,
-                      color: 'white',
-                      bgcolor: 'rgba(0,0,0,0.5)',
-                    }}
+                    className={`${className} absolute top-1 right-1`}
                   >
                     <FileCopyIcon />
                   </IconButton>
