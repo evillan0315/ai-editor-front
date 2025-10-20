@@ -14,6 +14,7 @@ import {
   isCameraRecordingStore,
   currentCameraRecordingIdStore,
   setIsCameraRecording,
+  recorderSettingsStore,
 } from './stores/recordingStore';
 import { useStore } from '@nanostores/react';
 
@@ -35,6 +36,8 @@ export function Recording() {
 
   const isCameraRecording = useStore(isCameraRecordingStore); // Use new camera store
   const currentCameraRecordingId = useStore(currentCameraRecordingIdStore);
+
+  const currentRecorderSettings = useStore(recorderSettingsStore); // Get current recorder settings
 
   const [recordings, setRecordings] = useState<RecordingItem[]>([]);
   const [totalRecordings, setTotalRecordings] = useState(0);
@@ -140,11 +143,11 @@ export function Recording() {
     setLoading('startCameraRecording', true);
     try {
       const dto: StartCameraRecordingDto = {
-        cameraDevice: ['/dev/video0'],
-        audioDevice: ['alsa_input.pci-0000_00_1b.0.analog-stereo'],
-        resolution: '1280x720',
-        framerate: 30,
-        name: `camera-record-${Date.now()}`,
+        cameraDevice: currentRecorderSettings.cameraVideoDevice,
+        audioDevice: currentRecorderSettings.cameraAudioDevice,
+        resolution: currentRecorderSettings.cameraResolution,
+        framerate: currentRecorderSettings.cameraFramerate,
+        name: `${currentRecorderSettings.namePrefix}-camera-record-${Date.now()}`,
       };
       const res = await recordingApi.startCameraRecording(dto);
       setIsCameraRecording(true);
