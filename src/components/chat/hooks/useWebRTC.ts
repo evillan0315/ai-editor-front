@@ -200,7 +200,8 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
         console.warn(`Ignoring answer from ${senderSocketId}: signalingState is already 'stable'.`);
         return;
       }
-      if (pc.localDescription) { // Ensure we have a local offer set to which this is an answer
+      // Ensure we have a local offer set to which this is an answer
+      if (pc.localDescription) {
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
           console.log(`Remote description set for ${senderSocketId}`);
