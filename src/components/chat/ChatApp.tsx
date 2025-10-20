@@ -127,11 +127,14 @@ const ChatApp: React.FC = () => {
         });
     }
 
+    // IMPORTANT: Remove chatSocketService.disconnect() from here. 
+    // The chat socket should remain connected as long as the ChatApp is mounted and active conversation exists,
+    // regardless of video chat state. Its lifecycle is tied to ChatApp, not VideoChatComponent.
     return () => {
       chatSocketService.off('receive_message');
       chatSocketService.off('conversation_history');
-      chatSocketService.disconnect();
-      console.log('Chat socket disconnected.');
+      // chatSocketService.disconnect(); // REMOVED: This was causing disconnection when video chat was exited.
+      // console.log('Chat socket disconnected.'); // REMOVED
     };
   }, [$auth.isLoggedIn, token, $user?.id, $activeConversationId, handleReceiveMessage]);
 
