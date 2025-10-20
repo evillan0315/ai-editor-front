@@ -278,9 +278,12 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
       roomIdRef.current = null;
     }
 
-    if (chatSocketService.isConnected()) {
-        chatSocketService.disconnect();
-    }
+    // IMPORTANT: Remove chatSocketService.disconnect() from here.
+    // The chat socket's lifecycle should be managed by the higher-level ChatApp component,
+    // not by the useWebRTC hook, as it's used for both chat and video signaling.
+    // if (chatSocketService.isConnected()) {
+    //     chatSocketService.disconnect(); // REMOVED: This was causing disconnection when video chat was exited.
+    // }
 
     console.log('Disconnected from video chat.');
   }, []);
@@ -296,8 +299,13 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
       setIsLoading(true);
       setError(null);
 
-      await chatSocketService.connect(token);
-      console.log(token, 'connected using token');
+      // chatSocketService.connect(token); is already handled by ChatApp's main useEffect.
+      // We only need to ensure it's connected and then join the video room.
+      if (!chatSocketService.isConnected()) {
+        await chatSocketService.connect(token);
+        console.log(token, 'chatSocketService re-connected for video signaling');
+      }
+      
       await getLocalMedia();
       
       chatSocketService.joinVideoRoom({
@@ -305,7 +313,7 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
         userId: currentUserId // Backend expects userId
       });
        
-      // Register WebSocket listeners
+      // Register WebSocket listeners for WebRTC signaling
       chatSocketService.on('user_joined', handleUserJoined);
       chatSocketService.on('receive_offer', handleReceiveOffer);
       chatSocketService.on('receive_answer', handleReceiveAnswer);
@@ -328,7 +336,7 @@ export const useWebRTC = (currentUserId: string): UseWebRTCHooksResult => {
     return () => {
       console.log('useWebRTC cleanup running...');
       disconnect();
-      // Ensure socket listeners are removed
+      // Ensure socket listeners are removed (important to avoid memory leaks and stale listeners)
       chatSocketService.off('user_joined');
       chatSocketService.off('receive_offer');
       chatSocketService.off('receive_answer');
