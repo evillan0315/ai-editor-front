@@ -11,12 +11,18 @@ import {
   Box,
   SxProps,
   Theme,
+  Tooltip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
 import GifIcon from '@mui/icons-material/Gif';
+
+// Import specific icons for recording types
+import VideocamIcon from '@mui/icons-material/Videocam';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import ImageIcon from '@mui/icons-material/Image';
 
 import { RecordingItem } from './types/recording'; // Re-exporting RecordingItem as RecordingItem
 
@@ -65,6 +71,20 @@ const tableBodyCellSx: SxProps<Theme> = (theme) => ({
   overflow: 'hidden',
   textOverflow: 'ellipsis',
 });
+
+// Helper function to get icon for recording type
+const getRecordingTypeIcon = (type: string) => {
+  switch (type) {
+    case 'screenRecord':
+      return <VideocamIcon fontSize="small" />;
+    case 'cameraRecord':
+      return <CameraAltIcon fontSize="small" />;
+    case 'screenShot':
+      return <ImageIcon fontSize="small" />;
+    default:
+      return null; // Or a default generic icon if needed
+  }
+};
 
 const RecordingsTable: React.FC<RecordingsTableProps> = ({
   recordings,
@@ -129,7 +149,13 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
                 {recording.name}
               </TableCell>
               <TableCell sx={tableBodyCellSx(theme)}>
-                {recording.type}
+                <Tooltip title={recording.type}>
+                  <Box className="flex items-center gap-1">
+                    {getRecordingTypeIcon(recording.type)}
+                    {/* Optionally keep text for accessibility for screen readers or if icons are not enough */}
+                    {/* <Typography variant="body2">{recording.type}</Typography> */}
+                  </Box>
+                </Tooltip>
               </TableCell>
               <TableCell sx={tableBodyCellSx(theme)}>
                 {formatBytes(recording.sizeBytes)}

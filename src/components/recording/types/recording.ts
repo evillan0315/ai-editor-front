@@ -85,8 +85,8 @@ export interface TranscodeToGifResult {
 }
 
 export interface StartCameraRecordingDto {
-  audioDevice?: string[];
-  cameraDevice?: string[];
+  audioDevice?: string;
+  cameraDevice?: string;
   resolution?: string;
   framerate?: number;
   duration?: number;

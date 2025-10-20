@@ -26,7 +26,7 @@ import VideoModal from '@/components/VideoModal';
 import path from 'path-browserify';
 
 type SortOrder = 'asc' | 'desc';
-type SortField = 'name' | 'createdAt' | 'type' | 'status';
+type SortField = 'name' | 'createdAt' | 'type' | 'sizeBytes'; // MODIFIED: Removed 'status'
 
 const RECORDING_TYPES = ['screenRecord', 'screenShot', 'cameraRecord']; // Updated with cameraRecord
 
@@ -244,7 +244,8 @@ export function Recording() {
     [],
   );
 
-  const handleEdit = (id: string) => recordingApi.editRecording?.(id);
+  // MODIFIED: Removed handleEdit as it's no longer used
+  // const handleEdit = (id: string) => recordingApi.editRecording?.(id);
 
   // Pagination
   const handlePageChange = (_: unknown, newPage: number) => setPage(newPage);
@@ -341,7 +342,6 @@ export function Recording() {
       <RecordingsTable
         recordings={recordings}
         onPlay={handlePlay}
-        onEdit={handleEdit}
         onDelete={handleDelete}
         onView={openDrawer} // View info drawer
         onSort={handleSort}

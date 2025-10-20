@@ -7,8 +7,8 @@ import {
   isCameraRecordingStore,
   currentCameraRecordingIdStore,
   setIsCameraRecording,
-} from '@/stores/recordingStore';
-import { recordingApi } from '@/api/recording';
+} from '@/components/recording/stores/recordingStore';
+import { recordingApi } from '@/components/recording/api/recording';
 import { setSnackbarState } from '@/stores/snackbarStore';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -19,7 +19,7 @@ import OutputLogger from '@/components/OutputLogger';
 import MediaPlayerContainer from '@/components/media/MediaPlayerContainer';
 import { RecordingControls } from '@/components/recording/RecordingControls';
 import { RecordingStatus } from '@/components/recording/RecordingStatus'; // Import RecordingStatus
-import { StartCameraRecordingDto } from '@/types';
+import { StartCameraRecordingDto } from '@//components/recording/types';
 
 const Footer = () => {
   const theme = useTheme();
