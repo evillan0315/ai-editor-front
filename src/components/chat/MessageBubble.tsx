@@ -32,7 +32,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUserId })
       : isBot
         ? theme.palette.background.main // A subtle background for bot messages
         : theme.palette.success.main, // Example for other users, could be another theme color
-    color: isCurrentUser ? theme.palette.primary.contrastText : isBot ? theme.palette.primary.light : theme.palette.primary.contrastText,
+    color: isCurrentUser ? theme.palette.primary.contrastText : isBot ? theme.palette.primary.main : theme.palette.primary.contrastText,
     borderRadius: '12px',
     ...(isCurrentUser && { borderBottomRightRadius: '2px' }), // Adjust corner for current user
     ...(!isCurrentUser && { borderBottomLeftRadius: '2px' }), // Adjust corner for bot/other user

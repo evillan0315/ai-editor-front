@@ -55,7 +55,7 @@ export const getAppTheme = (mode: PaletteMode) => {
       grey: muiGrey, // Apply the VS Code inspired grayscale palette
       primary: {
         // VS Code's accent blue
-        main: '#007ACC',
+        main: mode === 'dark' ? muiGrey[200] : muiGrey[700],
         light: mode === 'dark' ? '#ADD6FF' : '#B3D9FF',
         dark: mode === 'dark' ? '#005F99' : '#005F99',
         contrastText: mode === 'dark' ? muiGrey[950] : muiGrey[50],
@@ -147,6 +147,27 @@ export const getAppTheme = (mode: PaletteMode) => {
           '.cm-editor .cm-gutters': {
             backgroundColor: mode === 'dark' ? muiGrey[900] : muiGrey[100],
           },
+          // Markdown Table styles
+          '.markdown-body table': {
+            borderCollapse: 'collapse',
+            display: 'block',
+            width: 'fit-content',
+            maxWidth: '100%',
+            overflow: 'auto',
+            wordBreak: 'normal',
+            border: `1px solid ${mode === 'dark' ? muiGrey[500] : muiGrey[200]}`,
+            marginTop: '1rem',
+            marginBottom: '1rem',
+          },
+          '.markdown-body thead': {
+            backgroundColor: mode === 'dark' ? muiGrey[700] : muiGrey[300],
+            color: mode === 'dark' ? muiGrey[100] : muiGrey[900],
+          },
+          '.markdown-body th, .markdown-body td': {
+            padding: '8px 13px',
+            border: `1px solid ${mode === 'dark' ? muiGrey[500] : muiGrey[200]}`,
+            textAlign: 'left',
+          },
         },
       },
       MuiIconButton: {
@@ -229,7 +250,7 @@ export const getAppTheme = (mode: PaletteMode) => {
       MuiDialog: {
         styleOverrides: {
           paper: ({ theme }) => ({
-            backgroundColor: theme.palette.background.paper,
+            backgroundColor: theme.palette.background.default,
             borderRadius: 6,
           }),
         },

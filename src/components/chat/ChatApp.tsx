@@ -291,9 +291,6 @@ const ChatApp: React.FC = () => {
             <Typography variant="h5" component="h1" className="font-bold">
               Chatbot
             </Typography>
-            <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>
-              Current User: {$user?.name || 'Guest User'} {(!$user?.id && '(Guest Mode)') || ''}
-            </Typography>
           </div>
           <Button
             variant="contained"
