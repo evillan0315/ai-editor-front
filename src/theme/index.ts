@@ -133,12 +133,15 @@ export const getAppTheme = (mode: PaletteMode) => {
           },
           '.markdown-body pre > div': {
             backgroundColor: mode === 'dark' ? muiGrey[900] : muiGrey[50],
-            padding: '1rem'
+            padding: '1.2rem',
+            marginBottom: '1rem',
+            marginTop: '1rem'
           },
           '.markdown-body pre .language-btn': {
             backgroundColor: mode === 'dark' ? muiGrey[600] : muiGrey[700],
             color: mode === 'dark' ? muiGrey[100] : muiGrey[50],
-            padding: '.5rem'
+            marginTop: '1rem',
+            padding: '.2rem'
           },
           // Adjust CodeMirror gutter background for theme consistency
           '.cm-editor .cm-gutters': {
