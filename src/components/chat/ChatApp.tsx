@@ -8,15 +8,30 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import { useStore } from '@nanostores/react';
 import { authStore, user, getToken } from '@/stores/authStore';
-import { activeConversationId, setActiveConversationId, showVideoChat, setShowVideoChat } from '@/stores/conversationStore';
+import {
+  activeConversationId,
+  setActiveConversationId,
+  showVideoChat,
+  setShowVideoChat,
+  messages,
+  setMessages,
+  conversationLoading, // NEW: Import conversationLoading atom
+  setConversationLoading, // NEW: Import setConversationLoading function
+  conversationError, // NEW: Import conversationError atom
+  setConversationError, // NEW: Import setConversationError function
+  isHistoryLoading, // NEW: Import isHistoryLoading atom
+  setIsHistoryLoading, // NEW: Import setIsHistoryLoading function
+  historyError, // NEW: Import historyError atom
+  setHistoryError, // NEW: Import setHistoryError function
+} from '@/components/chat/stores/conversationStore';
 import { motion, AnimatePresence } from 'framer-motion'; // Import framer-motion
 
 import { chatSocketService } from './chatSocketService';
-import { Message, SendMessageDto, Sender } from './types'; // Import Sender enum
+import { Message, SendMessageDto, Sender } from './types'; // Import Sender enum and Message type
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import VideoChatComponent from './VideoChatComponent';
-import { conversationApi } from '@/api/conversation'; // Import the new API service
+import { chatApi } from '@/components/chat/api/chat'; // UPDATED: Import the new chat API service
 
 // Bot User ID (remains constant for client-side display)
 const BOT_USER_ID = 'user-bot';
@@ -39,43 +54,43 @@ const ChatApp: React.FC = () => {
   const $user = useStore(user);
   const $activeConversationId = useStore(activeConversationId);
   const $showVideoChat = useStore(showVideoChat);
+  const $messages = useStore(messages); // Use nanostore for messages
+  // NEW: Consume loading and error states from nanostore
+  const $conversationLoading = useStore(conversationLoading);
+  const $conversationError = useStore(conversationError);
+  const $isHistoryLoading = useStore(isHistoryLoading);
+  const $historyError = useStore(historyError);
+
   const theme = useTheme();
   const token = getToken();
   const currentUserActualId = $user?.id || 'guest-user';
-
-  const [messages, setMessages] = useState<Message[]>([]); // messages now fully managed here, including history
-  const [conversationLoading, setConversationLoading] = useState(false);
-  const [conversationError, setConversationError] = useState<string | null>(null);
-  const [isHistoryLoading, setIsHistoryLoading] = useState(true); // New state for history loading
-  const [historyError, setHistoryError] = useState<string | null>(null); // New state for history error
 
   // Effect to create or retrieve a conversation ID on component mount
   useEffect(() => {
     const initializeConversation = async () => {
       // Only initialize if logged in, user ID is available, and no active conversation is set
       if ($auth.isLoggedIn && $user?.id && !$activeConversationId) {
-        setConversationLoading(true);
-        setConversationError(null);
+        setConversationLoading(true); // Use nanostore setter
+        setConversationError(null); // Use nanostore setter
         try {
           if (!token) {
             throw new Error('Authentication token not available.');
           }
-          // Create a new conversation on the backend
-          const newConversation = await conversationApi.createConversation(
+          // Create a new conversation on the backend using the refactored chatApi
+          const newConversation = await chatApi.createConversation(
             {
               title: `Chat Session - ${new Date().toLocaleString()}`,
               createdById: $user.id,
             },
-            token,
           );
           setActiveConversationId(newConversation.id);
           console.log('New conversation created:', newConversation.id);
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to create conversation.';
-          setConversationError(errorMessage);
+          setConversationError(errorMessage); // Use nanostore setter
           console.error('Error creating conversation:', err);
         } finally {
-          setConversationLoading(false);
+          setConversationLoading(false); // Use nanostore setter
         }
       }
     };
@@ -97,8 +112,8 @@ const ChatApp: React.FC = () => {
   // Effect to connect/disconnect chat socket and listen for messages and history
   useEffect(() => {
     if ($auth.isLoggedIn && $user?.id && $activeConversationId) {
-      setIsHistoryLoading(true);
-      setHistoryError(null);
+      setIsHistoryLoading(true); // Use nanostore setter
+      setHistoryError(null); // Use nanostore setter
 
       // Attempt to connect to the chat socket
       chatSocketService.connect(token)
@@ -110,8 +125,8 @@ const ChatApp: React.FC = () => {
           // Listen for conversation history once and populate messages
           chatSocketService.on('conversation_history', (history: Message[]) => {
             console.log('Conversation history received:', history);
-            setMessages(history);
-            setIsHistoryLoading(false);
+            setMessages(history); // Use nanostore setter
+            setIsHistoryLoading(false); // Use nanostore setter
 
             // Add initial bot welcome message if history is empty
             if (history.length === 0) {
@@ -130,12 +145,12 @@ const ChatApp: React.FC = () => {
         })
         .catch(err => {
           console.error('Failed to connect chat socket or fetch history:', err);
-          setHistoryError(err instanceof Error ? err.message : 'Failed to connect or load history.');
-          setIsHistoryLoading(false);
+          setHistoryError(err instanceof Error ? err.message : 'Failed to connect or load history.'); // Use nanostore setter
+          setIsHistoryLoading(false); // Use nanostore setter
         });
     }
 
-    // IMPORTANT: Remove chatSocketService.disconnect() from here. 
+    // IMPORTANT: Remove chatSocketService.disconnect() from here.
     // The chat socket should remain connected as long as the ChatApp is mounted and active conversation exists,
     // regardless of video chat state. Its lifecycle is tied to ChatApp, not VideoChatComponent.
     return () => {
@@ -155,7 +170,7 @@ const ChatApp: React.FC = () => {
   const handleSendMessage = (text: string, userId: string = currentUserActualId) => {
     if (!$activeConversationId) {
       console.warn('Cannot send message: No active conversation ID.');
-      setConversationError('No active conversation. Please wait or try again.');
+      setConversationError('No active conversation. Please wait or try again.'); // Use nanostore setter
       return;
     }
 
@@ -176,10 +191,15 @@ const ChatApp: React.FC = () => {
     };
 
     // Always add message to local state first for immediate display
-    //setMessages((prev) => [...prev, newMessage]);
+    // This is now handled by the `receive_message` listener that adds messages received from the server.
+    // For user-sent messages, they will be echoed by the server. For bot messages, they are also sent via websocket.
+    // The duplicate check in handleReceiveMessage will prevent adding the message twice.
+    // So, we don't need to manually set the message here for immediate display.
+    // If we wanted instant display before server echo, we'd add `setMessages((prev) => [...prev, newMessage]);` here.
+    // Keeping it commented out for now as the current duplicate prevention logic in handleReceiveMessage handles it.
 
     // Determine the actual userId to send to backend and the sender type for persistence
-    const backendUserId = currentUserActualId; // Use the authenticated user's actual ID
+    const backendUserId = currentUserActualId; // Use the authenticated user's ID for persistence
     let senderTypeForBackend: Sender;
 
     if (userId === BOT_USER_ID) {
@@ -208,12 +228,12 @@ const ChatApp: React.FC = () => {
   };
 
   // Show loading indicator while authentication status, conversation, or history is being determined
-  if ($auth.loading || conversationLoading || isHistoryLoading) {
+  if ($auth.loading || $conversationLoading || $isHistoryLoading) { // Use nanostore values
     return (
       <Box className="flex items-center justify-center h-full">
         <CircularProgress />
         <Typography variant="h6" ml={2}>
-          {isHistoryLoading ? 'Loading conversation history...' : (conversationLoading ? 'Starting conversation...' : 'Loading user data...')}
+          {$isHistoryLoading ? 'Loading conversation history...' : ($conversationLoading ? 'Starting conversation...' : 'Loading user data...')}
         </Typography>
       </Box>
     );
@@ -233,11 +253,11 @@ const ChatApp: React.FC = () => {
   }
 
   // Display authentication, conversation creation, or history error if one exists
-  if ($auth.error || conversationError || historyError) {
+  if ($auth.error || $conversationError || $historyError) { // Use nanostore values
     return (
       <Box className="flex items-center justify-center h-full p-4">
         <Typography variant="h6" color="error">
-          Error: {$auth.error || conversationError || historyError}
+          Error: {$auth.error || $conversationError || $historyError}
         </Typography>
       </Box>
     );
@@ -310,7 +330,7 @@ const ChatApp: React.FC = () => {
                 className="absolute inset-0 flex flex-col"
               >
                 {/* Message List Area */}
-                <MessageList messages={messages} currentUserId={currentUserActualId} />
+                <MessageList messages={$messages} currentUserId={currentUserActualId} />
 
                 {/* Message Input Area */}
                 <MessageInput onSendMessage={handleSendMessage} />
