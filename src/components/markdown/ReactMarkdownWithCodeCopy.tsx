@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import rehypeHighlight from 'rehype-highlight';
-import { Box, IconButton, Tooltip, Typography, useTheme } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography, useTheme, SxProps } from '@mui/material';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
 
 interface ReactMarkdownWithCodeCopyProps {
@@ -12,26 +12,48 @@ interface ReactMarkdownWithCodeCopyProps {
 }
 
 // Define consistent sx styles at the top for maintainability
-const codeBlockContainerSx = {
+const getCodeBlockContainerSx = (theme: ReturnType<typeof useTheme>): SxProps => ({
   position: 'relative',
-};
+  marginY: theme.spacing(2),
+  padding: theme.spacing(2),
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: theme.palette.codeBlockBackground,
+  border: `1px solid ${theme.palette.divider}`,
+  overflowX: 'auto',
+  whiteSpace: 'pre'
+});
 
-const getLanguageLabelSx = (theme: ReturnType<typeof useTheme>) => ({
+const getInlineCodeSx = (theme: ReturnType<typeof useTheme>): SxProps => ({
+  backgroundColor: theme.palette.inlineCodeBackground,
+  borderRadius: theme.shape.borderRadius / 2, // Equivalent to rounded-sm
+  paddingX: theme.spacing(0.5),
+  paddingY: theme.spacing(0.25),
+  fontFamily: 'monospace',
+  fontSize: theme.typography.body2.fontSize, // Equivalent to text-sm
+});
+
+const getBlockCodeSx = (theme: ReturnType<typeof useTheme>): SxProps => ({
+  display: 'block',
+  whiteSpace: 'pre',
+  fontSize: theme.typography.body2.fontSize,
+});
+
+const getLanguageLabelSx = (theme: ReturnType<typeof useTheme>): SxProps => ({
   position: 'absolute',
   top: theme.spacing(1),
-  left: theme.spacing(1.5),
+  right: theme.spacing(4),
   px: 1,
   py: 0.5,
   borderRadius: 1,
   backgroundColor: theme.palette.action.selected,
   color: theme.palette.text.secondary,
   fontSize: '0.75rem',
-  zIndex: 1,
+  zIndex: 40,
   opacity: 0.8,
   pointerEvents: 'none', // Prevent label from interfering with selection
 });
 
-const getCopyButtonSx = (theme: ReturnType<typeof useTheme>) => ({
+const getCopyButtonSx = (theme: ReturnType<typeof useTheme>): SxProps => ({
   position: 'absolute',
   top: theme.spacing(0.5),
   right: theme.spacing(0.5),
@@ -89,8 +111,8 @@ const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
 
           return (
             <Box
-              sx={codeBlockContainerSx} // Retain for 'position: relative' only
-              className="group my-4 rounded-md bg-gray-800 dark:bg-gray-900 p-4 overflow-x-auto"
+              sx={getCodeBlockContainerSx(theme)}
+              className="group" // Retain 'group' for Tailwind's group-hover utility
             >
               {language && (
                 <Typography variant="caption" sx={getLanguageLabelSx(theme)}>
@@ -120,7 +142,8 @@ const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
             return (
               <Box
                 component="code"
-                className="bg-gray-200 dark:bg-gray-700 rounded-sm px-1 py-0.5 font-mono text-sm"
+                sx={getInlineCodeSx(theme)}
+                {...props}
               >
                 {children}
               </Box>
@@ -128,10 +151,12 @@ const ReactMarkdownWithCodeCopy: React.FC<ReactMarkdownWithCodeCopyProps> = ({
           }
           // For block code, let ReactMarkdown render the <code> tag as it would normally,
           // ensuring rehypeHighlight can process it.
-          // Add Tailwind classes for block display, whitespace handling, and font size.
+          // Apply styles directly via sx.
           return (
             <code
-              className={`${className || ''} block whitespace-pre text-sm`}
+              className={`${className || ''}`}
+              style={{ color: theme.palette.text.primary }} // Ensure highlighted code text color matches primary text
+              sx={getBlockCodeSx(theme)}
               {...props}
             >
               {children}

@@ -60,6 +60,9 @@ export const getAppTheme = (mode: PaletteMode) => {
       },
       divider:
         mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+      // Custom colors for code blocks
+      codeBlockBackground: mode === 'dark' ? '#282c34' : '#f6f8fa',
+      inlineCodeBackground: mode === 'dark' ? '#424242' : '#e0e0e0',
     },
     typography: {
       fontFamily: ['Inter', 'sans-serif'].join(','),
@@ -205,7 +208,7 @@ export const getAppTheme = (mode: PaletteMode) => {
               width: '100%', // Tailwind w-full
               tableLayout: 'auto', // Tailwind table-auto
               borderCollapse: 'collapse',
-              fontSize: tailwindFontSize.sm, // Tailwind text-sm
+              fontSize: theme.typography.body2.fontSize, // Changed from tailwindFontSize.sm to theme.typography
               marginTop: theme.spacing(2), // Tailwind my-4 (16px)
               marginBottom: theme.spacing(2),
               border: `1px solid ${theme.palette.divider}`, // Retained from existing theme
