@@ -25,9 +25,7 @@
   background-color: var(--color-bg);
 }
 
-.markdown-body pre > div {
-  background-color: #000000;
-}
+
 .language-btn {
   @apply bg-sky-500;
 }

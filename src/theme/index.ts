@@ -1,4 +1,3 @@
-// src/theme/getAppTheme.ts
 import { createTheme, ThemeOptions } from '@mui/material/styles';
 import { PaletteMode } from '@mui/material';
 
@@ -68,14 +67,58 @@ export const getAppTheme = (mode: PaletteMode) => {
     },
     components: {
       MuiCssBaseline: {
-        styleOverrides: {
+        styleOverrides: (theme) => ({
           '.markdown-body': {
             backgroundColor: mode === 'dark' ? '#1d1d1d' : '#f5f5f5',
+
+            // Table styling
+            '& table': {
+              width: '100%',
+              borderCollapse: 'collapse',
+              marginBottom: theme.spacing(2),
+              border: `1px solid ${theme.palette.divider}`,
+            },
+            '& th, & td': {
+              border: `1px solid ${theme.palette.divider}`,
+              padding: theme.spacing(1),
+              textAlign: 'left',
+            },
+            '& th': {
+              backgroundColor: theme.palette.action.hover,
+            },
+
+            // Horizontal rule styling
+            '& hr': {
+              border: 'none',
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              margin: theme.spacing(3, 0),
+            },
+
+            // Preformatted text/code block styling
+            '& pre': {
+              backgroundColor: mode === 'dark' ? '#2d2d2d' : '#e8e8e8',
+              padding: theme.spacing(2),
+              borderRadius: theme.shape.borderRadius,
+              overflow: 'auto',
+              fontSize: '0.9em',
+              lineHeight: 1.5,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+            },
+
+            // Inline code styling
+            '& code': {
+              backgroundColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+              padding: '2px 4px',
+              borderRadius: '3px',
+              fontFamily: '"Fira Code", "Cascadia Code", monospace',
+              fontSize: '0.9em',
+            },
           },
-                    '.cm-editor .cm-gutters': {
+          '.cm-editor .cm-gutters': {
             backgroundColor: mode === 'dark' ? '#1d1d1d' : '#f5f5f5',
           },
-        },
+        }),
       },
       MuiIconButton: {
         styleOverrides: {
