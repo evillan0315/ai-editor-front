@@ -15,31 +15,31 @@ import { useTheme } from '@mui/material/styles';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CommitIcon from '@mui/icons-material/Commit';
 
-import { getCodeMirrorLanguage } from '@/utils';
-import {
-  gitCommit,
-  gitStageFiles,
-  gitUnstageFiles,
-  getGitStatus,
-  gitGetBranches,
-  gitCheckoutBranch,
-  gitCreateBranch,
-  gitDeleteBranch,
-  gitGetCommitLog,
-  gitCreateSnapshot,
-  gitRestoreSnapshot,
-  gitListSnapshots,
-  gitDeleteSnapshot,
-  gitUndoFileChanges,
-  gitRevertCommit,
-  gitResetHard,
-  getGitDiff
+import { 
+  getGitStatus, 
+  gitCommit, 
+  gitStageFiles, 
+  gitUnstageFiles, 
+  gitGetBranches, 
+  gitCheckoutBranch, 
+  gitCreateBranch, 
+  gitDeleteBranch, 
+  gitGetCommitLog, 
+  gitCreateSnapshot, 
+  gitRestoreSnapshot, 
+  gitListSnapshots, 
+  gitDeleteSnapshot, 
+  gitUndoFileChanges, 
+  gitRevertCommit, 
+  gitResetHard, 
+  getGitDiff 
 } from './api/git';
 
-import { gitStore, GitBranch, GitCommit, GitStatusResult, GitResetHardDtoFrontend } from './types/git';
+import { IGitBranch, IGitCommit, IGitStatusResult, IGitResetHardDtoFrontend } from './types/git';
 import { showGlobalSnackbar } from '@/stores/snackbarStore';
 import { themeStore } from '@/stores/themeStore';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
+import { gitStore } from './stores/gitStore';
 
 import { GitStatusSection } from './GitStatusSection';
 import { GitBranchesSection } from './GitBranchesSection';
@@ -128,10 +128,10 @@ export default function GitPage() {
   const [openDiffViewer, setOpenDiffViewer] = useState(false);
 
   const [fileContextMenu, setFileContextMenu] = useState<{ mouseX: number; mouseY: number; file: string } | null>(null);
-  const [branchContextMenu, setBranchContextMenu] = useState<{ mouseX: number; mouseY: number; branch: GitBranch } | null>(null);
+  const [branchContextMenu, setBranchContextMenu] = useState<{ mouseX: number; mouseY: number; branch: IGitBranch } | null>(null);
   const [commitMenuAnchorEl, setCommitMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [openCommitMenu, setOpenCommitMenu] = useState(false);
-  const [selectedCommitForMenu, setSelectedCommitForMenu] = useState<GitCommit | null>(null);
+  const [selectedCommitForMenu, setSelectedCommitForMenu] = useState<IGitCommit | null>(null);
   const [snapshotContextMenu, setSnapshotContextMenu] = useState<{ mouseX: number; mouseY: number; snapshot: string } | null>(null);
 
   const fetchAllGitData = useCallback(async () => {
@@ -296,7 +296,7 @@ export default function GitPage() {
     setOpenResetHardDialog(false);
     gitStore.setKey('loading', true);
     try {
-      const dto: GitResetHardDtoFrontend = { commitHash: resetHardCommitHash, projectRoot };
+      const dto: IGitResetHardDtoFrontend = { commitHash: resetHardCommitHash, projectRoot };
       await gitResetHard(dto);
       showGlobalSnackbar(`Repository reset hard to commit '${resetHardCommitHash}'`, 'success');
       setResetHardCommitHash('');
@@ -390,7 +390,7 @@ export default function GitPage() {
     );
   };
 
-  const handleBranchContextMenu = (event: React.MouseEvent, branch: GitBranch) => {
+  const handleBranchContextMenu = (event: React.MouseEvent, branch: IGitBranch) => {
     event.preventDefault();
     setBranchContextMenu(
       branchContextMenu === null
@@ -399,7 +399,7 @@ export default function GitPage() {
     );
   };
 
-  const handleCommitContextMenu = (event: React.MouseEvent, commit: GitCommit) => {
+  const handleCommitContextMenu = (event: React.MouseEvent, commit: IGitCommit) => {
     event.preventDefault();
     setCommitMenuAnchorEl(event.currentTarget as HTMLElement);
     setSelectedCommitForMenu(commit);

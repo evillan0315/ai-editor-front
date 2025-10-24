@@ -10,13 +10,13 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import CodeIcon from '@mui/icons-material/Code';
 import UndoIcon from '@mui/icons-material/Undo';
 
-import { GitStatusResult } from './types/git';
+import { IGitStatusResult } from './types/git';
 
 interface GitFileContextMenuProps {
   contextMenu: { mouseX: number; mouseY: number; file: string } | null;
   onClose: () => void;
   loading: boolean;
-  status: GitStatusResult | null;
+  status: IGitStatusResult | null;
   onViewDiff: (filePath: string) => Promise<void>;
   onStageFiles: (files?: string[]) => Promise<void>;
   onUnstageFiles: (files?: string[]) => Promise<void>;

@@ -8,10 +8,10 @@ import {
 import GitBranchIcon from '@mui/icons-material/CallSplit';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
-import { GitBranch } from './types/git';
+import { IGitBranch } from './types/git';
 
 interface GitBranchContextMenuProps {
-  contextMenu: { mouseX: number; mouseY: number; branch: GitBranch } | null;
+  contextMenu: { mouseX: number; mouseY: number; branch: IGitBranch } | null;
   onClose: () => void;
   loading: boolean;
   onCheckoutBranch: (branchName: string) => void;
