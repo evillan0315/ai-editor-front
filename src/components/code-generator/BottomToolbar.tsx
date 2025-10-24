@@ -16,7 +16,10 @@ import {
   Clear as ClearIcon,
   Save as SaveIcon,
   BugReport as BugReportIcon,
-  Check as CheckIcon // New import for the Confirm button
+  Check as CheckIcon,
+  Build as RepairIcon,
+  AutoAwesomeOutlined as AutoAwesomeOutlinedIcon,
+  DataObjectOutlined as DataObjectOutlinedIcon,
 } from '@mui/icons-material';
 import {
   setLastLlmResponse,
@@ -39,18 +42,21 @@ import {
   showGlobalSnackbar,
 } from '@/stores/aiEditorStore';
 import { useStore } from '@nanostores/react';
-import PromptGeneratorSettings from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
-import { ImportJson } from './drawerContent/ImportJson'; // Updated import path for ImportJson
+import { ImportJson } from './drawerContent/ImportJson';
 import { CodeGeneratorData } from './CodeGeneratorMain';
-import { RequestType } from '@/types/llm'; 
-import { GlobalAction } from '@/types/app'; // Import GlobalAction
+import { RequestType } from '@/types/llm';
+import { GlobalAction } from '@/types/app';
 
 // New import for the refactored ScanPathsDrawer
 import ScanPathsDrawer from '@/components/code-generator/drawerContent/ScanPathsDrawer';
 // New import for the refactored DirectoryPickerDrawer
 import DirectoryPickerDrawer from '@/components/code-generator/drawerContent/DirectoryPickerDrawer';
+// New import for the refactored InstructionEditorDrawer
+import InstructionEditorDrawer from '@/components/code-generator/drawerContent/InstructionEditorDrawer';
+// New import for the relocated PromptGeneratorSettings
+import PromptGeneratorSettings from '@/components/code-generator/drawerContent/PromptGeneratorSettings';
 
 interface BottomToolbarProps {
   scanPathAutocompleteOptions: string[];
@@ -61,8 +67,8 @@ interface BottomToolbarProps {
 
   isImportDialogOpen: boolean;
   setIsImportDialogOpen: (open: boolean) => void;
-  isSettingsOpen: boolean;
-  setIsSettingsOpen: (open: boolean) => void;
+  // isSettingsOpen: boolean; // REMOVED: Managed internally for PromptGeneratorSettings drawer
+  // setIsSettingsOpen: (open: boolean) => void; // REMOVED: Managed internally for PromptGeneratorSettings drawer
   isProjectRootPickerDialogOpen: boolean;
   setIsProjectRootPickerDialogOpen: (open: boolean) => void;
   isScanPathsDialogOpen: boolean;
@@ -83,8 +89,8 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   isImportDialogOpen,
   setIsImportDialogOpen,
-  isSettingsOpen,
-  setIsSettingsOpen,
+  // isSettingsOpen, // REMOVED
+  // setIsSettingsOpen, // REMOVED
   isProjectRootPickerDialogOpen,
   setIsProjectRootPickerDialogOpen,
   isScanPathsDialogOpen,
@@ -103,6 +109,12 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   // New local state to hold changes made within the ScanPathsDrawer before confirming
   const [localScanPaths, setLocalScanPaths] = useState<string[]>(currentScanPathsArray);
+  // New states for the InstructionEditorDrawer
+  const [isAiInstructionDrawerOpen, setIsAiInstructionDrawerOpen] = useState(false);
+  const [isExpectedOutputInstructionDrawerOpen, setIsExpectedOutputInstructionDrawerOpen] = useState(false);
+
+  // New state for the PromptGeneratorSettingsDrawer
+  const [isPromptGeneratorSettingsDrawerOpen, setIsPromptGeneratorSettingsDrawerOpen] = useState(false);
 
   // Sync localScanPaths with currentScanPathsArray when the drawer is opened or parent changes it
   useEffect(() => {
@@ -118,11 +130,29 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   const handleImport = useCallback(() => {
     try {
-      const parsedData: CodeGeneratorData = JSON.parse(importContentString);
-      setLastLlmResponse(parsedData as any); // Type assertion needed due to partial match with ModelResponse
-      // If the parsed data includes a rawResponse, also update the main LLM response editor
-      if (parsedData.rawResponse) {
-        setLlmResponse(parsedData.rawResponse);
+      const parsedData: unknown = JSON.parse(importContentString);
+
+      // Attempt to treat it as a full ModelResponse (CodeGeneratorData)
+      // Check for key properties of CodeGeneratorData
+      if (
+        typeof parsedData === 'object' &&
+        parsedData !== null &&
+        'title' in parsedData && typeof (parsedData as CodeGeneratorData).title === 'string' &&
+        'summary' in parsedData && typeof (parsedData as CodeGeneratorData).summary === 'string' &&
+        'changes' in parsedData && Array.isArray((parsedData as CodeGeneratorData).changes)
+      ) {
+        setLastLlmResponse(parsedData as CodeGeneratorData);
+        // If it also contains rawResponse, use that for the editor
+        if ('rawResponse' in parsedData && typeof (parsedData as { rawResponse: string }).rawResponse === 'string') {
+          setLlmResponse((parsedData as { rawResponse: string }).rawResponse);
+        } else {
+          // If it's a structured response but no rawResponse, use the stringified version
+          setLlmResponse(JSON.stringify(parsedData, null, 2));
+        }
+      } else {
+        // If it's not a full ModelResponse, treat it as raw JSON content for the editor
+        setLlmResponse(JSON.stringify(parsedData, null, 2));
+        setLastLlmResponse(null); // Clear previous structured response if this is raw content
       }
       showGlobalSnackbar('Data imported successfully!', 'success');
       setIsImportDialogOpen(false);
@@ -134,20 +164,26 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
     }
   }, [importContentString, setIsImportDialogOpen]);
 
-  const GlobalActionButtons: GlobalAction[] = [
-    { label: 'Cancel', action: () => setIsSettingsOpen(false), icon: <ClearIcon />, color: 'text', variant: 'outlined' },
-    { label: 'Save', action: handleSave, icon: <SaveIcon />, color: 'primary',
-      variant: 'contained', },
-  ];
-  const ImportDataAction: GlobalAction[] = [
-    { 
-      label: 'Cancel', 
-      action: () => setIsImportDialogOpen(false), 
+  // GlobalAction for PromptGeneratorSettingsDrawer footer
+  const PromptGeneratorSettingsDrawerActions: GlobalAction[] = [
+    {
+      label: 'Close',
+      action: () => setIsPromptGeneratorSettingsDrawerOpen(false),
       icon: <ClearIcon />,
       color: 'text',
       variant: 'outlined'
     },
-    { 
+  ];
+
+  const ImportDataAction: GlobalAction[] = [
+    {
+      label: 'Cancel',
+      action: () => setIsImportDialogOpen(false),
+      icon: <ClearIcon />,
+      color: 'text',
+      variant: 'outlined'
+    },
+    {
       label: 'Import',
       action: handleImport,
       icon: <CloudUploadIcon />,
@@ -159,14 +195,14 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   // Action buttons for the ScanPathsDrawer
   const ScanPathsDrawerActions: GlobalAction[] = [
-    { 
-    label: 'Cancel', 
+    {
+    label: 'Cancel',
     color: 'text',
     variant: 'outlined',
-    action: () => setIsScanPathsDialogOpen(false), 
-    icon: <ClearIcon /> 
-    },    
-    { 
+    action: () => setIsScanPathsDialogOpen(false),
+    icon: <ClearIcon />
+    },
+    {
       label: 'Confirm',
       color: 'primary',
       variant: 'contained',
@@ -176,21 +212,21 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         showGlobalSnackbar('Scan paths updated successfully!', 'success');
       },
       icon: <CheckIcon />,
-      disabled: false, // Potentially disable if no paths are selected, or if localScanPaths is empty. Depends on desired UX.
+      disabled: false,
     },
   ];
 
   // Action buttons for the DirectoryPickerDrawer
   const DirectoryPickerDrawerActions: GlobalAction[] = [
-    { 
-      label: 'Cancel', 
+    {
+      label: 'Cancel',
       color: 'text',
       variant: 'outlined',
-      action: () => setIsProjectRootPickerDialogOpen(false), 
-      icon: <ClearIcon /> 
+      action: () => setIsProjectRootPickerDialogOpen(false),
+      icon: <ClearIcon />
     },
     {
-      label: 'Select', 
+      label: 'Select',
       color: 'primary',
       variant: 'contained',
       action: (path) => {
@@ -199,12 +235,22 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         setIsProjectRootPickerDialogOpen(false);
       },
       icon: <CheckIcon />,
-      disabled: false, 
+      disabled: false,
     },
   ];
 
-  // Callback for CodeRepair to 'export' its content to the ImportJson drawer
-  // Removed onOpenImportDrawerWithContent prop from CodeRepair
+  // Action buttons for the CodeRepair drawer, including an "Import Data" button
+  const CodeRepairActions: GlobalAction[] = [
+    { label: 'Cancel', action: toggleCodeRepair, icon: <ClearIcon />, color: 'text', variant: 'outlined' },
+    {
+      label: 'Import Data',
+      action: () => setIsImportDialogOpen(true),
+      icon: <CloudUploadIcon />,
+      color: 'secondary',
+      variant: 'outlined'
+    },
+    { label: 'Repair', action: handleSave, icon: <RepairIcon />, color: 'primary', variant: 'contained' },
+  ];
 
   return (
     <Box className="flex items-center justify-between gap-2 ">
@@ -212,7 +258,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         <Tooltip title="Prompt generator settings" aria-label="Prompt generator settings">
           <IconButton
             color="primary"
-            onClick={() => setIsSettingsOpen(true)}
+            onClick={() => setIsPromptGeneratorSettingsDrawerOpen(true)} // Open the new drawer
             aria-label="open prompt generator settings"
           >
             <SettingsIcon />
@@ -249,6 +295,26 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           </IconButton>
         </Tooltip>
 
+        {/* New buttons for InstructionEditorDrawer (can be kept as separate drawers) 
+        <Tooltip title="Edit AI Instructions" aria-label="Edit AI Instructions">
+          <IconButton
+            color="primary"
+            onClick={() => setIsAiInstructionDrawerOpen(true)}
+            aria-label="edit ai instructions"
+          >
+            <AutoAwesomeOutlinedIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Edit Expected Output Instructions" aria-label="Edit Expected Output Instructions">
+          <IconButton
+            color="primary"
+            onClick={() => setIsExpectedOutputInstructionDrawerOpen(true)}
+            aria-label="edit expected output instructions"
+          >
+            <DataObjectOutlinedIcon />
+          </IconButton>
+        </Tooltip>
+       */}
         {requestType === RequestType.LLM_GENERATION && (
           <Tooltip
             title="Import prompt data from JSON file"
@@ -301,6 +367,19 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         </Box>
       )}
       {/* Dialogs */}
+      {/* PromptGeneratorSettings now wrapped in CustomDrawer */}
+      <CustomDrawer
+        open={isPromptGeneratorSettingsDrawerOpen}
+        onClose={() => setIsPromptGeneratorSettingsDrawerOpen(false)}
+        position="right"
+        size="medium"
+        title="Prompt Generator Settings"
+        hasBackdrop={false}
+        footerActionButton={PromptGeneratorSettingsDrawerActions}
+      >
+        <PromptGeneratorSettings />
+      </CustomDrawer>
+
       {/* ScanPathsDrawer now wrapped in CustomDrawer */}
       <CustomDrawer
         open={isScanPathsDialogOpen}
@@ -309,13 +388,13 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         size="normal"
         title="Manage Scan Paths"
         hasBackdrop={false}
-        footerActionButton={ScanPathsDrawerActions} // Pass the new actions
+        footerActionButton={ScanPathsDrawerActions}
       >
         <ScanPathsDrawer
-          currentScanPaths={currentScanPathsArray} // Initial paths from store
+          currentScanPaths={currentScanPathsArray}
           availablePaths={scanPathAutocompleteOptions}
           allowExternalPaths
-          onLocalPathsChange={setLocalScanPaths} // Update local state here
+          onLocalPathsChange={setLocalScanPaths}
         />
       </CustomDrawer>
 
@@ -327,13 +406,13 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         size="normal"
         title="Select Project Root Folder"
         hasBackdrop={false}
-        footerActionButton={DirectoryPickerDrawerActions} // Pass the new actions
+        footerActionButton={DirectoryPickerDrawerActions}
       >
         <DirectoryPickerDrawer
           onSelect={(path) => {
             setCurrentProjectPath(path);
             handleLoadProject();
-            setIsProjectRootPickerDialogOpen(false); // Close drawer after selection
+            setIsProjectRootPickerDialogOpen(false);
           }}
           onClose={() => setIsProjectRootPickerDialogOpen(false)}
           initialPath={projectInput || '/'}
@@ -353,24 +432,13 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         <ImportJson value={importContentString} onChange={setImportContentString} />
       </CustomDrawer>
       <CustomDrawer
-        open={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        position="left"
-        size="medium"
-        title="Prompt Generator Settings"
-        hasBackdrop={true}
-        footerActionButton={GlobalActionButtons}
-      >
-        <PromptGeneratorSettings open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-      </CustomDrawer>
-      <CustomDrawer
         open={isCodeRepairOpen}
         onClose={() => setIsCodeRepairOpen(false)}
-        position="right"
+        position="left"
         size="medium"
         title="Code Repair"
-        hasBackdrop={false}
-        footerActionButton={GlobalActionButtons}
+        hasBackdrop={true}
+        footerActionButton={CodeRepairActions}
       >
         <CodeRepair
           value={response || ''}
@@ -379,6 +447,19 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           height="100%"
         />
       </CustomDrawer>
+
+      {/* New InstructionEditorDrawer instances 
+      <InstructionEditorDrawer
+        open={isAiInstructionDrawerOpen}
+        onClose={() => setIsAiInstructionDrawerOpen(false)}
+        type="ai"
+      />
+      <InstructionEditorDrawer
+        open={isExpectedOutputInstructionDrawerOpen}
+        onClose={() => setIsExpectedOutputInstructionDrawerOpen(false)}
+        type="expected"
+      />
+      */}
     </Box>
   );
 };
