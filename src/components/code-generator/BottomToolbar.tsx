@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Tooltip,
@@ -114,6 +114,9 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   useEffect(() => {
     if (isScanPathsDialogOpen) {
       setLocalScanPaths(currentScanPathsArray);
+    } else {
+      // Reset local state when drawer closes to reflect true store state if parent updated it
+      setLocalScanPaths(currentScanPathsArray);
     }
   }, [isScanPathsDialogOpen, currentScanPathsArray]);
 
@@ -173,7 +176,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
     },
   ];
 
-  const ImportDataAction: GlobalAction[] = [
+  const ImportDataActions = useMemo<GlobalAction[]>(() => [
     {
       label: 'Cancel',
       action: () => setIsImportDialogOpen(false),
@@ -189,7 +192,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       variant: 'contained',
       disabled: !importContentString, // Disable if no content to import
     },
-  ];
+  ], [handleImport, importContentString, setIsImportDialogOpen]);
 
   // Action buttons for the ScanPathsDrawer
   const ScanPathsDrawerActions: GlobalAction[] = [
@@ -248,7 +251,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       color: 'secondary',
       variant: 'outlined'
     },
-    { label: 'Repair', action: handleSave, icon: <RepairIcon />, color: 'primary', variant: 'contained' },
+    { label: 'Repair', action: () => setLastLlmResponse(), icon: <RepairIcon />, color: 'primary', variant: 'contained' },
   ];
 
   return (
@@ -409,7 +412,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         size="medium"
         title="Import Data"
         hasBackdrop={true}
-        footerActionButton={ImportDataAction}
+        footerActionButton={ImportDataActions}
       >
         <ImportJson value={importContentString} onChange={setImportContentString} />
       </CustomDrawer>
