@@ -116,6 +116,9 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   // New state for the PromptGeneratorSettingsDrawer
   const [isPromptGeneratorSettingsDrawerOpen, setIsPromptGeneratorSettingsDrawerOpen] = useState(false);
 
+  // New state to hold the currently browsed path in DirectoryPickerDrawer
+  const [selectedDirectoryPathForDrawer, setSelectedDirectoryPathForDrawer] = useState<string>(projectInput || '/');
+
   // Sync localScanPaths with currentScanPathsArray when the drawer is opened or parent changes it
   useEffect(() => {
     if (isScanPathsDialogOpen) {
@@ -123,6 +126,10 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
     }
   }, [isScanPathsDialogOpen, currentScanPathsArray]);
 
+  // Sync selectedDirectoryPathForDrawer with projectInput if projectInput changes externally
+  useEffect(() => {
+    setSelectedDirectoryPathForDrawer(projectInput || '/');
+  }, [projectInput]);
 
   const toggleCodeRepair = useCallback(() => {
     setIsCodeRepairOpen((open) => !open);
@@ -229,13 +236,14 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       label: 'Select',
       color: 'primary',
       variant: 'contained',
-      action: (path) => {
-        setCurrentProjectPath(path);
+      action: () => {
+        // This action uses the path actively browsed/selected in the drawer
+        setCurrentProjectPath(selectedDirectoryPathForDrawer);
         handleLoadProject();
         setIsProjectRootPickerDialogOpen(false);
       },
       icon: <CheckIcon />,
-      disabled: false,
+      disabled: !selectedDirectoryPathForDrawer, // Disable if no path is selected
     },
   ];
 
@@ -371,10 +379,10 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       <CustomDrawer
         open={isPromptGeneratorSettingsDrawerOpen}
         onClose={() => setIsPromptGeneratorSettingsDrawerOpen(false)}
-        position="right"
+        position="left"
         size="medium"
         title="Prompt Generator Settings"
-        hasBackdrop={false}
+        hasBackdrop={true}
         footerActionButton={PromptGeneratorSettingsDrawerActions}
       >
         <PromptGeneratorSettings />
@@ -410,6 +418,8 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       >
         <DirectoryPickerDrawer
           onSelect={(path) => {
+            // This onSelect is now only for direct selection inside drawer if an internal button called it
+            // but for external footer, we rely on onPathUpdate
             setCurrentProjectPath(path);
             handleLoadProject();
             setIsProjectRootPickerDialogOpen(false);
@@ -417,6 +427,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           onClose={() => setIsProjectRootPickerDialogOpen(false)}
           initialPath={projectInput || '/'}
           allowExternalPaths
+          onPathUpdate={setSelectedDirectoryPathForDrawer} // Pass the new callback
         />
       </CustomDrawer>
 
