@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   Box,
   Tooltip,
@@ -14,18 +14,17 @@ import {
   CloudUpload as CloudUploadIcon,
   Settings as SettingsIcon,
   Clear as ClearIcon,
-  Close as CloseIcon,
   Save as SaveIcon,
-  BugReport as BugReportIcon
+  BugReport as BugReportIcon,
+  Check as CheckIcon // New import for the Confirm button
 } from '@mui/icons-material';
 import {
-  setScanPathsInput,
   setLastLlmResponse,
   setCurrentDiff,
   setIsBuilding,
   llmStore,
   setLlmResponse,
-  clearLlmStore
+  clearLlmStore,
 } from '@/stores/llmStore';
 import {
   loadInitialTree,
@@ -33,11 +32,14 @@ import {
   setCurrentProjectPath,
 } from '@/stores/fileTreeStore';
 import { addLog } from '@/stores/logStore';
-import { errorStore, setErrorRaw } from '@/stores/errorStore';
-import { autoApplyChanges, setAutoApplyChanges, showGlobalSnackbar } from '@/stores/aiEditorStore';
+import { setErrorRaw } from '@/stores/errorStore';
+import {
+  autoApplyChanges,
+  setAutoApplyChanges,
+  showGlobalSnackbar,
+} from '@/stores/aiEditorStore';
 import { useStore } from '@nanostores/react';
 import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
-import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
 import PromptGeneratorSettings, {
   type GlobalAction,
 } from '@/components/Drawer/PromptGeneratorSettings';
@@ -47,9 +49,12 @@ import { ImportJson } from './ImportJson';
 import { CodeGeneratorData } from './CodeGeneratorMain';
 import { RequestType } from '@/types/llm';
 
+// New import for the refactored ScanPathsDrawer
+import ScanPathsDrawer from '@/components/code-generator/drawerContent/ScanPathsDrawer';
+
 interface BottomToolbarProps {
   scanPathAutocompleteOptions: string[];
-  currentScanPathsArray: string[];
+  currentScanPathsArray: string[]; // Current paths from llmStore
   projectInput: string;
   setProjectInput: (value: string) => void;
   handleLoadProject: () => void;
@@ -63,9 +68,9 @@ interface BottomToolbarProps {
   isScanPathsDialogOpen: boolean;
   setIsScanPathsDialogOpen: (open: boolean) => void;
 
-  updateScanPaths: (paths: string[]) => void;
+  updateScanPaths: (paths: string[]) => void; // Function to update the llmStore.scanPathsInput
   requestType: RequestType;
-  handleSave: () => void; // Add handleSave prop
+  handleSave: () => void;
   commonDisabled?: boolean;
 }
 
@@ -85,16 +90,27 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   isScanPathsDialogOpen,
   setIsScanPathsDialogOpen,
 
-  updateScanPaths,
+  updateScanPaths, // This now updates the llmStore
   requestType,
-  handleSave, // Receive handleSave
-  commonDisabled
+  handleSave,
+  commonDisabled,
 }) => {
   const theme = useTheme();
   const $autoApplyChanges = useStore(autoApplyChanges);
   const [importContentString, setImportContentString] = useState<string>('');
   const [isCodeRepairOpen, setIsCodeRepairOpen] = useState(false);
   const { response } = useStore(llmStore);
+
+  // New local state to hold changes made within the ScanPathsDrawer before confirming
+  const [localScanPaths, setLocalScanPaths] = useState<string[]>(currentScanPathsArray);
+
+  // Sync localScanPaths with currentScanPathsArray when the drawer is opened or parent changes it
+  useEffect(() => {
+    if (isScanPathsDialogOpen) {
+      setLocalScanPaths(currentScanPathsArray);
+    }
+  }, [isScanPathsDialogOpen, currentScanPathsArray]);
+
 
   const toggleCodeRepair = useCallback(() => {
     setIsCodeRepairOpen((open) => !open);
@@ -117,79 +133,110 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       showGlobalSnackbar(msg, 'error');
     }
   }, [importContentString, setIsImportDialogOpen]);
+
   const GlobalActionButtons: GlobalAction[] = [
     {
       label: 'Cancel',
       action: () => setIsSettingsOpen(false),
-      icon: CloseIcon,
+      icon: <ClearIcon />,
     },
-    { label: 'Save', action: handleSave, icon: SaveIcon },
+    { label: 'Save', action: handleSave, icon: <SaveIcon /> },
   ];
   const ImportDataAction: GlobalAction[] = [
     {
       label: 'Cancel',
       action: () => setIsImportDialogOpen(false),
-      icon: CloseIcon,
+      icon: <ClearIcon />,
     },
     {
       label: 'Import',
       action: handleImport,
-      icon: CloudUploadIcon,
+      icon: <CloudUploadIcon />,
       disabled: !importContentString, // Disable if no content to import
     },
-  ]; 
+  ];
+
+  // Action buttons for the ScanPathsDrawer
+  const ScanPathsDrawerActions: GlobalAction[] = [
+    {
+      label: 'Cancel',
+      action: () => setIsScanPathsDialogOpen(false),
+      icon: <ClearIcon />,
+    },
+    {
+      label: 'Confirm',
+      action: () => {
+        updateScanPaths(localScanPaths); // Commit changes from local state to store
+        setIsScanPathsDialogOpen(false);
+        showGlobalSnackbar('Scan paths updated successfully!', 'success');
+      },
+      icon: <CheckIcon />,
+      disabled: false, // Potentially disable if no paths are selected, or if localScanPaths is empty. Depends on desired UX.
+    },
+  ];
 
   // Callback for CodeRepair to 'export' its content to the ImportJson drawer
-  const handleExportToImportDrawer = useCallback((content: string) => {
-    setImportContentString(content);
-    setIsImportDialogOpen(true);
-    showGlobalSnackbar('Content loaded into Import Data drawer.', 'info');
-  }, [setIsImportDialogOpen]);
-  
+  const handleExportToImportDrawer = useCallback(
+    (content: string) => {
+      setImportContentString(content);
+      setIsImportDialogOpen(true);
+      showGlobalSnackbar('Content loaded into Import Data drawer.', 'info');
+    },
+    [setIsImportDialogOpen],
+  );
+
   return (
     <Box className="flex items-center justify-between gap-2 ">
       <Box className="flex flex-wrap gap-2 ">
-        <Tooltip title="Prompt generator settings">
-          <IconButton color="primary" onClick={() => setIsSettingsOpen(true)}>
+        <Tooltip title="Prompt generator settings" aria-label="Prompt generator settings">
+          <IconButton
+            color="primary"
+            onClick={() => setIsSettingsOpen(true)}
+            aria-label="open prompt generator settings"
+          >
             <SettingsIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Load the selected project">
+        <Tooltip title="Load the selected project" aria-label="Load the selected project">
           <IconButton
             color="primary"
             disabled={commonDisabled}
             onClick={handleLoadProject}
+            aria-label="load selected project"
           >
             <DriveFolderUploadIcon />
           </IconButton>
         </Tooltip>
 
-        <Tooltip title="Pick project root directory">
+        <Tooltip title="Pick project root directory" aria-label="Pick project root directory">
           <IconButton
             color="primary"
             onClick={() => setIsProjectRootPickerDialogOpen(true)}
+            aria-label="pick project root directory"
           >
             <FolderOpenIcon />
           </IconButton>
         </Tooltip>
 
-        <Tooltip title="Manage scan paths for the AI search">
+        <Tooltip title="Manage scan paths for the AI search" aria-label="Manage scan paths for the AI search">
           <IconButton
             color="primary"
             onClick={() => setIsScanPathsDialogOpen(true)}
+            aria-label="manage scan paths"
           >
             <AddRoadIcon />
           </IconButton>
         </Tooltip>
 
-        
-
-        
         {requestType === RequestType.LLM_GENERATION && (
-          <Tooltip title="Import prompt data from JSON file">
+          <Tooltip
+            title="Import prompt data from JSON file"
+            aria-label="Import prompt data from JSON file"
+          >
             <IconButton
               color="primary"
               onClick={() => setIsImportDialogOpen(true)}
+              aria-label="import json data"
             >
               <CloudUploadIcon />
             </IconButton>
@@ -198,17 +245,23 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       </Box>
       {requestType === RequestType.LLM_GENERATION && (
         <Box className="flex flex-wrap gap-0 ">
-          <Tooltip title="Toggle Code Repair Drawer">
-          <IconButton
-            color="primary"
-            onClick={toggleCodeRepair}
-            disabled={commonDisabled || !response}
-          >
-            <BugReportIcon />
-          </IconButton>
-        </Tooltip>
-          <Tooltip title="Clear editor and AI response">
-            <IconButton color="error" onClick={clearLlmStore} disabled={commonDisabled}>
+          <Tooltip title="Toggle Code Repair Drawer" aria-label="Toggle Code Repair Drawer">
+            <IconButton
+              color="primary"
+              onClick={toggleCodeRepair}
+              disabled={commonDisabled || !response}
+              aria-label="toggle code repair drawer"
+            >
+              <BugReportIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Clear editor and AI response" aria-label="Clear editor and AI response">
+            <IconButton
+              color="error"
+              onClick={clearLlmStore}
+              disabled={commonDisabled}
+              aria-label="clear editor and ai response"
+            >
               <ClearIcon />
             </IconButton>
           </Tooltip>
@@ -216,7 +269,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           <FormControlLabel
             control={
               <Switch
-                className='ml-2'
+                className="ml-2"
                 checked={$autoApplyChanges}
                 onChange={(e) => setAutoApplyChanges(e.target.checked)}
                 name="autoApply"
@@ -227,14 +280,24 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         </Box>
       )}
       {/* Dialogs */}
-      <ScanPathsDialog
+      {/* ScanPathsDrawer now wrapped in CustomDrawer */}
+      <CustomDrawer
         open={isScanPathsDialogOpen}
         onClose={() => setIsScanPathsDialogOpen(false)}
-        currentScanPaths={currentScanPathsArray}
-        availablePaths={scanPathAutocompleteOptions}
-        allowExternalPaths
-        onUpdatePaths={updateScanPaths}
-      />
+        position="left"
+        size="medium"
+        title="Manage Scan Paths"
+        hasBackdrop={false}
+        footerActionButton={ScanPathsDrawerActions} // Pass the new actions
+      >
+        <ScanPathsDrawer
+          currentScanPaths={currentScanPathsArray} // Initial paths from store
+          availablePaths={scanPathAutocompleteOptions}
+          allowExternalPaths
+          onLocalPathsChange={setLocalScanPaths} // Update local state here
+        />
+      </CustomDrawer>
+
       <DirectoryPickerDialog
         open={isProjectRootPickerDialogOpen}
         onClose={() => setIsProjectRootPickerDialogOpen(false)}
@@ -254,10 +317,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         hasBackdrop={true}
         footerActionButton={ImportDataAction}
       >
-      <ImportJson
-        value={importContentString}
-        onChange={setImportContentString}
-      />
+        <ImportJson value={importContentString} onChange={setImportContentString} />
       </CustomDrawer>
       <CustomDrawer
         open={isSettingsOpen}
@@ -268,10 +328,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         hasBackdrop={true}
         footerActionButton={GlobalActionButtons}
       >
-        <PromptGeneratorSettings
-          open={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-        />
+        <PromptGeneratorSettings open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       </CustomDrawer>
       <CustomDrawer
         open={isCodeRepairOpen}
@@ -286,7 +343,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           onChange={setLlmResponse}
           filePath="temp.json"
           height="100%"
-          onOpenImportDrawerWithContent={handleExportToImportDrawer} // Pass the callback
+          onOpenImportDrawerWithContent={handleExportToImportDrawer}
         />
       </CustomDrawer>
     </Box>

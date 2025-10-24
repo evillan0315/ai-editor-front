@@ -5,7 +5,7 @@ import { ButtonColor, ButtonVariant } from '@mui/material/Button';
 export interface GlobalAction {
   label: string;
   action: () => void;
-  icon?: React.ElementType;
+  icon?: React.ReactNode; // Changed from icon?: React.ElementType to allow ReactNode
   color?: ButtonColor;
   variant?: ButtonVariant;
   disabled?: boolean;
@@ -37,7 +37,7 @@ function GlobalActionButton({ globalActions, iconOnly=true }: GlobalActionButton
                 size="small" 
                 disabled={action.disabled}
                >
-                {action.icon ? <action.icon /> : null}
+                {action.icon ? action.icon : null}
               </IconButton>
             </Tooltip>
           ) : (
@@ -46,7 +46,7 @@ function GlobalActionButton({ globalActions, iconOnly=true }: GlobalActionButton
               onClick={action.action}
               color={action.color || 'primary'}
               variant={action.variant || 'contained'}
-              startIcon={action.icon ? <action.icon /> : null}
+              startIcon={action.icon || null} // Use startIcon directly
               disabled={action.disabled}
             >
               {action.label}
