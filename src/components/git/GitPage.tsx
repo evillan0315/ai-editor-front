@@ -9,7 +9,7 @@ import {
   Alert,
   Tabs,
   Tab,
-  Menu,
+  TextField,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -46,7 +46,6 @@ import { GitStatusSection } from './GitStatusSection';
 import { GitBranchesSection } from './GitBranchesSection';
 import { GitCommitsSection } from './GitCommitsSection';
 import { GitSnapshotsSection } from './GitSnapshotsSection';
-import { GitDialogs } from './GitDialogs';
 import { GitDiffViewerContent } from './GitDiffViewerContent';
 import { GitFileContextMenu } from './GitFileContextMenu';
 import { GitBranchContextMenu } from './GitBranchContextMenu';
@@ -103,6 +102,7 @@ export default function GitPage() {
   const projectRoot = useStore(projectRootDirectoryStore) || '/';
   const { status, branches, commits, snapshots, loading, error } = useStore(gitStore);
 
+  // Local states for dialog inputs
   const [commitMessage, setCommitMessage] = useState('');
   const [newBranchName, setNewBranchName] = useState('');
   const [checkoutBranchName, setCheckoutBranchName] = useState('');
@@ -111,21 +111,11 @@ export default function GitPage() {
   const [resetHardCommitHash, setResetHardCommitHash] = useState('');
   const [snapshotToDelete, setSnapshotToDelete] = useState<string | null>(null);
 
-  const [openCommitDialog, setOpenCommitDialog] = useState(false);
-  const [openBranchDialog, setOpenBranchDialog] = useState(false);
-  const [openCheckoutDialog, setOpenCheckoutDialog] = useState(false);
-  const [openSnapshotDialog, setOpenSnapshotDialog] = useState(false);
-  const [openRevertDialog, setOpenRevertDialog] = useState(false);
-  const [openResetHardDialog, setOpenResetHardDialog] = useState(false);
-  const [openRestoreSnapshotDialog, setOpenRestoreSnapshotDialog] = useState(false);
-  const [openDeleteSnapshotDialog, setOpenDeleteSnapshotDialog] = useState(false);
-
   const [activeTab, setActiveTab] = useState(0);
   const [selectedStagedFiles, setSelectedStagedFiles] = useState<string[]>([]);
   const [selectedUnstagedFiles, setSelectedUnstagedFiles] = useState<string[]>([]);
 
-  // Removed currentDiff, diffFilePath, openDiffViewer states
-
+  // Context menu states
   const [fileMenuAnchorEl, setFileMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [openFileMenu, setOpenFileMenu] = useState(false);
   const [selectedFileForMenu, setSelectedFileForMenu] = useState<string | null>(null);
@@ -206,8 +196,9 @@ export default function GitPage() {
       await getGitStatus(projectRoot);
     } catch (err: any) {
       showGlobalSnackbar(`Error staging files: ${err.message}`, 'error');
+    } finally {
+      gitStore.setKey('loading', false);
     }
-    gitStore.setKey('loading', false);
   };
 
   const handleUnstageSelected = async (filesToUnstage?: string[]) => {
@@ -221,13 +212,14 @@ export default function GitPage() {
       await getGitStatus(projectRoot);
     } catch (err: any) {
       showGlobalSnackbar(`Error unstaging files: ${err.message}`, 'error');
+    } finally {
+      gitStore.setKey('loading', false);
     }
-    gitStore.setKey('loading', false);
   };
 
   const handleCommit = async () => {
     if (!commitMessage.trim() || !projectRoot) return;
-    setOpenCommitDialog(false);
+    hideDialog(); // Close dialog before starting async operation
     gitStore.setKey('loading', true);
     try {
       await gitCommit(commitMessage, projectRoot);
@@ -243,7 +235,7 @@ export default function GitPage() {
 
   const handleCreateBranch = async () => {
     if (!newBranchName.trim() || !projectRoot) return;
-    setOpenBranchDialog(false);
+    hideDialog();
     gitStore.setKey('loading', true);
     try {
       await gitCreateBranch(newBranchName, projectRoot);
@@ -259,7 +251,7 @@ export default function GitPage() {
 
   const handleCheckoutBranch = async () => {
     if (!checkoutBranchName.trim() || !projectRoot) return;
-    setOpenCheckoutDialog(false);
+    hideDialog();
     gitStore.setKey('loading', true);
     try {
       await gitCheckoutBranch(checkoutBranchName, false, projectRoot);
@@ -275,7 +267,7 @@ export default function GitPage() {
 
   const handleDeleteBranch = async (branchName: string, force: boolean = false) => {
     if (!branchName || !projectRoot) return;
-    if (!window.confirm(`Are you sure you want to delete branch '${branchName}'? ${force ? '(Force delete)' : ''}`)) return;
+    hideDialog(); // Close confirm dialog
     gitStore.setKey('loading', true);
     try {
       await gitDeleteBranch(branchName, force, projectRoot);
@@ -290,7 +282,7 @@ export default function GitPage() {
 
   const handleRevertCommit = async () => {
     if (!revertCommitHash.trim() || !projectRoot) return;
-    setOpenRevertDialog(false);
+    hideDialog();
     gitStore.setKey('loading', true);
     try {
       await gitRevertCommit(revertCommitHash, projectRoot);
@@ -306,7 +298,7 @@ export default function GitPage() {
 
   const handleGitResetHard = async () => {
     if (!resetHardCommitHash.trim() || !projectRoot) return;
-    setOpenResetHardDialog(false);
+    hideDialog();
     gitStore.setKey('loading', true);
     try {
       const dto: IGitResetHardDtoFrontend = { commitHash: resetHardCommitHash, projectRoot };
@@ -323,7 +315,7 @@ export default function GitPage() {
 
   const handleUndoFileChanges = async (filePath: string) => {
     if (!filePath || !projectRoot) return;
-    if (!window.confirm(`Are you sure you want to discard changes in '${filePath}'? This cannot be undone.`)) return;
+    hideDialog();
     gitStore.setKey('loading', true);
     try {
       await gitUndoFileChanges(filePath, projectRoot);
@@ -338,7 +330,7 @@ export default function GitPage() {
 
   const handleCreateSnapshot = async () => {
     if (!snapshotName.trim() || !projectRoot) return;
-    setOpenSnapshotDialog(false);
+    hideDialog();
     gitStore.setKey('loading', true);
     try {
       await gitCreateSnapshot(snapshotName, `Snapshot created by Codejector: ${snapshotName}`, projectRoot);
@@ -354,8 +346,7 @@ export default function GitPage() {
 
   const handleRestoreSnapshot = async (name: string) => {
     if (!name || !projectRoot) return;
-    setOpenRestoreSnapshotDialog(false);
-    if (!window.confirm(`Restoring snapshot '${name}' will revert your repository to that state. Are you sure?`)) return;
+    hideDialog();
     gitStore.setKey('loading', true);
     try {
       await gitRestoreSnapshot(name, projectRoot);
@@ -368,13 +359,13 @@ export default function GitPage() {
     }
   };
 
-  const handleDeleteSnapshot = async () => {
-    if (!snapshotToDelete || !projectRoot) return;
-    setOpenDeleteSnapshotDialog(false);
+  const handleDeleteSnapshot = async (snapshotName: string) => {
+    if (!snapshotName || !projectRoot) return;
+    hideDialog();
     gitStore.setKey('loading', true);
     try {
-      await gitDeleteSnapshot(snapshotToDelete, projectRoot);
-      showGlobalSnackbar(`Snapshot '${snapshotToDelete}' deleted`, 'success');
+      await gitDeleteSnapshot(snapshotName, projectRoot);
+      showGlobalSnackbar(`Snapshot '${snapshotName}' deleted`, 'success');
       setSnapshotToDelete(null);
       await fetchAllGitData();
     } catch (err: any) {
@@ -420,8 +411,268 @@ export default function GitPage() {
     });
     // The loading for the initial fetch is already handled by gitStore.setKey('loading', true) at the start
     // The dialog's content itself will not show a loading spinner, as the content is only rendered after diffContent is available.
-    gitStore.setKey('loading', false); // Turn off loading once dialog is shown with content
+    // gitStore.setKey('loading', false); // Turn off loading once dialog is shown with content -- no need, as it's handled in the onClose of showDialog for consistency
   };
+
+  // Dialog opener functions
+  const handleOpenCommitDialog = () => {
+    showDialog({
+      title: 'Commit Changes',
+      content: (
+        <Box className="p-4">
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Commit Message"
+          type="text"
+          fullWidth
+          variant="outlined"
+          value={commitMessage}
+          onChange={(e) => setCommitMessage(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !loading && commitMessage.trim()) handleCommit(); }}
+          disabled={loading}
+        />
+        </Box>
+      ),
+      actions: (
+        <>
+          <Button onClick={hideDialog} disabled={loading}>Cancel</Button>
+          <Button onClick={handleCommit} disabled={!commitMessage.trim() || loading}>Commit</Button>
+        </>
+      ),
+      onClose: () => setCommitMessage(''), // Reset message on close
+      showCloseButton: true,
+    });
+  };
+
+  const handleOpenBranchDialog = () => {
+    showDialog({
+      title: 'Create New Branch',
+      content: (
+        <TextField
+          autoFocus
+          margin="dense"
+          label="New Branch Name"
+          type="text"
+          fullWidth
+          variant="outlined"
+          value={newBranchName}
+          onChange={(e) => setNewBranchName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !loading && newBranchName.trim()) handleCreateBranch(); }}
+          disabled={loading}
+        />
+      ),
+      actions: (
+        <>
+          <Button onClick={hideDialog} disabled={loading}>Cancel</Button>
+          <Button onClick={handleCreateBranch} disabled={!newBranchName.trim() || loading}>Create</Button>
+        </>
+      ),
+      onClose: () => setNewBranchName(''),
+      showCloseButton: true,
+    });
+  };
+
+  const handleOpenCheckoutDialog = (branchName: string | null = null) => {
+    if (branchName) setCheckoutBranchName(branchName); // Pre-fill if called from context menu
+    showDialog({
+      title: 'Checkout Branch',
+      content: (
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Branch Name to Checkout"
+          type="text"
+          fullWidth
+          variant="outlined"
+          value={branchName || checkoutBranchName} // Use passed name or current state
+          onChange={(e) => setCheckoutBranchName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !loading && (branchName || checkoutBranchName).trim()) handleCheckoutBranch(); }}
+          disabled={loading}
+        />
+      ),
+      actions: (
+        <>
+          <Button onClick={hideDialog} disabled={loading}>Cancel</Button>
+          <Button onClick={handleCheckoutBranch} disabled={!(branchName || checkoutBranchName).trim() || loading}>Checkout</Button>
+        </>
+      ),
+      onClose: () => setCheckoutBranchName(''),
+      showCloseButton: true,
+    });
+  };
+
+  const handleOpenDeleteBranchConfirmDialog = (branchName: string, force: boolean = false) => {
+    showDialog({
+      title: `Confirm Delete Branch: ${branchName}`,
+      content: (
+        <Typography>
+          Are you sure you want to delete branch '<b>{branchName}</b>'? {force ? '(Force delete - irreversible if unmerged)' : ''} This cannot be undone.
+        </Typography>
+      ),
+      actions: (
+        <>
+          <Button onClick={hideDialog} disabled={loading}>Cancel</Button>
+          <Button onClick={() => handleDeleteBranch(branchName, force)} color="error" disabled={loading}>
+            Delete {force ? 'Force' : ''}
+          </Button>
+        </>
+      ),
+      showCloseButton: true,
+      maxWidth: 'xs',
+    });
+  };
+
+  const handleOpenRevertDialog = (commitHash: string | null = null) => {
+    if (commitHash) setRevertCommitHash(commitHash);
+    showDialog({
+      title: 'Revert Commit',
+      content: (
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Commit Hash to Revert"
+          type="text"
+          fullWidth
+          variant="outlined"
+          value={commitHash || revertCommitHash}
+          onChange={(e) => setRevertCommitHash(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !loading && (commitHash || revertCommitHash).trim()) handleRevertCommit(); }}
+          disabled={loading}
+        />
+      ),
+      actions: (
+        <>
+          <Button onClick={hideDialog} disabled={loading}>Cancel</Button>
+          <Button onClick={handleRevertCommit} disabled={!(commitHash || revertCommitHash).trim() || loading}>Revert</Button>
+        </>
+      ),
+      onClose: () => setRevertCommitHash(''),
+      showCloseButton: true,
+    });
+  };
+
+  const handleOpenResetHardDialog = (commitHash: string | null = null) => {
+    if (commitHash) setResetHardCommitHash(commitHash);
+    showDialog({
+      title: 'Confirm Git Reset (Hard)',
+      content: (
+        <>
+          <Alert severity="error" className="mb-4">
+            WARNING: This will discard ALL uncommitted changes AND force the repository to the state of commit '{ (commitHash || resetHardCommitHash).substring(0, 7) }'. This action is irreversible. Are you absolutely sure?
+          </Alert>
+          <TextField
+            margin="dense"
+            label="Commit Hash (for confirmation)"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={commitHash || resetHardCommitHash}
+            InputProps={{ readOnly: true }}
+            disabled={loading}
+          />
+        </>
+      ),
+      actions: (
+        <>
+          <Button onClick={hideDialog} disabled={loading}>Cancel</Button>
+          <Button onClick={handleGitResetHard} color="error" disabled={!(commitHash || resetHardCommitHash).trim() || loading}>Reset Hard</Button>
+        </>
+      ),
+      onClose: () => setResetHardCommitHash(''),
+      showCloseButton: true,
+    });
+  };
+
+  const handleOpenDiscardChangesConfirmDialog = (filePath: string) => {
+    showDialog({
+      title: `Confirm Discard Changes`,
+      content: (
+        <Typography>
+          Are you sure you want to discard changes in '<b>{filePath}</b>'? This cannot be undone.
+        </Typography>
+      ),
+      actions: (
+        <>
+          <Button onClick={hideDialog} disabled={loading}>Cancel</Button>
+          <Button onClick={() => handleUndoFileChanges(filePath)} color="error" disabled={loading}>
+            Discard
+          </Button>
+        </>
+      ),
+      showCloseButton: true,
+      maxWidth: 'xs',
+    });
+  };
+
+  const handleOpenCreateSnapshotDialog = () => {
+    showDialog({
+      title: 'Create Repository Snapshot',
+      content: (
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Snapshot Name (e.g., 'pre-refactor')"
+          type="text"
+          fullWidth
+          variant="outlined"
+          value={snapshotName}
+          onChange={(e) => setSnapshotName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !loading && snapshotName.trim()) handleCreateSnapshot(); }}
+          disabled={loading}
+        />
+      ),
+      actions: (
+        <>
+          <Button onClick={hideDialog} disabled={loading}>Cancel</Button>
+          <Button onClick={handleCreateSnapshot} disabled={!snapshotName.trim() || loading}>Create</Button>
+        </>
+      ),
+      onClose: () => setSnapshotName(''),
+      showCloseButton: true,
+    });
+  };
+
+  const handleOpenRestoreSnapshotConfirmDialog = (name: string) => {
+    showDialog({
+      title: `Confirm Restore Snapshot: ${name}`,
+      content: (
+        <Typography>
+          Restoring snapshot '<b>{name}</b>' will revert your repository to that state. Are you sure?
+        </Typography>
+      ),
+      actions: (
+        <>
+          <Button onClick={hideDialog} disabled={loading}>Cancel</Button>
+          <Button onClick={() => handleRestoreSnapshot(name)} color="error" disabled={loading}>
+            Restore
+          </Button>
+        </>
+      ),
+      showCloseButton: true,
+      maxWidth: 'xs',
+    });
+  };
+
+  const handleOpenDeleteSnapshotConfirmDialog = (snapshot: string) => {
+    // setSnapshotToDelete(snapshot); // State for snapshotToDelete is not explicitly needed here, direct passing is fine.
+    showDialog({
+      title: 'Confirm Delete Snapshot',
+      content: (
+        <Typography>Are you sure you want to delete snapshot '<b>{snapshot}</b>'? This cannot be undone.</Typography>
+      ),
+      actions: (
+        <>
+          <Button onClick={hideDialog} disabled={loading}>Cancel</Button>
+          <Button onClick={() => handleDeleteSnapshot(snapshot)} color="error" disabled={loading}>Delete</Button>
+        </>
+      ),
+      onClose: () => setSnapshotToDelete(null),
+      showCloseButton: true,
+      maxWidth: 'xs',
+    });
+  };
+
 
   const handleFileContextMenu = (event: React.MouseEvent, file: string) => {
     event.preventDefault();
@@ -497,7 +748,7 @@ export default function GitPage() {
         <Button variant="contained" startIcon={<RefreshIcon />} onClick={handleRefresh}>
           Refresh Git Data
         </Button>
-        <Button variant="contained" startIcon={<CommitIcon />} onClick={() => setOpenCommitDialog(true)} disabled={status?.staged.length === 0 || loading}>
+        <Button variant="contained" startIcon={<CommitIcon />} onClick={handleOpenCommitDialog} disabled={status?.staged.length === 0 || loading}>
           Commit Staged
         </Button>
       </Box>
@@ -530,8 +781,8 @@ export default function GitPage() {
           <GitBranchesSection
             branches={branches}
             loading={loading}
-            onCreateBranchClick={() => setOpenBranchDialog(true)}
-            onCheckoutBranch={(branchName) => { setCheckoutBranchName(branchName); setOpenCheckoutDialog(true); }}
+            onCreateBranchClick={handleOpenBranchDialog}
+            onCheckoutBranch={handleOpenCheckoutDialog}
             onBranchContextMenu={handleBranchContextMenu}
           />
         </CustomTabPanel>
@@ -540,7 +791,7 @@ export default function GitPage() {
           <GitCommitsSection
             commits={commits}
             loading={loading}
-            onRevertCommit={(commitHash) => { setRevertCommitHash(commitHash); setOpenRevertDialog(true); }}
+            onRevertCommit={handleOpenRevertDialog}
             onCommitContextMenu={handleCommitContextMenu}
           />
         </CustomTabPanel>
@@ -549,9 +800,9 @@ export default function GitPage() {
           <GitSnapshotsSection
             snapshots={snapshots}
             loading={loading}
-            onCreateSnapshotClick={() => setOpenSnapshotDialog(true)}
-            onRestoreSnapshot={handleRestoreSnapshot}
-            onDeleteSnapshot={(snapshot) => { setSnapshotToDelete(snapshot); setOpenDeleteSnapshotDialog(true); }}
+            onCreateSnapshotClick={handleOpenCreateSnapshotDialog}
+            onRestoreSnapshot={handleOpenRestoreSnapshotConfirmDialog}
+            onDeleteSnapshot={handleOpenDeleteSnapshotConfirmDialog}
             onSnapshotContextMenu={handleSnapshotContextMenu}
           />
         </CustomTabPanel>
@@ -567,7 +818,7 @@ export default function GitPage() {
         onViewDiff={handleViewDiff}
         onStageFiles={handleStageSelected}
         onUnstageFiles={handleUnstageSelected}
-        onDiscardChanges={handleUndoFileChanges}
+        onDiscardChanges={(filePath) => { handleOpenDiscardChangesConfirmDialog(filePath); handleCloseContextMenu(); }}
       />
 
       <GitBranchContextMenu
@@ -576,8 +827,8 @@ export default function GitPage() {
         onClose={handleCloseContextMenu}
         loading={loading}
         selectedBranch={selectedBranchForMenu}
-        onCheckoutBranch={(branchName) => { setCheckoutBranchName(branchName); setOpenCheckoutDialog(true); handleCloseContextMenu(); }}
-        onDeleteBranch={handleDeleteBranch}
+        onCheckoutBranch={(branchName) => { handleOpenCheckoutDialog(branchName); handleCloseContextMenu(); }}
+        onDeleteBranch={(branchName, force) => { handleOpenDeleteBranchConfirmDialog(branchName, force); handleCloseContextMenu(); }}
       />
 
       <GitCommitContextMenu
@@ -587,13 +838,11 @@ export default function GitPage() {
         loading={loading}
         selectedCommit={selectedCommitForMenu}
         onRevertCommit={(commitHash) => {
-          setRevertCommitHash(commitHash);
-          setOpenRevertDialog(true);
+          handleOpenRevertDialog(commitHash);
           handleCloseContextMenu(); // Close the context menu after selecting an action
         }}
         onResetHard={(commitHash) => {
-          setResetHardCommitHash(commitHash);
-          setOpenResetHardDialog(true);
+          handleOpenResetHardDialog(commitHash);
           handleCloseContextMenu(); // Close the context menu after selecting an action
         }}
       />
@@ -604,71 +853,9 @@ export default function GitPage() {
         onClose={handleCloseContextMenu}
         loading={loading}
         selectedSnapshot={selectedSnapshotForMenu}
-        onRestoreSnapshot={(snapshot) => { handleRestoreSnapshot(snapshot); handleCloseContextMenu(); }}
-        onDeleteSnapshot={(snapshot) => { setSnapshotToDelete(snapshot); setOpenDeleteSnapshotDialog(true); handleCloseContextMenu(); }} />
+        onRestoreSnapshot={(snapshot) => { handleOpenRestoreSnapshotConfirmDialog(snapshot); handleCloseContextMenu(); }}
+        onDeleteSnapshot={(snapshot) => { handleOpenDeleteSnapshotConfirmDialog(snapshot); handleCloseContextMenu(); }} />
 
-      <GitDialogs
-        commitDialog={{
-          open: openCommitDialog,
-          message: commitMessage,
-          onMessageChange: setCommitMessage,
-          onCommit: handleCommit,
-          onClose: () => setOpenCommitDialog(false),
-          loading: loading,
-          disabled: !commitMessage.trim() || loading
-        }}
-        branchDialog={{
-          open: openBranchDialog,
-          name: newBranchName,
-          onNameChange: setNewBranchName,
-          onCreate: handleCreateBranch,
-          onClose: () => setOpenBranchDialog(false),
-          loading: loading,
-          disabled: !newBranchName.trim() || loading
-        }}
-        checkoutDialog={{
-          open: openCheckoutDialog,
-          name: checkoutBranchName,
-          onNameChange: setCheckoutBranchName,
-          onCheckout: handleCheckoutBranch,
-          onClose: () => setOpenCheckoutDialog(false),
-          loading: loading,
-          disabled: !checkoutBranchName.trim() || loading
-        }}
-        revertDialog={{
-          open: openRevertDialog,
-          commitHash: revertCommitHash,
-          onHashChange: setRevertCommitHash,
-          onRevert: handleRevertCommit,
-          onClose: () => setOpenRevertDialog(false),
-          loading: loading,
-          disabled: !revertCommitHash.trim() || loading
-        }}
-        resetHardDialog={{
-          open: openResetHardDialog,
-          commitHash: resetHardCommitHash,
-          onReset: handleGitResetHard,
-          onClose: () => setOpenResetHardDialog(false),
-          loading: loading,
-          disabled: !resetHardCommitHash.trim() || loading
-        }}
-        createSnapshotDialog={{
-          open: openSnapshotDialog,
-          name: snapshotName,
-          onNameChange: setSnapshotName,
-          onCreate: handleCreateSnapshot,
-          onClose: () => setOpenSnapshotDialog(false),
-          loading: loading,
-          disabled: !snapshotName.trim() || loading
-        }}
-        deleteSnapshotDialog={{
-          open: openDeleteSnapshotDialog,
-          snapshotName: snapshotToDelete,
-          onDelete: handleDeleteSnapshot,
-          onClose: () => setOpenDeleteSnapshotDialog(false),
-          loading: loading,
-        }}
-      />
     </Box>
   );
 }

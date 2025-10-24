@@ -12,6 +12,7 @@ import CustomSnackbar from '@/components/Snackbar';
 import { useStore } from '@nanostores/react';
 import { snackbarState, hideGlobalSnackbar } from '@/stores/snackbarStore';
 import { authStore } from '@/stores/authStore';
+import { GlobalDialog } from '@/components/dialogs'; 
 
 import '@xterm/xterm/css/xterm.css';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -390,6 +391,7 @@ function App() {
         onClose={handleSnackbarClose}
         autoHideDuration={3000}
       />
+      <GlobalDialog /> 
     </>
   );
 }
