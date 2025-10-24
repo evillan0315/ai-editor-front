@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useStore } from '@nanostores/react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
-import { roomStore, fetchRooms } from './stores/roomStore';
+import { roomStore, fetchRooms, fetchConnectionCountsForRooms } from './stores/roomStore';
 import { RoomCard } from './RoomCard';
 
 const listContainerSx = {
@@ -31,11 +31,17 @@ const errorAlertSx = {
 };
 
 export const RoomList: React.FC = () => {
-  const { rooms, loading, error } = useStore(roomStore);
+  const { rooms, loading, error, connectionCounts, loadingConnectionCounts } = useStore(roomStore);
 
   useEffect(() => {
     fetchRooms();
   }, []);
+
+  useEffect(() => {
+    if (!loading && rooms.length > 0) {
+      fetchConnectionCountsForRooms(rooms);
+    }
+  }, [loading, rooms]);
 
   return (
     <Box sx={listContainerSx} className="w-full flex flex-col items-center py-4 h-full">
@@ -64,7 +70,12 @@ export const RoomList: React.FC = () => {
       <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full max-w-7xl justify-items-center">
         {!loading &&
           rooms.map((room) => (
-            <RoomCard key={room.id} room={room} />
+            <RoomCard
+              key={room.id}
+              room={room}
+              connectionCount={room.roomId ? connectionCounts[room.roomId] : null}
+              loadingConnections={room.roomId ? loadingConnectionCounts[room.roomId] || false : false}
+            />
           ))}
       </Box>
     </Box>

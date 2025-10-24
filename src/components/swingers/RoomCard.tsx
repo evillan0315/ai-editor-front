@@ -1,14 +1,17 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, Chip } from '@mui/material';
+import { Card, CardContent, Typography, Box, Chip, CircularProgress } from '@mui/material';
 import { IRoom } from '@/components/swingers/types';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import DoneIcon from '@mui/icons-material/Done';
 import CloseIcon from '@mui/icons-material/Close';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt'; // Import for connections count
 
 interface RoomCardProps {
   room: IRoom;
+  connectionCount: number | null; // New prop for connection count
+  loadingConnections: boolean; // New prop for loading state
 }
 
 const cardSx = {
@@ -44,7 +47,7 @@ const infoItemSx = {
   wordBreak: 'break-word',
 };
 
-export const RoomCard: React.FC<RoomCardProps> = ({ room }) => {
+export const RoomCard: React.FC<RoomCardProps> = ({ room, connectionCount, loadingConnections }) => {
   const { name, type, active, description, roomId, recording, liveStream, created_at } = room;
 
   return (
@@ -86,6 +89,17 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room }) => {
           <Typography variant="body2" color="text.secondary">
             {new Date(created_at).toLocaleDateString()}
           </Typography>
+        </Box>
+        <Box sx={infoItemSx}>
+          <PeopleAltIcon color="action" fontSize="small" />
+          <Typography variant="body2" color="text.secondary" className="font-semibold">Connections:</Typography>
+          {loadingConnections ? (
+            <CircularProgress size={16} color="inherit" />
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              {connectionCount !== null ? connectionCount : 'N/A'}
+            </Typography>
+          )}
         </Box>
       </CardContent>
     </Card>
