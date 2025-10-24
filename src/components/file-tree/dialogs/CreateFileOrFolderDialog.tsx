@@ -11,6 +11,7 @@ import {
   Box,
   useTheme,
 } from '@mui/material';
+import CancelIcon from '@mui/icons-material/Close';
 import FolderIcon from '@mui/icons-material/FolderOutlined';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CodeMirror from '@uiw/react-codemirror';
@@ -21,6 +22,7 @@ import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
 import * as path from 'path-browserify';
 import { showDialog, hideDialog } from '@/stores/dialogStore';
 import { showGlobalSnackbar } from '@/stores/snackbarStore';
+import GlobalActionButton, { GlobalAction } from '@/components/ui/GlobalActionButton';
 
 // -----------------------------------------------------------------------------
 // Styles
@@ -114,6 +116,25 @@ const CreateFileOrFolderContent: React.FC<CreateFileOrFolderContentProps> = ({
     return [getCodeMirrorLanguage(name || '.txt')];
   }, [name, isFolder]);
 
+  const dialogActions: GlobalAction[] = [
+    {
+      label: 'Cancel',
+      action: hideDialog,
+      disabled: loading,
+      color: 'text',
+      variant: 'outlined',
+      icon: <CancelIcon />
+    },
+    {
+      label: isFolder ? 'Create Folder' : 'Create File',
+      action: handleSubmit,
+      color: 'primary',
+      variant: 'contained',
+      disabled: loading || !name.trim(),
+      icon: loading ? <CircularProgress size={20} /> : isFolder ? <FolderIcon  /> : <InsertDriveFileIcon />,
+    },
+  ];
+
   return (
     <>
  
@@ -183,18 +204,7 @@ const CreateFileOrFolderContent: React.FC<CreateFileOrFolderContentProps> = ({
           </Box>
         )}
       <Box className="flex items-center justify-between gap-2 mt-4">
-        <Button onClick={hideDialog} disabled={loading}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          color="primary"
-          variant="contained"
-          disabled={loading || !name.trim()}
-          startIcon={loading && <CircularProgress size={20} />}
-        >
-          {isFolder ? 'Create Folder' : 'Create File'}
-        </Button>
+        <GlobalActionButton globalActions={dialogActions} iconOnly={false} />
      </Box>
     </>
   );
