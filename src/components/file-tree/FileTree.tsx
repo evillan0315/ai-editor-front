@@ -9,6 +9,9 @@ import {
   IconButton,
   useTheme,
   TextField,
+  Button,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import FileTreeItem from './FileTreeItem';
 import {
@@ -50,7 +53,7 @@ import { LineMdFileDocumentPlusFilled } from '@/components/icons/LineMdFileDocum
 import { FileTreeContextMenuRenderer } from './FileTreeContextMenuRenderer';
 
 import {
-  showRenameDialog,             
+  showRenameDialog,
 } from './dialogs'; // Updated import path
 import { showOperationPathDialog, showCreateFileOrFolderDialog } from './dialogs'; // Updated import path
 import { deleteFile as apiDeleteFile } from '@/api/file';
@@ -60,11 +63,26 @@ import {
   setShowTerminal,
   connectTerminal,
 } from '@/components/Terminal/stores/terminalStore';
-import { showGlobalSnackbar } from '@/stores/snackbarStore'; 
+import { showGlobalSnackbar } from '@/stores/snackbarStore';
+import { showDialog, hideDialog } from '@/stores/dialogStore';
 
 import FileTreeHeader from './common/FileTreeHeader';
 import FileTreeStatus from './common/FileTreeStatus';
 import FileTreeList from './common/FileTreeList';
+
+// ----------------------------------------------------------------------------- 
+// Styles 
+// ----------------------------------------------------------------------------- 
+const dialogContentSx = {
+  p: 2,
+};
+
+const dialogActionsSx = {
+  borderTop: `1px solid`,
+  borderColor: 'divider',
+  p: 2,
+  justifyContent: 'flex-end',
+};
 
 interface FileTreeProps {
 }
@@ -116,9 +134,6 @@ const FileTree: React.FC<FileTreeProps> = () => {
   useEffect(() => {
     if (projectRoot) {
       loadInitialTree(projectRoot);
-    } else {
-      showGlobalSnackbar('No project root specified. Cannot load file tree.', 'error');
-      clearFileTree();
     }
     return () => {
       clearFileTree();
@@ -134,7 +149,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
     async (targetPath: string) => {
       const parentDir = path.dirname(targetPath);
       const isRoot = parentDir === targetPath;
-      const pathToRefresh = 
+      const pathToRefresh =
         isRoot && parentDir === '/' ? targetPath : parentDir;
 
       if (pathToRefresh && pathToRefresh !== '.') {
@@ -175,28 +190,57 @@ const FileTree: React.FC<FileTreeProps> = () => {
   );
 
   const handleDeleteItem = useCallback(
-    async (node: FileEntry) => {
-      if (window.confirm(
-          `Are you sure you want to delete ${node.name}? This action cannot be undone.`,
-        )
-      ) {
-        try {
-          const result = await apiDeleteFile(node.path);
-          if (result.success) {
-            showGlobalSnackbar(result.message, 'success');
-            refreshPath(node.path);
-          } else {
-            showGlobalSnackbar(result.message || 'Failed to delete.', 'error');
-          }
-        } catch (err: any) {
-          showGlobalSnackbar(
-            `Error deleting: ${err.message || String(err)}`,
-            'error',
-          );
-        }
-      }
+    (node: FileEntry) => {
+      showDialog({
+        title: `Confirm Deletion`,
+        content: (
+          <DialogContent sx={dialogContentSx}>
+            <Typography variant="body1">
+              Are you sure you want to delete{' '}
+              <strong style={{ color: theme.palette.error.main }}>
+                {node.name}
+              </strong>
+              ? This action cannot be undone.
+            </Typography>
+          </DialogContent>
+        ),
+        actions: (
+<>
+            <Button onClick={hideDialog}>Cancel</Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={async () => {
+                try {
+                  const result = await apiDeleteFile(node.path);
+                  if (result.success) {
+                    showGlobalSnackbar(result.message, 'success');
+                    refreshPath(node.path);
+                  } else {
+                    showGlobalSnackbar(
+                      result.message || 'Failed to delete.',
+                      'error',
+                    );
+                  }
+                } catch (err: any) {
+                  showGlobalSnackbar(
+                    `Error deleting: ${err.message || String(err)}`,
+                    'error',
+                  );
+                } finally {
+                  hideDialog(); // Always hide dialog after action
+                }
+              }}
+            >
+              Delete
+            </Button>
+</>
+        ),
+        maxWidth: 'xs', // Small dialog size
+        showCloseButton: true,
+      });
     },
-    [refreshPath],
+    [refreshPath, theme.palette.error.main],
   );
 
   const handleRenameItem = useCallback(
@@ -345,7 +389,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
       return items;
     },
-    [handleDeleteItem, scanPathsInput, handleAddFileFolder, handleRenameItem, handleOperationItem],
+    [handleDeleteItem, scanPathsInput, handleAddFileFolder, handleRenameItem, handleOperationItem, theme.palette.error.main],
   );
 
   const handleNodeContextMenu = useCallback(

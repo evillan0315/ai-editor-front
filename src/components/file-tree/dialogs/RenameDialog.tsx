@@ -17,20 +17,6 @@ import { projectStore } from '@/stores/projectStore';
 import { useStore } from '@nanostores/react';
 
 // -----------------------------------------------------------------------------
-// Styles
-// -----------------------------------------------------------------------------
-const dialogContentSx = {
-  p: 2,
-};
-
-const dialogActionsSx = {
-  borderTop: `1px solid`,
-  borderColor: 'divider',
-  p: 2,
-  justifyContent: 'flex-end',
-};
-
-// -----------------------------------------------------------------------------
 // Component for the content of the Rename Dialog
 // -----------------------------------------------------------------------------
 interface RenameContentProps {
@@ -93,8 +79,7 @@ const RenameContent: React.FC<RenameContentProps> = ({ item, onRenameSuccess }) 
   };
 
   return (
-    <>
-      <DialogContent sx={dialogContentSx}>
+    <DialogContent sx={{ p: 2 }}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -117,8 +102,7 @@ const RenameContent: React.FC<RenameContentProps> = ({ item, onRenameSuccess }) 
           helperText={error}
           sx={{ mb: 2 }}
         />
-      </DialogContent>
-      <DialogActions sx={dialogActionsSx}>
+      <DialogActions sx={{ pt: 2, justifyContent: 'flex-end', borderTop: `1px solid`, borderColor: 'divider'}}>
         <Button onClick={hideDialog} disabled={loading}>
           Cancel
         </Button>
@@ -126,7 +110,7 @@ const RenameContent: React.FC<RenameContentProps> = ({ item, onRenameSuccess }) 
           {loading ? <CircularProgress size={20} /> : 'Rename'}
         </Button>
       </DialogActions>
-    </>
+    </DialogContent>
   );
 };
 
