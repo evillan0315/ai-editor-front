@@ -40,6 +40,7 @@ interface IClientDataLocalSettings {
   camera: IClientDataLocalSettingsCamera;
   general: IClientDataLocalSettingsGeneral;
   customCameraLabel?: string; // Can be directly under localSettings
+  chat?: { chatColor: string }; // Optional field found in some clientData
 }
 
 interface IInnerClientData {
@@ -80,7 +81,7 @@ interface IMediaOptions {
   filter: Record<string, unknown>; // Can be an empty object
 }
 
-interface IPublisherSubscriber {
+export interface IPublisherSubscriber {
   createdAt: number;
   streamId: string;
   mediaOptions?: IMediaOptions; // Optional field
@@ -113,9 +114,24 @@ export interface IConnection {
   subscribers: IPublisherSubscriber[];
 }
 
-interface IConnect {
+interface ISessionConnections {
   numberOfElements: number;
   content: IConnection[];
+}
+
+export interface ISession {
+  id: string;
+  object: 'session';
+  sessionId: string;
+  createdAt: number;
+  recording: boolean;
+  mediaMode: string;
+  recordingMode: string;
+  defaultRecordingProperties: IDefaultRecordingProperties;
+  customSessionId: string;
+  forcedVideoCodec: string;
+  allowTranscoding: boolean;
+  connections: ISessionConnections;
 }
 
 export interface IRoom {
