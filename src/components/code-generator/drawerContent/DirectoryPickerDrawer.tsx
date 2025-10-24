@@ -42,7 +42,7 @@ import { useStore } from '@nanostores/react';
 import PromptGeneratorSettings from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
-import { ImportJson } from './ImportJson';
+import { ImportJson } from '../ImportJson';
 import { CodeGeneratorData } from './CodeGeneratorMain';
 import { RequestType } from '@/types/llm'; 
 import { GlobalAction } from '@/types/app'; // Import GlobalAction
@@ -184,10 +184,10 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       label: 'Select', 
       color: 'primary',
       variant: 'contained',
-      action: (path) => {
-        setCurrentProjectPath(path);
-            handleLoadProject();
-            setIsProjectRootPickerDialogOpen(false);
+      action: () => {
+        // This action will be passed to DirectoryPickerDrawer and triggered by its internal 'Select' logic
+        // The actual `onSelect` callback for `DirectoryPickerDrawer` will handle setting project path and closing.
+        // No direct state update here, the drawer's internal `onSelect` will do that.
       },
       icon: <CheckIcon />,
       // The disabled state should be managed by the DirectoryPickerDrawer content itself if it has internal validation
