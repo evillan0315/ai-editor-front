@@ -15,24 +15,24 @@ import { useTheme } from '@mui/material/styles';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CommitIcon from '@mui/icons-material/Commit';
 
-import { 
-  getGitStatus, 
-  gitCommit, 
-  gitStageFiles, 
-  gitUnstageFiles, 
-  gitGetBranches, 
-  gitCheckoutBranch, 
-  gitCreateBranch, 
-  gitDeleteBranch, 
-  gitGetCommitLog, 
-  gitCreateSnapshot, 
-  gitRestoreSnapshot, 
-  gitListSnapshots, 
-  gitDeleteSnapshot, 
-  gitUndoFileChanges, 
-  gitRevertCommit, 
-  gitResetHard, 
-  getGitDiff 
+import {
+  getGitStatus,
+  gitCommit,
+  gitStageFiles,
+  gitUnstageFiles,
+  gitGetBranches,
+  gitCheckoutBranch,
+  gitCreateBranch,
+  gitDeleteBranch,
+  gitGetCommitLog,
+  gitCreateSnapshot,
+  gitRestoreSnapshot,
+  gitListSnapshots,
+  gitDeleteSnapshot,
+  gitUndoFileChanges,
+  gitRevertCommit,
+  gitResetHard,
+  getGitDiff
 } from './api/git';
 
 import { IGitBranch, IGitCommit, IGitStatusResult, IGitResetHardDtoFrontend } from './types/git';
@@ -40,13 +40,14 @@ import { showGlobalSnackbar } from '@/stores/snackbarStore';
 import { themeStore } from '@/stores/themeStore';
 import { projectRootDirectoryStore } from '@/stores/fileTreeStore';
 import { gitStore } from './stores/gitStore';
+import { showDialog, hideDialog } from '@/stores/dialogStore';
 
 import { GitStatusSection } from './GitStatusSection';
 import { GitBranchesSection } from './GitBranchesSection';
 import { GitCommitsSection } from './GitCommitsSection';
 import { GitSnapshotsSection } from './GitSnapshotsSection';
 import { GitDialogs } from './GitDialogs';
-import { GitDiffViewerDialog } from './GitDiffViewerDialog';
+import { GitDiffViewerContent } from './GitDiffViewerContent';
 import { GitFileContextMenu } from './GitFileContextMenu';
 import { GitBranchContextMenu } from './GitBranchContextMenu';
 import { GitCommitContextMenu } from './GitCommitContextMenu';
@@ -123,16 +124,23 @@ export default function GitPage() {
   const [selectedStagedFiles, setSelectedStagedFiles] = useState<string[]>([]);
   const [selectedUnstagedFiles, setSelectedUnstagedFiles] = useState<string[]>([]);
 
-  const [currentDiff, setCurrentDiff] = useState<string | null>(null);
-  const [diffFilePath, setDiffFilePath] = useState<string | null>(null);
-  const [openDiffViewer, setOpenDiffViewer] = useState(false);
+  // Removed currentDiff, diffFilePath, openDiffViewer states
 
-  const [fileContextMenu, setFileContextMenu] = useState<{ mouseX: number; mouseY: number; file: string } | null>(null);
-  const [branchContextMenu, setBranchContextMenu] = useState<{ mouseX: number; mouseY: number; branch: IGitBranch } | null>(null);
+  const [fileMenuAnchorEl, setFileMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [openFileMenu, setOpenFileMenu] = useState(false);
+  const [selectedFileForMenu, setSelectedFileForMenu] = useState<string | null>(null);
+
+  const [branchMenuAnchorEl, setBranchMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [openBranchMenu, setOpenBranchMenu] = useState(false);
+  const [selectedBranchForMenu, setSelectedBranchForMenu] = useState<IGitBranch | null>(null);
+
   const [commitMenuAnchorEl, setCommitMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [openCommitMenu, setOpenCommitMenu] = useState(false);
   const [selectedCommitForMenu, setSelectedCommitForMenu] = useState<IGitCommit | null>(null);
-  const [snapshotContextMenu, setSnapshotContextMenu] = useState<{ mouseX: number; mouseY: number; snapshot: string } | null>(null);
+
+  const [snapshotMenuAnchorEl, setSnapshotMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [openSnapshotMenu, setOpenSnapshotMenu] = useState(false);
+  const [selectedSnapshotForMenu, setSelectedSnapshotForMenu] = useState<string | null>(null);
 
   const fetchAllGitData = useCallback(async () => {
     if (!projectRoot) return;
@@ -228,8 +236,9 @@ export default function GitPage() {
       await fetchAllGitData();
     } catch (err: any) {
       showGlobalSnackbar(`Error committing changes: ${err.message}`, 'error');
+    } finally {
+      gitStore.setKey('loading', false);
     }
-    gitStore.setKey('loading', false);
   };
 
   const handleCreateBranch = async () => {
@@ -243,8 +252,9 @@ export default function GitPage() {
       await fetchAllGitData();
     } catch (err: any) {
       showGlobalSnackbar(`Error creating branch: ${err.message}`, 'error');
+    } finally {
+      gitStore.setKey('loading', false);
     }
-    gitStore.setKey('loading', false);
   };
 
   const handleCheckoutBranch = async () => {
@@ -258,8 +268,9 @@ export default function GitPage() {
       await fetchAllGitData();
     } catch (err: any) {
       showGlobalSnackbar(`Error checking out branch: ${err.message}`, 'error');
+    } finally {
+      gitStore.setKey('loading', false);
     }
-    gitStore.setKey('loading', false);
   };
 
   const handleDeleteBranch = async (branchName: string, force: boolean = false) => {
@@ -272,8 +283,9 @@ export default function GitPage() {
       await fetchAllGitData();
     } catch (err: any) {
       showGlobalSnackbar(`Error deleting branch: ${err.message}`, 'error');
+    } finally {
+      gitStore.setKey('loading', false);
     }
-    gitStore.setKey('loading', false);
   };
 
   const handleRevertCommit = async () => {
@@ -287,8 +299,9 @@ export default function GitPage() {
       await fetchAllGitData();
     } catch (err: any) {
       showGlobalSnackbar(`Error reverting commit: ${err.message}`, 'error');
+    } finally {
+      gitStore.setKey('loading', false);
     }
-    gitStore.setKey('loading', false);
   };
 
   const handleGitResetHard = async () => {
@@ -303,8 +316,9 @@ export default function GitPage() {
       await fetchAllGitData();
     } catch (err: any) {
       showGlobalSnackbar(`Error performing hard reset: ${err.message}`, 'error');
+    } finally {
+      gitStore.setKey('loading', false);
     }
-    gitStore.setKey('loading', false);
   };
 
   const handleUndoFileChanges = async (filePath: string) => {
@@ -317,8 +331,9 @@ export default function GitPage() {
       await getGitStatus(projectRoot);
     } catch (err: any) {
       showGlobalSnackbar(`Error discarding changes: ${err.message}`, 'error');
+    } finally {
+      gitStore.setKey('loading', false);
     }
-    gitStore.setKey('loading', false);
   };
 
   const handleCreateSnapshot = async () => {
@@ -332,8 +347,9 @@ export default function GitPage() {
       await fetchAllGitData();
     } catch (err: any) {
       showGlobalSnackbar(`Error creating snapshot: ${err.message}`, 'error');
+    } finally {
+      gitStore.setKey('loading', false);
     }
-    gitStore.setKey('loading', false);
   };
 
   const handleRestoreSnapshot = async (name: string) => {
@@ -347,8 +363,9 @@ export default function GitPage() {
       await fetchAllGitData();
     } catch (err: any) {
       showGlobalSnackbar(`Error restoring snapshot: ${err.message}`, 'error');
+    } finally {
+      gitStore.setKey('loading', false);
     }
-    gitStore.setKey('loading', false);
   };
 
   const handleDeleteSnapshot = async () => {
@@ -362,41 +379,62 @@ export default function GitPage() {
       await fetchAllGitData();
     } catch (err: any) {
       showGlobalSnackbar(`Error deleting snapshot: ${err.message}`, 'error');
-    }
-    gitStore.setKey('loading', false);
-  };
-
-  const handleViewDiff = async (filePath: string) => {
-    if (!projectRoot) return;
-    gitStore.setKey('loading', true);
-    try {
-      const diffContent = await getGitDiff(filePath, projectRoot);
-      setCurrentDiff(diffContent);
-      setDiffFilePath(filePath);
-      setOpenDiffViewer(true);
-    } catch (err: any) {
-      showGlobalSnackbar(`Error fetching diff: ${err.message}`, 'error');
     } finally {
       gitStore.setKey('loading', false);
     }
   };
 
+  const handleViewDiff = async (filePath: string) => {
+    if (!projectRoot) return;
+    gitStore.setKey('loading', true); // Start global loading
+    let diffContent: string | null = null;
+
+    try {
+      diffContent = await getGitDiff(filePath, projectRoot);
+    } catch (err: any) {
+      showGlobalSnackbar(`Error fetching diff: ${err.message}`, 'error');
+      gitStore.setKey('loading', false); // Stop loading on error
+      return;
+    }
+
+    showDialog({
+      title: `Diff Viewer: ${filePath}`,
+      content: (
+        <GitDiffViewerContent
+          diffContent={diffContent}
+          filePath={filePath}
+          loading={false} // Content component itself is not loading anymore, global dialog is
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true,
+      showCloseButton: true,
+      actions: (
+        <Button onClick={hideDialog} disabled={loading}>Close</Button>
+      ),
+      onClose: () => {
+        // This onClose is called when the dialog requests to close (e.g., escape key, backdrop click)
+        // It should stop the loading indicator if it's still active from the diff fetch.
+        gitStore.setKey('loading', false);
+      }
+    });
+    // The loading for the initial fetch is already handled by gitStore.setKey('loading', true) at the start
+    // The dialog's content itself will not show a loading spinner, as the content is only rendered after diffContent is available.
+    gitStore.setKey('loading', false); // Turn off loading once dialog is shown with content
+  };
+
   const handleFileContextMenu = (event: React.MouseEvent, file: string) => {
     event.preventDefault();
-    setFileContextMenu(
-      fileContextMenu === null
-        ? { mouseX: event.clientX + 2, mouseY: event.clientY - 6, file }
-        : null,
-    );
+    setFileMenuAnchorEl(event.currentTarget as HTMLElement);
+    setSelectedFileForMenu(file);
+    setOpenFileMenu(true);
   };
 
   const handleBranchContextMenu = (event: React.MouseEvent, branch: IGitBranch) => {
     event.preventDefault();
-    setBranchContextMenu(
-      branchContextMenu === null
-        ? { mouseX: event.clientX + 2, mouseY: event.clientY - 6, branch }
-        : null,
-    );
+    setBranchMenuAnchorEl(event.currentTarget as HTMLElement);
+    setSelectedBranchForMenu(branch);
+    setOpenBranchMenu(true);
   };
 
   const handleCommitContextMenu = (event: React.MouseEvent, commit: IGitCommit) => {
@@ -408,20 +446,27 @@ export default function GitPage() {
 
   const handleSnapshotContextMenu = (event: React.MouseEvent, snapshot: string) => {
     event.preventDefault();
-    setSnapshotContextMenu(
-      snapshotContextMenu === null
-        ? { mouseX: event.clientX + 2, mouseY: event.clientY - 6, snapshot }
-        : null,
-    );
+    setSnapshotMenuAnchorEl(event.currentTarget as HTMLElement);
+    setSelectedSnapshotForMenu(snapshot);
+    setOpenSnapshotMenu(true);
   };
 
   const handleCloseContextMenu = () => {
-    setFileContextMenu(null);
-    setBranchContextMenu(null);
-    setSnapshotContextMenu(null);
-    setOpenCommitMenu(false);
+    setFileMenuAnchorEl(null);
+    setOpenFileMenu(false);
+    setSelectedFileForMenu(null);
+
+    setBranchMenuAnchorEl(null);
+    setOpenBranchMenu(false);
+    setSelectedBranchForMenu(null);
+
     setCommitMenuAnchorEl(null);
+    setOpenCommitMenu(false);
     setSelectedCommitForMenu(null);
+
+    setSnapshotMenuAnchorEl(null);
+    setOpenSnapshotMenu(false);
+    setSelectedSnapshotForMenu(null);
   };
 
   if (!projectRoot || projectRoot === '/') {
@@ -513,9 +558,11 @@ export default function GitPage() {
       </Paper>
 
       <GitFileContextMenu
-        contextMenu={fileContextMenu}
+        anchorEl={fileMenuAnchorEl}
+        open={openFileMenu}
         onClose={handleCloseContextMenu}
         loading={loading}
+        selectedFile={selectedFileForMenu}
         status={status}
         onViewDiff={handleViewDiff}
         onStageFiles={handleStageSelected}
@@ -524,10 +571,12 @@ export default function GitPage() {
       />
 
       <GitBranchContextMenu
-        contextMenu={branchContextMenu}
+        anchorEl={branchMenuAnchorEl}
+        open={openBranchMenu}
         onClose={handleCloseContextMenu}
         loading={loading}
-        onCheckoutBranch={(branchName) => { setCheckoutBranchName(branchName); setOpenCheckoutDialog(true); }}
+        selectedBranch={selectedBranchForMenu}
+        onCheckoutBranch={(branchName) => { setCheckoutBranchName(branchName); setOpenCheckoutDialog(true); handleCloseContextMenu(); }}
         onDeleteBranch={handleDeleteBranch}
       />
 
@@ -550,12 +599,13 @@ export default function GitPage() {
       />
 
       <GitSnapshotContextMenu
-        contextMenu={snapshotContextMenu}
+        anchorEl={snapshotMenuAnchorEl}
+        open={openSnapshotMenu}
         onClose={handleCloseContextMenu}
         loading={loading}
-        onRestoreSnapshot={handleRestoreSnapshot}
-        onDeleteSnapshot={(snapshot) => { setSnapshotToDelete(snapshot); setOpenDeleteSnapshotDialog(true); }}
-      />
+        selectedSnapshot={selectedSnapshotForMenu}
+        onRestoreSnapshot={(snapshot) => { handleRestoreSnapshot(snapshot); handleCloseContextMenu(); }}
+        onDeleteSnapshot={(snapshot) => { setSnapshotToDelete(snapshot); setOpenDeleteSnapshotDialog(true); handleCloseContextMenu(); }} />
 
       <GitDialogs
         commitDialog={{
@@ -618,15 +668,6 @@ export default function GitPage() {
           onClose: () => setOpenDeleteSnapshotDialog(false),
           loading: loading,
         }}
-      />
-
-      <GitDiffViewerDialog
-        open={openDiffViewer}
-        onClose={() => setOpenDiffViewer(false)}
-        diffContent={currentDiff}
-        filePath={diffFilePath}
-        loading={loading}
-        mode={mode}
       />
     </Box>
   );

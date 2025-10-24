@@ -13,9 +13,11 @@ import UndoIcon from '@mui/icons-material/Undo';
 import { IGitStatusResult } from './types/git';
 
 interface GitFileContextMenuProps {
-  contextMenu: { mouseX: number; mouseY: number; file: string } | null;
+  anchorEl: HTMLElement | null;
+  open: boolean;
   onClose: () => void;
   loading: boolean;
+  selectedFile: string | null;
   status: IGitStatusResult | null;
   onViewDiff: (filePath: string) => Promise<void>;
   onStageFiles: (files?: string[]) => Promise<void>;
@@ -24,16 +26,18 @@ interface GitFileContextMenuProps {
 }
 
 export function GitFileContextMenu({
-  contextMenu,
+  anchorEl,
+  open,
   onClose,
   loading,
+  selectedFile,
   status,
   onViewDiff,
   onStageFiles,
   onUnstageFiles,
   onDiscardChanges,
 }: GitFileContextMenuProps) {
-  const targetFile = contextMenu?.file || '';
+  const targetFile = selectedFile || '';
   const isNotAdded = status?.not_added.includes(targetFile);
   const isModified = status?.modified.includes(targetFile);
   const isDeleted = status?.deleted.includes(targetFile); // Changed to 'includes' based on backend DTO
@@ -41,14 +45,17 @@ export function GitFileContextMenu({
 
   return (
     <Menu
-      open={contextMenu !== null}
+      open={open}
       onClose={onClose}
-      anchorReference="point"
-      anchorPosition={
-        contextMenu !== null
-          ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-          : undefined
-      }
+      anchorEl={anchorEl}
+      anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'left',
+      }}
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'left',
+      }}
     >
       {/* View Diff */}
       {(isModified || isDeleted) && (

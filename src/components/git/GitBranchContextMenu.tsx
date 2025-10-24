@@ -11,32 +11,39 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { IGitBranch } from './types/git';
 
 interface GitBranchContextMenuProps {
-  contextMenu: { mouseX: number; mouseY: number; branch: IGitBranch } | null;
+  anchorEl: HTMLElement | null;
+  open: boolean;
   onClose: () => void;
   loading: boolean;
+  selectedBranch: IGitBranch | null;
   onCheckoutBranch: (branchName: string) => void;
   onDeleteBranch: (branchName: string, force?: boolean) => Promise<void>;
 }
 
 export function GitBranchContextMenu({
-  contextMenu,
+  anchorEl,
+  open,
   onClose,
   loading,
+  selectedBranch,
   onCheckoutBranch,
   onDeleteBranch,
 }: GitBranchContextMenuProps) {
-  const targetBranch = contextMenu?.branch;
+  const targetBranch = selectedBranch;
 
   return (
     <Menu
-      open={contextMenu !== null}
+      open={open}
       onClose={onClose}
-      anchorReference="point"
-      anchorPosition={
-        contextMenu !== null
-          ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-          : undefined
-      }
+      anchorEl={anchorEl}
+      anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'left',
+      }}
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'left',
+      }}
     >
       {targetBranch && !targetBranch.current && (
         <MenuItem onClick={() => { onCheckoutBranch(targetBranch.name); onClose(); }} disabled={loading}>
