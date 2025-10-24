@@ -4069,10 +4069,10 @@ object.values@^1.1.6, object.values@^1.2.1:
     define-properties "^1.2.1"
     es-object-atoms "^1.0.0"
 
-openvidu-browser@2.26.0:
-  version "2.26.0"
-  resolved "https://registry.yarnpkg.com/openvidu-browser/-/openvidu-browser-2.26.0.tgz#0bdbc579bf01675beec76b1d92ca7a28cead05ae"
-  integrity sha512-Z/zFriOOYzFtYen00DoQWaLaPhMfb5YDBvxu1cSiwH6/uwsb4Qoi8ZvrABHVmFVnz4pVmB+4cA7+WeIzXJUo9Q==
+openvidu-browser@2.25.0:
+  version "2.25.0"
+  resolved "https://registry.yarnpkg.com/openvidu-browser/-/openvidu-browser-2.25.0.tgz#7d6ca7b6f2805d7d3fc12a8e4be1f50899da1214"
+  integrity sha512-arDKARUXCbt39AE3shLjgrsZR/1jwHlE81OGZGq8MLVHWALGEbvcZyjpYGFtymmwhYsAH6QcLh60Y3+fJoF7Ww==
   dependencies:
     events "3.3.0"
     freeice "2.2.2"

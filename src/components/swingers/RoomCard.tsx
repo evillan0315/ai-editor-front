@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, Chip, CircularProgress, IconButton } from '@mui/material';
+import { Card, CardContent, Typography, Box, Chip, CircularProgress, IconButton, useTheme } from '@mui/material';
 import { IRoom } from '@/components/swingers/types';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
@@ -25,7 +25,7 @@ interface RoomCardProps {
 const baseCardSx = {
   display: 'flex',
   flexDirection: 'column',
-  height: '100%',
+  height: '100%', // Ensure the card takes full height in a flex container
   width: '100%',
   overflow: 'hidden',
   boxShadow: 3,
@@ -61,7 +61,7 @@ const topRoomHighlightSx = {
 };
 
 const contentSx = {
-  flexGrow: 1,
+  flexGrow: 1, // Allows content to fill available space, pushing footer down
   display: 'flex',
   flexDirection: 'column',
   padding: '16px',
@@ -78,8 +78,22 @@ const infoItemSx = {
   wordBreak: 'break-word',
 };
 
+// --- New Sticky Footer Styles --- //
+const stickyFooterSx = (theme: ReturnType<typeof useTheme>) => ({
+  position: 'sticky',
+  bottom: 0,
+  zIndex: 1, // Ensure it stays on top of the card content if it scrolls
+  backgroundColor: theme.palette.background.paper,
+  borderTop: `1px solid ${theme.palette.divider}`,
+  padding: '8px 16px',
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: '8px',
+});
+
 export const RoomCard: React.FC<RoomCardProps> = ({ room, connectionCount, loadingConnections, isTopRoom, onJoinRoom, onViewRoom, onResetRoom, resettingRoomId }) => {
   const { name, type, active, description, roomId, recording, liveStream, created_at } = room;
+  const theme = useTheme();
 
   const isResetting = resettingRoomId === roomId;
 
@@ -103,7 +117,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, connectionCount, loadi
         {/* Original Active/Inactive label at top-right */}
         <Box className="absolute top-2 right-2 flex items-center gap-1 p-1 rounded-full text-white text-xs font-semibold"
              sx={{ bgcolor: active ? 'success.main' : 'error.main' }}>
-          {active ? <DoneIcon fontSize="small" /> : <CloseIcon fontSize="small" />}         
+          {active ? <DoneIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
           {active ? 'Active' : 'Inactive'}
         </Box>
       </Box>
@@ -148,46 +162,46 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, connectionCount, loadi
             </Typography>
           )}
         </Box>
-
-        {/* New: Action buttons at the bottom */}
-        <Box className="flex justify-end gap-2 mt-4">
-          {roomId && onResetRoom && (
-            <IconButton
-              aria-label="reset room"
-              color="secondary"
-              onClick={() => onResetRoom(roomId)}
-              disabled={isResetting}
-              sx={{ '&:hover': { bgcolor: 'secondary.light' } }}
-            >
-              {isResetting ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <ReplayIcon />
-              )}
-            </IconButton>
-          )}
-          {roomId && onJoinRoom && (
-            <IconButton
-              aria-label="join room"
-              color="primary"
-              onClick={() => onJoinRoom(roomId)}
-              sx={{ '&:hover': { bgcolor: 'primary.light' } }}
-            >
-              <CallIcon />
-            </IconButton>
-          )}
-          {roomId && onViewRoom && (
-            <IconButton
-              aria-label="view room details"
-              color="info"
-              onClick={() => onViewRoom(roomId)}
-              sx={{ '&:hover': { bgcolor: 'info.light' } }}
-            >
-              <VisibilityIcon />
-            </IconButton>
-          )}
-        </Box>
       </CardContent>
+
+      {/* New: Sticky Footer for Action buttons */}
+      <Box sx={stickyFooterSx(theme)}>
+        {roomId && onResetRoom && (
+          <IconButton
+            aria-label="reset room"
+            color="secondary"
+            onClick={() => onResetRoom(roomId)}
+            disabled={isResetting}
+            sx={{ '&:hover': { bgcolor: 'secondary.light' } }}
+          >
+            {isResetting ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <ReplayIcon />
+            )}
+          </IconButton>
+        )}
+        {roomId && onViewRoom && (
+          <IconButton
+            aria-label="view room details"
+            color="info"
+            onClick={() => onViewRoom(roomId)}
+            sx={{ '&:hover': { bgcolor: 'info.light' } }}
+          >
+            <VisibilityIcon />
+          </IconButton>
+        )}
+        {roomId && onJoinRoom && (
+          <IconButton
+            aria-label="join room"
+            color="primary"
+            onClick={() => onJoinRoom(roomId)}
+            sx={{ '&:hover': { bgcolor: 'primary.light' } }}
+          >
+            <CallIcon />
+          </IconButton>
+        )}
+      </Box>
     </Card>
   );
 };

@@ -70,6 +70,8 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_SLS_VIDU_URL': JSON.stringify(env.VITE_SLS_VIDU_URL),
       'import.meta.env.VITE_SLS_API_KEY': JSON.stringify(env.VITE_SLS_API_KEY),
       'import.meta.env.VITE_SLS_USERNAME': JSON.stringify(env.VITE_SLS_USERNAME),
+      'import.meta.env.VITE_SLS_WS_URL': JSON.stringify(env.VITE_SLS_WS_URL),
+      
     },
   };
 });

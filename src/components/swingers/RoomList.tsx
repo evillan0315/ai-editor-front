@@ -1,8 +1,12 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import { roomStore, fetchRooms, fetchConnectionCountsForRooms } from './stores/roomStore';
 import { RoomCard } from './RoomCard';
+import { deleteSession, createSession } from '@/components/swingers/api/sessions';
+import { openViduSocketService } from '@/components/swingers/services/openViduSocketService';
+import { showDialog } from '@/stores/dialogStore';
+
 
 const listContainerSx = {
   padding: '24px',
@@ -32,10 +36,18 @@ const errorAlertSx = {
 
 export const RoomList: React.FC = () => {
   const { rooms, loading, error, connectionCounts, loadingConnectionCounts } = useStore(roomStore);
+  const [resettingRoomId, setResettingRoomId] = useState<string | null>(null); // State to track which room is being reset
 
   useEffect(() => {
     fetchRooms();
-  }, []);
+    // Initialize OpenVidu socket connection when RoomList mounts
+    openViduSocketService.initSocket();
+
+    // Disconnect OpenVidu socket when RoomList unmounts
+    return () => {
+      openViduSocketService.disconnectSocket();
+    };
+  }, []); // Empty dependency array means this runs once on mount and once on unmount
 
   useEffect(() => {
     if (!loading && rooms.length > 0) {
@@ -45,14 +57,41 @@ export const RoomList: React.FC = () => {
 
   // Callback for joining a room
   const handleJoinRoom = useCallback((roomId: string) => {
-    console.log(`Attempting to join room: ${roomId}`);
-    // Implement actual join logic here, e.g., navigate to session page or open dialog
+    
   }, []);
 
   // Callback for viewing room details
   const handleViewRoom = useCallback((roomId: string) => {
-    console.log(`Viewing details for room: ${roomId}`);
-    // Implement actual view logic here, e.g., navigate to room details page or open dialog
+
+  }, []);
+
+  // Callback for resetting/recreating a room's OpenVidu session
+  const handleResetRoom = useCallback(async (roomId: string) => {
+    if (!roomId) {
+      console.error('Cannot reset room: roomId is missing.');
+      return;
+    }
+
+    setResettingRoomId(roomId); // Set loading state for this specific room
+    try {
+      // 1. Delete the existing OpenVidu session
+      await deleteSession(roomId);
+      console.log(`OpenVidu session ${roomId} deleted.`);
+
+      // 2. Create a new OpenVidu session with the same customSessionId
+      await createSession({ customSessionId: roomId });
+      console.log(`OpenVidu session ${roomId} recreated.`);
+
+      // 3. Refresh rooms and connection counts to update UI
+      // fetchRooms will update the roomStore, and the useEffect will trigger fetchConnectionCountsForRooms
+      await fetchRooms();
+
+    } catch (error) {
+      console.error(`Error resetting room ${roomId}:`, error);
+      // TODO: Implement a global snackbar/toast for user feedback
+    } finally {
+      setResettingRoomId(null); // Clear loading state
+    }
   }, []);
 
   // Sort rooms: live streams first, then by connection count (descending)
@@ -103,6 +142,8 @@ export const RoomList: React.FC = () => {
               isTopRoom={index === 0 && !loading && !error && sortedRooms.length > 0}
               onJoinRoom={handleJoinRoom} // Pass the join handler
               onViewRoom={handleViewRoom} // Pass the view handler
+              onResetRoom={handleResetRoom} // Pass the new reset handler
+              resettingRoomId={resettingRoomId} // Pass the ID of the room currently being reset
             />
           ))}
       </Box>

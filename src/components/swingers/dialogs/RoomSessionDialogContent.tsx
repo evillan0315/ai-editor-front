@@ -13,6 +13,7 @@ import CallEndIcon from '@mui/icons-material/CallEnd';
 import CallIcon from '@mui/icons-material/Call';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
 import { createSession } from '@/components/swingers/api/sessions';
 import { createConnection } from '@/components/swingers/api/connections';
@@ -113,8 +114,8 @@ export const RoomSessionDialogContent: React.FC<RoomSessionDialogContentProps> =
   const ovState = useStore(openViduStore);
   const [roomDetails, setRoomDetails] = useState<IRoom | null>(null);
   const [currentConnectionCount, setCurrentConnectionCount] = useState<number | null>(null);
-  const [isCameraActive, setIsCameraActive] = useState(true);
-  const [isMicActive, setIsMicActive] = useState(true);
+  const [isCameraActive, setIsCameraActive] = useState(true); // Tracks intended camera state, not actual publishing
+  const [isMicActive, setIsMicActive] = useState(true);     // Tracks intended mic state
   const [isChatEnabled, setIsChatEnabled] = useState(false);
   const [fetchRoomError, setFetchRoomError] = useState<string | null>(null);
 
@@ -161,7 +162,7 @@ export const RoomSessionDialogContent: React.FC<RoomSessionDialogContentProps> =
     try {
       const session = await createSession({ customSessionId: mySessionId });
       const connection = await createConnection(session.sessionId, {
-        role: 'PUBLISHER',
+        role: 'PUBLISHER', // Requesting PUBLISHER role for future publishing
         data: `user_data_${Math.floor(Math.random() * 100)}`, // Example client data
       });
       return connection.token;
@@ -211,23 +212,9 @@ export const RoomSessionDialogContent: React.FC<RoomSessionDialogContentProps> =
 
       await session.connect(token, { clientData: 'Codejector User' });
 
-      // Get your own camera and microphone stream and publish
-      const publisher = await OV_REF.current.initPublisherAsync(undefined, {
-        audioSource: undefined, // Default microphone
-        videoSource: undefined, // Default webcam
-        publishAudio: true,
-        publishVideo: true,
-        resolution: '640x480',
-        frameRate: 30,
-        insertMode: 'APPEND',
-        mirror: true,
-      }) as IOpenViduPublisher;
+      // No longer publishing stream automatically on join
 
-      PUBLISHER_REF.current = publisher;
-      setOpenViduPublisher(publisher);
-      await session.publish(publisher);
-
-      // Update connection count after successfully joining and publishing
+      // Update connection count after successfully joining
       getConnections(roomId).then(c => setCurrentConnectionCount(c.length));
       fetchRooms(); // To update room list with new connection count status
 
@@ -238,7 +225,47 @@ export const RoomSessionDialogContent: React.FC<RoomSessionDialogContentProps> =
     } finally {
       setOpenViduLoading(false);
     }
-  }, [roomId, getToken, ovState.currentSessionId]);
+  }, [roomId, getToken]);
+
+  const startPublishingMedia = useCallback(async () => {
+    if (!ovState.session || !OV_REF.current) return;
+
+    setOpenViduLoading(true);
+    setOpenViduError(null);
+
+    try {
+      // Get your own camera and microphone stream and publish
+      const publisher = await OV_REF.current.initPublisherAsync(undefined, {
+        audioSource: undefined, // Default microphone
+        videoSource: undefined, // Default webcam
+        publishAudio: isMicActive, // Use current mic state
+        publishVideo: isCameraActive, // Use current camera state
+        resolution: '640x480',
+        frameRate: 30,
+        insertMode: 'APPEND',
+        mirror: true,
+      }) as IOpenViduPublisher;
+
+      PUBLISHER_REF.current = publisher;
+      setOpenViduPublisher(publisher);
+      await ovState.session.publish(publisher);
+
+      getConnections(roomId).then(c => setCurrentConnectionCount(c.length));
+      fetchRooms();
+
+    } catch (error) {
+      console.error('Error publishing media:', error.code, error.message);
+      setOpenViduError(`Failed to publish media: ${error.message || error}`);
+      // If publishing fails, disconnect publisher, but keep session open for chat
+      if (PUBLISHER_REF.current) {
+        PUBLISHER_REF.current.destroy();
+        PUBLISHER_REF.current = null;
+        setOpenViduPublisher(null);
+      }
+    } finally {
+      setOpenViduLoading(false);
+    }
+  }, [ovState.session, isMicActive, isCameraActive, roomId]);
 
   const leaveSession = useCallback(() => {
     if (SESSION_REF.current) {
@@ -250,6 +277,8 @@ export const RoomSessionDialogContent: React.FC<RoomSessionDialogContentProps> =
     // Update connection count after leaving
     getConnections(roomId).then(c => setCurrentConnectionCount(c.length));
     fetchRooms(); // To update room list
+    setIsCameraActive(true); // Reset to default state
+    setIsMicActive(true);     // Reset to default state
   }, [roomId]);
 
   const toggleCamera = useCallback(() => {
@@ -374,9 +403,22 @@ export const RoomSessionDialogContent: React.FC<RoomSessionDialogContentProps> =
             </Button>
           )}
         </Grid>
+        {ovState.currentSessionId && !ovState.publisher && (
+          <Grid item>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={startPublishingMedia}
+              disabled={ovState.loading}
+              startIcon={ovState.loading ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
+            >
+              {ovState.loading ? 'Starting Stream...' : 'Publish Video/Audio'}
+            </Button>
+          </Grid>
+        )}
       </Grid>
 
-      {ovState.currentSessionId && (
+      {ovState.currentSessionId && ovState.publisher && (
         <Card variant="outlined" className="mb-4">
           <CardContent>
             <Typography variant="h6" className="mb-2 font-semibold text-center">Media Settings</Typography>

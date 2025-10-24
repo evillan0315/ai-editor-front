@@ -71,3 +71,21 @@ export const fetchConnectionCountsForRooms = async (rooms: IRoom[]) => {
   roomStore.setKey('connectionCounts', { ...roomStore.get().connectionCounts, ...newConnectionCounts });
   roomStore.setKey('loadingConnectionCounts', { ...roomStore.get().loadingConnectionCounts, ...newLoadingState });
 };
+
+/**
+ * Updates the connection count for a specific room.
+ * This is intended for real-time updates from a WebSocket or similar.
+ * @param roomId The ID of the room whose connection count to update.
+ * @param count The new connection count for the room.
+ */
+export const updateRoomConnectionCount = (roomId: string, count: number) => {
+  roomStore.setKey('connectionCounts', {
+    ...roomStore.get().connectionCounts,
+    [roomId]: count,
+  });
+  // Also ensure loading for this specific room is false after an update
+  roomStore.setKey('loadingConnectionCounts', {
+    ...roomStore.get().loadingConnectionCounts,
+    [roomId]: false,
+  });
+};

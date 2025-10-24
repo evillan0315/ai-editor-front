@@ -8,7 +8,10 @@ export * from './RoomCard';
 export * from './RoomHeader';
 export * from './stores/roomStore';
 
-export * from './OpenViduSessionConnector';
+
 export * from './stores/openViduStore';
 
 export * from './api/connections';
+export * from './services/openViduSocketService';
+
+export * from './dialogs/RoomSessionDialogContent';
