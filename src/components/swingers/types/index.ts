@@ -1,5 +1,7 @@
 export interface IDefaultRecordingProperties {
-  id: number;
+  // `id` and `name` were inferred from the broader `IDefaultRecordingProperties` structure in existing types.
+  // Based on `room.json`, these fields might not always be present at the top level of `defaultRecordingProperties`.
+  // However, the object structure in `room.json` directly matches this interface's fields, so it's consistent.
   name: string;
   hasAudio: boolean;
   hasVideo: boolean;
@@ -10,29 +12,138 @@ export interface IDefaultRecordingProperties {
   shmSize: number;
 }
 
+// New interfaces for detailed room connections
+
+interface IClientDataLocalSettingsDefaultRoom {
+  value: string;
+}
+
+interface IClientDataLocalSettingsCamera {
+  publishAudio: boolean;
+  publishVideo: boolean;
+  resolution: string;
+  frameRate: number;
+  insertMode: string;
+  mirror: boolean;
+  audioSource?: string; // Optional field
+  videoSource?: string; // Optional field
+}
+
+interface IClientDataLocalSettingsGeneral {
+  soundNotification: boolean;
+  toggleWhisperOption: boolean;
+  textSize: string;
+  defaultRoom: IClientDataLocalSettingsDefaultRoom;
+}
+
+interface IClientDataLocalSettings {
+  camera: IClientDataLocalSettingsCamera;
+  general: IClientDataLocalSettingsGeneral;
+  customCameraLabel?: string; // Can be directly under localSettings
+}
+
+interface IInnerClientData {
+  USERNAME: string;
+  USERID: number;
+  PICTURE: string;
+  USERGROUPID: string;
+  ROOMNAME: string;
+  publicKey: string;
+  USER_GENDER: string; // e.g., "Couple", "", "Female", "Male"
+  GENDER1: number; // e.g., 0, 1
+  GENDER2: string | number; // e.g., 1, ""
+  PRIVATE: boolean;
+  localSettings: IClientDataLocalSettings;
+  id: number;
+  GENDER_DESC: string | boolean; // e.g., "Couple", "Female", "Male" or false
+  connectionId: string;
+}
+
+interface IClientDataContent {
+  clientData: IInnerClientData;
+  publicKey: string;
+}
+
+interface IVideoDimensions {
+  width: number;
+  height: number;
+}
+
+interface IMediaOptions {
+  hasAudio: boolean;
+  audioActive: boolean;
+  hasVideo: boolean;
+  videoActive: boolean;
+  typeOfVideo: string;
+  frameRate: number;
+  videoDimensions: string; // This is a JSON string, client-side parsing needed
+  filter: Record<string, unknown>; // Can be an empty object
+}
+
+interface IPublisherSubscriber {
+  createdAt: number;
+  streamId: string;
+  mediaOptions?: IMediaOptions; // Optional field
+}
+
+export interface IConnection {
+  id: string;
+  object: string;
+  status: string;
+  connectionId: string;
+  sessionId: string;
+  createdAt: number;
+  activeAt: number;
+  location: string;
+  ip: string;
+  platform: string;
+  token: string;
+  type: string;
+  record: boolean;
+  role: string;
+  kurentoOptions: unknown | null;
+  customIceServers: unknown[];
+  rtspUri: unknown | null;
+  adaptativeBitrate: unknown | null;
+  onlyPlayWithSubscribers: unknown | null;
+  networkCache: unknown | null;
+  serverData: string;
+  clientData: string; // This is a JSON string of IClientDataContent, client-side parsing needed
+  publishers: IPublisherSubscriber[];
+  subscribers: IPublisherSubscriber[];
+}
+
+interface IConnect {
+  numberOfElements: number;
+  content: IConnection[];
+}
+
 export interface IRoom {
   id: number;
   name: string;
   active: boolean;
-  type: string;
+  type: 'club' | 'public';
   description: string | null;
   roomId: string;
   agreement: unknown | null;
   reset: boolean;
-  allowTranscoding: boolean;
+  allowTranscoding: boolean | null;
   recording: boolean;
-  recordingMode: string;
+  recordingMode: string | null; // e.g., "MANUAL"
   map_sessions: unknown | null;
   analytics: unknown | null;
   liveStream: boolean;
-  shortName: unknown | null;
+  shortName: string | null;
   created_at: string; // ISO date string
   updated_at: string; // ISO date string
-  forceVideoCodec: string;
-  forcedVideoCodec: unknown | null;
-  defaultRecordingProperties: IDefaultRecordingProperties;
-  connections: unknown[];
+  forceVideoCodec: string | null; // e.g., "VP8"
+  forcedVideoCodec: string | null; // e.g., "MEDIA_SERVER_PREFERRED"
+  defaultRecordingProperties: IDefaultRecordingProperties | null;
+  connections: unknown[]; // This appears to be an empty array in samples, distinct from `connect.content`.
+  connect?: IConnect; // Optional, present in `room.json` but not `rooms.json`
 }
+
+export type IRooms = IRoom[];
 
 export interface IMemberJsonData {
   LAT: number;
