@@ -9,6 +9,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import CallIcon from '@mui/icons-material/Call'; // New: Icon for joining a room
 import VisibilityIcon from '@mui/icons-material/Visibility'; // New: Icon for viewing a room
+import ReplayIcon from '@mui/icons-material/Replay'; // New: Icon for reset/refresh
 
 interface RoomCardProps {
   room: IRoom;
@@ -17,6 +18,8 @@ interface RoomCardProps {
   isTopRoom: boolean;
   onJoinRoom?: (roomId: string) => void; // New prop for join action
   onViewRoom?: (roomId: string) => void; // New prop for view action
+  onResetRoom?: (roomId: string) => void; // New prop for reset action
+  resettingRoomId?: string | null; // To indicate if this room is currently being reset
 }
 
 const baseCardSx = {
@@ -75,8 +78,10 @@ const infoItemSx = {
   wordBreak: 'break-word',
 };
 
-export const RoomCard: React.FC<RoomCardProps> = ({ room, connectionCount, loadingConnections, isTopRoom, onJoinRoom, onViewRoom }) => {
+export const RoomCard: React.FC<RoomCardProps> = ({ room, connectionCount, loadingConnections, isTopRoom, onJoinRoom, onViewRoom, onResetRoom, resettingRoomId }) => {
   const { name, type, active, description, roomId, recording, liveStream, created_at } = room;
+
+  const isResetting = resettingRoomId === roomId;
 
   return (
     <Card sx={{ ...baseCardSx, ...(liveStream && liveCardHighlightSx), ...(isTopRoom && topRoomHighlightSx) }} className="flex-none w-full sm:w-80 md:w-full lg:w-96 min-h-60 h-auto">
@@ -146,6 +151,21 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, connectionCount, loadi
 
         {/* New: Action buttons at the bottom */}
         <Box className="flex justify-end gap-2 mt-4">
+          {roomId && onResetRoom && (
+            <IconButton
+              aria-label="reset room"
+              color="secondary"
+              onClick={() => onResetRoom(roomId)}
+              disabled={isResetting}
+              sx={{ '&:hover': { bgcolor: 'secondary.light' } }}
+            >
+              {isResetting ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <ReplayIcon />
+              )}
+            </IconButton>
+          )}
           {roomId && onJoinRoom && (
             <IconButton
               aria-label="join room"
