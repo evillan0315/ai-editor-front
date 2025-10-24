@@ -246,10 +246,38 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
     { label: 'Cancel', action: toggleCodeRepair, icon: <ClearIcon />, color: 'text', variant: 'outlined' },
     {
       label: 'Import Data',
-      action: () => setIsImportDialogOpen(true),
-      icon: <CloudUploadIcon />,
+      action: () => {
+        // Attempt to parse the current content of the CodeRepair editor (which is `response` from llmStore)
+        // and set it as lastLlmResponse, as if it were a new AI response.
+        try {
+          if (!response) {
+            showGlobalSnackbar('No content in Code Repair editor to import.', 'warning');
+            return;
+          }
+          const parsedData: unknown = JSON.parse(response);
+          if (
+            typeof parsedData === 'object' &&
+            parsedData !== null &&
+            'title' in parsedData && typeof (parsedData as CodeGeneratorData).title === 'string' &&
+            'summary' in parsedData && typeof (parsedData as CodeGeneratorData).summary === 'string' &&
+            'changes' in parsedData && Array.isArray((parsedData as CodeGeneratorData).changes)
+          ) {
+            setLastLlmResponse(parsedData as CodeGeneratorData);
+            showGlobalSnackbar('Content imported as structured LLM response.', 'success');
+          } else {
+            setLastLlmResponse(null); // Clear existing structured response if new content is not valid
+            showGlobalSnackbar('Content is not a valid structured LLM response. Clearing structured data.', 'warning');
+          }
+        } catch (err) {
+          console.error('Failed to parse Code Repair content for import:', err);
+          setLastLlmResponse(null); // Ensure previous structured response is cleared on error
+          showGlobalSnackbar(`Failed to parse content as valid JSON: ${err instanceof Error ? err.message : String(err)}`, 'error');
+        }
+      },
+      icon: <DataObjectOutlinedIcon />,
       color: 'secondary',
-      variant: 'outlined'
+      variant: 'outlined',
+      disabled: !response, // Disable if no content in CodeRepair editor
     },
     { label: 'Repair', action: () => setLastLlmResponse(), icon: <RepairIcon />, color: 'primary', variant: 'contained' },
   ];
