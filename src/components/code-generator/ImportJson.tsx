@@ -215,7 +215,7 @@ export const ImportJson: React.FC<ImportJsonProps> = ({
   );
 
   return (
-    <Box className="flex flex-col h-full py-4">
+    <Box className="flex flex-col h-full">
       <Box sx={selectContainerSx}>
         <Autocomplete
           fullWidth

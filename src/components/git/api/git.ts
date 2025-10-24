@@ -1,9 +1,26 @@
-import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
-import { GitBranch, GitStatusResult, GitCommit, GitDiffResponseDto, GitResetHardDto } from '@/types/git';
+import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api/fetch';
+import {
+  GitBranchDto,
+  GitCommitDto,
+  GitStatusResponseDto,
+  GitDiffResponseDto,
+  GitResetHardDto,
+  CommitDto,
+  CreateBranchDto,
+  CheckoutBranchDto,
+  DeleteBranchDto,
+  RevertCommitDto,
+  GitFileOperationDto,
+  GitFilesOperationDto,
+  CreateSnapshotDto,
+  RestoreSnapshotDto,
+  ListSnapshotsResponseDto
+} from '~/git/dto';
+import { GitBranch, GitCommit, GitStatusResult } from '../types/git'; // Keep local types for components for now
 
-export const getGitStatus = async (projectRoot?: string): Promise<GitStatusResult> => {
+export const getGitStatus = async (projectRoot?: string): Promise<GitStatusResponseDto> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/git/status?projectRoot=${projectRoot}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/git/status?projectRoot=${projectRoot || ''}`, {
       method: 'GET'
     });
     return await handleResponse(response);
@@ -15,9 +32,10 @@ export const getGitStatus = async (projectRoot?: string): Promise<GitStatusResul
 
 export const gitCommit = async (message: string, projectRoot?: string) => {
   try {
+    const dto: CommitDto = { message, projectRoot };
     const response = await fetchWithAuth(`${API_BASE_URL}/git/commit`, {
       method: 'POST',
-      body: JSON.stringify({ message, projectRoot }),
+      body: JSON.stringify(dto),
     });
     return await handleResponse(response);
   } catch (error) {
@@ -28,9 +46,10 @@ export const gitCommit = async (message: string, projectRoot?: string) => {
 
 export const gitStageFiles = async (filePaths: string[], projectRoot?: string) => {
   try {
+    const dto: GitFilesOperationDto = { filePaths, projectRoot };
     const response = await fetchWithAuth(`${API_BASE_URL}/git/stage`, {
       method: 'POST',
-      body: JSON.stringify({ filePaths, projectRoot }),
+      body: JSON.stringify(dto),
     });
     return await handleResponse(response);
   } catch (error) {
@@ -41,9 +60,10 @@ export const gitStageFiles = async (filePaths: string[], projectRoot?: string) =
 
 export const gitUnstageFiles = async (filePaths: string[], projectRoot?: string) => {
   try {
+    const dto: GitFilesOperationDto = { filePaths, projectRoot };
     const response = await fetchWithAuth(`${API_BASE_URL}/git/unstage`, {
       method: 'POST',
-      body: JSON.stringify({ filePaths, projectRoot }),
+      body: JSON.stringify(dto),
     });
     return await handleResponse(response);
   } catch (error) {
@@ -78,13 +98,13 @@ export const gitResetHard = async (dto: GitResetHardDto) => {
   }
 };
 
-export const gitGetBranches = async (projectRoot?: string): Promise<GitBranch[]> => {
+export const gitGetBranches = async (projectRoot?: string): Promise<GitBranchDto[]> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/git/branches?projectRoot=${projectRoot}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/git/branches?projectRoot=${projectRoot || ''}`, {
       method: 'GET'
     });
     return await handleResponse(response);
- 
+
   } catch (error) {
     console.error('Error fetching branches', error);
     throw error;
@@ -93,9 +113,10 @@ export const gitGetBranches = async (projectRoot?: string): Promise<GitBranch[]>
 
 export const gitCreateBranch = async (newBranchName: string, projectRoot?: string) => {
   try {
+    const dto: CreateBranchDto = { newBranchName, projectRoot };
     const response = await fetchWithAuth(`${API_BASE_URL}/git/branch`, {
       method: 'POST',
-      body: JSON.stringify({ newBranchName, projectRoot }),
+      body: JSON.stringify(dto),
     });
     return await handleResponse(response);
   } catch (error) {
@@ -106,9 +127,10 @@ export const gitCreateBranch = async (newBranchName: string, projectRoot?: strin
 
 export const gitCheckoutBranch = async (branchName: string, remote: boolean = false, projectRoot?: string) => {
   try {
+    const dto: CheckoutBranchDto = { branchName, remote, projectRoot };
     const response = await fetchWithAuth(`${API_BASE_URL}/git/checkout`, {
       method: 'POST',
-      body: JSON.stringify({ branchName, remote, projectRoot }),
+      body: JSON.stringify(dto),
     });
     return await handleResponse(response);
   } catch (error) {
@@ -119,9 +141,10 @@ export const gitCheckoutBranch = async (branchName: string, remote: boolean = fa
 
 export const gitDeleteBranch = async (branchName: string, force: boolean = false, projectRoot?: string) => {
   try {
+    const dto: DeleteBranchDto = { branchName, force, projectRoot };
     const response = await fetchWithAuth(`${API_BASE_URL}/git/branch`, {
       method: 'DELETE',
-      body: JSON.stringify({ branchName, force, projectRoot }),
+      body: JSON.stringify(dto),
     });
     return await handleResponse(response);
   } catch (error) {
@@ -132,9 +155,10 @@ export const gitDeleteBranch = async (branchName: string, force: boolean = false
 
 export const gitRevertCommit = async (commitHash: string, projectRoot?: string) => {
   try {
+    const dto: RevertCommitDto = { commitHash, projectRoot };
     const response = await fetchWithAuth(`${API_BASE_URL}/git/revert`, {
       method: 'POST',
-      body: JSON.stringify({ commitHash, projectRoot }),
+      body: JSON.stringify(dto),
     });
     return await handleResponse(response);
   } catch (error) {
@@ -145,9 +169,10 @@ export const gitRevertCommit = async (commitHash: string, projectRoot?: string) 
 
 export const gitUndoFileChanges = async (filePath: string, projectRoot?: string) => {
   try {
+    const dto: GitFileOperationDto = { filePath, projectRoot };
     const response = await fetchWithAuth(`${API_BASE_URL}/git/undo-file-changes`, {
       method: 'POST',
-      body: JSON.stringify({ filePath, projectRoot }),
+      body: JSON.stringify(dto),
     });
     return await handleResponse(response);
   } catch (error) {
@@ -158,9 +183,10 @@ export const gitUndoFileChanges = async (filePath: string, projectRoot?: string)
 
 export const gitCreateSnapshot = async (snapshotName: string, message?: string, projectRoot?: string) => {
   try {
+    const dto: CreateSnapshotDto = { snapshotName, message, projectRoot };
     const response = await fetchWithAuth(`${API_BASE_URL}/git/snapshot`, {
       method: 'POST',
-      body: JSON.stringify({ snapshotName, message, projectRoot }),
+      body: JSON.stringify(dto),
     });
     return await handleResponse(response);
   } catch (error) {
@@ -171,9 +197,10 @@ export const gitCreateSnapshot = async (snapshotName: string, message?: string, 
 
 export const gitRestoreSnapshot = async (snapshotName: string, projectRoot?: string) => {
   try {
+    const dto: RestoreSnapshotDto = { snapshotName, projectRoot };
     const response = await fetchWithAuth(`${API_BASE_URL}/git/restore-snapshot`, {
       method: 'POST',
-      body: JSON.stringify({ snapshotName, projectRoot }),
+      body: JSON.stringify(dto),
     });
     return await handleResponse(response);
   } catch (error) {
@@ -182,10 +209,10 @@ export const gitRestoreSnapshot = async (snapshotName: string, projectRoot?: str
   }
 };
 
-export const gitListSnapshots = async (projectRoot?: string): Promise<{ tags: string[] }> => {
+export const gitListSnapshots = async (projectRoot?: string): Promise<ListSnapshotsResponseDto> => {
   try {
 
-    const response = await fetchWithAuth(`${API_BASE_URL}/git/snapshots?projectRoot=${projectRoot}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/git/snapshots?projectRoot=${projectRoot || ''}`, {
       method: 'GET',
     });
     return await handleResponse(response);
@@ -197,7 +224,11 @@ export const gitListSnapshots = async (projectRoot?: string): Promise<{ tags: st
 
 export const gitDeleteSnapshot = async (snapshotName: string, projectRoot?: string) => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/git/snapshot/${snapshotName}`, {
+    let url = `${API_BASE_URL}/git/snapshot/${snapshotName}`;
+    if (projectRoot) {
+      url += `?projectRoot=${projectRoot}`;
+    }
+    const response = await fetchWithAuth(url, {
       method: 'DELETE',
     });
     return await handleResponse(response);
@@ -207,10 +238,10 @@ export const gitDeleteSnapshot = async (snapshotName: string, projectRoot?: stri
   }
 };
 
-export const gitGetCommitLog = async (projectRoot?: string): Promise<GitCommit[]> => {
+export const gitGetCommitLog = async (projectRoot?: string): Promise<GitCommitDto[]> => {
   try {
 
-    const response = await fetchWithAuth(`${API_BASE_URL}/git/commits?projectRoot=${projectRoot}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/git/commits?projectRoot=${projectRoot || ''}`, {
       method: 'GET',
     });
     return await handleResponse(response);
@@ -225,9 +256,10 @@ export const getGitDiff = async (
   projectRoot: string,
 ): Promise<string> => {
   try {
+    const dto: GitDiffDto = { filePath, projectRoot };
     const response = await fetchWithAuth(`${API_BASE_URL}/git/diff`, {
       method: 'POST',
-      body: JSON.stringify({ filePath, projectRoot }),
+      body: JSON.stringify(dto),
     });
     const data = await handleResponse<GitDiffResponseDto>(response);
     return data.diff;

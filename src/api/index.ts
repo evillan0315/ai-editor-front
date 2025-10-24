@@ -4,7 +4,6 @@ export * from './fetch';
 export * from './file';
 export * from './gemini';
 export * from './geminiLive';
-export * from './git';
 // export * from './recording'; // REMOVED: Moved to src/components/recording/api
 export * from './index';
 export * from './llm';
@@ -16,5 +15,4 @@ export * from './project';
 export * from './repo';
 export * from './schema';
 export * from './socket';
-export * from './terminal';
 export * from './user';

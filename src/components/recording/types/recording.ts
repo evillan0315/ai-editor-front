@@ -8,12 +8,14 @@ export interface IRecorderSettings {
   cameraAudioDevice: string;
 }
 
+export type RecordingType = 'screenRecord' | 'screenShot' | 'cameraRecord';
+
 export interface RecordingItem {
   id: string;
   name: string;
   createdAt: string;
   sizeBytes: number;
-  type: string;
+  type: RecordingType; // Use the specific RecordingType union
   status: string;
   path: string;
   createdById: string;
@@ -24,7 +26,7 @@ export interface RecordingItem {
     [key: string]: any;
   };
 }
-export type RecordingType = 'screenShot' | 'screenRecord' | 'screenCapture';
+
 export type SortOrder = 'asc' | 'desc';
 export type SortField = 'name' | 'createdAt' | 'type' | 'sizeBytes';
 
@@ -34,7 +36,7 @@ export interface PaginationRecordingQueryDto {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   search?: string;
-  type?: string;
+  type?: string; // This can remain 'string' for API queries if the backend is flexible
   pageSize?: number;
 }
 
@@ -59,7 +61,7 @@ export interface RecordingStatusDto {
   startedAt: string | null;
 }
 export interface RecordingResultDto extends RecordingStartResponse {
-  type: string;
+  type: RecordingType; // Use the specific RecordingType union
   pid: string;
   status: string;
   data: RecordingDataDto;
@@ -105,6 +107,6 @@ export interface CameraRecordingResponseDto {
 
 export interface UpdateRecordingDto {
   name?: string;
-  type?: string;
+  type?: RecordingType; // Use the specific RecordingType union
   data?: any;
 }

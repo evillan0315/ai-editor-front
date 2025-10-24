@@ -14,9 +14,7 @@ import {
   CloudUpload as CloudUploadIcon,
   Settings as SettingsIcon,
   Clear as ClearIcon,
-  Close as CloseIcon,
-  Save as SaveIcon,
-  BugReport as BugReportIcon
+  BugReport as BugReportIcon,
 } from '@mui/icons-material';
 import {
   setScanPathsInput,
@@ -28,24 +26,24 @@ import {
   clearLlmStore
 } from '@/stores/llmStore';
 import {
-  loadInitialTree,
-  projectRootDirectoryStore,
   setCurrentProjectPath,
 } from '@/stores/fileTreeStore';
 import { addLog } from '@/stores/logStore';
-import { errorStore, setErrorRaw } from '@/stores/errorStore';
+import { setErrorRaw } from '@/stores/errorStore';
 import { autoApplyChanges, setAutoApplyChanges, showGlobalSnackbar } from '@/stores/aiEditorStore';
 import { useStore } from '@nanostores/react';
-import DirectoryPickerDialog from '@/components/dialogs/DirectoryPickerDialog';
-import ScanPathsDialog from '@/components/dialogs/ScanPathsDialog';
-import PromptGeneratorSettings, {
-  type GlobalAction,
-} from '@/components/Drawer/PromptGeneratorSettings';
+import {
+  showDirectoryPickerDialog, // New import
+  showScanPathsDialog, // New import
+} from '@/components/dialogs'; // Updated import path
+import PromptGeneratorSettings, { type GlobalAction } from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import { ImportJson } from './ImportJson';
 import { CodeGeneratorData } from './CodeGeneratorMain';
 import { RequestType } from '@/types/llm';
+import SaveIcon from '@mui/icons-material/Save';
+import CloseIcon from '@mui/icons-material/Close';
 
 interface BottomToolbarProps {
   scanPathAutocompleteOptions: string[];
@@ -58,10 +56,10 @@ interface BottomToolbarProps {
   setIsImportDialogOpen: (open: boolean) => void;
   isSettingsOpen: boolean;
   setIsSettingsOpen: (open: boolean) => void;
-  isProjectRootPickerDialogOpen: boolean;
-  setIsProjectRootPickerDialogOpen: (open: boolean) => void;
-  isScanPathsDialogOpen: boolean;
-  setIsScanPathsDialogOpen: (open: boolean) => void;
+  // isProjectRootPickerDialogOpen: boolean; // Removed, handled by showDirectoryPickerDialog
+  // setIsProjectRootPickerDialogOpen: (open: boolean) => void; // Removed
+  // isScanPathsDialogOpen: boolean; // Removed, handled by showScanPathsDialog
+  // setIsScanPathsDialogOpen: (open: boolean) => void; // Removed
 
   updateScanPaths: (paths: string[]) => void;
   requestType: RequestType;
@@ -80,14 +78,14 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   setIsImportDialogOpen,
   isSettingsOpen,
   setIsSettingsOpen,
-  isProjectRootPickerDialogOpen,
-  setIsProjectRootPickerDialogOpen,
-  isScanPathsDialogOpen,
-  setIsScanPathsDialogOpen,
+  // isProjectRootPickerDialogOpen, // Removed
+  // setIsProjectRootPickerDialogOpen, // Removed
+  // isScanPathsDialogOpen, // Removed
+  // setIsScanPathsDialogOpen, // Removed
 
   updateScanPaths,
   requestType,
-  handleSave, // Receive handleSave
+  handleSave,
   commonDisabled
 }) => {
   const theme = useTheme();
@@ -113,6 +111,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       showGlobalSnackbar(msg, 'error');
     }
   }, [importContentString, setIsImportDialogOpen]);
+
   const GlobalActionButtons: GlobalAction[] = [
     {
       label: 'Cancel',
@@ -121,6 +120,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
     },
     { label: 'Save', action: handleSave, icon: SaveIcon },
   ];
+
   const ImportDataAction: GlobalAction[] = [
     {
       label: 'Cancel',
@@ -131,10 +131,33 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       label: 'Import',
       action: handleImport,
       icon: CloudUploadIcon,
-      disabled: !importContentString, // Disable if no content to import
+      disabled: !importContentString,
     },
-  ]; 
-  
+  ];
+
+  const handleShowProjectRootPicker = useCallback(() => {
+    showDirectoryPickerDialog({
+      onSelect: (path) => {
+        setCurrentProjectPath(path);
+        setProjectInput(path); // Keep local state in sync
+        handleLoadProject();
+      },
+      initialPath: projectInput || '/',
+      allowExternalPaths: true,
+      onClose: () => addLog('Directory Picker', 'Project root selection cancelled.', 'info')
+    });
+  }, [projectInput, setProjectInput, handleLoadProject]);
+
+  const handleShowScanPathsDialog = useCallback(() => {
+    showScanPathsDialog({
+      currentScanPaths: currentScanPathsArray,
+      availablePaths: scanPathAutocompleteOptions,
+      allowExternalPaths: true,
+      onUpdatePaths: updateScanPaths,
+      onClose: () => addLog('Scan Paths', 'Scan paths selection cancelled.', 'info')
+    });
+  }, [currentScanPathsArray, scanPathAutocompleteOptions, updateScanPaths]);
+
   return (
     <Box className="flex items-center justify-between gap-2 ">
       <Box className="flex flex-wrap gap-2 ">
@@ -156,7 +179,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         <Tooltip title="Pick project root directory">
           <IconButton
             color="primary"
-            onClick={() => setIsProjectRootPickerDialogOpen(true)}
+            onClick={handleShowProjectRootPicker} // Call new show function
           >
             <FolderOpenIcon />
           </IconButton>
@@ -165,15 +188,13 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         <Tooltip title="Manage scan paths for the AI search">
           <IconButton
             color="primary"
-            onClick={() => setIsScanPathsDialogOpen(true)}
+            onClick={handleShowScanPathsDialog} // Call new show function
           >
             <AddRoadIcon />
           </IconButton>
         </Tooltip>
 
-        
 
-        
         {requestType === RequestType.LLM_GENERATION && (
           <Tooltip title="Import prompt data from JSON file">
             <IconButton
@@ -222,25 +243,8 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           />
         </Box>
       )}
-      {/* Dialogs */}
-      <ScanPathsDialog
-        open={isScanPathsDialogOpen}
-        onClose={() => setIsScanPathsDialogOpen(false)}
-        currentScanPaths={currentScanPathsArray}
-        availablePaths={scanPathAutocompleteOptions}
-        allowExternalPaths
-        onUpdatePaths={updateScanPaths}
-      />
-      <DirectoryPickerDialog
-        open={isProjectRootPickerDialogOpen}
-        onClose={() => setIsProjectRootPickerDialogOpen(false)}
-        onSelect={(path) => {
-          setCurrentProjectPath(path);
-          handleLoadProject();
-        }}
-        initialPath={projectInput || '/'}
-        allowExternalPaths
-      />
+      {/* Dialogs are now controlled by Nanostore and rendered by GlobalDialog */}
+      {/* The CustomDrawer components remain as they are not MUI Dialogs */}
       <CustomDrawer
         open={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
@@ -265,7 +269,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
         footerActionButton={GlobalActionButtons}
       >
         <PromptGeneratorSettings
-          open={isSettingsOpen}
+          open={isSettingsOpen} // This prop is only for internal logic of PromptGeneratorSettings
           onClose={() => setIsSettingsOpen(false)}
         />
       </CustomDrawer>

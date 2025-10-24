@@ -1,5 +1,5 @@
 import { map } from 'nanostores';
-import { GitBranch, GitCommit, GitStatusResult } from '@/types/git';
+import { GitBranch, GitCommit, GitStatusResult } from '../types/git';
 
 export interface GitState {
   status: GitStatusResult | null;

@@ -8,7 +8,7 @@ import {
   Divider,
 } from '@mui/material';
 import CustomDrawer from '../Drawer/CustomDrawer';
-import { RecordingItem } from './types/recording';
+import { RecordingItem, RecordingType } from './types/recording';
 import { useStore } from '@nanostores/react';
 import {
   editableRecordingStore,
@@ -26,7 +26,7 @@ interface RecordingInfoDrawerProps {
   onUpdate: () => void; // No longer takes an argument, reads from store
 }
 
-const RECORDING_TYPES = ['screenRecord', 'screenShot', 'cameraRecord'];
+const RECORDING_TYPES: RecordingType[] = ['screenRecord', 'screenShot', 'cameraRecord'];
 
 export const RecordingInfoDrawer: React.FC<RecordingInfoDrawerProps> = ({
   open, // Keep for CustomDrawer
@@ -96,7 +96,7 @@ export const RecordingInfoDrawer: React.FC<RecordingInfoDrawerProps> = ({
           select
           value={editableRecording.type || ''}
           onChange={(e) =>
-            setEditableRecording({ ...editableRecording, type: e.target.value })
+            setEditableRecording({ ...editableRecording, type: e.target.value as RecordingType })
           }
           fullWidth
           size="small"

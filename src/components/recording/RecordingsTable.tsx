@@ -18,18 +18,20 @@ import {
   DialogContentText,
   DialogActions,
   Button,
+  Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
 import GifIcon from '@mui/icons-material/Gif';
+import StopCircle from '@mui/icons-material/StopCircle'; // New import
 
 import VideocamIcon from '@mui/icons-material/Videocam';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import ImageIcon from '@mui/icons-material/Image';
 
-import { RecordingItem, SortField, SortOrder } from './types/recording';
+import { RecordingItem, SortField, SortOrder, RecordingType } from './types/recording';
 import { useStore } from '@nanostores/react';
 import {
   recordingsListStore,
@@ -45,6 +47,7 @@ interface RecordingsTableProps {
   onDelete: (id: string) => void;
   onView: (recording: RecordingItem) => void;
   onConvertToGif: (recording: RecordingItem) => void;
+  onStopRecording: (id: string, type: RecordingType) => void; // New prop
 }
 
 const tableContainerSx: SxProps<Theme> = (theme) => ({
@@ -87,17 +90,71 @@ const dialogTitleSx: SxProps<Theme> = (theme) => ({
   color: theme.palette.error.contrastText,
 });
 
-const getRecordingTypeIcon = (type: string) => {
-  switch (type) {
-    case 'screenRecord':
-      return <VideocamIcon fontSize="small" />;
-    case 'cameraRecord':
-      return <CameraAltIcon fontSize="small" />;
-    case 'screenShot':
-      return <ImageIcon fontSize="small" />;
-    default:
-      return null;
+// Styles for the stop recording icon, matching color of RecordingControls stop button
+const errorIconColorSx: SxProps<Theme> = (theme) => ({
+  color: theme.palette.error.main,
+});
+
+const stopRecordingIconSx: SxProps<Theme> = (theme) => ({
+  ...errorIconColorSx(theme),
+  fontSize: '1.5rem', // Slightly larger for emphasis, fits table cell
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+  padding: 0,
+  cursor: 'pointer',
+});
+
+// Refactored function to get the display for the recording type column
+const getRecordingTypeDisplay = (
+  recording: RecordingItem,
+  onStopRecording: (id: string, type: RecordingType) => void,
+  theme: Theme,
+) => {
+  if (recording.status === 'recording') {
+    return (
+      <Box className="flex items-center justify-start gap-1">
+      <Tooltip title={`Stop ${recording.type === 'screenRecord' ? 'Screen' : 'Camera'} Recording`}>
+        <IconButton
+          aria-label={`stop ${recording.type} recording`}
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent row click from firing
+            onStopRecording(recording.id, recording.type);
+          }}
+          sx={stopRecordingIconSx(theme)}
+        >
+          <StopCircle fontSize="inherit" />
+        </IconButton>
+      </Tooltip>
+        </Box>
+    );
   }
+
+  let icon = null;
+  let tooltipText = '';
+  switch (recording.type) {
+    case 'screenRecord':
+      icon = <VideocamIcon fontSize="small" />;
+      tooltipText = 'Screen Recording';
+      break;
+    case 'cameraRecord':
+      icon = <CameraAltIcon fontSize="small" />;
+      tooltipText = 'Camera Recording';
+      break;
+    case 'screenShot':
+      icon = <ImageIcon fontSize="small" />;
+      tooltipText = 'Screenshot';
+      break;
+    default:
+      icon = null;
+      tooltipText = '';
+  }
+
+  return (
+    <Box className="flex items-center gap-1">
+      {icon && <Tooltip title={tooltipText}>{icon}</Tooltip>}
+    </Box>
+  );
 };
 
 const RecordingsTable: React.FC<RecordingsTableProps> = ({
@@ -105,6 +162,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   onDelete,
   onView,
   onConvertToGif,
+  onStopRecording, // Destructure new prop
 }) => {
   const theme = useTheme();
   const recordings = useStore(recordingsListStore);
@@ -197,11 +255,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
                 {recording.name}
               </TableCell>
               <TableCell sx={tableBodyCellSx(theme)}>
-                <Tooltip title={recording.type}>
-                  <Box className="flex items-center gap-1">
-                    {getRecordingTypeIcon(recording.type)}
-                  </Box>
-                </Tooltip>
+                {getRecordingTypeDisplay(recording, onStopRecording, theme)}
               </TableCell>
               <TableCell sx={tableBodyCellSx(theme)}>
                 {formatBytes(recording.sizeBytes)}

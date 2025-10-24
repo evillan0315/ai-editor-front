@@ -1,6 +1,6 @@
 /**
  * @file Dedicated WebSocket service for chat and video signaling events.
- * @description This service connects to the '/ws' namespace of the NestJS ChatGateway
+ * @description This service connects to the '/chat' namespace of the NestJS ChatGateway
  * and provides methods for sending/receiving chat messages and WebRTC signaling payloads.
  */
 
@@ -10,7 +10,7 @@ import { atom } from 'nanostores';
 import { SendMessageDto, GetHistoryDto, Message } from './types';
 
 // WebSocket URL, using relative path for Vite proxy consistency
-const WS_BASE_URL = import.meta.env.VITE_WS_URL; // Expects VITE_WS_URL to be defined
+const WS_BASE_URL = import.meta.env.VITE_WS_URL as string; // Expects VITE_WS_URL to be defined
 const CHAT_WS_NAMESPACE = '/chat'; // Matches NestJS ChatGateway path
 
 /**
@@ -20,12 +20,18 @@ export const isChatSocketConnected = atom(false);
 
 /**
  * Helper function to deserialize message timestamps from ISO strings to Date objects.
- * Assumes backend sends 'createdAt' as an ISO string.
+ * Assumes backend sends 'createdAt' as an ISO string and aligns with `Message` interface.
  */
 const deserializeMessage = (rawMessage: any): Message => {
   return {
     ...rawMessage,
-    createdAt: new Date(rawMessage.createdAt), // Correctly map 'createdAt' from backend to Date object
+    createdAt: new Date(rawMessage.createdAt),
+    // Ensure these fields exist and are mapped correctly from backend payload
+    id: rawMessage.id,
+    conversationId: rawMessage.conversationId,
+    createdById: rawMessage.createdById,
+    content: rawMessage.content,
+    sender: rawMessage.sender,
   };
 };
 
@@ -139,7 +145,7 @@ class ChatSocketService {
         callback((data as any[]).map(deserializeMessage) as T);
       } else {
         callback(data as T);
-      }
+      n}
     };
 
     this.listeners.set(event, wrappedCallback); // Store wrapped listener

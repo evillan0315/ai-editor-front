@@ -197,6 +197,39 @@ export function Recording() {
     }
   };
 
+  const handleStopRecording = async (id: string, type: RecordingType) => {
+    // Ensure the recording to stop is the currently active one for its type
+    if (
+      (type === 'screenRecord' && currentRecordingId !== id) ||
+      (type === 'cameraRecord' && currentCameraRecordingId !== id)
+    ) {
+      console.warn(`Attempted to stop a non-active recording of type ${type}. ID: ${id}`);
+      return; // Do not proceed if it's not the currently active recording of its type
+    }
+
+    if (type === 'screenRecord') {
+      setLoading('stopRecording', true);
+      try {
+        await recordingApi.stopRecording(id);
+        setIsScreenRecording(false);
+        currentRecordingIdStore.set(null);
+        fetchRecordings();
+      } finally {
+        setLoading('stopRecording', false);
+      }
+    } else if (type === 'cameraRecord') {
+      setLoading('stopCameraRecording', true);
+      try {
+        await recordingApi.stopCameraRecording(id);
+        setIsCameraRecording(false);
+        currentCameraRecordingIdStore.set(null);
+        fetchRecordings();
+      } finally {
+        setLoading('stopCameraRecording', false);
+      }
+    }
+  };
+
   const handleDelete = async (id: string) => {
     setLoading('deleteRecording', true);
     try {
@@ -366,6 +399,7 @@ export function Recording() {
         sortBy={sortBy}
         sortOrder={sortOrder}
         onConvertToGif={handleConvertToGif}
+        onStopRecording={handleStopRecording} // New prop
       />
 
       <RecordingsPagination

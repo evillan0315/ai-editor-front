@@ -1,5 +1,5 @@
 import { persistentAtom } from '@/utils/persistentAtom';
-import { IRecorderSettings, RecordingItem, SortField, SortOrder } from '../types/recording';
+import { IRecorderSettings, RecordingItem, SortField, SortOrder, RecordingType } from '../types/recording';
 
 // Existing stores
 export const currentRecordingIdStore = persistentAtom<string | null>(
@@ -61,7 +61,7 @@ export const editableRecordingStore = persistentAtom<Partial<RecordingItem>>(
   'editableRecording',
   {}, // Store the editable form state
 );
-export const recordingTypeFilterStore = persistentAtom<string>(
+export const recordingTypeFilterStore = persistentAtom<RecordingType | ''>(
   'recordingTypeFilter',
   '',
 );
@@ -130,7 +130,7 @@ export const setEditableRecording = (editable: Partial<RecordingItem>) => {
   editableRecordingStore.set(editable);
 };
 
-export const setRecordingTypeFilter = (typeFilter: string) => {
+export const setRecordingTypeFilter = (typeFilter: RecordingType | '') => {
   recordingTypeFilterStore.set(typeFilter);
 };
 
