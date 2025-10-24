@@ -4,6 +4,49 @@ import { ISession } from '@/components/swingers/types';
 const API_SESSIONS_BASE_URL = `${SLS_VIDU_URL}/api/sessions`;
 
 /**
+ * Options for creating a new OpenVidu session.
+ * Corresponds to the body for POST /openvidu/api/sessions
+ */
+export interface ICreateSessionOptions {
+  customSessionId?: string;
+  mediaMode?: 'ROUTED' | 'RELAYED'; // 'ROUTED' by default if not specified
+  recordingMode?: 'MANUAL' | 'ALWAYS'; // 'MANUAL' by default if not specified
+  defaultRecordingProperties?: {
+    name?: string;
+    hasAudio?: boolean;
+    hasVideo?: boolean;
+    outputMode?: 'COMPOSED' | 'INDIVIDUAL';
+    recordingLayout?: 'BEST_FIT' | 'CUSTOM' | 'PICTURE_IN_PICTURE' | 'VERTICAL_PRESENTATION' | 'HORIZONTAL_PRESENTATION';
+    resolution?: string;
+    frameRate?: number;
+    shmSize?: number;
+  };
+}
+
+/**
+ * Creates or initializes a new OpenVidu session.
+ * Corresponds to: POST /openvidu/api/sessions
+ * @param options Optional parameters for session creation, such as customSessionId or mediaMode.
+ * @returns A promise that resolves to the created ISession object.
+ */
+export const createSession = async (options?: ICreateSessionOptions): Promise<ISession> => {
+  try {
+    const response = await fetchWithBasicAuth(
+      API_SESSIONS_BASE_URL,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(options || {}),
+      },
+    );
+    return handleResponse<ISession>(response);
+  } catch (error) {
+    console.error(`Error creating OpenVidu session:`, error);
+    throw error;
+  }
+};
+
+/**
  * Fetches all active OpenVidu sessions.
  * Corresponds to: GET /openvidu/api/sessions
  * @returns A promise that resolves to an array of ISession objects.

@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '../../../api';
+import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api/fetch';
 
 import {
   RecordingStartResponse,

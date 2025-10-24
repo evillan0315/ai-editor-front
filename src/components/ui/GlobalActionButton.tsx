@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Button, Tooltip, useTheme, IconButton } from '@mui/material';
-import { ButtonColor, ButtonVariant } from '@mui/material/Button';
+
 import { GlobalAction } from '@/types/app'; // Corrected import path for GlobalAction
 
 interface GlobalActionButtonProps {

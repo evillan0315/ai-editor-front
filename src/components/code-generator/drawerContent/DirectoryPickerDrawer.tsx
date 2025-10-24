@@ -31,6 +31,7 @@ interface DirectoryPickerDrawerProps {
   onClose: () => void;
   initialPath?: string;
   allowExternalPaths?: boolean;
+  onPathUpdate?: (path: string) => void; // New prop for external path updates
 }
 
 const DirectoryPickerDrawer: React.FC<DirectoryPickerDrawerProps> = ({
@@ -38,6 +39,7 @@ const DirectoryPickerDrawer: React.FC<DirectoryPickerDrawerProps> = ({
   onClose,
   initialPath = '/media/eddie/Data/projects',
   allowExternalPaths = false,
+  onPathUpdate, // Destructure new prop
 }) => {
   const theme = useTheme();
   const [currentBrowsingPath, setCurrentBrowsingPath] = useState<string>('');
@@ -57,6 +59,9 @@ const DirectoryPickerDrawer: React.FC<DirectoryPickerDrawerProps> = ({
     setTempPathInput(effectiveInitialPath);
     // Only fetch contents if the drawer is logically 'open' or relevant for initial load
     fetchContents(effectiveInitialPath);
+    if (onPathUpdate) {
+      onPathUpdate(effectiveInitialPath);
+    }
   }, [initialPath, projectRoot]); // Dependencies for initial setup
 
   useEffect(() => {
@@ -72,15 +77,23 @@ const DirectoryPickerDrawer: React.FC<DirectoryPickerDrawerProps> = ({
       const foldersOnly = contents.filter((item) => item.type === 'folder');
       foldersOnly.sort((a, b) => a.name.localeCompare(b.name));
       setDirectoryContents(foldersOnly);
+      setCurrentBrowsingPath(dirPath); // Update current path after successful fetch
+      if (onPathUpdate) {
+        onPathUpdate(dirPath);
+      }
     } catch (err) {
       console.error(`Error fetching directory contents for ${dirPath}:`, err);
       setError(
         `Failed to load directory contents: ${err instanceof Error ? err.message : String(err)}`,
       );
+      if (onPathUpdate) {
+        // Notify parent of path, even if loading failed (e.g., for error context)
+        onPathUpdate(dirPath);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [onPathUpdate]);
 
   const handleGoUp = useCallback(() => {
     const parentPath = path.dirname(currentBrowsingPath);
@@ -95,38 +108,52 @@ const DirectoryPickerDrawer: React.FC<DirectoryPickerDrawerProps> = ({
       canGoAboveRoot
     ) {
       setCurrentBrowsingPath(normalizedParentPath);
+      if (onPathUpdate) {
+        onPathUpdate(normalizedParentPath);
+      }
       fetchContents(normalizedParentPath);
     }
-  }, [currentBrowsingPath, fetchContents, allowExternalPaths, projectRoot]);
+  }, [currentBrowsingPath, fetchContents, allowExternalPaths, projectRoot, onPathUpdate]);
 
   const handleOpenDirectory = useCallback(
     (dirPath: string) => {
       setCurrentBrowsingPath(dirPath);
-      // No need to set projectRootDirectoryStore here, it's done upon 'Select'
+      if (onPathUpdate) {
+        onPathUpdate(dirPath);
+      }
+      // No need to set projectRootDirectoryStore here, it's done upon 'Select' by parent
       fetchContents(dirPath);
     },
-    [fetchContents],
+    [fetchContents, onPathUpdate],
   );
 
-  const handleSelectCurrent = useCallback(() => {
-    onSelect(currentBrowsingPath);
-    // The parent (BottomToolbar) will handle projectRootDirectoryStore.set(currentBrowsingPath)
-    onClose(); // Close the drawer after selection
-  }, [currentBrowsingPath, onSelect, onClose]);
+  // Removed handleSelectCurrent as selection is handled by parent's footer action
+  // const handleSelectCurrent = useCallback(() => {
+  //   onSelect(currentBrowsingPath);
+  //   // The parent (BottomToolbar) will handle projectRootDirectoryStore.set(currentBrowsingPath)
+  //   onClose(); // Close the drawer after selection
+  // }, [currentBrowsingPath, onSelect, onClose]);
 
   const handleTempPathInputChange = (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    setTempPathInput(e.target.value);
+    const newPath = e.target.value;
+    setTempPathInput(newPath);
+    if (onPathUpdate) {
+      onPathUpdate(newPath); // Notify parent of manual input change
+    }
   };
 
   const handleGoToPath = useCallback(() => {
     const trimmedPath = tempPathInput.trim();
     if (trimmedPath) {
       setCurrentBrowsingPath(trimmedPath);
+      if (onPathUpdate) {
+        onPathUpdate(trimmedPath);
+      }
       fetchContents(trimmedPath);
     }
-  }, [tempPathInput, fetchContents]);
+  }, [tempPathInput, fetchContents, onPathUpdate]);
 
   const canGoUp = useMemo(() => {
     const normalizedPath = currentBrowsingPath.replace(/\\/g, '/');
@@ -247,10 +274,12 @@ const DirectoryPickerDrawer: React.FC<DirectoryPickerDrawerProps> = ({
             <ListItem
               key={folder.path}
               onClick={() => handleOpenDirectory(folder.path)}
-              sx={{
-                '&:hover': { bgcolor: theme.palette.action.hover },
-                cursor: 'pointer',
-              }}
+              sx={
+                {
+                  '&:hover': { bgcolor: theme.palette.action.hover },
+                  cursor: 'pointer',
+                }
+              }
             >
               <ListItemIcon>
                 <FolderIcon

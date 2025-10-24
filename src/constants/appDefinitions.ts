@@ -16,8 +16,18 @@ import ForumIcon from '@mui/icons-material/Forum';
 import DataObjectIcon from '@mui/icons-material/DataObject'; // For Schema Generator
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // NEW: For ChatApp (Direct)
 import WebAssetIcon from '@mui/icons-material/WebAsset'; // NEW: For Playwright
+import GroupIcon from '@mui/icons-material/Group'; // NEW: For Swingers App
 
 export const appDefinitions: AppDefinition[] = [
+  {
+    id: 'swingers',
+    title: 'Swingers App',
+    description: 'Connect with a community of like-minded individuals.',
+    link: '/apps/swingers',
+    linkText: 'Open Swingers App',
+    icon: GroupIcon,
+    category: 'Community',
+  },
   {
     id: 'ai-editor',
     title: 'AI Editor',

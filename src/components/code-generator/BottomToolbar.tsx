@@ -350,9 +350,22 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       color: 'primary',
       variant: 'contained',
       action: () => {
-        // This action uses the path actively browsed/selected in the drawer
+        // 1. Update the parent component's local state (PromptGenerator's projectInput)
+        // so the TextField reflects the newly selected path when the drawer closes.
+        setProjectInput(selectedDirectoryPathForDrawer);
+
+        // 2. Directly update the global project root store.
         setCurrentProjectPath(selectedDirectoryPathForDrawer);
-        handleLoadProject();
+
+        // 3. Trigger the file tree loading for the newly selected project root.
+        // This ensures the tree updates immediately with the correct path selected in the drawer,
+        // bypassing any stale `handleLoadProject` closures.
+        loadInitialTree(selectedDirectoryPathForDrawer);
+
+        // 4. Log the action.
+        addLog('Directory Picker', `Project root selected: ${selectedDirectoryPathForDrawer}`, 'success');
+
+        // 5. Close the drawer.
         setIsProjectRootPickerDialogOpen(false);
       },
       icon: <CheckIcon />,
@@ -555,7 +568,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
             setIsProjectRootPickerDialogOpen(false);
           }}
           onClose={() => setIsProjectRootPickerDialogOpen(false)}
-          initialPath={projectInput || '/'}
+          initialPath={projectInput || '/'} // Pass the projectInput so the drawer starts at the currently loaded project or default
           allowExternalPaths
           onPathUpdate={setSelectedDirectoryPathForDrawer} // Pass the new callback
         />
