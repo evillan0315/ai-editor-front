@@ -10,3 +10,5 @@ export * from './stores/roomStore';
 
 export * from './OpenViduSessionConnector';
 export * from './stores/openViduStore';
+
+export * from './api/connections';

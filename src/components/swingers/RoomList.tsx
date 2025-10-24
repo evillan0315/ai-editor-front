@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useStore } from '@nanostores/react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import { roomStore, fetchRooms, fetchConnectionCountsForRooms } from './stores/roomStore';
@@ -42,6 +42,18 @@ export const RoomList: React.FC = () => {
       fetchConnectionCountsForRooms(rooms);
     }
   }, [loading, rooms]);
+
+  // Callback for joining a room
+  const handleJoinRoom = useCallback((roomId: string) => {
+    console.log(`Attempting to join room: ${roomId}`);
+    // Implement actual join logic here, e.g., navigate to session page or open dialog
+  }, []);
+
+  // Callback for viewing room details
+  const handleViewRoom = useCallback((roomId: string) => {
+    console.log(`Viewing details for room: ${roomId}`);
+    // Implement actual view logic here, e.g., navigate to room details page or open dialog
+  }, []);
 
   // Sort rooms: live streams first, then by connection count (descending)
   const sortedRooms = [...rooms].sort((a, b) => {
@@ -88,7 +100,9 @@ export const RoomList: React.FC = () => {
               room={room}
               connectionCount={room.roomId ? connectionCounts[room.roomId] : null}
               loadingConnections={room.roomId ? loadingConnectionCounts[room.roomId] || false : false}
-              isTopRoom={index === 0 && !loading && !error && sortedRooms.length > 0} // Pass isTopRoom prop to the first card
+              isTopRoom={index === 0 && !loading && !error && sortedRooms.length > 0}
+              onJoinRoom={handleJoinRoom} // Pass the join handler
+              onViewRoom={handleViewRoom} // Pass the view handler
             />
           ))}
       </Box>

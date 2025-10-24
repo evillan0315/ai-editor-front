@@ -23,8 +23,8 @@ export interface ICreateRoomDto {
 export interface IUpdateRoomDto extends Partial<ICreateRoomDto> {}
 
 /**
- * Fetches all available rooms.
- * @returns A promise that resolves to an array of IRoom objects.
+ * Fetches all available rooms, filtering out inactive ones.
+ * @returns A promise that resolves to an array of active IRoom objects.
  */
 export const getRooms = async (): Promise<IRoom[]> => {
   try {
@@ -32,7 +32,9 @@ export const getRooms = async (): Promise<IRoom[]> => {
       SWINGERS_ROOMS_BASE_URL,
       { method: 'GET' },
     );
-    return handleResponse<IRoom[]>(response);
+    const allRooms = await handleResponse<IRoom[]>(response);
+    // Filter out inactive rooms
+    return allRooms.filter(room => room.active);
   } catch (error) {
     console.error(`Error fetching rooms:`, error);
     throw error;

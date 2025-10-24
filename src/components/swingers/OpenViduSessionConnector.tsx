@@ -11,6 +11,7 @@ import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import CallEndIcon from '@mui/icons-material/CallEnd';
 import CallIcon from '@mui/icons-material/Call';
+import { nanoid } from 'nanoid';
 
 import { createSession } from '@/components/swingers/api/sessions';
 import { createConnection } from '@/components/swingers/api/connections';
@@ -129,6 +130,13 @@ export const OpenViduSessionConnector: React.FC = () => {
       leaveSession();
     };
   }, []);
+
+  // Auto-generate session ID if not already set or in an active session
+  useEffect(() => {
+    if (!sessionNameInput && !ovState.currentSessionId) {
+      setSessionNameInput(`session-${nanoid(8)}`);
+    }
+  }, [sessionNameInput, ovState.currentSessionId]);
 
   // Function to create/fetch a session and generate a token
   const getToken = useCallback(async (mySessionId: string): Promise<string> => {

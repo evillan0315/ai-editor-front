@@ -1,6 +1,11 @@
 import { fetchWithBasicAuth, handleResponse, SLS_VIDU_URL } from '@/api/fetch';
 import { ISession } from '@/components/swingers/types';
 
+// NOTE: These API calls interact directly with the OpenVidu server via a proxy.
+// The `fetchWithBasicAuth` uses the VITE_SLS_API_KEY environment variable directly from the frontend.
+// In a production environment, it is recommended to proxy these calls through your own backend
+// to keep the OpenVidu secret server-side and only expose a generated token to the frontend.
+
 const API_SESSIONS_BASE_URL = `${SLS_VIDU_URL}/api/sessions`;
 
 /**
@@ -8,7 +13,7 @@ const API_SESSIONS_BASE_URL = `${SLS_VIDU_URL}/api/sessions`;
  * Corresponds to the body for POST /openvidu/api/sessions
  */
 export interface ICreateSessionOptions {
-  customSessionId?: string;
+  customSessionId?: string; // OpenVidu custom session ID
   mediaMode?: 'ROUTED' | 'RELAYED'; // 'ROUTED' by default if not specified
   recordingMode?: 'MANUAL' | 'ALWAYS'; // 'MANUAL' by default if not specified
   defaultRecordingProperties?: {
@@ -57,7 +62,9 @@ export const getSessions = async (): Promise<ISession[]> => {
       API_SESSIONS_BASE_URL,
       { method: 'GET' },
     );
-    return handleResponse<ISession[]>(response);
+    // The OpenVidu API returns a JSON object with a 'content' array for sessions
+    const data = await handleResponse<{ content: ISession[] }>(response);
+    return data.content;
   } catch (error) {
     console.error(
       `Error fetching OpenVidu sessions:`, // Corrected error message

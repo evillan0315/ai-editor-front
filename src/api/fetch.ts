@@ -53,9 +53,8 @@ export const fetchWithBasicAuth = async (
   url: string,
   options?: RequestInit,
 ) => {
-  const basic_token = Buffer.from(
-    `${import.meta.env.VITE_SLS_USERNAME}:${import.meta.env.VITE_SLS_API_KEY}`,
-  ).toString('base64');
+  const credentials = `${import.meta.env.VITE_SLS_USERNAME}:${import.meta.env.VITE_SLS_API_KEY}`;
+  const basic_token = btoa(credentials);
   const headers = {
     'Content-Type': 'application/json',
     ...(basic_token && { Authorization: `Basic ${basic_token}` }),
