@@ -17,7 +17,7 @@ interface GitBranchContextMenuProps {
   loading: boolean;
   selectedBranch: IGitBranch | null;
   onCheckoutBranch: (branchName: string) => void;
-  onDeleteBranch: (branchName: string, force?: boolean) => Promise<void>;
+  onDeleteBranch: (branchName: string, force?: boolean) => void;
 }
 
 export function GitBranchContextMenu({

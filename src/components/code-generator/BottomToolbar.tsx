@@ -42,7 +42,7 @@ import { useStore } from '@nanostores/react';
 import PromptGeneratorSettings from '@/components/Drawer/PromptGeneratorSettings';
 import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
-import { ImportJson } from './ImportJson';
+import { ImportJson } from './drawerContent/ImportJson'; // Updated import path for ImportJson
 import { CodeGeneratorData } from './CodeGeneratorMain';
 import { RequestType } from '@/types/llm'; 
 import { GlobalAction } from '@/types/app'; // Import GlobalAction
@@ -135,15 +135,24 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   }, [importContentString, setIsImportDialogOpen]);
 
   const GlobalActionButtons: GlobalAction[] = [
-    { label: 'Cancel', action: () => setIsSettingsOpen(false), icon: <ClearIcon /> },
-    { label: 'Save', action: handleSave, icon: <SaveIcon /> },
+    { label: 'Cancel', action: () => setIsSettingsOpen(false), icon: <ClearIcon />, color: 'text', variant: 'outlined' },
+    { label: 'Save', action: handleSave, icon: <SaveIcon />, color: 'primary',
+      variant: 'contained', },
   ];
   const ImportDataAction: GlobalAction[] = [
-    { label: 'Cancel', action: () => setIsImportDialogOpen(false), icon: <ClearIcon /> },
+    { 
+      label: 'Cancel', 
+      action: () => setIsImportDialogOpen(false), 
+      icon: <ClearIcon />,
+      color: 'text',
+      variant: 'outlined'
+    },
     { 
       label: 'Import',
       action: handleImport,
       icon: <CloudUploadIcon />,
+      color: 'primary',
+      variant: 'contained',
       disabled: !importContentString, // Disable if no content to import
     },
   ];
@@ -157,9 +166,9 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
     action: () => setIsScanPathsDialogOpen(false), 
     icon: <ClearIcon /> 
     },    
-    {
+    { 
       label: 'Confirm',
-            color: 'primary',
+      color: 'primary',
       variant: 'contained',
       action: () => {
         updateScanPaths(localScanPaths); // Commit changes from local state to store
@@ -186,11 +195,10 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       variant: 'contained',
       action: (path) => {
         setCurrentProjectPath(path);
-            handleLoadProject();
-            setIsProjectRootPickerDialogOpen(false);
+        handleLoadProject();
+        setIsProjectRootPickerDialogOpen(false);
       },
       icon: <CheckIcon />,
-      // The disabled state should be managed by the DirectoryPickerDrawer content itself if it has internal validation
       disabled: false, 
     },
   ];
@@ -358,10 +366,11 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       <CustomDrawer
         open={isCodeRepairOpen}
         onClose={() => setIsCodeRepairOpen(false)}
-        position="left"
-        size="large"
+        position="right"
+        size="medium"
         title="Code Repair"
         hasBackdrop={false}
+        footerActionButton={GlobalActionButtons}
       >
         <CodeRepair
           value={response || ''}

@@ -20,6 +20,7 @@ import { projectStore } from '@/stores/projectStore';
 import { useStore } from '@nanostores/react';
 import GlobalActionButton, { GlobalAction } from '@/components/ui/GlobalActionButton';
 import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
 import { MdiRenameBox } from '@/components/icons/MdiRenameBox';
 
 // -----------------------------------------------------------------------------
@@ -75,7 +76,8 @@ const RenameContent: React.FC<RenameContentProps> = ({ item, onRenameSuccess }) 
         const errorMessage = result.message || 'Failed to rename item.';
         setError(errorMessage);
         showGlobalSnackbar(errorMessage, 'error');
-      } catch (err: any) {
+      }
+    } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred.';
       setError(errorMessage);
       showGlobalSnackbar(`Error renaming: ${errorMessage}`, 'error');
@@ -99,7 +101,7 @@ const RenameContent: React.FC<RenameContentProps> = ({ item, onRenameSuccess }) 
       disabled: loading || !newName.trim(),
       color: 'primary',
       variant: 'contained',
-      icon: loading ? <CircularProgress size={20} /> : <MdiRenameBox />,
+      icon: loading ? <CircularProgress size={20} /> : <EditIcon />,
     },
   ];
 

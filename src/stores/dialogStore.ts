@@ -2,9 +2,9 @@ import { atom, map } from 'nanostores';
 import type { ReactNode } from 'react';
 import type { Breakpoint } from '@mui/material';
 
-// ----------------------------------------------------------------------------- 
-// Dialog Store Types 
-// ----------------------------------------------------------------------------- 
+// -----------------------------------------------------------------------------
+// Dialog Store Types
+// -----------------------------------------------------------------------------
 export interface DialogState {
   open: boolean;
   title: string | ReactNode;
@@ -19,9 +19,9 @@ export interface DialogState {
   paperPropsSx?: object; // Custom sx for PaperProps
 }
 
-// ----------------------------------------------------------------------------- 
-// Dialog Store 
-// ----------------------------------------------------------------------------- 
+// -----------------------------------------------------------------------------
+// Dialog Store
+// -----------------------------------------------------------------------------
 export const dialogStore = map<DialogState>({
   open: false,
   title: '',

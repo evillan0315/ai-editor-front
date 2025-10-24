@@ -14,7 +14,7 @@ interface GitSnapshotContextMenuProps {
   onClose: () => void;
   loading: boolean;
   selectedSnapshot: string | null;
-  onRestoreSnapshot: (snapshotName: string) => Promise<void>;
+  onRestoreSnapshot: (snapshotName: string) => void;
   onDeleteSnapshot: (snapshotName: string) => void;
 }
 

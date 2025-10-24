@@ -40,7 +40,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'chat-component',
     title: 'Chat App (Direct)',
-    description: 'Direct access to the ChatApp component for testing or specific use.',
+    description:
+      'Direct access to the ChatApp component for testing or specific use.',
     link: '/apps/chat-component',
     linkText: 'Open Direct Chat',
     icon: ChatBubbleOutlineIcon,
@@ -58,7 +59,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'llm-playwright',
     title: 'LLM Playwright',
-    description: 'Automate web tasks and generate insights with Playwright and AI.',
+    description:
+      'Automate web tasks and generate insights with Playwright and AI.',
     link: '/apps/llm-playwright',
     linkText: 'Open Playwright',
     icon: WebAssetIcon,

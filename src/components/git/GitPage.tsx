@@ -449,6 +449,7 @@ export default function GitPage() {
     showDialog({
       title: 'Create New Branch',
       content: (
+         <Box className="p-4">
         <TextField
           autoFocus
           margin="dense"
@@ -461,6 +462,7 @@ export default function GitPage() {
           onKeyDown={(e) => { if (e.key === 'Enter' && !loading && newBranchName.trim()) handleCreateBranch(); }}
           disabled={loading}
         />
+         </Box>
       ),
       actions: (
         <>
@@ -478,6 +480,7 @@ export default function GitPage() {
     showDialog({
       title: 'Checkout Branch',
       content: (
+         <Box className="p-4">
         <TextField
           autoFocus
           margin="dense"
@@ -490,6 +493,7 @@ export default function GitPage() {
           onKeyDown={(e) => { if (e.key === 'Enter' && !loading && (branchName || checkoutBranchName).trim()) handleCheckoutBranch(); }}
           disabled={loading}
         />
+         </Box>
       ),
       actions: (
         <>
@@ -506,9 +510,11 @@ export default function GitPage() {
     showDialog({
       title: `Confirm Delete Branch: ${branchName}`,
       content: (
+         <Box className="p-4">
         <Typography>
           Are you sure you want to delete branch '<b>{branchName}</b>'? {force ? '(Force delete - irreversible if unmerged)' : ''} This cannot be undone.
         </Typography>
+         </Box>
       ),
       actions: (
         <>
@@ -528,6 +534,7 @@ export default function GitPage() {
     showDialog({
       title: 'Revert Commit',
       content: (
+         <Box className="p-4">
         <TextField
           autoFocus
           margin="dense"
@@ -540,6 +547,7 @@ export default function GitPage() {
           onKeyDown={(e) => { if (e.key === 'Enter' && !loading && (commitHash || revertCommitHash).trim()) handleRevertCommit(); }}
           disabled={loading}
         />
+         </Box>
       ),
       actions: (
         <>
@@ -557,7 +565,7 @@ export default function GitPage() {
     showDialog({
       title: 'Confirm Git Reset (Hard)',
       content: (
-        <>
+         <Box className="p-4">
           <Alert severity="error" className="mb-4">
             WARNING: This will discard ALL uncommitted changes AND force the repository to the state of commit '{ (commitHash || resetHardCommitHash).substring(0, 7) }'. This action is irreversible. Are you absolutely sure?
           </Alert>
@@ -571,7 +579,7 @@ export default function GitPage() {
             InputProps={{ readOnly: true }}
             disabled={loading}
           />
-        </>
+        </Box>
       ),
       actions: (
         <>
@@ -588,9 +596,11 @@ export default function GitPage() {
     showDialog({
       title: `Confirm Discard Changes`,
       content: (
+         <Box className="p-4">
         <Typography>
           Are you sure you want to discard changes in '<b>{filePath}</b>'? This cannot be undone.
         </Typography>
+         </Box>
       ),
       actions: (
         <>
@@ -609,6 +619,7 @@ export default function GitPage() {
     showDialog({
       title: 'Create Repository Snapshot',
       content: (
+         <Box className="p-4">
         <TextField
           autoFocus
           margin="dense"
@@ -621,6 +632,7 @@ export default function GitPage() {
           onKeyDown={(e) => { if (e.key === 'Enter' && !loading && snapshotName.trim()) handleCreateSnapshot(); }}
           disabled={loading}
         />
+         </Box>
       ),
       actions: (
         <>
@@ -637,9 +649,11 @@ export default function GitPage() {
     showDialog({
       title: `Confirm Restore Snapshot: ${name}`,
       content: (
+         <Box className="p-4">
         <Typography>
           Restoring snapshot '<b>{name}</b>' will revert your repository to that state. Are you sure?
         </Typography>
+         </Box>
       ),
       actions: (
         <>
@@ -659,7 +673,9 @@ export default function GitPage() {
     showDialog({
       title: 'Confirm Delete Snapshot',
       content: (
+         <Box className="p-4">
         <Typography>Are you sure you want to delete snapshot '<b>{snapshot}</b>'? This cannot be undone.</Typography>
+         </Box>
       ),
       actions: (
         <>

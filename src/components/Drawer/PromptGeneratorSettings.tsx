@@ -17,7 +17,7 @@ import {
 } from '@/stores/llmStore';
 import CodeMirrorEditor from '@/components/codemirror/CodeMirrorEditor';
 import MarkdownEditor from '@/components/MarkdownEditor'; // ✅ New rich editor
-import { GlobalAction } from '@/types';
+import { GlobalAction } from '@/types/app'; // Corrected import path for GlobalAction
 import AiSchemaGenerator from '@/components/schema/AiSchemaGenerator';
 
 interface PromptGeneratorSettingsProps {

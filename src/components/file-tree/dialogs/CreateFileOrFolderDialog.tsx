@@ -25,20 +25,6 @@ import { showGlobalSnackbar } from '@/stores/snackbarStore';
 import GlobalActionButton, { GlobalAction } from '@/components/ui/GlobalActionButton';
 
 // -----------------------------------------------------------------------------
-// Styles
-// -----------------------------------------------------------------------------
-const dialogContentSx = {
-  p: 2,
-};
-
-const dialogActionsSx = {
-  borderTop: `1px solid`,
-  borderColor: 'divider',
-  p: 2,
-  justifyContent: 'flex-end',
-};
-
-// -----------------------------------------------------------------------------
 // Component for the content of the Create File/Folder dialog
 // -----------------------------------------------------------------------------
 interface CreateFileOrFolderContentProps {
@@ -131,13 +117,13 @@ const CreateFileOrFolderContent: React.FC<CreateFileOrFolderContentProps> = ({
       color: 'primary',
       variant: 'contained',
       disabled: loading || !name.trim(),
-      icon: loading ? <CircularProgress size={20} /> : isFolder ? <FolderIcon  /> : <InsertDriveFileIcon />,
+      icon: loading ? <CircularProgress size={20} /> : (isFolder ? <FolderIcon  /> : <InsertDriveFileIcon />),
     },
   ];
 
   return (
     <>
- 
+       <Box className="p-4">
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -203,9 +189,10 @@ const CreateFileOrFolderContent: React.FC<CreateFileOrFolderContentProps> = ({
             />
           </Box>
         )}
-      <Box className="flex items-center justify-between gap-2 mt-4">
+      </Box>
+      <DialogActions sx={{ pt: 1,  mt:1, justifyContent: 'flex-end', borderTop: `1px solid ${muiTheme.palette.divider}` }}>
         <GlobalActionButton globalActions={dialogActions} iconOnly={false} />
-     </Box>
+      </DialogActions>
     </>
   );
 };

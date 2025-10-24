@@ -44,7 +44,7 @@ const GlobalDialog: React.FC = () => {
       fullWidth={fullWidth}
       PaperProps={{
         sx: {
-          bgcolor: theme.palette.background.paper,
+          bgColor: theme.palette.background.paper,
           color: theme.palette.text.primary,
           ...paperPropsSx,
         },
@@ -60,10 +60,11 @@ const GlobalDialog: React.FC = () => {
             justifyContent: 'space-between',
             alignItems: 'center',
             pr: 1,
+            backgroundColor: theme.palette.background.default
           }}
         >
           {typeof title === 'string' ? (
-            <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }} className="truncate">
               {title}
             </Typography>
           ) : (
@@ -81,15 +82,11 @@ const GlobalDialog: React.FC = () => {
         </DialogTitle>
       )}
 
-      {content && <DialogContent sx={{ p: 2 }}>{content}</DialogContent>}
+      {content && <DialogContent sx={{ p: 0, backgroundColor: theme.palette.background.paper }}>{content}</DialogContent>}
 
       {actions && (
         <DialogActions
-          sx={{
-            borderTop: `1px solid ${theme.palette.divider}`,
-            p: 2,
-            justifyContent: 'flex-end',
-          }}
+          sx={{ pt: 1, justifyContent: 'flex-end', borderTop: `1px solid ${theme.palette.divider}` }}
         >
           {actions}
         </DialogActions>

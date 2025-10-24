@@ -249,8 +249,9 @@ const FileTree: React.FC<FileTreeProps> = () => {
         item: node,
         onRenameSuccess: (oldPath, newPath) => {
           refreshPath(oldPath);
-          if (oldPath !== newPath) {
-            refreshPath(newPath);
+          // Refresh new parent if path changes (e.g., if renamed from 'a/b' to 'a/c')
+          if (path.dirname(oldPath) !== path.dirname(newPath)) {
+            refreshPath(path.dirname(newPath));
           }
         },
       });

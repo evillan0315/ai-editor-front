@@ -7,7 +7,8 @@ import {
   Typography,
   CircularProgress,
   Alert,
-  Box
+  Box,
+  useTheme
 } from '@mui/material';
 import { copyFile as apiCopyFile, moveFile as apiMoveFile } from '@/api/file';
 import { FileEntry } from '@/types/refactored/fileTree';
@@ -16,6 +17,10 @@ import { showDialog, hideDialog } from '@/stores/dialogStore';
 import { showGlobalSnackbar } from '@/stores/snackbarStore';
 import { projectStore } from '@/stores/projectStore'; 
 import { useStore } from '@nanostores/react';
+import GlobalActionButton, { GlobalAction } from '@/components/ui/GlobalActionButton';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
+import CloseIcon from '@mui/icons-material/Close';
 
 // -----------------------------------------------------------------------------
 // Component for the content of the Operation Path Dialog
@@ -33,6 +38,7 @@ const OperationPathContent: React.FC<OperationPathContentProps> = ({
   onOperationSuccess,
   projectRoot,
 }) => {
+  const muiTheme = useTheme();
   const [destinationPathInput, setDestinationPathInput] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -96,9 +102,28 @@ const OperationPathContent: React.FC<OperationPathContentProps> = ({
     }
   };
 
+  const dialogActions: GlobalAction[] = [
+    {
+      label: 'Cancel',
+      action: hideDialog,
+      disabled: loading,
+      color: 'text',
+      variant: 'outlined',
+      icon: <CloseIcon />
+    },
+    {
+      label: operationLabel,
+      action: handleOperation,
+      disabled: loading || !destinationPathInput.trim(),
+      color: 'primary',
+      variant: 'contained',
+      icon: loading ? <CircularProgress size={20} /> : (mode === 'copy' ? <ContentCopyIcon /> : <DriveFileMoveIcon />),
+    },
+  ];
+
   return (
-    <DialogContent sx={{ p: 2 }}>
-      <Box  className="">
+    <>
+      <Box className="p-4">
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -125,15 +150,10 @@ const OperationPathContent: React.FC<OperationPathContentProps> = ({
           Final {operationLabel} Path: <strong>{path.join(destinationPathInput, item?.name || '')}</strong>
         </Typography>
      </Box>
-      <DialogActions sx={{ pt: 2, justifyContent: 'flex-end', borderTop: `1px solid`, borderColor: 'divider'}}>
-        <Button onClick={hideDialog} disabled={loading}>
-          Cancel
-        </Button>
-        <Button onClick={handleOperation} disabled={loading} variant="contained" color="primary">
-          {loading ? <CircularProgress size={20} /> : operationLabel}
-        </Button>
+      <DialogActions sx={{ pt: 1,  mt:1, justifyContent: 'flex-end', borderTop: `1px solid ${muiTheme.palette.divider}` }}>
+        <GlobalActionButton globalActions={dialogActions} iconOnly={false} />
       </DialogActions>
-    </DialogContent>
+    </>
   );
 };
 

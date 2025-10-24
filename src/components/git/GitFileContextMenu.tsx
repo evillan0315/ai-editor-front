@@ -19,10 +19,10 @@ interface GitFileContextMenuProps {
   loading: boolean;
   selectedFile: string | null;
   status: IGitStatusResult | null;
-  onViewDiff: (filePath: string) => Promise<void>;
+  onViewDiff: (filePath: string) => void;
   onStageFiles: (files?: string[]) => Promise<void>;
   onUnstageFiles: (files?: string[]) => Promise<void>;
-  onDiscardChanges: (filePath: string) => Promise<void>;
+  onDiscardChanges: (filePath: string) => void;
 }
 
 export function GitFileContextMenu({

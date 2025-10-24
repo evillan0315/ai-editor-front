@@ -140,7 +140,11 @@ project-board-front/
 │   ├── components/     # Reusable React components
 │   │   ├── ai-tools/   # Components for AI prompt generation and interaction (e.g., `AIPromptGenerator.tsx`)
 │   │   ├── board/      # Components for the Kanban board (`KanbanBoard.tsx`)
-│   │   ├── code-generator/ # Core components for AI code generation, diffing, and applying changes (`ChangesList.tsx`, `PromptGenerator.tsx`, `CodeGeneratorMain.tsx`, `ChangeItem.tsx`, `GitInstructions.tsx`, `DocumentationViewer.tsx`, `ImportJson.tsx`, `ThoughtProcess.tsx`, `CodeRepair.tsx`)
+│   │   ├── code-generator/ # Core components for AI code generation, diffing, and applying changes (`ChangesList.tsx`, `PromptGenerator.tsx`, `CodeGeneratorMain.tsx`, `ChangeItem.tsx`, `GitInstructions.tsx`, `DocumentationViewer.tsx`, `ThoughtProcess.tsx`, `CodeRepair.tsx`)
+│   │   │   ├── drawerContent/
+│   │   │   │   ├── DirectoryPickerDrawer.tsx
+│   │   │   │   ├── ImportJson.tsx
+│   │   │   │   └── ScanPathsDrawer.tsx
 │   │   ├── dialogs/    # Modal dialog components (e.g., `CreateFileOrFolderDialog.tsx`, `DirectoryPickerDialog.tsx`, `FileUploaderDialog.tsx`, `InstructionEditorDialog.tsx`, `OperationPathDialog.tsx`, `RenameDialog.tsx`, `ScanPathsDialog.tsx`, `TerminalSettingsDialog.tsx`, `index.ts` for exports)
 │   │   ├── file-tree/  # Components for rendering and interacting with the project's file tree (`FileTree.tsx`, `FileTreeItem.tsx`, `FileTreeContextMenuRenderer.tsx`, `index.ts` for exports)
 │   │   ├── git/        # **NEW: Co-located Git module components**
@@ -153,7 +157,6 @@ project-board-front/
 │   │   │   ├── GitBranchContextMenu.tsx
 │   │   │   ├── GitBranchesSection.tsx
 │   │   │   ├── GitCommitContextMenu.tsx
-│   │   │   ├── GitCommitsSection.tsx
 │   │   │   ├── GitDialogs.tsx
 │   │   │   ├── GitDiffViewerDialog.tsx
 │   │   │   ├── GitFileContextMenu.tsx
