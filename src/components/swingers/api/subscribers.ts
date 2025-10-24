@@ -4,7 +4,12 @@ import { getUniqueSubscribers } from '@/components/swingers/utils/subscriberUtil
 
 const SWINGERS_SUBSCRIBERS = `${SLS_API_URL}/subscribers`;
 
-
+/**
+ * Fetches all subscribers and returns a list of unique subscribers, 
+ * where uniqueness is determined by the 'email' property.
+ * This function delegates the uniqueness logic to `getUniqueSubscribers` utility.
+ * @returns A promise that resolves to an array of unique ISwinger objects.
+ */
 export const getSubscribers = async (): Promise<ISwinger[]> => {
   try {
     const response = await fetchWithToken(
