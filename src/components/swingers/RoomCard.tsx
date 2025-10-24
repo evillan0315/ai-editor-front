@@ -12,6 +12,7 @@ interface RoomCardProps {
   room: IRoom;
   connectionCount: number | null; // New prop for connection count
   loadingConnections: boolean; // New prop for loading state
+  isTopRoom: boolean; // New prop to indicate if it's the very top room
 }
 
 const baseCardSx = {
@@ -41,6 +42,17 @@ const liveCardHighlightSx = {
   },
 };
 
+const topRoomHighlightSx = {
+  borderColor: 'warning.main', // Even more prominent border
+  borderWidth: '3px', // Thicker border
+  boxShadow: '0 0 25px rgba(255, 165, 0, 0.7)', // More intense glow, perhaps orange
+  transform: 'scale(1.02)', // Slightly larger scale
+  '&:hover': {
+    transform: 'scale(1.04) translateY(-6px)',
+    boxShadow: '0 0 35px rgba(255, 165, 0, 0.9)',
+  },
+};
+
 const contentSx = {
   flexGrow: 1,
   display: 'flex',
@@ -59,11 +71,11 @@ const infoItemSx = {
   wordBreak: 'break-word',
 };
 
-export const RoomCard: React.FC<RoomCardProps> = ({ room, connectionCount, loadingConnections }) => {
+export const RoomCard: React.FC<RoomCardProps> = ({ room, connectionCount, loadingConnections, isTopRoom }) => {
   const { name, type, active, description, roomId, recording, liveStream, created_at } = room;
 
   return (
-    <Card sx={{ ...baseCardSx, ...(liveStream && liveCardHighlightSx) }} className="flex-none w-full sm:w-80 md:w-full lg:w-96 min-h-60 h-auto">
+    <Card sx={{ ...baseCardSx, ...(liveStream && liveCardHighlightSx), ...(isTopRoom && topRoomHighlightSx) }} className="flex-none w-full sm:w-80 md:w-full lg:w-96 min-h-60 h-auto">
       <Box className="relative h-28 w-full overflow-hidden bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center p-4">
         <MeetingRoomIcon className="text-white" sx={{ fontSize: '4rem' }} />
         <Box className="absolute top-2 right-2 flex items-center gap-1 p-1 rounded-full text-white text-xs font-semibold"

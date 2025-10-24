@@ -43,11 +43,17 @@ export const RoomList: React.FC = () => {
     }
   }, [loading, rooms]);
 
-  // Sort rooms: live streams first, then others
+  // Sort rooms: live streams first, then by connection count (descending)
   const sortedRooms = [...rooms].sort((a, b) => {
-    if (a.liveStream && !b.liveStream) return -1; // a is live, b is not: a comes first
-    if (!a.liveStream && b.liveStream) return 1;  // b is live, a is not: b comes first
-    return 0; // maintain original order for rooms with the same live status
+    const aConnections = a.roomId ? connectionCounts[a.roomId] || 0 : 0;
+    const bConnections = b.roomId ? connectionCounts[b.roomId] || 0 : 0;
+
+    // Primary sort: liveStream rooms come first
+    if (a.liveStream && !b.liveStream) return -1;
+    if (!a.liveStream && b.liveStream) return 1;
+
+    // Secondary sort: if both are live or both are not live, sort by connection count (descending)
+    return bConnections - aConnections;
   });
 
   return (
@@ -76,12 +82,13 @@ export const RoomList: React.FC = () => {
 
       <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full max-w-7xl justify-items-center">
         {!loading &&
-          sortedRooms.map((room) => (
+          sortedRooms.map((room, index) => (
             <RoomCard
               key={room.id}
               room={room}
               connectionCount={room.roomId ? connectionCounts[room.roomId] : null}
               loadingConnections={room.roomId ? loadingConnectionCounts[room.roomId] || false : false}
+              isTopRoom={index === 0 && !loading && !error && sortedRooms.length > 0} // Pass isTopRoom prop to the first card
             />
           ))}
       </Box>
