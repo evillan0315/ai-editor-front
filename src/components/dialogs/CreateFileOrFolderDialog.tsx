@@ -1,20 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Button,
   TextField,
   Typography,
-  IconButton,
-  useTheme,
-  Box,
   CircularProgress,
   Alert,
-  InputAdornment, // Added InputAdornment import
+  InputAdornment,
+  Box,
+  useTheme,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import FolderIcon from '@mui/icons-material/FolderOutlined';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CodeMirror from '@uiw/react-codemirror';
@@ -23,18 +19,33 @@ import { themeStore } from '@/stores/themeStore';
 import { createFileOrFolder as apiCreateFileOrFolder } from '@/api/file';
 import { getCodeMirrorLanguage, createCodeMirrorTheme } from '@/utils/index';
 import * as path from 'path-browserify';
+import { showDialog, hideDialog } from '@/stores/dialogStore';
+import { showGlobalSnackbar } from '@/stores/snackbarStore';
 
-interface CreateFileOrFolderDialogProps {
-  open: boolean;
-  onClose: () => void;
+// -----------------------------------------------------------------------------
+// Styles
+// -----------------------------------------------------------------------------
+const dialogContentSx = {
+  p: 2,
+};
+
+const dialogActionsSx = {
+  borderTop: `1px solid`,
+  borderColor: 'divider',
+  p: 2,
+  justifyContent: 'flex-end',
+};
+
+// -----------------------------------------------------------------------------
+// Component for the content of the Create File/Folder dialog
+// -----------------------------------------------------------------------------
+interface CreateFileOrFolderContentProps {
   parentPath: string;
   isFolder: boolean;
   onCreateSuccess: (newPath: string) => void;
 }
 
-const CreateFileOrFolderDialog: React.FC<CreateFileOrFolderDialogProps> = ({
-  open,
-  onClose,
+const CreateFileOrFolderContent: React.FC<CreateFileOrFolderContentProps> = ({
   parentPath,
   isFolder,
   onCreateSuccess,
@@ -47,13 +58,11 @@ const CreateFileOrFolderDialog: React.FC<CreateFileOrFolderDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) {
-      setName('');
-      setContent('');
-      setError(null);
-      setLoading(false);
-    }
-  }, [open]);
+    setName('');
+    setContent('');
+    setError(null);
+    setLoading(false);
+  }, [parentPath, isFolder]);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -79,15 +88,22 @@ const CreateFileOrFolderDialog: React.FC<CreateFileOrFolderDialogProps> = ({
       );
       if (result.success) {
         onCreateSuccess(fullPath);
-        onClose();
-      } else {
-        setError(
-          result.filePath ||
-            `Failed to create ${isFolder ? 'folder' : 'file'}.`,
+        showGlobalSnackbar(
+          `${isFolder ? 'Folder' : 'File'} created successfully at ${fullPath}`,
+          'success',
         );
+        hideDialog();
+      } else {
+        const errorMessage =
+          result.filePath ||
+          `Failed to create ${isFolder ? 'folder' : 'file'}.`;
+        setError(errorMessage);
+        showGlobalSnackbar(errorMessage, 'error');
       }
     } catch (err: any) {
-      setError(`Failed to create: ${err.message || String(err)}`);
+      const errorMessage = `Failed to create: ${err.message || String(err)}`;
+      setError(errorMessage);
+      showGlobalSnackbar(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -95,43 +111,12 @@ const CreateFileOrFolderDialog: React.FC<CreateFileOrFolderDialogProps> = ({
 
   const languageExtensions = useMemo(() => {
     if (isFolder) return [];
-    return [getCodeMirrorLanguage(name || '.txt')]; // Dynamically detect language based on name
+    return [getCodeMirrorLanguage(name || '.txt')];
   }, [name, isFolder]);
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: muiTheme.palette.background.paper,
-          color: muiTheme.palette.text.primary,
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{
-          borderBottom: `1px solid ${muiTheme.palette.divider}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          pr: 1,
-        }}
-      >
-        <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
-          {isFolder ? 'Create New Folder' : 'Create New File'}
-        </Typography>
-        <IconButton
-          onClick={onClose}
-          size="small"
-          sx={{ color: muiTheme.palette.text.secondary }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent sx={{ p: 2 }}>
+    <>
+      <DialogContent sx={dialogContentSx}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -198,14 +183,8 @@ const CreateFileOrFolderDialog: React.FC<CreateFileOrFolderDialogProps> = ({
           </Box>
         )}
       </DialogContent>
-      <DialogActions
-        sx={{
-          borderTop: `1px solid ${muiTheme.palette.divider}`,
-          p: 2,
-          justifyContent: 'flex-end',
-        }}
-      >
-        <Button onClick={onClose} disabled={loading}>
+      <DialogActions sx={dialogActionsSx}>
+        <Button onClick={hideDialog} disabled={loading}>
           Cancel
         </Button>
         <Button
@@ -218,8 +197,36 @@ const CreateFileOrFolderDialog: React.FC<CreateFileOrFolderDialogProps> = ({
           {isFolder ? 'Create Folder' : 'Create File'}
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };
 
-export default CreateFileOrFolderDialog;
+// -----------------------------------------------------------------------------
+// Function to show the Create File/Folder Dialog via GlobalDialog
+// -----------------------------------------------------------------------------
+interface ShowCreateFileOrFolderDialogProps {
+  parentPath: string;
+  isFolder: boolean;
+  onCreateSuccess: (newPath: string) => void;
+}
+
+export const showCreateFileOrFolderDialog = ({
+  parentPath,
+  isFolder,
+  onCreateSuccess,
+}: ShowCreateFileOrFolderDialogProps) => {
+  showDialog({
+    title: isFolder ? 'Create New Folder' : 'Create New File',
+    content: (
+      <CreateFileOrFolderContent
+        parentPath={parentPath}
+        isFolder={isFolder}
+        onCreateSuccess={onCreateSuccess}
+      />
+    ),
+    maxWidth: 'sm',
+    fullWidth: true,
+    showCloseButton: true,
+    onClose: hideDialog,
+  });
+};

@@ -20,7 +20,7 @@ import {
   projectRootDirectoryStore,
   setCurrentProjectPath,
 } from '@/stores/fileTreeStore';
-import { llmStore, showGlobalSnackbar } from '@/stores/llmStore';
+import { llmStore } from '@/stores/llmStore';
 
 import { ContextMenuItem } from '@/types/main';
 import { FileEntry } from '@/types/refactored/fileTree';
@@ -38,7 +38,7 @@ import {
   FileCopy as FileCopyIcon,
   ArrowUpward as ArrowUpwardIcon,
   Source as SourceFolderIcon,
- CreateNewFolder as MaterialIconThemeFolderResource
+  CreateNewFolder as MaterialIconThemeFolderResource
 } from '@mui/icons-material';
 import FolderOpenIcon from '@mui/icons-material/FolderOpenOutlined';
 import { MaterialIconThemeFolderUtils } from '@/components/icons/MaterialIconThemeFolderUtils';
@@ -50,10 +50,9 @@ import { LineMdFileDocumentPlusFilled } from '@/components/icons/LineMdFileDocum
 import { FileTreeContextMenuRenderer } from './FileTreeContextMenuRenderer';
 
 import {
-  CreateFileOrFolderDialog,
-  RenameDialog,
-  OperationPathDialog,
-} from '@/components/dialogs';
+  showRenameDialog,             
+} from './dialogs'; // Updated import path
+import { showOperationPathDialog, showCreateFileOrFolderDialog } from './dialogs'; // Updated import path
 import { deleteFile as apiDeleteFile } from '@/api/file';
 import * as path from 'path-browserify';
 import {
@@ -61,6 +60,7 @@ import {
   setShowTerminal,
   connectTerminal,
 } from '@/components/Terminal/stores/terminalStore';
+import { showGlobalSnackbar } from '@/stores/snackbarStore'; 
 
 import FileTreeHeader from './common/FileTreeHeader';
 import FileTreeStatus from './common/FileTreeStatus';
@@ -78,23 +78,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
   const { scanPathsInput } = useStore(llmStore);
   const projectRoot = useStore(projectRootDirectoryStore);
 
-  const showTerminal = useStore(isTerminalVisible);
   const theme = useTheme();
-
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [pathForNewItem, setPathForNewItem] = useState('');
-
-  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
-  const [itemToRename, setItemToRename] = useState<FileEntry | null>(null);
-
-  const [isOperationPathDialogOpen, setIsOperationPathDialogOpen] = 
-    useState(false);
-  const [itemForOperation, setItemForOperation] = useState<FileEntry | null>(
-    null,
-  );
-  const [operationMode, setOperationMode] = useState<'copy' | 'move'>('copy');
-  const [terminalDialogOpen, setTerminalDialogOpen] = useState(false);
 
   // State for search
   const [searchTerm, setSearchTerm] = useState('');
@@ -179,23 +163,15 @@ const FileTree: React.FC<FileTreeProps> = () => {
   // Handler for adding new file/folder, called by FileTreeHeader or context menu
   const handleAddFileFolder = useCallback(
     (type: 'file' | 'folder', targetPath: string) => {
-      setPathForNewItem(targetPath);
-      setIsCreatingFolder(type === 'folder');
-      setIsCreateDialogOpen(true);
+      showCreateFileOrFolderDialog({
+        parentPath: targetPath,
+        isFolder: type === 'folder',
+        onCreateSuccess: (newPath) => {
+          refreshPath(path.dirname(newPath));
+        },
+      });
     },
-    [],
-  );
-
-  const handleCreateSuccess = useCallback(
-    (newPath: string) => {
-      const parentDir = path.dirname(newPath);
-      refreshPath(parentDir);
-      showGlobalSnackbar(
-        `${isCreatingFolder ? 'Folder' : 'File'} created successfully at ${newPath}`,
-        'success',
-      );
-    },
-    [isCreatingFolder, refreshPath],
+    [refreshPath],
   );
 
   const handleDeleteItem = useCallback(
@@ -223,27 +199,36 @@ const FileTree: React.FC<FileTreeProps> = () => {
     [refreshPath],
   );
 
-  const handleRenameSuccess = useCallback(
-    (oldPath: string, newPath: string) => {
-      refreshPath(oldPath);
-      refreshPath(newPath);
-      showGlobalSnackbar('Item renamed successfully!', 'success');
+  const handleRenameItem = useCallback(
+    (node: FileEntry) => {
+      showRenameDialog({
+        item: node,
+        onRenameSuccess: (oldPath, newPath) => {
+          refreshPath(oldPath);
+          if (oldPath !== newPath) {
+            refreshPath(newPath);
+          }
+        },
+      });
     },
     [refreshPath],
   );
 
-  const handleOperationSuccess = useCallback(
-    (sourcePath: string, destinationPath: string) => {
-      if (operationMode === 'move') {
-        refreshPath(sourcePath);
-      }
-      refreshPath(destinationPath);
-      showGlobalSnackbar(
-        `${operationMode === 'copy' ? 'Copied' : 'Moved'} successfully!`,
-        'success',
-      );
+  const handleOperationItem = useCallback(
+    (node: FileEntry, mode: 'copy' | 'move') => {
+      showOperationPathDialog({
+        item: node,
+        mode: mode,
+        onOperationSuccess: (sourcePath, destinationPath) => {
+          if (mode === 'move') {
+            refreshPath(sourcePath);
+          }
+          refreshPath(destinationPath);
+        },
+        projectRoot: projectRoot,
+      });
     },
-    [operationMode, refreshPath],
+    [refreshPath, projectRoot],
   );
 
   const renderContextMenuItems = useCallback(
@@ -294,28 +279,17 @@ const FileTree: React.FC<FileTreeProps> = () => {
         {
           label: 'Rename...',
           icon: <MdiRenameBox fontSize="1.2em" />,
-          action: (file) => {
-            setItemToRename(file);
-            setIsRenameDialogOpen(true);
-          },
+          action: handleRenameItem,
         },
         {
           label: 'Copy...',
           icon: <FileCopyIcon fontSize="small" />,
-          action: (file) => {
-            setItemForOperation(file);
-            setOperationMode('copy');
-            setIsOperationPathDialogOpen(true);
-          },
+          action: (file) => handleOperationItem(file, 'copy'),
         },
         {
           label: 'Move...',
           icon: <DriveFileMoveIcon fontSize="small" />,
-          action: (file) => {
-            setItemForOperation(file);
-            setOperationMode('move');
-            setIsOperationPathDialogOpen(true);
-          },
+          action: (file) => handleOperationItem(file, 'move'),
         },
         { type: 'divider' },
         {
@@ -371,7 +345,7 @@ const FileTree: React.FC<FileTreeProps> = () => {
 
       return items;
     },
-    [handleDeleteItem, scanPathsInput, handleAddFileFolder],
+    [handleDeleteItem, scanPathsInput, handleAddFileFolder, handleRenameItem, handleOperationItem],
   );
 
   const handleNodeContextMenu = useCallback(
@@ -463,32 +437,6 @@ const FileTree: React.FC<FileTreeProps> = () => {
       )}
 
       <FileTreeContextMenuRenderer />
-
-      <CreateFileOrFolderDialog
-        open={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
-        parentPath={pathForNewItem}
-        isFolder={isCreatingFolder}
-        onCreateSuccess={handleCreateSuccess}
-      />
-
-      <RenameDialog
-        open={isRenameDialogOpen}
-        onClose={() => setIsRenameDialogOpen(false)}
-        item={itemToRename}
-        onRenameSuccess={handleRenameSuccess}
-        snackbar={{ show: showGlobalSnackbar }}
-      />
-
-      <OperationPathDialog
-        open={isOperationPathDialogOpen}
-        onClose={() => setIsOperationPathDialogOpen(false)}
-        item={itemForOperation}
-        mode={operationMode}
-        onOperationSuccess={handleOperationSuccess}
-        snackbar={{ show: showGlobalSnackbar }}
-        projectRoot={projectRoot}
-      />
     </Box>
   );
 };
