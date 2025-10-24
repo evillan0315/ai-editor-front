@@ -7,3 +7,6 @@ export * from './RoomList';
 export * from './RoomCard';
 export * from './RoomHeader';
 export * from './stores/roomStore';
+
+export * from './OpenViduSessionConnector';
+export * from './stores/openViduStore';
