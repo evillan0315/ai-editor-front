@@ -6,6 +6,7 @@ import {
   FormControlLabel,
   Switch,
   useTheme,
+  CircularProgress,
 } from '@mui/material';
 import {
   DriveFolderUpload as DriveFolderUploadIcon,
@@ -28,14 +29,18 @@ import {
   llmStore,
   setLlmResponse,
   clearLlmStore,
+  setLoading,
+  setLlmError,
+  setLastLlmGeneratePayload,
 } from '@/stores/llmStore';
 import {
   loadInitialTree,
   projectRootDirectoryStore,
   setCurrentProjectPath,
+  fileTreeStore,
 } from '@/stores/fileTreeStore';
 import { addLog } from '@/stores/logStore';
-import { setErrorRaw } from '@/stores/errorStore';
+import { setError } from '@/stores/errorStore';
 import {
   autoApplyChanges,
   setAutoApplyChanges,
@@ -46,8 +51,15 @@ import CustomDrawer from '@/components/Drawer/CustomDrawer';
 import { CodeRepair } from '@/components/code-generator/utils/CodeRepair';
 import { ImportJson } from './drawerContent/ImportJson';
 import { CodeGeneratorData } from './CodeGeneratorMain';
-import { RequestType } from '@/types/llm';
-import { GlobalAction } from '@/types/app';
+import {
+  RequestType,
+  ModelResponse,
+  LlmGeneratePayload,
+  LlmOutputFormat,
+} from '@/types/llm';
+import { generateCode, extractCodeFromMarkdown } from '@/api/llm';
+
+import * as path from 'path-browserify';
 
 // New import for the refactored ScanPathsDrawer
 import ScanPathsDrawer from '@/components/code-generator/drawerContent/ScanPathsDrawer';
@@ -99,7 +111,9 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
   const $autoApplyChanges = useStore(autoApplyChanges);
   const [importContentString, setImportContentString] = useState<string>('');
   const [isCodeRepairOpen, setIsCodeRepairOpen] = useState(false);
-  const { response } = useStore(llmStore);
+  const { response, aiInstruction, expectedOutputInstruction, scanPathsInput, loading } = useStore(llmStore);
+  const { flatFileList } = useStore(fileTreeStore);
+  const currentProjectPath = useStore(projectRootDirectoryStore);
 
   // New local state to hold changes made within the ScanPathsDrawer before confirming
   const [localScanPaths, setLocalScanPaths] = useState<string[]>(currentScanPathsArray);
@@ -164,6 +178,111 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       showGlobalSnackbar(msg, 'error');
     }
   }, [importContentString, setIsImportDialogOpen]);
+
+  // Helper to get relevant files for payload
+  const getRelevantFiles = useCallback(() => {
+    const projectRoot = currentProjectPath;
+    if (!projectRoot) return [];
+
+    const scannedPaths = scanPathsInput
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    // Filter flatFileList based on scanPaths
+    return flatFileList
+      .filter((file) => {
+        if (!file.filePath) return false;
+        // Check if the file path is within any of the scanned directories
+        // Use path.join to ensure platform consistency
+        return scannedPaths.some(
+          (scanPath) =>
+            file.filePath.startsWith(path.join(projectRoot, scanPath)) ||
+            file.filePath === path.join(projectRoot, scanPath),
+        );
+      })
+      .map((file) => ({
+        filePath: file.filePath,
+        relativePath: path.relative(projectRoot, file.filePath),
+        content: '', // Content will be fetched on backend
+      }));
+  }, [currentProjectPath, scanPathsInput, flatFileList]);
+
+  const handleRepair = useCallback(async () => {
+    if (!response) {
+      showGlobalSnackbar('No content in Code Repair editor to process.', 'error');
+      return;
+    }
+    if (!currentProjectPath) {
+      showGlobalSnackbar('Project root is not set. Please load a project first.', 'error');
+      return;
+    }
+    setIsCodeRepairOpen(false)
+    setLoading(true);
+    setError(''); // Clear UI error
+    setLlmError(null); // Clear LLM specific error
+    setLastLlmResponse(null); // Clear previous AI response
+    setCurrentDiff(null, null); // Clear current diff display
+    setIsBuilding(false); // Ensure build state is reset
+
+    try {
+      const payload: LlmGeneratePayload = {
+        userPrompt: response, // The content currently in the CodeRepair editor
+        projectRoot: currentProjectPath,
+        projectStructure: '', // This might be dynamically generated on the backend or in PromptGenerator. We'll leave it empty here.
+        relevantFiles: getRelevantFiles(), // Fetch relevant files based on scan paths
+        additionalInstructions: aiInstruction,
+        expectedOutputFormat: expectedOutputInstruction,
+        scanPaths: currentScanPathsArray,
+        requestType: RequestType.CODE_REPAIR, // Set request type to CODE_REPAIR
+        output: LlmOutputFormat.JSON, // Always expect JSON for structured responses
+      };
+
+      setLastLlmGeneratePayload(payload);
+      addLog('Code Repair', 'Sending CODE_REPAIR request to AI...', 'info');
+
+      const aiResponse: ModelResponse = await generateCode(payload);
+
+      let errorMessage: string | null = null;
+      if (aiResponse.error) {
+        errorMessage =
+          aiResponse.error instanceof Error
+            ? aiResponse.error.message
+            : typeof aiResponse.error === 'string'
+              ? aiResponse.error
+              : JSON.stringify(aiResponse.error);
+        setError(errorMessage);
+        setLlmError(errorMessage);
+        showGlobalSnackbar(`AI Error: ${errorMessage}`, 'error');
+      }
+
+      if (aiResponse.rawResponse) {
+        setLlmResponse(aiResponse.rawResponse); // Update the CodeRepair editor with the new raw response
+      }
+
+      if (!errorMessage) {
+        setLastLlmResponse(aiResponse); // Set the structured response for ChangesList
+        showGlobalSnackbar('Code Repair response received. Review changes.', 'success');
+        setIsCodeRepairOpen(false); // Close the drawer on successful repair generation
+      }
+    } catch (err) {
+      const msg = `Failed to perform code repair: ${err instanceof Error ? err.message : String(err)}`;
+      setError(msg);
+      addLog('Code Repair', msg, 'error');
+      showGlobalSnackbar(msg, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    response,
+    currentProjectPath,
+    aiInstruction,
+    expectedOutputInstruction,
+    currentScanPathsArray,
+    flatFileList,
+    scanPathsInput,
+    getRelevantFiles,
+  ]);
 
   // GlobalAction for PromptGeneratorSettingsDrawer footer
   const PromptGeneratorSettingsDrawerActions: GlobalAction[] = [
@@ -254,7 +373,8 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
             showGlobalSnackbar('No content in Code Repair editor to import.', 'warning');
             return;
           }
-          const parsedData: unknown = JSON.parse(response);
+          
+          const parsedData: unknown = JSON.parse(extractCodeFromMarkdown(response));
           if (
             typeof parsedData === 'object' &&
             parsedData !== null &&
@@ -264,6 +384,7 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           ) {
             setLastLlmResponse(parsedData as CodeGeneratorData);
             showGlobalSnackbar('Content imported as structured LLM response.', 'success');
+            setIsCodeRepairOpen(false)
           } else {
             setLastLlmResponse(null); // Clear existing structured response if new content is not valid
             showGlobalSnackbar('Content is not a valid structured LLM response. Clearing structured data.', 'warning');
@@ -279,7 +400,14 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
       variant: 'outlined',
       disabled: !response, // Disable if no content in CodeRepair editor
     },
-    { label: 'Repair', action: () => setLastLlmResponse(), icon: <RepairIcon />, color: 'primary', variant: 'contained' },
+    {
+      label: 'Repair',
+      action: handleRepair, // Call the new handleRepair function
+      icon: loading ? <CircularProgress size={16} /> : <RepairIcon />,
+      color: 'primary',
+      variant: 'contained',
+      disabled: commonDisabled || loading || !response, // Disable if no content or already loading
+    },
   ];
 
   return (
