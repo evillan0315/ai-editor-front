@@ -14,7 +14,7 @@ interface RoomCardProps {
   loadingConnections: boolean; // New prop for loading state
 }
 
-const cardSx = {
+const baseCardSx = {
   display: 'flex',
   flexDirection: 'column',
   height: '100%',
@@ -22,10 +22,22 @@ const cardSx = {
   overflow: 'hidden',
   boxShadow: 3,
   borderRadius: 2,
-  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out',
   '&:hover': {
     transform: 'translateY(-4px)',
     boxShadow: 6,
+  },
+};
+
+const liveCardHighlightSx = {
+  borderColor: 'error.main',
+  borderWidth: '2px',
+  borderStyle: 'solid',
+  boxShadow: '0 0 15px rgba(255, 0, 0, 0.5)', // A glowing effect
+  transform: 'scale(1.01)', // Slightly enlarge
+  '&:hover': {
+    transform: 'scale(1.03) translateY(-4px)',
+    boxShadow: '0 0 20px rgba(255, 0, 0, 0.7)',
   },
 };
 
@@ -51,12 +63,12 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, connectionCount, loadi
   const { name, type, active, description, roomId, recording, liveStream, created_at } = room;
 
   return (
-    <Card sx={cardSx} className="flex-none w-full sm:w-80 md:w-full lg:w-96 min-h-60 h-auto">
+    <Card sx={{ ...baseCardSx, ...(liveStream && liveCardHighlightSx) }} className="flex-none w-full sm:w-80 md:w-full lg:w-96 min-h-60 h-auto">
       <Box className="relative h-28 w-full overflow-hidden bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center p-4">
         <MeetingRoomIcon className="text-white" sx={{ fontSize: '4rem' }} />
         <Box className="absolute top-2 right-2 flex items-center gap-1 p-1 rounded-full text-white text-xs font-semibold"
              sx={{ bgcolor: active ? 'success.main' : 'error.main' }}>
-          {active ? <DoneIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
+          {active ? <DoneIcon fontSize="small" /> : <CloseIcon fontSize="small" />}         
           {active ? 'Active' : 'Inactive'}
         </Box>
       </Box>
@@ -67,7 +79,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, connectionCount, loadi
         <Box className="flex justify-center flex-wrap gap-2 mb-2">
           <Chip label={type.toUpperCase()} size="small" color="primary" />
           {recording && <Chip label="RECORDING" size="small" icon={<FiberManualRecordIcon />} color="warning" />}
-          {liveStream && <Chip label="LIVE" size="small" icon={<LiveTvIcon />} color="error" />}
+          {liveStream && <Chip label="LIVE" size="medium" icon={<LiveTvIcon />} color="error" className="animate-pulse font-bold" />}
         </Box>
         {description && (
           <Box sx={infoItemSx}>

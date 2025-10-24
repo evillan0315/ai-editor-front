@@ -43,6 +43,13 @@ export const RoomList: React.FC = () => {
     }
   }, [loading, rooms]);
 
+  // Sort rooms: live streams first, then others
+  const sortedRooms = [...rooms].sort((a, b) => {
+    if (a.liveStream && !b.liveStream) return -1; // a is live, b is not: a comes first
+    if (!a.liveStream && b.liveStream) return 1;  // b is live, a is not: b comes first
+    return 0; // maintain original order for rooms with the same live status
+  });
+
   return (
     <Box sx={listContainerSx} className="w-full flex flex-col items-center py-4 h-full">
       <Typography variant="h4" component="h1" sx={titleSx} className="text-3xl md:text-4xl text-teal-600 dark:text-teal-400">
@@ -69,7 +76,7 @@ export const RoomList: React.FC = () => {
 
       <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full max-w-7xl justify-items-center">
         {!loading &&
-          rooms.map((room) => (
+          sortedRooms.map((room) => (
             <RoomCard
               key={room.id}
               room={room}
