@@ -43,7 +43,7 @@ interface IClientDataLocalSettings {
   chat?: { chatColor: string }; // Optional field found in some clientData
 }
 
-interface IInnerClientData {
+export interface IInnerClientData {
   USERNAME: string;
   USERID: number;
   PICTURE: string;
@@ -310,3 +310,38 @@ export interface ISwinger {
   created_at: string; // ISO date string
   updated_at: string; // ISO date string
 }
+
+export interface IActivity {
+  id: number;
+  event: string;
+  sessionId: string;
+  participantId: string | null;
+  clientData: IInnerClientData | null; // Reusing existing clientData type
+  platform: string | null;
+  timestamp: string; // ISO date string
+  connectionId: string | null;
+  from: string | null;
+  connection: string | null; // e.g., "INBOUND", "OUTBOUND"
+  type: string | null; // e.g., "connect", "blocker", "whisper", "streamDestroyed", "disconnect", "streamCreated", "userSettings", "unsubscribe"
+  duration: number | null;
+  receivingFrom: string | null;
+  streamId: string | null;
+  reason: string | null; // e.g., "unpublish", "disconnect"
+  serverData: string | null;
+  location: string | null;
+  ip: string | null;
+  startTime: string | null; // ISO date string
+  videoSource: string | null; // e.g., "CAMERA"
+  room: string | null; // Room ID/name
+  member: string | null; // Member ID
+  data: unknown | null;
+  session_connection: unknown | null;
+  connectId: unknown | null;
+  name: string | null;
+  created_at: string; // ISO date string
+  updated_at: string; // ISO date string
+  date?: string; // e.g., "09/19/2025" - Optional
+  hour?: string; // e.g., "14:00 (9/19)" - Optional
+}
+
+export type IActivities = IActivity[];
