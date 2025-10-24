@@ -53,8 +53,6 @@ import { GlobalAction } from '@/types/app';
 import ScanPathsDrawer from '@/components/code-generator/drawerContent/ScanPathsDrawer';
 // New import for the refactored DirectoryPickerDrawer
 import DirectoryPickerDrawer from '@/components/code-generator/drawerContent/DirectoryPickerDrawer';
-// New import for the refactored InstructionEditorDrawer
-import InstructionEditorDrawer from '@/components/code-generator/drawerContent/InstructionEditorDrawer';
 // New import for the relocated PromptGeneratorSettings
 import PromptGeneratorSettings from '@/components/code-generator/drawerContent/PromptGeneratorSettings';
 
@@ -67,8 +65,6 @@ interface BottomToolbarProps {
 
   isImportDialogOpen: boolean;
   setIsImportDialogOpen: (open: boolean) => void;
-  // isSettingsOpen: boolean; // REMOVED: Managed internally for PromptGeneratorSettings drawer
-  // setIsSettingsOpen: (open: boolean) => void; // REMOVED: Managed internally for PromptGeneratorSettings drawer
   isProjectRootPickerDialogOpen: boolean;
   setIsProjectRootPickerDialogOpen: (open: boolean) => void;
   isScanPathsDialogOpen: boolean;
@@ -89,8 +85,6 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   isImportDialogOpen,
   setIsImportDialogOpen,
-  // isSettingsOpen, // REMOVED
-  // setIsSettingsOpen, // REMOVED
   isProjectRootPickerDialogOpen,
   setIsProjectRootPickerDialogOpen,
   isScanPathsDialogOpen,
@@ -109,9 +103,6 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
   // New local state to hold changes made within the ScanPathsDrawer before confirming
   const [localScanPaths, setLocalScanPaths] = useState<string[]>(currentScanPathsArray);
-  // New states for the InstructionEditorDrawer
-  const [isAiInstructionDrawerOpen, setIsAiInstructionDrawerOpen] = useState(false);
-  const [isExpectedOutputInstructionDrawerOpen, setIsExpectedOutputInstructionDrawerOpen] = useState(false);
 
   // New state for the PromptGeneratorSettingsDrawer
   const [isPromptGeneratorSettingsDrawerOpen, setIsPromptGeneratorSettingsDrawerOpen] = useState(false);
@@ -303,26 +294,6 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           </IconButton>
         </Tooltip>
 
-        {/* New buttons for InstructionEditorDrawer (can be kept as separate drawers) 
-        <Tooltip title="Edit AI Instructions" aria-label="Edit AI Instructions">
-          <IconButton
-            color="primary"
-            onClick={() => setIsAiInstructionDrawerOpen(true)}
-            aria-label="edit ai instructions"
-          >
-            <AutoAwesomeOutlinedIcon />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Edit Expected Output Instructions" aria-label="Edit Expected Output Instructions">
-          <IconButton
-            color="primary"
-            onClick={() => setIsExpectedOutputInstructionDrawerOpen(true)}
-            aria-label="edit expected output instructions"
-          >
-            <DataObjectOutlinedIcon />
-          </IconButton>
-        </Tooltip>
-       */}
         {requestType === RequestType.LLM_GENERATION && (
           <Tooltip
             title="Import prompt data from JSON file"
@@ -458,19 +429,6 @@ const BottomToolbar: React.FC<BottomToolbarProps> = ({
           height="100%"
         />
       </CustomDrawer>
-
-      {/* New InstructionEditorDrawer instances 
-      <InstructionEditorDrawer
-        open={isAiInstructionDrawerOpen}
-        onClose={() => setIsAiInstructionDrawerOpen(false)}
-        type="ai"
-      />
-      <InstructionEditorDrawer
-        open={isExpectedOutputInstructionDrawerOpen}
-        onClose={() => setIsExpectedOutputInstructionDrawerOpen(false)}
-        type="expected"
-      />
-      */}
     </Box>
   );
 };
