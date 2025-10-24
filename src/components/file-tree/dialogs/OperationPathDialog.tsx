@@ -18,20 +18,6 @@ import { projectStore } from '@/stores/projectStore';
 import { useStore } from '@nanostores/react';
 
 // -----------------------------------------------------------------------------
-// Styles
-// -----------------------------------------------------------------------------
-const dialogContentSx = {
-  p: 2,
-};
-
-const dialogActionsSx = {
-  borderTop: `1px solid`,
-  borderColor: 'divider',
-  p: 2,
-  justifyContent: 'flex-end',
-};
-
-// -----------------------------------------------------------------------------
 // Component for the content of the Operation Path Dialog
 // -----------------------------------------------------------------------------
 interface OperationPathContentProps {
@@ -111,7 +97,7 @@ const OperationPathContent: React.FC<OperationPathContentProps> = ({
   };
 
   return (
-    <>
+    <DialogContent sx={{ p: 2 }}>
       <Box  className="">
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -139,16 +125,15 @@ const OperationPathContent: React.FC<OperationPathContentProps> = ({
           Final {operationLabel} Path: <strong>{path.join(destinationPathInput, item?.name || '')}</strong>
         </Typography>
      </Box>
-      <Box className="flex items-center justify-between gap-2 mt-2 pt-4" sx={{  borderTop: `1px solid`,
-  borderColor: 'divider'}}>
+      <DialogActions sx={{ pt: 2, justifyContent: 'flex-end', borderTop: `1px solid`, borderColor: 'divider'}}>
         <Button onClick={hideDialog} disabled={loading}>
           Cancel
         </Button>
         <Button onClick={handleOperation} disabled={loading} variant="contained" color="primary">
           {loading ? <CircularProgress size={20} /> : operationLabel}
         </Button>
-      </Box>
-    </>
+      </DialogActions>
+    </DialogContent>
   );
 };
 
