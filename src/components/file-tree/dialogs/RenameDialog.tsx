@@ -7,14 +7,20 @@ import {
   Typography,
   CircularProgress,
   Alert,
+  InputAdornment,
+  Box,
+  useTheme,
 } from '@mui/material';
 import { renameFile as apiRenameFile } from '@/api/file';
 import { FileEntry } from '@/types/refactored/fileTree';
 import * as path from 'path-browserify';
 import { showDialog, hideDialog } from '@/stores/dialogStore';
 import { showGlobalSnackbar } from '@/stores/snackbarStore';
-import { projectStore } from '@/stores/projectStore'; 
+import { projectStore } from '@/stores/projectStore';
 import { useStore } from '@nanostores/react';
+import GlobalActionButton, { GlobalAction } from '@/components/ui/GlobalActionButton';
+import CloseIcon from '@mui/icons-material/Close';
+import { MdiRenameBox } from '@/components/icons/MdiRenameBox';
 
 // -----------------------------------------------------------------------------
 // Component for the content of the Rename Dialog
@@ -25,6 +31,7 @@ interface RenameContentProps {
 }
 
 const RenameContent: React.FC<RenameContentProps> = ({ item, onRenameSuccess }) => {
+  const muiTheme = useTheme();
   const [newName, setNewName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -58,8 +65,8 @@ const RenameContent: React.FC<RenameContentProps> = ({ item, onRenameSuccess }) 
     setError('');
     try {
       const parentDir = path.dirname(item.path);
-      const newPath = path.join(parentDir, newName);
-      const result = await apiRenameFile(item.path, newPath, projectId); 
+      const newPath = path.join(parentDir, newName.trim());
+      const result = await apiRenameFile(item.path, newPath, projectId);
       if (result.success) {
         onRenameSuccess(item.path, newPath);
         showGlobalSnackbar(result.message || 'Item renamed successfully!', 'success');
@@ -68,8 +75,7 @@ const RenameContent: React.FC<RenameContentProps> = ({ item, onRenameSuccess }) 
         const errorMessage = result.message || 'Failed to rename item.';
         setError(errorMessage);
         showGlobalSnackbar(errorMessage, 'error');
-      }
-    } catch (err: any) {
+      } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred.';
       setError(errorMessage);
       showGlobalSnackbar(`Error renaming: ${errorMessage}`, 'error');
@@ -78,8 +84,28 @@ const RenameContent: React.FC<RenameContentProps> = ({ item, onRenameSuccess }) 
     }
   };
 
+  const dialogActions: GlobalAction[] = [
+    {
+      label: 'Cancel',
+      action: hideDialog,
+      disabled: loading,
+      color: 'text',
+      variant: 'outlined',
+      icon: <CloseIcon />
+    },
+    {
+      label: 'Rename',
+      action: handleRename,
+      disabled: loading || !newName.trim(),
+      color: 'primary',
+      variant: 'contained',
+      icon: loading ? <CircularProgress size={20} /> : <MdiRenameBox />,
+    },
+  ];
+
   return (
-    <DialogContent sx={{ p: 2 }}>
+    <>
+      <Box className="p-4">
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -96,21 +122,28 @@ const RenameContent: React.FC<RenameContentProps> = ({ item, onRenameSuccess }) 
           label="New Name"
           type="text"
           fullWidth
+          variant="outlined"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
+          disabled={loading}
           error={!!error}
-          helperText={error}
-          sx={{ mb: 2 }}
+          helperText={error || `Enter the new name for the ${item?.type || 'item'}`}
+          sx={{ mt: 2 }}
+          InputLabelProps={{ shrink: true }}
+          InputProps={{
+            style: { color: muiTheme.palette.text.primary },
+            startAdornment: (
+              <InputAdornment position="start">
+                <MdiRenameBox sx={{ color: muiTheme.palette.info.main }} />
+              </InputAdornment>
+            ),
+          }}
         />
-      <DialogActions sx={{ pt: 2, justifyContent: 'flex-end', borderTop: `1px solid`, borderColor: 'divider'}}>
-        <Button onClick={hideDialog} disabled={loading}>
-          Cancel
-        </Button>
-        <Button onClick={handleRename} disabled={loading} variant="contained" color="primary">
-          {loading ? <CircularProgress size={20} /> : 'Rename'}
-        </Button>
+      </Box>
+      <DialogActions sx={{ pt: 1, mt: 1, justifyContent: 'flex-end', borderTop: `1px solid ${muiTheme.palette.divider}` }}>
+        <GlobalActionButton globalActions={dialogActions} iconOnly={false} />
       </DialogActions>
-    </DialogContent>
+    </>
   );
 };
 
