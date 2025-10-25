@@ -152,9 +152,18 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   }, [ovState.session, ovState.currentSessionId, isMicActive, isCameraActive]);
 
   const joinSession = useCallback(async (sessionIdToJoin?: string) => {
+    // Ensure a clean slate before attempting to join a new session
+    if (SESSION_REF.current || ovState.session) {
+      console.warn('Attempting to join session while another might be active or pending. Cleaning up first.');
+      leaveSession(); // Disconnect existing and reset store
+    }
+
     const effectiveSessionId = sessionIdToJoin || sessionNameInput;
 
-    if (!effectiveSessionId || !OV_REF.current) return;
+    if (!effectiveSessionId || !OV_REF.current) {
+      setOpenViduError('Session ID or OpenVidu object is missing.');
+      return;
+    }
 
     setOpenViduLoading(true);
     setOpenViduError(null);
@@ -220,7 +229,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
         }
       });
 
-      await session.connect(token, { clientData: JSON.stringify({ USERNAME: currentUserDisplayName }) }); // Use consistent display name
+      await session.connect(token, { clientData: JSON.stringify({ USERNAME: currentUserDisplayName }) }); // This is the line where the error occurs
       
       // Automatically start publishing media if joining a session from URL (e.g., a room link)
       if (sessionIdToJoin) {
@@ -234,7 +243,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     } finally {
       setOpenViduLoading(false);
     }
-  }, [sessionNameInput, getToken, startPublishingMedia, currentUserDisplayName]); // Added startPublishingMedia and currentUserDisplayName to dependencies
+  }, [sessionNameInput, getToken, startPublishingMedia, currentUserDisplayName, ovState.session, leaveSession]); // Added ovState.session and leaveSession to dependencies
 
   
 
