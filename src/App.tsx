@@ -36,8 +36,6 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const SpotifyAppPage = lazy(() => import('./pages/SpotifyAppPage'));
-const TranslatorAppPage = lazy(() => import('./pages/TranslatorAppPage'));
-const GeminiLiveAudioPage = lazy(() => import('./pages/GeminiLiveAudioPage'));
 const PreviewAppPage = lazy(() => import('./pages/PreviewAppPage'));
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
@@ -148,30 +146,8 @@ const router = createBrowserRouter(
           </RequireAuth>
         }
       />
-      <Route
-        path="/apps/translator"
-        element={
-          <RequireAuth>
-            <Suspense fallback={<Loading />}>
-              <ErrorBoundary>
-                <TranslatorAppPage />
-              </ErrorBoundary>
-            </Suspense>
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/apps/gemini-live-audio"
-        element={
-          <RequireAuth>
-            <Suspense fallback={<Loading />}>
-              <ErrorBoundary>
-                <GeminiLiveAudioPage />
-              </ErrorBoundary>
-            </Suspense>
-          </RequireAuth>
-        }
-      />
+
+    
       <Route
         path="/apps/preview"
         element={
