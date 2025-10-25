@@ -89,7 +89,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
 
   const getToken = useCallback(async (mySessionId: string): Promise<string> => {
     try {
-      // Attempt to create a new session
+      // createSession now handles the 409 Conflict internally, returning the existing session
+      // if one already exists for the customSessionId.
       const session = await createSession({ customSessionId: mySessionId });
       const connection = await createConnection(session.sessionId, {
         role: 'PUBLISHER',
@@ -97,26 +98,10 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       });
       return connection.token;
     } catch (error: any) {
+      // This catch block will only be hit for actual errors (not 409 handled by createSession)
       console.error('Error in getToken:', error);
-
-      if (error.message && error.message.includes('409 Conflict')) {
-        console.warn(`Session ${mySessionId} already exists. Attempting to get existing session.`);
-        try {
-          const existingSession = await getSession(mySessionId);
-          const connection = await createConnection(existingSession.sessionId, {
-            role: 'PUBLISHER',
-            data: JSON.stringify({ USERNAME: currentUserDisplayName }),
-          });
-          return connection.token;
-        } catch (existingSessionError: any) {
-          console.error(`Error getting existing session ${mySessionId} or creating connection for it:`, existingSessionError);
-          setOpenViduError(`Failed to get or connect to existing session: ${existingSessionError.message || existingSessionError}`);
-          throw existingSessionError;
-        }
-      } else {
-        setOpenViduError(`Failed to get OpenVidu token: ${error.message || error}`);
-        throw error;
-      }
+      setOpenViduError(`Failed to get OpenVidu token: ${error.message || error}`);
+      throw error;
     }
   }, [currentUserDisplayName]);
 
