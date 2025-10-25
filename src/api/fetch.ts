@@ -9,33 +9,29 @@ export interface ApiError extends Error {
 
 // Handles the response from a fetch call, checks for errors, and parses JSON or text.
 export const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    let errorData: any;
+  const isJson = response.headers.get('content-type')?.includes('application/json');
+  const text = await response.text(); // Consume body once as text
+
+  let data: any;
+  if (isJson && text.trim().length > 0) {
     try {
-      errorData = await response.json();
+      data = JSON.parse(text);
     } catch (e) {
-      errorData = await response.text();
-    }
-
-    throw new Error(
-      typeof errorData === 'string'
-        ? errorData
-        : errorData.message || `API error: ${response.status}`,
-    );
-  }
-
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    try {
-      const data = await response.json();
-      return data as T;
-    } catch (error) {
-      console.error('Error parsing JSON:', error);
-      throw new Error('Failed to parse JSON response.');
+      console.warn('Response content-type was JSON but failed to parse:', e, 'Raw text:', text);
+      data = text; // Fallback to raw text if JSON parsing fails
     }
   } else {
-    return response.text() as Promise<T>;
+    data = text; // If not JSON or empty, use raw text
   }
+
+  if (!response.ok) {
+    const errorMessage = typeof data === 'string'
+      ? data
+      : data.message || `API error: ${response.status} ${response.statusText}`;
+    throw new Error(errorMessage);
+  }
+
+  return data as T;
 };
 
 export const fetchWithAuth = async (url: string, options?: RequestInit) => {

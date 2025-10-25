@@ -39,21 +39,35 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   const OV_REF = useRef<OpenVidu | null>(null);
   const SESSION_REF = useRef<openvidu_browser.Session | null>(null);
   const PUBLISHER_REF = useRef<IOpenViduPublisher | null>(null);
-
+  const leaveSession = useCallback(() => {
+    if (SESSION_REF.current) {
+      SESSION_REF.current.disconnect();
+      SESSION_REF.current = null;
+    }
+    resetOpenViduStore();
+    PUBLISHER_REF.current = null;
+    setIsCameraActive(true);
+    setIsMicActive(true);
+    // Manually trigger a connection count update to reflect leaving the room, if currentSessionId is available
+    if (ovState.currentSessionId) {
+      getConnections(ovState.currentSessionId).then(c => updateRoomConnectionCount(ovState.currentSessionId!, c.length));
+    }
+  }, [ovState.currentSessionId]);
   // Initialize OpenVidu object once per hook instance
   useEffect(() => {
     if (!OV_REF.current) {
       OV_REF.current = new OpenVidu();
     }
-    // If initialSessionId changes, update the input state
-    if (initialSessionId && initialSessionId !== sessionNameInput) {
+    // If initialSessionId changes and sessionNameInput is not already set (e.g., by user input),
+    // update the input state to reflect the URL param. This prevents overriding user input.
+    if (initialSessionId && sessionNameInput === '') {
       setSessionNameInput(initialSessionId);
     }
     return () => {
       leaveSession();
       resetOpenViduStore();
     };
-  }, [initialSessionId]); // Depend on initialSessionId
+  }, [initialSessionId, sessionNameInput, leaveSession]); // Depend on initialSessionId, sessionNameInput, and leaveSession
 
   const handleSessionNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setSessionNameInput(event.target.value);
@@ -137,10 +151,11 @@ export const useOpenViduSession = (initialSessionId?: string) => {
         const subscriber = session.subscribe(event.stream, undefined) as IOpenViduSubscriber;
         setOpenViduError(null);
         subscriber.on('streamPlaying', () => {
-          const videoElement = document.getElementById(`video-stream-${subscriber.streamId}`);
-          if (videoElement) {
-            subscriber.addVideoElement(videoElement as HTMLVideoElement);
-          }  
+          // REMOVED: Redundant attachment of video element. OpenViduVideoRenderer handles this.
+          // const videoElement = document.getElementById(`video-stream-${subscriber.streamId}`);
+          // if (videoElement) {
+          //   subscriber.addVideoElement(videoElement as HTMLVideoElement);
+          // }
         });
         addOpenViduSubscriber(subscriber);
         getConnections(effectiveSessionId).then(c => updateRoomConnectionCount(effectiveSessionId, c.length));
@@ -198,20 +213,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     }
   }, [sessionNameInput, getToken, startPublishingMedia, currentUserDisplayName]); // Added startPublishingMedia and currentUserDisplayName to dependencies
 
-  const leaveSession = useCallback(() => {
-    if (SESSION_REF.current) {
-      SESSION_REF.current.disconnect();
-      SESSION_REF.current = null;
-    }
-    resetOpenViduStore();
-    PUBLISHER_REF.current = null;
-    setIsCameraActive(true);
-    setIsMicActive(true);
-    // Manually trigger a connection count update to reflect leaving the room, if currentSessionId is available
-    if (ovState.currentSessionId) {
-      getConnections(ovState.currentSessionId).then(c => updateRoomConnectionCount(ovState.currentSessionId!, c.length));
-    }
-  }, [ovState.currentSessionId]);
+  
 
   const toggleCamera = useCallback(() => {
     if (ovState.publisher) {
