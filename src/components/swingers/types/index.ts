@@ -1,19 +1,6 @@
 import { Session, Publisher, Subscriber, Stream, StreamManager } from 'openvidu-browser';
 
 /**
- * Represents a member within the Swingers ecosystem.
- * This is a more detailed type for the 'member' object often nested in ISwingerSessionParticipant.
- * Assuming `id` is a string as it might be a UUID from a database, not necessarily a numeric OpenVidu `USERID`.
- */
-export interface IMember {
-  id: string;
-  username: string;
-  email: string;
-  json_data: { [key: string]: any }; // Flexible for various user profile data
-  // Add other relevant properties here based on API response
-}
-
-/**
  * Represents various properties for default session recording.
  */
 export interface IDefaultRecordingProperties {
@@ -165,13 +152,173 @@ export interface IConnection {
   publishers: IPublisherData[];
   subscribers: ISubscriberData[];
 }
-
+/**
+ * Represents a list of sessions, typically found nested in session or room objects.
+ */
+export interface ISessionList {
+  numberOfElements: number;
+  content: ISession[];
+}
 /**
  * Represents a list of connections, typically found nested in session or room objects.
  */
 export interface IConnectionList {
   numberOfElements: number;
   content: IConnection[];
+}
+
+/**
+ * Represents various detailed properties within a member's json_data.
+ */
+export interface IMemberJsonData {
+  LAT: number;
+  LON: number;
+  AGE1: number;
+  AGE2: number | string; // e.g., 66 or ""
+  CITY: string;
+  LONG: number;
+  NAME: string;
+  PAID: boolean;
+  BLOCK: number;
+  EMAIL: string;
+  STATE: string;
+  DRINK1: boolean;
+  DRINK2: boolean | string; // e.g., true or ""
+  FRIEND: number;
+  ONLINE: number; // Represents boolean (1 for true)
+  SMOKE1: boolean;
+  SMOKE2: boolean | string; // e.g., false or ""
+  USERID: number;
+  APPSAFE: string | boolean; // e.g., "" or false
+  CNTPICS: number;
+  COUNTRY: string; // e.g., "US" or ""
+  GENDER1: number; // Represents gender (0 or 1)
+  GENDER2: number | string; // Represents gender (1, 0 or "")
+  HEIGHT1: number;
+  HEIGHT2: number | string; // e.g., 67 or ""
+  PICTURE: string;
+  PRIVATE: number; // Represents boolean (0 for false)
+  TAGLINE: string;
+  WEIGHT1: number;
+  WEIGHT2: number | string; // e.g., 160 or ""
+  ZIPCODE: string;
+  APPROVED: number; // Represents boolean (0 for false)
+  BLOCKBIT: number;
+  CNTVIDEO: number;
+  DISTANCE: string; // e.g., "0 Mi."
+  EMPLOYEE: number; // Represents boolean (0 for false)
+  FAVORITE: number; // Represents boolean (0 for false)
+  HEIGHT1M: string; // e.g., "170.2cm"
+  HEIGHT2M: string; // e.g., "170.2cm" or "0.0cm"
+  USERNAME: string;
+  WEIGHT1M: string; // e.g., "50.3kg"
+  WEIGHT2M: string; // e.g., "72.6kg" or ""
+  INTERESTF: number;
+  INTERESTM: number;
+  CNTPRIVATE: number;
+  INTERESTFF: number;
+  INTERESTMF: number;
+  INTERESTMM: number;
+  MEMBERTYPE: string; // e.g., "Paid" or "Lifetime"
+  WILLINGBIT: number;
+  CNTHOTDATES: number;
+  DATECREATED: string; // ISO date string
+  INTERESTBIT: number;
+  PHANTOMMAIL: number; // Represents boolean (0 for false)
+  PICTUREFULL: string;
+  USERGROUPID: string;
+  WILLINGFULL: number;
+  WILLINGSOFT: number;
+  CNTCERTIFIED: number;
+  DATETIMEJOIN: string; // ISO date string
+  DATETIMELAST: string; // ISO date string
+  INTERESTFREE: boolean;
+  ORIENTATION1: number; // Represents orientation
+  ORIENTATION2: number | string; // Represents orientation or ""
+  RELATIONSHIP: number; // Represents relationship type
+  WILLINGWATCH: number;
+  DATETIMEJOIN2: string; // e.g., "over a month"
+  DATETIMELAST2: string; // e.g., "minutes ago"
+  HEIGHT1INCHES: string; // e.g., "5'7\""
+  HEIGHT2INCHES: string; // e.g., "5'7\"" or "0'0\""
+  HIDEMEFROMBIT: number;
+  INTERESTDRINK: number;
+  INTERESTSMOKE: number;
+  PICTURERATING: string; // e.g., "Public G" or "Public R"
+  WEIGHT1POUNDS: string; // e.g., "111lbs"
+  WEIGHT2POUNDS: string; // e.g., "160lbs" or ""
+  INTERESTLOWAGE: number;
+  INTERESTHIGHAGE: number;
+  RELATIONSHIPBIT: number;
+  ORIENTATION1NAME: string; // e.g., "Straight"
+  ORIENTATION2NAME: string; // e.g., "Straight" or ""
+  RELATIONSHIPNAME: string; // e.g., "MF" or "M"
+  USERGROUPIDDEFAULT: number;
+  MAILFORUMRESTRICTION: number;
+}
+
+/**
+ * Represents a detailed member object as found in subscribers.json's 'member' or 'subscribed_member' fields.
+ */
+export interface IMemberFull {
+  id: number;
+  username: string;
+  email: string;
+  provider: string;
+  confirmed: boolean;
+  blocked: boolean;
+  role: number;
+  userId: number;
+  json_data: IMemberJsonData;
+  blockedExpire: string | null;
+  blockedStart: string | null;
+  PAID: boolean;
+  createGroup: boolean;
+  EMPLOYEE: boolean;
+  ONLINE: boolean;
+  MEMBERTYPE: string;
+  PICTURE: string;
+  admin_user: any | null;
+  created_at: string;
+  updated_at: string;
+  LAT: string; // String representation, distinct from json_data.LAT
+  LON: string; // String representation, distinct from json_data.LON
+  usetting: any | null;
+  terms: any | null;
+}
+
+/**
+ * Represents a detailed streamer object as found in subscribers.json's 'streamer' field.
+ */
+export interface IStreamerFull {
+  id: number;
+  name: string;
+  connectionId: string;
+  private: boolean;
+  json: any | null;
+  timestamp: string;
+  active: boolean;
+  member: number; // Foreign key to member ID
+  room: number; // Foreign key to room ID
+  connection: number; // Foreign key to connection ID
+  streamId: string;
+  end_date: string | null;
+  stream_duration: any | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Represents a member within the Swingers ecosystem (simplified for generic usage).
+ * This is a more detailed type for the 'member' object often nested in ISwingerSessionParticipant.
+ * Assuming `id` is a string as it might be a UUID from a database, not necessarily a numeric OpenVidu `USERID`.
+ */
+export interface IMember {
+  id: string;
+  username: string;
+  email: string;
+  json_data: { [key: string]: any }; // Flexible for various user profile data
+  // Add other relevant properties here based on API response
 }
 
 /**
@@ -197,21 +344,20 @@ export interface IRoom {
   created_at: string; // Existing
   updated_at: string; // Renamed from 'updatedAt' to 'updated_at' based on room.json
   forceVideoCodec: string; // Added based on room.json
-  forcedVideoCodec: string; // Added based on room.json
+  forcedVideoCodec: string | null; // Changed to allow null based on room.json, although here it's string. Better safe.
   defaultRecordingProperties: IDefaultRecordingProperties; // Added based on room.json structure
   connections?: IConnection[]; // Added, optional field for the empty 'connections' array at room.json root
-  connect: IConnectionList; // Added to capture the actual connections data from 'connect' property in room.json
+  connect?: IConnectionList; // Made optional to align with subscribers.json which does not always have it
   // Removed ownerId, members, openViduSessionId as they are not explicitly present in the provided room.json
 }
 
 /**
- * Represents a swinger participant (subscriber or streamer) in the context of a session.
- * Note: If IRoom no longer has `ownerId` or `members`, `ISwingerSessionParticipant`'s `member` and `room` fields should be
- * understood in the context of the updated IRoom definition.
+ * Represents a swinger participant (subscriber or streamer) in the context of a session (generic base type).
+ * Note: This interface remains as a generic base and does not directly reflect the detailed subscriber from subscribers.json.
  */
 export interface ISwingerSessionParticipant {
   id: string;
-  member: IMember; // Detailed member information
+  member: IMember; // Detailed member information (using the less specific IMember here)
   room: IRoom; // Associated room information
   active: boolean;
   streamId?: string; // OpenVidu stream ID if applicable
@@ -244,14 +390,35 @@ export interface ISession {
   connections: IConnectionList; // Changed to use IConnectionList for consistency
 }
 
+/**
+ * Represents a streamer, extending the generic participant.
+ */
 export interface IStreamer extends ISwingerSessionParticipant {
   isLive: boolean;
   streamTitle?: string;
   viewersCount: number;
 }
 
-export interface ISubscriber extends ISwingerSessionParticipant {
-  isPremium: boolean;
+/**
+ * Represents a detailed subscriber entry based on the structure of data/subscribers.json.
+ * This interface provides a comprehensive view of a subscriber, including nested member, streamer, and room details.
+ */
+export interface ISubscriber {
+  id: number; // Top-level ID, typically a number
+  name: string;
+  connectionId: string;
+  streamerId: string;
+  json: any | null;
+  receivingFrom: string;
+  timestamp: string;
+  member: IMemberFull; // The main member associated with this subscriber entry
+  streamer: IStreamerFull; // The streamer object this subscriber is connected to
+  room: IRoom; // The room details associated with this subscriber
+  active: boolean;
+  streamId: string;
+  subscribed_member: IMemberFull; // The member who is subscribed (can be different from 'member' field)
+  created_at: string;
+  updated_at: string;
 }
 
 /**
