@@ -82,8 +82,9 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       });
       return connection.token;
     } catch (error) {
-      console.error('Error getting token:', error);
-      throw new Error(`Failed to get OpenVidu token: ${error.message || error}`);
+      console.error('Error in getToken:', error);
+      // Re-throw the original error directly for better debugging downstream
+      throw error;
     }
   }, [currentUserDisplayName]);
 
