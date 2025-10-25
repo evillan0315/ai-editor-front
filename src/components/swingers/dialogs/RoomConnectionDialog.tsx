@@ -1,16 +1,11 @@
 import React, { useCallback, useEffect } from 'react';
-import { useStore } from '@nanostores/react';
 import {
   Box,
   Button,
-  DialogContent,
-  DialogContentText,
   TextField,
   CircularProgress,
   Typography,
-  useTheme,
   Alert,
-  IconButton,
 } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import MicIcon from '@mui/icons-material/Mic';
@@ -20,8 +15,6 @@ import CallEndIcon from '@mui/icons-material/CallEnd';
 import CallIcon from '@mui/icons-material/Call';
 
 import { useOpenViduSession } from '@/components/swingers/hooks/useOpenViduSession';
-import { OpenViduVideoRenderer } from '@/components/swingers/openvidu/OpenViduVideoRenderer';
-import { OpenViduControls } from '@/components/swingers/openvidu/OpenViduControls';
 import { hideDialog } from '@/stores/dialogStore';
 
 interface RoomConnectionDialogProps {
@@ -29,74 +22,36 @@ interface RoomConnectionDialogProps {
   onSuccess?: () => void; // Optional callback on successful connection
 }
 
-const dialogContentSx = {
-  p: 2,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 2,
-  alignItems: 'center',
-};
-
-const videoPreviewContainerSx = {
-  position: 'relative',
-  width: '100%',
-  maxWidth: '400px',
-  paddingTop: '75%', // 4:3 aspect ratio
-  backgroundColor: 'black',
-  borderRadius: '8px',
-  overflow: 'hidden',
-  mt: 2,
-  mb: 2,
-  border: '2px solid',
-  borderColor: 'divider',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  '& video': {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    borderRadius: '8px',
-  },
-};
+// No longer directly renders a Dialog, just its content.
+// Padding for this content is now handled by this component itself, as GlobalDialog's DialogContent has p:0.
 
 export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
   roomId,
   onSuccess,
 }) => {
-  const theme = useTheme();
-  const { 
+  const {
     sessionNameInput,
     handleSessionNameChange,
     joinSession,
     leaveSession,
-    startPublishingMedia,
     toggleCamera,
     toggleMic,
     isCameraActive,
     isMicActive,
     isLoading,
     error,
-  } = useOpenViduSession(roomId);
+  } = useOpenViduSession(roomId); // Pass roomId to hook for initial session name
 
-  useEffect(() => {
-    // If a roomId is provided, attempt to join automatically, but only if not already connected
-    // and not currently loading. The useOpenViduSession hook itself handles `initialSessionId` for auto-fill.
-    // We'll rely on the 'Connect' button for explicit connection.
-  }, [roomId]);
+  // No need for a useEffect here to auto-join based on roomId if the 'Connect' button is the explicit trigger.
+  // The useOpenViduSession hook already handles pre-filling sessionNameInput if roomId is provided.
 
   const handleConnect = useCallback(async () => {
     if (!sessionNameInput) {
-      // This error would be handled by useOpenViduSession, but adding a local check too.
       console.error('Session name is required to connect.');
       return;
     }
     try {
       await joinSession(sessionNameInput);
-      // startPublishingMedia is called internally by joinSession if sessionIdToJoin is provided to it
       onSuccess && onSuccess();
       hideDialog(); // Close dialog on success
     } catch (e) {
@@ -107,18 +62,28 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
 
   const handleLeave = useCallback(async () => {
     await leaveSession();
-    // Optionally hide dialog after leaving, or keep it open for re-connection
-    // hideDialog();
+    // Optionally hide dialog after leaving, or keep it open for re-connection.
+    hideDialog();
   }, [leaveSession]);
 
   return (
-    <DialogContent sx={dialogContentSx}>
+    <Box
+      sx={{
+        p: 2, // Add padding here directly for the content within GlobalDialog's DialogContent
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        alignItems: 'center',
+      }}
+    >
+      {/* Title and main descriptive text are handled by GlobalDialog. */}
+      {/* Keeping specific instructional text here. */}
       <Typography variant="h6" component="div" color="text.primary" className="font-bold">
         {roomId ? `Connect to Room: ${roomId}` : 'Configure & Connect to Room'}
       </Typography>
-      <DialogContentText color="text.secondary">
+      <Typography color="text.secondary">
         Configure your camera and microphone before joining the session.
-      </DialogContentText>
+      </Typography>
 
       {error && (
         <Alert severity="error" className="w-full">
@@ -126,13 +91,8 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
         </Alert>
       )}
 
-      {/* Local Video Preview */}
-      <Box sx={videoPreviewContainerSx}>
-        {isLoading && (
-          <CircularProgress size={40} className="absolute z-10 text-white" />
-        )}
-       
-      </Box>
+      {/* Local Video Preview removed for simplicity as `useOpenViduSession` doesn't expose `publisher` easily here. */}
+      {/* The main OpenVidu page will display the video grid. This dialog focuses on connection setup. */}
 
       {/* Controls for Camera/Mic */}
       <Box className="flex gap-4 justify-center w-full">
@@ -190,6 +150,6 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
           {isLoading ? 'Connecting...' : 'Connect to Room'}
         </Button>
       </Box>
-    </DialogContent>
+    </Box>
   );
 };

@@ -2,8 +2,8 @@ import React, { useEffect, useCallback } from 'react';
 import { OpenVidu } from 'openvidu-browser';
 import { useStore } from '@nanostores/react';
 
-import { createSession, getSession } from '@/components/swingers/api/sessions'; // Import getSession as well
-import { getConnections, createConnection } from '@/components/swingers/api/connections';
+import { createSession } from '@/components/swingers/api/sessions';
+import { createConnection } from '@/components/swingers/api/connections';
 import { ISession } from '@/components/swingers/types';
 import {
   openViduStore,
@@ -21,6 +21,7 @@ import {
   setSessionNameInput as setOpenViduSessionNameInput,
 } from '@/components/swingers/stores/openViduStore';
 import { updateRoomConnectionCount } from '@/components/swingers/stores/roomStore';
+import { connectionStore, fetchSessionConnections, clearConnections, currentDefaultConnection } from '@/components/swingers/stores/connectionStore'; // Import new connection store actions
 import { authStore } from '@/stores/authStore';
 
 
@@ -33,28 +34,23 @@ import { authStore } from '@/stores/authStore';
 export const useOpenViduSession = (initialSessionId?: string) => {
   const ovState = useStore(openViduStore);
   const $auth = useStore(authStore);
-  const currentUserDisplayName = $auth.user?.username || 'Guest User';
-
-  // --- Modified leaveSession to be async and awaitable ---
+  const $currentDefaultConnection = useStore(currentDefaultConnection);
+  const currentUserDisplayName = JSON.parse($currentDefaultConnection.clientData);
+  
   const leaveSession = useCallback(async () => {
     if (ovState.session) {
       console.log(`Disconnecting from OpenVidu session ${ovState.session.sessionId}...`);
       ovState.session.disconnect();
-      // Introduce a small delay to allow OpenVidu's internal WebSocket cleanup to begin.
-      // This helps prevent race conditions if a new session connects immediately.
-      await new Promise(resolve => setTimeout(resolve, 200)); // Increased delay for robustness
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    // Update connection count to reflect leaving the room BEFORE resetting the store fully.
+    // fetchSessionConnections will update roomStore.connectionCounts to 0 after disconnect.
+    if (ovState.currentSessionId) {
+      await fetchSessionConnections(ovState.currentSessionId); // Fetching after disconnect should yield 0 connections
     }
     resetOpenViduStore();
-    // Update connection count to reflect leaving the room
-    if (ovState.currentSessionId) {
-      try {
-        const connections = await getConnections(ovState.currentSessionId);
-        updateRoomConnectionCount(ovState.currentSessionId, connections.length);
-      } catch (err) {
-        console.warn("Failed to update connection count after leaving session:", err);
-      }
-    }
-  }, [ovState.session, ovState.currentSessionId]); // Depends on currentSessionId to ensure connection count update is for the correct session
+    clearConnections(); // Clear connections from connectionStore
+  }, [ovState.session, ovState.currentSessionId, clearConnections]);
 
   // Initialize OpenVidu object and session name once per hook instance
   useEffect(() => {
@@ -66,15 +62,15 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     }
 
     return () => {
-      // Ensure leaveSession is awaited during cleanup to prevent resource leaks
       (async () => {
-        if (ovState.session) { // Only call if a session was actually active
+        if (ovState.session) {
           await leaveSession();
         }
-        resetOpenViduStore(); // Ensure store is fully reset on unmount
+        resetOpenViduStore();
+        clearConnections(); // Ensure store is fully reset on unmount
       })();
     };
-  }, [initialSessionId, ovState.sessionNameInput, ovState.openViduInstance, ovState.session, leaveSession]);
+  }, [initialSessionId, ovState.sessionNameInput, ovState.openViduInstance, ovState.session, leaveSession, clearConnections]);
 
   const handleSessionNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setOpenViduSessionNameInput(event.target.value);
@@ -82,16 +78,13 @@ export const useOpenViduSession = (initialSessionId?: string) => {
 
   const getToken = useCallback(async (mySessionId: string): Promise<string> => {
     try {
-      // createSession now handles the 409 Conflict internally, returning the existing session
-      // if one already exists for the customSessionId.
       const session = await createSession({ customSessionId: mySessionId });
       const connection = await createConnection(session.sessionId, {
         role: 'PUBLISHER',
-        data: JSON.stringify({ USERNAME: currentUserDisplayName }),
+        data: JSON.stringify(currentUserDisplayName),
       });
       return connection.token;
     } catch (error: any) {
-      // This catch block will only be hit for actual errors (not 409 handled by createSession)
       console.error('Error in getToken:', error);
       setOpenViduError(`Failed to get OpenVidu token: ${error.message || error}`);
       throw error;
@@ -120,7 +113,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       await ovState.session.publish(publisher);
 
       if (ovState.currentSessionId) {
-        getConnections(ovState.currentSessionId).then(c => updateRoomConnectionCount(ovState.currentSessionId!, c.length));
+        // Update connection details and count after publishing
+        await fetchSessionConnections(ovState.currentSessionId);
       }
 
     } catch (error: any) {
@@ -135,11 +129,9 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     }
   }, [ovState.session, ovState.currentSessionId, ovState.isMicActive, ovState.isCameraActive, ovState.openViduInstance, ovState.publisher]);
 
-  // --- Modified joinSession to await leaveSession and handle auto-publish ---
   const joinSession = useCallback(async (sessionIdToJoin?: string) => {
-    // If there's an active session, ensure it's fully disconnected before proceeding.
-    // Awaiting leaveSession here prevents race conditions where a new connection
-    // attempts to initialize while resources from a previous session are still tearing down.
+    setOpenViduError(null);
+
     if (ovState.session) {
       console.warn('Attempting to join session while another might be active or pending. Cleaning up first.');
       await leaveSession();
@@ -153,7 +145,6 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     }
 
     setOpenViduLoading(true);
-    setOpenViduError(null);
 
     try {
       const token = await getToken(effectiveSessionId);
@@ -161,21 +152,22 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       setOpenViduSessionId(effectiveSessionId);
       setOpenViduSession(session as ISession);
 
-      session.on('connectionCreated', (event) => {
+      session.on('connectionCreated', async (event) => {
          console.log('connectionCreated:', event);
+         await fetchSessionConnections(effectiveSessionId); // Refresh connection list on new connection
       });
 
-      session.on('streamCreated', (event) => {
+      session.on('streamCreated', async (event) => {
         const subscriber = session.subscribe(event.stream, undefined);
         setOpenViduError(null);
-        subscriber.on('streamPlaying', () => {}); // Renderer handles attachment
+        subscriber.on('streamPlaying', () => {});
         addOpenViduSubscriber(subscriber);
-        getConnections(effectiveSessionId).then(c => updateRoomConnectionCount(effectiveSessionId, c.length));
+        await fetchSessionConnections(effectiveSessionId); // Refresh connection list on new stream
       });
 
-      session.on('streamDestroyed', (event) => {
+      session.on('streamDestroyed', async (event) => {
         removeOpenViduSubscriber(event.stream.streamId);
-        getConnections(effectiveSessionId).then(c => updateRoomConnectionCount(effectiveSessionId, c.length));
+        await fetchSessionConnections(effectiveSessionId); // Refresh connection list on stream destroyed
       });
       
       session.on('networkQualityChanged', (event) => {
@@ -194,7 +186,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
               senderName = clientData.USERNAME || 'Unknown';
             } catch (parseError) {
               senderName = connectionData.replace('clientData_', '') || 'Unknown';
-            }
+            }  
           }
 
           if (signalData.message) {
@@ -206,10 +198,11 @@ export const useOpenViduSession = (initialSessionId?: string) => {
         }
       });
 
-      await session.connect(token, { clientData: JSON.stringify({ USERNAME: currentUserDisplayName }) });
+      await session.connect(token, { clientData: JSON.stringify(currentUserDisplayName) });
+
+      // Fetch connections and update room store immediately after connecting
+      await fetchSessionConnections(effectiveSessionId);
       
-      // Only start publishing if joining directly (e.g., via URL parameter), not if simply reconnecting
-      // This condition is true when initialSessionId is passed to the hook and joinSession is called without args
       if (sessionIdToJoin) { 
         await startPublishingMedia();
       }
@@ -218,15 +211,15 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       console.error('Error connecting to session:', error.code, error.message);
       setOpenViduError(`Failed to connect to OpenVidu session: ${error.message || error}`);
       
-      // Explicitly disconnect and clean up if connection fails mid-process
       if (ovState.session) {
          ovState.session.disconnect();
       }
-      resetOpenViduStore(); // Ensure store is in a clean state
+      resetOpenViduStore();
+      clearConnections(); // Clear connections from connectionStore on error
     } finally {
       setOpenViduLoading(false);
     }
-  }, [ovState.sessionNameInput, ovState.openViduInstance, getToken, startPublishingMedia, currentUserDisplayName, ovState.session, leaveSession]);
+  }, [ovState.sessionNameInput, ovState.openViduInstance, getToken, startPublishingMedia, currentUserDisplayName, ovState.session, leaveSession, fetchSessionConnections, clearConnections]);
 
   const toggleCamera = useCallback(() => {
     if (ovState.publisher) {
@@ -249,7 +242,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     }
     try {
       const messagePayload = {
-        sender: currentUserDisplayName,
+        sender: currentUserDisplayName.USERNAME,
         message: messageText,
         timestamp: Date.now(),
       };
