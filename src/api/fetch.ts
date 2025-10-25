@@ -7,6 +7,11 @@ export interface ApiError extends Error {
   message: string;
 }
 
+// Augment RequestInit to allow a 'data' field for JSON bodies
+interface CustomRequestInit extends RequestInit {
+  data?: object; // Custom field to hold JSON body object, which will be stringified
+}
+
 // Handles the response from a fetch call, checks for errors, and parses JSON or text.
 export const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
@@ -17,11 +22,13 @@ export const handleResponse = async <T>(response: Response): Promise<T> => {
       errorData = await response.text();
     }
 
-    throw new Error(
-      typeof errorData === 'string'
-        ? errorData
-        : errorData.message || `API error: ${response.status}`,
-    );
+    const errorMessage = typeof errorData === 'string'
+      ? errorData
+      : errorData.message || `API error: ${response.status} ${response.statusText}`;
+
+    const error = new Error(errorMessage) as ApiError;
+    error.statusCode = response.status;
+    throw error;
   }
 
   const contentType = response.headers.get('content-type');
@@ -38,7 +45,11 @@ export const handleResponse = async <T>(response: Response): Promise<T> => {
   }
 };
 
-export const fetchWithAuth = async (url: string, options?: RequestInit) => {
+// Generic fetch wrapper with token for authenticated requests
+export async function fetchWithAuth(
+  url: string,
+  options?: CustomRequestInit,
+): Promise<Response> {
   const token = getToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -46,12 +57,18 @@ export const fetchWithAuth = async (url: string, options?: RequestInit) => {
     ...options?.headers,
   };
 
-  return fetch(url, { ...options, headers });
-};
-// Generic fetch wrapper with token for authenticated requests
+  let body = options?.body;
+  if (options?.data && options.method !== 'GET' && options.method !== 'HEAD') {
+    body = JSON.stringify(options.data);
+  }
+
+  return fetch(url, { ...options, headers, body });
+}
+
+// Generic fetch wrapper with API Key for authenticated requests to SLS API
 export async function fetchWithToken(
   input: RequestInfo | URL,
-  init?: RequestInit,
+  init?: CustomRequestInit,
 ): Promise<Response> {
   const token = `${import.meta.env.VITE_SLS_API_KEY}`;
   const url = `${input}?token=${token}`;
@@ -60,16 +77,22 @@ export async function fetchWithToken(
     ...init?.headers,
   };
 
+  let body = init?.body;
+  if (init?.data && init.method !== 'GET' && init.method !== 'HEAD') {
+    body = JSON.stringify(init.data);
+  }
+
   return fetch(url, {
     ...init,
     headers,
+    body,
   });
 }
 
 // Fetch wrapper with Basic Auth for OpenVidu server
 export async function fetchWithBasicAuth(
   input: RequestInfo | URL,
-  init?: RequestInit,
+  init?: CustomRequestInit,
 ): Promise<Response> {
   const OPENVIDU_SERVER_SECRET = import.meta.env.VITE_SLS_API_KEY;
   const OPENVIDU_SERVER_USERNAME = import.meta.env.VITE_SLS_USERNAME || 'OPENVIDUAPP'; // Default OpenVidu username
@@ -85,9 +108,15 @@ export async function fetchWithBasicAuth(
     ...init?.headers,
   };
 
+  let body = init?.body;
+  if (init?.data && init.method !== 'GET' && init.method !== 'HEAD') {
+    body = JSON.stringify(init.data);
+  }
+
   return fetch(input, {
     ...init,
     headers,
+    body,
   });
 }
 
