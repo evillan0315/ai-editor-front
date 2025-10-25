@@ -78,6 +78,8 @@ export const RoomList: React.FC = () => {
       console.log(`OpenVidu session ${roomId} deleted.`);
 
       // 2. Create a new OpenVidu session with the same customSessionId
+      // The createSession API function now handles 409 (conflict/already exists) by returning the existing session
+      // So, if we deleted it, it will be truly recreated. If delete failed silently, createSession would return the existing.
       await createSession({ customSessionId: roomId });
       console.log(`OpenVidu session ${roomId} recreated.`);
 
