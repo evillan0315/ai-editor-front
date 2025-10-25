@@ -3,7 +3,7 @@ import { OpenVidu } from 'openvidu-browser';
 import { useStore } from '@nanostores/react';
 import { nanoid } from 'nanoid';
 
-import { createSession } from '@/components/swingers/api/sessions';
+import { createSession, getSession } from '@/components/swingers/api/sessions'; // Import getSession
 import { getConnections, createConnection } from '@/components/swingers/api/connections';
 import { IOpenViduPublisher, IOpenViduSubscriber, ISession } from '@/components/swingers/types';
 import {
@@ -75,16 +75,38 @@ export const useOpenViduSession = (initialSessionId?: string) => {
 
   const getToken = useCallback(async (mySessionId: string): Promise<string> => {
     try {
+      // Attempt to create a new session
       const session = await createSession({ customSessionId: mySessionId });
       const connection = await createConnection(session.sessionId, {
         role: 'PUBLISHER',
         data: JSON.stringify({ USERNAME: currentUserDisplayName }), // Use consistent display name
       });
       return connection.token;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in getToken:', error);
-      // Re-throw the original error directly for better debugging downstream
-      throw error;
+
+      // Check if it's a 409 Conflict error (session already exists)
+      if (error.message && error.message.includes('409 Conflict')) {
+        console.warn(`Session ${mySessionId} already exists. Attempting to get existing session.`);
+        try {
+          // If session exists, retrieve it
+          const existingSession = await getSession(mySessionId);
+          // Then create a connection for the existing session
+          const connection = await createConnection(existingSession.sessionId, {
+            role: 'PUBLISHER',
+            data: JSON.stringify({ USERNAME: currentUserDisplayName }),
+          });
+          return connection.token;
+        } catch (existingSessionError: any) {
+          console.error(`Error getting existing session ${mySessionId} or creating connection for it:`, existingSessionError);
+          setOpenViduError(`Failed to get or connect to existing session: ${existingSessionError.message || existingSessionError}`);
+          throw existingSessionError; // Re-throw error if getting existing session fails
+        }
+      } else {
+        // If it's not a 409 conflict, re-throw the original error
+        setOpenViduError(`Failed to get OpenVidu token: ${error.message || error}`);
+        throw error;
+      }
     }
   }, [currentUserDisplayName]);
 
