@@ -4,8 +4,8 @@ import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import { roomStore, fetchRooms, fetchConnectionCountsForRooms } from './stores/roomStore';
 import { RoomCard } from './RoomCard';
 import { deleteSession, createSession } from '@/components/swingers/api/sessions';
-import { openViduSocketService } from '@/components/swingers/services/openViduSocketService';
-import { showDialog } from '@/stores/dialogStore';
+
+import { useNavigate } from 'react-router-dom';
 
 
 const listContainerSx = {
@@ -37,16 +37,12 @@ const errorAlertSx = {
 export const RoomList: React.FC = () => {
   const { rooms, loading, error, connectionCounts, loadingConnectionCounts } = useStore(roomStore);
   const [resettingRoomId, setResettingRoomId] = useState<string | null>(null); // State to track which room is being reset
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchRooms();
-    // Initialize OpenVidu socket connection when RoomList mounts
-    openViduSocketService.initSocket();
 
-    // Disconnect OpenVidu socket when RoomList unmounts
-    return () => {
-      openViduSocketService.disconnectSocket();
-    };
+    
   }, []); // Empty dependency array means this runs once on mount and once on unmount
 
   useEffect(() => {
@@ -57,12 +53,14 @@ export const RoomList: React.FC = () => {
 
   // Callback for joining a room
   const handleJoinRoom = useCallback((roomId: string) => {
-    
-  }, []);
+    navigate(`/openvidu/${roomId}`);
+  }, [navigate]);
 
   // Callback for viewing room details
   const handleViewRoom = useCallback((roomId: string) => {
-
+    // This handler can be implemented if there's a specific 'view' route/dialog for room info
+    // For now, it remains a stub as the main request is for joining.
+    console.log(`Viewing details for room: ${roomId}`);
   }, []);
 
   // Callback for resetting/recreating a room's OpenVidu session

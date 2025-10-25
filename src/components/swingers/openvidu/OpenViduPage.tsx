@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Box, Typography, Alert, Card, CardContent, Divider } from '@mui/material';
+import { Box, Typography, Alert, Card, CardContent, Divider, Button } from '@mui/material'; // Added Button for test message
 import { useStore } from '@nanostores/react';
 import { useParams } from 'react-router-dom';
 
@@ -42,7 +42,6 @@ export const OpenViduPage: React.FC = () => {
     isMicActive,
     isLoading,
     error,
-    // Removed startPublishingMedia, it's now called internally by joinSession for simplicity
     sendChatMessage, // New: Exposed function for sending chat messages
   } = useOpenViduSession(roomId); // Pass roomId to the hook
 
@@ -67,6 +66,12 @@ export const OpenViduPage: React.FC = () => {
       </Typography>
 
       <Box className="max-w-3xl w-full">
+        {error && (
+          <Alert severity="error" sx={alertSx} className="max-w-3xl w-full">
+            {error}
+          </Alert>
+        )}
+
         <OpenViduSessionForm
           sessionNameInput={sessionNameInput}
           handleSessionNameChange={handleSessionNameChange}
@@ -77,12 +82,6 @@ export const OpenViduPage: React.FC = () => {
           error={error}
           isRoomIdFromUrl={!!roomId} // Inform form if roomId came from URL
         />
-
-        {error && (
-          <Alert severity="error" sx={alertSx} className="max-w-3xl w-full">
-            {error}
-          </Alert>
-        )}
 
         {ovState.currentSessionId && (
           <Card className="mb-4 max-w-3xl w-full">
@@ -97,14 +96,15 @@ export const OpenViduPage: React.FC = () => {
                 publisher={ovState.publisher}
               />
               {/* Example chat button, replace with actual chat input/display */}
-              {/*<Button onClick={handleSendTestMessage} variant="outlined" className="mt-4">Send Test Chat Message</Button>*/}
+              {/* This button is for demonstration. Actual chat should use a dedicated input. */}
+              <Button onClick={handleSendTestMessage} variant="outlined" className="mt-4">Send Test Chat Message</Button>
             </CardContent>
           </Card>
         )}
 
         <OpenViduVideoGrid publisher={ovState.publisher} subscribers={ovState.subscribers} />
 
-        {!ovState.currentSessionId && !isLoading && !error && (
+        {!ovState.currentSessionId && !isLoading && !error && ( /* Adjusted condition to only show if not connected and no error */
           <Alert severity="info" className="max-w-3xl w-full mt-4">
             Enter a session name to start or join an OpenVidu video call.
           </Alert>
