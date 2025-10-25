@@ -78,7 +78,7 @@ const infoItemSx = {
   wordBreak: 'break-word',
 };
 
-// --- New Sticky Footer Styles --- //
+// --- New Sticky Footer Styles ---
 const stickyFooterSx = (theme: ReturnType<typeof useTheme>) => ({
   position: 'sticky',
   bottom: 0,
