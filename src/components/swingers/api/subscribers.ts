@@ -1,4 +1,4 @@
-import { fetchWithToken, handleResponse, SLS_API_URL } from '@/api/fetch';
+import { fetchWithToken, SLS_API_URL } from '@/api/fetch';
 import { ISwinger } from '@/components/swingers/types';
 
 const SWINGERS_SUBSCRIBERS = `${SLS_API_URL}/subscribers`;
@@ -12,11 +12,10 @@ const SWINGERS_SUBSCRIBERS = `${SLS_API_URL}/subscribers`;
  */
 export const getSubscribers = async (): Promise<ISwinger[]> => {
   try {
-    const response = await fetchWithToken(
+    const allSubscribers = await fetchWithToken<ISwinger[]>(
       `${SWINGERS_SUBSCRIBERS}`,
       { method: 'GET' },
     );
-    const allSubscribers = await handleResponse<ISwinger[]>(response);
 
     const seenKeys = new Set<string>();
     const uniqueSubscribers: ISwinger[] = [];

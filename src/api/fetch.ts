@@ -5,54 +5,37 @@ export const API_BASE_URL = `/api`;
 export interface ApiError extends Error {
   statusCode?: number;
   message: string;
-  data?: any; // To hold parsed error body
 }
 
 // Handles the response from a fetch call, checks for errors, and parses JSON or text.
 export const handleResponse = async <T>(response: Response): Promise<T> => {
-  const isJson = response.headers.get('content-type')?.includes('application/json');
-  const text = await response.text(); // Consume body once as text
-
-  let data: any;
-  if (isJson && text.trim().length > 0) {
+  if (!response.ok) {
+    let errorData: any;
     try {
-      data = JSON.parse(text);
+      errorData = await response.json();
     } catch (e) {
-      console.warn('Response content-type was JSON but failed to parse:', e, 'Raw text:', text);
-      data = text; // Fallback to raw text if JSON parsing fails
+      errorData = await response.text();
+    }
+
+    throw new Error(
+      typeof errorData === 'string'
+        ? errorData
+        : errorData.message || `API error: ${response.status}`,
+    );
+  }
+
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      const data = await response.json();
+      return data as T;
+    } catch (error) {
+      console.error('Error parsing JSON:', error);
+      throw new Error('Failed to parse JSON response.');
     }
   } else {
-    data = text; // If not JSON or empty, use raw text
+    return response.text() as Promise<T>;
   }
-
-  if (!response.ok) {
-    // Log detailed error information for debugging purposes
-    console.error(`API Error - Status: ${response.status}, StatusText: ${response.statusText}, Raw Response: ${text}`);
-
-    let detailedErrorMessage = `API error: ${response.status} ${response.statusText}`;
-
-    if (typeof data === 'object' && data !== null) {
-      // Try to extract a more specific message from the JSON response
-      if (data.message) {
-        detailedErrorMessage = data.message;
-      } else if (data.error) { // Common in some API error structures
-        detailedErrorMessage = data.error;
-      } else {
-        // If it's an object but no specific message field, stringify the whole object
-        detailedErrorMessage = JSON.stringify(data);
-      }
-    } else if (typeof data === 'string' && data.trim().length > 0) {
-      // Use raw text if it's a non-empty string
-      detailedErrorMessage = data;
-    }
-
-    const error: ApiError = new Error(detailedErrorMessage);
-    error.statusCode = response.status;
-    error.data = data; // Always attach the parsed (or raw) response body for further inspection
-    throw error;
-  }
-
-  return data as T;
 };
 
 export const fetchWithAuth = async (url: string, options?: RequestInit) => {
@@ -77,7 +60,7 @@ export async function fetchWithToken(
     ...init?.headers,
   };
 
-  return fetch(url, { 
+  return fetch(url, {
     ...init,
     headers,
   });

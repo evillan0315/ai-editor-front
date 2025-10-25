@@ -28,12 +28,11 @@ export interface IUpdateRoomDto extends Partial<ICreateRoomDto> {}
  */
 export const getRooms = async (): Promise<IRoom[]> => {
   try {
-    const allRooms = await fetchWithToken<IRoom[]>(
+    const response = await fetchWithToken<IRoom[]>(
       SWINGERS_ROOMS_BASE_URL,
       { method: 'GET' },
     );
-    return handleResponse<IRoom[]>(allRooms);
-   
+    return handleResponse<IRoom[]>(response);
   } catch (error) {
     console.error(`Error fetching rooms:`, error);
     throw error;
@@ -47,7 +46,7 @@ export const getRooms = async (): Promise<IRoom[]> => {
  */
 export const getRoom = async (id: number): Promise<IRoom> => {
   try {
-    const  response =  await fetchWithToken<IRoom>(
+    const response = await fetchWithToken<IRoom>(
       `${SWINGERS_ROOMS_BASE_URL}/${id}`,
       { method: 'GET' },
     );
@@ -90,13 +89,14 @@ export const updateRoom = async (
   roomData: IUpdateRoomDto,
 ): Promise<IRoom> => {
   try {
-    return await fetchWithToken<IRoom>(
+    const response = await fetchWithToken<IRoom>(
       `${SWINGERS_ROOMS_BASE_URL}/${id}`,
       {
         method: 'PUT',
         data: roomData, // Use 'data' for PUT request body with Axios
       },
     );
+    return handleResponse<IRoom>(response);
   } catch (error) {
     console.error(`Error updating room with ID ${id}:`, error);
     throw error;
@@ -110,10 +110,11 @@ export const updateRoom = async (
  */
 export const deleteRoom = async (id: number): Promise<void> => {
   try {
-    await fetchWithToken<void>(
+    const response = await fetchWithToken<void>(
       `${SWINGERS_ROOMS_BASE_URL}/${id}`,
       { method: 'DELETE' },
     ); // No content expected, just check for successful completion
+    handleResponse<void>(response);
   } catch (error) {
     console.error(`Error deleting room with ID ${id}:`, error);
     throw error;

@@ -1,10 +1,5 @@
 import { ApiError, fetchWithBasicAuth, handleResponse, SLS_VIDU_URL } from '@/api/fetch';
-import { IConnection } from '@/components/swingers/types';
-
-// NOTE: These API calls interact directly with the OpenVidu server via a proxy.
-// The `fetchWithBasicAuth` uses the VITE_SLS_API_KEY environment variable directly from the frontend.
-// In a production environment, it is recommended to proxy these calls through your own backend
-// to keep the OpenVidu secret server-side and only expose a generated token to the frontend.
+import { IConnection, IConnectionList } from '@/components/swingers/types';
 
 /**
  * Options for creating a new OpenVidu connection within a session.
@@ -68,12 +63,11 @@ export const createConnection = async (
 export const getConnections = async (sessionId: string): Promise<IConnection[]> => {
   try {
     // The OpenVidu API returns a JSON object with a 'content' array for connections
-    const data = await fetchWithBasicAuth<{ content: IConnection[] }>(
+    const response = await fetchWithBasicAuth<IConnectionList>(
       `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection`,
       { method: 'GET' },
     );
-   return handleResponse<{content: IConnection[]}>(data);
-
+    return handleResponse<IConnectionList>(response).content;
   } catch (error) {
     console.error(`Error fetching OpenVidu connections for session ${sessionId}:`, error);
     throw error;
@@ -109,10 +103,11 @@ export const deleteConnection = async (connectionId: string, sessionId: string):
   try {
     // fetchWithBasicAuth now returns data directly, but for DELETE, we might not expect content.
     // The success/failure is indicated by the promise resolving/rejecting.
-    await fetchWithBasicAuth<void>(
+    const response = await fetchWithBasicAuth<void>(
       `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection/${connectionId}`,
       { method: 'DELETE' },
     );
+    handleResponse<void>(response);
   } catch (error) {
     console.error(`Error deleting OpenVidu connection with ID ${connectionId}:`, error);
     throw error;

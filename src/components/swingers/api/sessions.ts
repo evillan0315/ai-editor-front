@@ -36,15 +36,30 @@ export interface ICreateSessionOptions {
  */
 export const createSession = async (options?: ICreateSessionOptions): Promise<ISession> => {
   try {
-    return await fetchWithBasicAuth<ISession>(
+    const response = await fetchWithBasicAuth<ISession>(
       API_SESSIONS_BASE_URL,
       {
         method: 'POST',
-        data: options || {}, // Use 'data' for POST request body with Axios
+        data: options || {},
       },
     );
+    return handleResponse<ISession>(response);
   } catch (error) {
-    
+    if (error  && error.status === 409) {
+      console.warn(`Session with ID ${options?.customSessionId} already exists. Attempting to retrieve existing session.`);
+      if (options?.customSessionId) {
+        try {
+          // If session already exists (409 Conflict), try to fetch the existing session
+          const existingSession = await getSession(options.customSessionId);
+          return existingSession;
+        } catch (getSessionError: unknown) {
+          console.error(`Failed to retrieve existing session ${options.customSessionId} after 409 conflict:`, getSessionError);
+          throw new Error('Failed to create or retrieve session due to conflict.');
+        }
+      } else {
+        throw new Error('Session already exists, but no customSessionId provided to retrieve it.');
+      }
+    }
     console.error(`Error creating OpenVidu session:`, error);
     throw error; // Re-throw if it's not a 409 or 409 handling failed.
   }
@@ -58,14 +73,14 @@ export const createSession = async (options?: ICreateSessionOptions): Promise<IS
 export const getSessions = async (): Promise<ISession[]> => {
   try {
     // The OpenVidu API returns a JSON object with a 'content' array for sessions
-    const data = await fetchWithBasicAuth<{ content: ISession[] }>(
+    const response = await fetchWithBasicAuth<{ content: ISession[] }>(
       API_SESSIONS_BASE_URL,
       { method: 'GET' },
     );
-    return data.content;
+    return handleResponse<{ content: ISession[] }>(response).content;
   } catch (error) {
     console.error(
-      `Error fetching OpenVidu sessions:`, // Corrected error message
+      `Error fetching OpenVidu sessions:`,
       error,
     );
     throw error;
@@ -80,13 +95,14 @@ export const getSessions = async (): Promise<ISession[]> => {
  */
 export const getSession = async (sessionId: string): Promise<ISession> => {
   try {
-    return await fetchWithBasicAuth<ISession>(
+    const response = await fetchWithBasicAuth<ISession>(
       `${API_SESSIONS_BASE_URL}/${sessionId}`,
       { method: 'GET' },
     );
+    return handleResponse<ISession>(response);
   } catch (error) {
     console.error(
-      `Error fetching OpenVidu session with ID ${sessionId}:`, // Corrected error message
+      `Error fetching OpenVidu session with ID ${sessionId}:`,
       error,
     );
     throw error;
@@ -101,13 +117,14 @@ export const getSession = async (sessionId: string): Promise<ISession> => {
  */
 export const deleteSession = async (sessionId: string): Promise<void> => {
   try {
-    await fetchWithBasicAuth<void>(
+    const response = await fetchWithBasicAuth<void>(
       `${API_SESSIONS_BASE_URL}/${sessionId}`,
       { method: 'DELETE' },
     );
+    handleResponse<void>(response);
   } catch (error) {
     console.error(
-      `Error deleting OpenVidu session with ID ${sessionId}:`, // Corrected error message
+      `Error deleting OpenVidu session with ID ${sessionId}:`,
       error,
     );
     throw error;
