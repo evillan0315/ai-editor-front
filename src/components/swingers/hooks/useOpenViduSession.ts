@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { OpenVidu } from 'openvidu-browser';
 import { useStore } from '@nanostores/react';
 
@@ -20,7 +20,7 @@ import {
   setIsMicActive,
   setSessionNameInput as setOpenViduSessionNameInput,
 } from '@/components/swingers/stores/openViduStore';
-import { fetchSessionConnections, clearConnections, currentDefaultConnection } from '@/components/swingers/stores/connectionStore'; // Import new connection store actions
+import { fetchSessionConnections, clearConnections, currentDefaultConnection } from '@/components/swingers/stores/connectionStore';
 import { authStore } from '@/stores/authStore';
 
 
@@ -34,9 +34,9 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   const ovState = useStore(openViduStore);
   const $auth = useStore(authStore);
   const $currentDefaultConnection = useStore(currentDefaultConnection);
-  console.log($currentDefaultConnection, '$currentDefaultConnection');
+
   // Add a ref to track if media initialization is in progress to prevent race conditions
-  const isMediaInitInProgress = React.useRef(false);
+  const isMediaInitInProgress = useRef(false);
 
   // Ensure currentUserDisplayName is safely parsed or defaulted
   const currentUserDisplayName = React.useMemo(() => {
@@ -49,6 +49,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   }, [$currentDefaultConnection.clientData]);
 
 
+  // `leaveSession` is triggered by user action or explicit logic, so it's safe to reset the store.
   const leaveSession = useCallback(async () => {
     if (ovState.session) {
       console.log(`Disconnecting from OpenVidu session ${ovState.session.sessionId}...`);
@@ -66,65 +67,10 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       // Only fetch connections if there was a session ID, otherwise it's moot
       await fetchSessionConnections(ovState.currentSessionId); // Fetching after disconnect should yield 0 connections
     }
-    resetOpenViduStore();
+    resetOpenViduStore(); // This is the intentional full reset
     clearConnections(); // Clear connections from connectionStore
     isMediaInitInProgress.current = false; // Reset flag on leaving session
   }, [ovState.session, ovState.currentSessionId, ovState.publisher, clearConnections]);
-
-  // NEW: Function to destroy local publisher, used for cleaning up preview
-  const destroyLocalMediaPreview = useCallback(() => {
-    if (ovState.publisher) {
-      ovState.publisher.destroy();
-      setOpenViduPublisher(null);
-    }
-    isMediaInitInProgress.current = false; // Reset flag on destroying preview
-  }, [ovState.publisher]);
-
-
-  // Initialize OpenVidu object and session name once per hook instance
-  // This useEffect ensures the OpenVidu instance is ready and session name input is set if provided.
-  useEffect(() => {
-    if (!ovState.openViduInstance) {
-      setOpenViduInstance(new OpenVidu());
-    }
-    if (initialSessionId && ovState.sessionNameInput === '') {
-      setOpenViduSessionNameInput(initialSessionId);
-    }
-
-    // Cleanup: Disconnect and reset store on component unmount
-    return () => {
-      // Ensure a full cleanup. If session is active, leave it. If only a preview publisher exists, destroy it.
-      if (ovState.session) {
-          leaveSession(); // Fully disconnect and destroy publisher
-      } else if (ovState.publisher) {
-          destroyLocalMediaPreview(); // Destroy publisher if no session was active (only preview)
-      }
-      resetOpenViduStore();
-      clearConnections();
-      isMediaInitInProgress.current = false; // Ensure flag is reset on component unmount
-    };
-  }, [initialSessionId, ovState.sessionNameInput, ovState.openViduInstance, ovState.session, ovState.publisher, leaveSession, clearConnections, destroyLocalMediaPreview]);
-
-
-  const handleSessionNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setOpenViduSessionNameInput(event.target.value);
-  }, []);
-
-  const getToken = useCallback(async (mySessionId: string): Promise<string> => {
-    try {
-      const session = await createSession({ customSessionId: mySessionId });
-      const connection = await createConnection(session.sessionId, {
-        role: 'PUBLISHER',
-        data: JSON.stringify(currentUserDisplayName), // Pass client data
-      });
-      return connection.token;
-    } catch (error: any) {
-      console.error('Error in getToken:', error);
-      setOpenViduError(`Failed to get OpenVidu token: ${error.message || error}`);
-      throw error;
-    }
-  }, [currentUserDisplayName]);
-
   // NEW: Function to initialize publisher for local preview without connecting to session
   const initLocalMediaPreview = useCallback(async () => {
     // Guard against multiple simultaneous initialization calls
@@ -171,7 +117,101 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       setOpenViduLoading(false);
       isMediaInitInProgress.current = false; // Reset flag
     }
-  }, [ovState.openViduInstance, ovState.isMicActive, ovState.isCameraActive]); // Crucial: removed ovState.publisher from dependencies.
+  }, [ovState.openViduInstance, ovState.isMicActive, ovState.isCameraActive]); 
+  // NEW: Function to destroy local publisher, used for cleaning up preview
+  const destroyLocalMediaPreview = useCallback(() => {
+    if (ovState.publisher) {
+      ovState.publisher.destroy();
+      setOpenViduPublisher(null);
+    }
+    isMediaInitInProgress.current = false; // Reset flag on destroying preview
+  }, [ovState.publisher]);
+
+
+  // This useEffect handles initialization of OpenVidu instance, initial session name, and component unmount cleanup.
+  useEffect(() => {
+    // 1. Initialize OpenVidu instance if not already done.
+    // This ensures `new OpenVidu()` is called only once per component lifecycle.
+    if (!ovState.openViduInstance) {
+      setOpenViduInstance(new OpenVidu());
+    }
+
+    // 2. Set session name input if `initialSessionId` is provided and the input is currently empty.
+    if (initialSessionId && !ovState.sessionNameInput) {
+      setOpenViduSessionNameInput(initialSessionId);
+    }
+
+    // Cleanup function: This runs on component unmount, or before the effect re-runs due to dependency changes.
+    return () => {
+      // Read current state directly from the Nanostore to avoid stale closures and ensure accuracy.
+      const currentOvStateOnCleanup = openViduStore.get();
+
+      if (currentOvStateOnCleanup.session) {
+          // If there's an active session, fully disconnect and reset. `leaveSession` handles this.
+          // Calling it here ensures a clean shutdown when the component unmounts.
+          leaveSession();
+      } else if (currentOvStateOnCleanup.publisher) {
+          // If only a preview publisher exists (no active session), destroy it.
+          // `destroyLocalMediaPreview` handles just destroying the publisher without a full store reset.
+          destroyLocalMediaPreview();
+      }
+      // IMPORTANT: `resetOpenViduStore()` and `clearConnections()` are NOT called directly here.
+      // They are part of `leaveSession()`. Calling them here on every dependency change was causing the infinite loop.
+
+      // Always reset the media initialization flag on cleanup.
+      isMediaInitInProgress.current = false;
+    };
+    // Dependencies are critical:
+    // - `initialSessionId`, `ovState.sessionNameInput`, `ovState.openViduInstance`: For initial setup and instance availability.
+    // - `leaveSession`, `destroyLocalMediaPreview`: These are stable `useCallback` functions and are needed for the cleanup to be up-to-date.
+    // - We intentionally EXCLUDE `ovState.session` and `ovState.publisher` from dependencies here.
+    //   Including them would cause the cleanup to re-run when their values change (e.g., to null after `leaveSession()`),
+    //   leading to the infinite update loop when combined with `setOpenViduInstance` in the effect body.
+  }, [initialSessionId, ovState.sessionNameInput, ovState.openViduInstance, leaveSession, destroyLocalMediaPreview]);
+
+  // Separate useEffect to manage local media preview state changes (camera/mic toggles)
+  // This effect ensures `initLocalMediaPreview` runs when camera/mic state changes or OpenVidu instance becomes available,
+  // but ONLY when no actual session is active.
+  useEffect(() => {
+    // Only run if OpenVidu is initialized, not in an active session, and not already initializing media.
+    if (ovState.openViduInstance && !ovState.session && !isMediaInitInProgress.current) {
+        initLocalMediaPreview();
+    }
+    // Cleanup for this specific media preview effect:
+    // If a session becomes active, this effect is no longer responsible for the publisher.
+    // If the component unmounts without a session, `destroyLocalMediaPreview` is handled by the main unmount cleanup.
+    // If camera/mic toggles, this cleanup runs, then the effect re-runs to re-init.
+    return () => {
+        const currentOvStateOnMediaCleanup = openViduStore.get();
+        // If there's a publisher and no session is active, ensure it's destroyed.
+        // This handles cases where `isCameraActive`/`isMicActive` dependencies change and a new preview is needed.
+        if (currentOvStateOnMediaCleanup.publisher && !currentOvStateOnMediaCleanup.session) {
+             destroyLocalMediaPreview();
+        }
+    };
+  }, [ovState.openViduInstance, ovState.session, ovState.isCameraActive, ovState.isMicActive, initLocalMediaPreview, destroyLocalMediaPreview]);
+
+
+  const handleSessionNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setOpenViduSessionNameInput(event.target.value);
+  }, []);
+
+  const getToken = useCallback(async (mySessionId: string): Promise<string> => {
+    try {
+      const session = await createSession({ customSessionId: mySessionId });
+      const connection = await createConnection(session.sessionId, {
+        role: 'PUBLISHER',
+        data: JSON.stringify(currentUserDisplayName), // Pass client data
+      });
+      return connection.token;
+    } catch (error: any) {
+      console.error('Error in getToken:', error);
+      setOpenViduError(`Failed to get OpenVidu token: ${error.message || error}`);
+      throw error;
+    }
+  }, [currentUserDisplayName]);
+
+  // Crucial: removed ovState.publisher from dependencies.
 
 
   const joinSession = useCallback(async (sessionIdToJoin?: string) => {
@@ -180,13 +220,14 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     // If already connected to a session, disconnect first.
     if (ovState.session) {
       console.warn('Attempting to join session while another might be active. Cleaning up first.');
-      await leaveSession(); // This will also destroy any existing publisher.
+      await leaveSession(); // This will also destroy any existing publisher and reset the store.
     }
 
     const effectiveSessionId = sessionIdToJoin || ovState.sessionNameInput;
 
     if (!effectiveSessionId || !ovState.openViduInstance) {
       setOpenViduError('Session ID or OpenVidu object is missing.');
+      setOpenViduLoading(false); // Ensure loading is off if we error out early
       return;
     }
 
@@ -281,7 +322,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       if (ovState.publisher) {
           ovState.publisher.destroy();
       }
-      resetOpenViduStore();
+      resetOpenViduStore(); // Reset store on connection failure
       clearConnections(); // Clear connections from connectionStore on error
       isMediaInitInProgress.current = false; // Reset flag on error
     } finally {
@@ -292,7 +333,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   const toggleCamera = useCallback(() => {
     const newCameraState = !ovState.isCameraActive;
     setIsCameraActive(newCameraState); // Update store immediately
-    // initLocalMediaPreview will be triggered by `isCameraActive` dependency change
+    // initLocalMediaPreview will be triggered by `isCameraActive` dependency change in the separate useEffect
     if (ovState.publisher) {
       ovState.publisher.publishVideo(newCameraState);
     }
@@ -301,7 +342,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   const toggleMic = useCallback(() => {
     const newMicState = !ovState.isMicActive;
     setIsMicActive(newMicState); // Update store immediately
-    // initLocalMediaPreview will be triggered by `isMicActive` dependency change
+    // initLocalMediaPreview will be triggered by `isMicActive` dependency change in the separate useEffect
     if (ovState.publisher) {
       ovState.publisher.publishAudio(newMicState);
     }
