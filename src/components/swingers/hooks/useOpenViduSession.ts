@@ -340,5 +340,6 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     error: ovState.error,
     publisher: ovState.publisher, // Expose publisher for preview
     currentSessionId: ovState.currentSessionId, // Expose for status
+    openViduInstance: ovState.openViduInstance, // NEW: Expose OpenVidu instance
   };
 };
