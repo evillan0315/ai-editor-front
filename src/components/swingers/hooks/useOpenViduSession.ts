@@ -180,7 +180,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     // - `leaveSession`, `destroyLocalMediaPreview`: These are stable `useCallback` functions and are needed for the cleanup to be up-to-date.
     // - `openViduStore.get().sessionNameInput` is read directly in the effect body now.
     // - We intentionally EXCLUDE `ovState.session` and `ovState.publisher` from dependencies here.
-    //   Including them would cause the cleanup to re-run when their values change (e.g., to null after `leaveSession()`),
+    //   Including them would cause the cleanup to re-run when their values change (e.g., to null after `leaveSession()致命), 
     //   leading to the infinite update loop when combined with `setOpenViduInstance` in the effect body.
   }, [initialSessionId, ovState.openViduInstance, leaveSession, destroyLocalMediaPreview]);
 
@@ -271,7 +271,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
          // Filter out our own connectionCreated event, as we handle local publisher separately
          // Access latest publisher state here for safety
          const latestPublisher = openViduStore.get().publisher;
-         if (latestPublisher && event.connection.connectionId === latestPublisher.stream.connection.connectionId) {
+         // MODIFIED: Added optional chaining for publisher.stream.connection to prevent TypeError
+         if (latestPublisher?.stream?.connection && event.connection.connectionId === latestPublisher.stream.connection.connectionId) {
              console.log('Skipping connectionCreated for own publisher.');
              return;
          }
@@ -281,7 +282,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       session.on('streamCreated', async (event) => {
         // Prevent subscribing to our own stream if it's already managed by our local publisher
         const latestPublisher = openViduStore.get().publisher;
-        if (latestPublisher && event.stream.connection.connectionId === latestPublisher.stream.connection.connectionId) {
+        // MODIFIED: Added optional chaining for publisher.stream.connection to prevent TypeError
+        if (latestPublisher?.stream?.connection && event.stream.connection.connectionId === latestPublisher.stream.connection.connectionId) {
             console.log("Skipping subscription to own stream.");
             return;
         }

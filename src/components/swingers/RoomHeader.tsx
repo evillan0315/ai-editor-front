@@ -2,7 +2,6 @@ import React, { useCallback } from 'react';
 import { Box, IconButton, useTheme, Paper, ButtonGroup, Tooltip, Typography } from '@mui/material';
 import DragIndicatorOutlinedIcon from '@mui/icons-material/DragIndicatorOutlined';
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
-import SettingsEthernetIcon from '@mui/icons-material/SettingsEthernet'; // For getClientData
 import VideoCallIcon from '@mui/icons-material/VideoCall'; // For connectClientData
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'; // Alternative for getClientData
 
@@ -51,7 +50,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = () => {
   const handleConnectDefaultClientGlobally = useCallback(() => {
     showDialog({
       title: 'Connect Default Client',
-      content: <RoomConnectionDialog />,
+      content: <RoomConnectionDialog />, // Pass the refactored component
       maxWidth: 'md',
       fullWidth: true,
       showCloseButton: true,

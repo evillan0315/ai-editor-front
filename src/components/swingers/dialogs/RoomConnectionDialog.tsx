@@ -45,16 +45,20 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
     error,
     publisher, // NEW: Expose publisher for preview
     currentSessionId, // NEW: Expose current session ID to know if already connected
+    openViduInstance, // NEW: Expose OpenVidu instance to guard useEffect
   } = useOpenViduSession(roomId); // Pass roomId to hook for initial session name
 
   // Effect to initialize and destroy local media preview
   useEffect(() => {
-    initLocalMediaPreview(); // Start local media acquisition when dialog mounts
+    // Only initialize if OpenVidu instance is ready
+    if (openViduInstance) {
+      initLocalMediaPreview(); // Start local media acquisition when dialog mounts
 
-    return () => {
-      destroyLocalMediaPreview(); // Stop and destroy publisher when dialog unmounts
-    };
-  }, [initLocalMediaPreview, destroyLocalMediaPreview]);
+      return () => {
+        destroyLocalMediaPreview(); // Stop and destroy publisher when dialog unmounts
+      };
+    }
+  }, [initLocalMediaPreview, destroyLocalMediaPreview, openViduInstance]);
 
 
   const handleConnect = useCallback(async () => {
@@ -143,7 +147,7 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
           startIcon={isMicActive ? <MicIcon /> : <MicOffIcon />}
           disabled={isLoading && !publisher} // Disable only if loading AND no publisher yet
         >
-          {isMicActive ? 'Mic ON' : 'Mic OFF'}
+        {isMicActive ? 'Mic ON' : 'Mic OFF'}
         </Button>
       </Box>
 

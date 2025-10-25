@@ -131,8 +131,8 @@ export const RoomList: React.FC = () => {
   // New callback for opening the connection dialog with a specific roomId
   const handleConnectDefaultClient = useCallback((roomId: string) => {
     showDialog({
-      title: 'Connect Default Client',
-      content: <RoomConnectionDialog roomId={roomId} />,
+      title: `Connect to Room: ${roomId}`, // Dynamically set title based on room ID
+      content: <RoomConnectionDialog roomId={roomId} />, // Pass the refactored component with prop
       maxWidth: 'md',
       fullWidth: true,
       showCloseButton: true,
