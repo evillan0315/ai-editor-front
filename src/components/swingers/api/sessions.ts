@@ -45,36 +45,22 @@ export const createSession = async (options?: ICreateSessionOptions): Promise<IS
       },
     );
     return handleResponse<ISession>(response); // This will return the session if OK, or throw ApiError
-  } catch (error: any) {
-    if (error instanceof Error && (error as ApiError).statusCode === 409) {
-      const apiError = error as ApiError;
+  } catch (error: unknown) {
+    if (error instanceof ApiError && error.statusCode === 409) {
       // If a 409 Conflict occurs, OpenVidu sends back the existing session object in the response body.
       // handleResponse will have parsed this and attached it to error.data.
-      // Check if error.data contains a valid session object structure
-      if (
-        apiError.data &&
-        typeof apiError.data === 'object' &&
-        (apiError.data as ISession).sessionId
-      ) {
+      if (error.data && typeof error.data === 'object' && (error.data as ISession).sessionId) {
         console.warn(`Session ${options?.customSessionId} already exists. Returning existing session from error data.`);
-        return apiError.data as ISession; // Return the existing session data
-      } else if (options?.customSessionId) {
-        // If error.data is missing or malformed for a 409, fetch the session explicitly
-        console.warn(`Session ${options.customSessionId} exists (409 Conflict), but no session data in response. Attempting to fetch existing session.`);
-        try {
-          return await getSession(options.customSessionId);
-        } catch (fetchError) {
-          console.error(`Failed to fetch existing session ${options.customSessionId} after 409 conflict:`, fetchError);
-          throw new Error(`Failed to retrieve session after 409 conflict: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
-        }
+        return error.data as ISession; // Return the existing session data
       } else {
-        // 409 without customSessionId to fetch, or other unexpected scenario
-        console.error(`409 Conflict: Session exists but could not retrieve details. No customSessionId provided to fetch.`, error);
-        throw new Error(`Session already exists but details could not be retrieved. Original error: ${apiError.message || 'Unknown API error'}`);
+        // If error.data is missing or malformed for a 409, it's an unexpected scenario.
+        // Re-throw or attempt to fetch if customSessionId is available (though error.data should be reliable).
+        console.error(`409 Conflict: Session exists but could not retrieve details from error.data.`, error);
+        throw new Error(`Session already exists but details could not be retrieved. Original error: ${error.message}`);
       }
     }
     console.error(`Error creating OpenVidu session:`, error);
-    throw error; // Re-throw if it's not a 409 or 409 handling failed without customSessionId
+    throw error; // Re-throw if it's not a 409 or 409 handling failed.
   }
 };
 

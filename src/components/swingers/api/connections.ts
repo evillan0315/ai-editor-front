@@ -63,10 +63,8 @@ export const createConnection = async (
 };
 
 /**
- * Fetches all active OpenVidu connections across all sessions.
+ * Fetches all active OpenVidu connections for a specific session.
  * Corresponds to: GET /openvidu/api/sessions/{sessionId}/connection
- * Note: The OpenVidu API documentation suggests /api/connections for all, but for a specific session,
- * it's /api/sessions/{sessionId}/connection. We'll use the latter as the request implies filtering by roomId (sessionId).
  * @param sessionId The ID of the session to fetch connections for.
  * @returns A promise that resolves to an array of IConnection objects.
  */
@@ -76,7 +74,9 @@ export const getConnections = async (sessionId: string): Promise<IConnection[]> 
       `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection`,
       { method: 'GET' },
     );
-    return handleResponse<IConnection>(response);
+    // The OpenVidu API returns a JSON object with a 'content' array for connections
+    const data = await handleResponse<{ content: IConnection[] }>(response);
+    return data.content;
   } catch (error) {
     console.error(`Error fetching OpenVidu connections for session ${sessionId}:`, error);
     throw error;

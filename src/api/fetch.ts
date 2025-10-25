@@ -31,7 +31,7 @@ export const handleResponse = async <T>(response: Response): Promise<T> => {
 
     let detailedErrorMessage = `API error: ${response.status} ${response.statusText}`;
 
-    if (isJson && typeof data === 'object' && data !== null) {
+    if (typeof data === 'object' && data !== null) {
       // Try to extract a more specific message from the JSON response
       if (data.message) {
         detailedErrorMessage = data.message;
@@ -42,13 +42,13 @@ export const handleResponse = async <T>(response: Response): Promise<T> => {
         detailedErrorMessage = JSON.stringify(data);
       }
     } else if (typeof data === 'string' && data.trim().length > 0) {
-      // Use raw text if it's a non-empty string and not JSON or failed JSON parsing
+      // Use raw text if it's a non-empty string
       detailedErrorMessage = data;
     }
 
     const error: ApiError = new Error(detailedErrorMessage);
     error.statusCode = response.status;
-    error.data = data; // Attach the parsed (or raw) response body for further inspection
+    error.data = data; // Always attach the parsed (or raw) response body for further inspection
     throw error;
   }
 
@@ -79,7 +79,7 @@ export async function fetchWithToken(
 
   return fetch(url, { 
     ...init,
-    headers, 
+    headers,
   });
 }
 
