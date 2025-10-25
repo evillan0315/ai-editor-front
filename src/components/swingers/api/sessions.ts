@@ -1,4 +1,4 @@
-import { fetchWithBasicAuth, handleResponse, SLS_VIDU_URL } from '@/api/fetch';
+import { fetchWithBasicAuth, handleResponse, SLS_VIDU_URL, ApiError } from '@/api/fetch';
 import { ISession } from '@/components/swingers/types';
 
 // NOTE: These API calls interact directly with the OpenVidu server via a proxy.
@@ -32,7 +32,7 @@ export interface ICreateSessionOptions {
  * Creates or initializes a new OpenVidu session.
  * Corresponds to: POST /openvidu/api/sessions
  * @param options Optional parameters for session creation, such as customSessionId or mediaMode.
- * @returns A promise that resolves to the created ISession object.
+ * @returns A promise that resolves to the created ISession object (new or existing).
  */
 export const createSession = async (options?: ICreateSessionOptions): Promise<ISession> => {
   try {
@@ -44,8 +44,14 @@ export const createSession = async (options?: ICreateSessionOptions): Promise<IS
         body: JSON.stringify(options || {}),
       },
     );
-    return handleResponse<ISession>(response);
-  } catch (error) {
+    return handleResponse<ISession>(response); // This will return the session if OK, or throw ApiError
+  } catch (error: any) {
+    // If a 409 Conflict occurs, OpenVidu sends back the existing session object in the response body.
+    // handleResponse will have parsed this and attached it to error.data.
+    if (error instanceof Error && (error as ApiError).statusCode === 409 && (error as ApiError).data) {
+      console.warn(`Session ${options?.customSessionId} already exists. Returning existing session.`);
+      return (error as ApiError).data as ISession; // Return the existing session data
+    }
     console.error(`Error creating OpenVidu session:`, error);
     throw error;
   }
