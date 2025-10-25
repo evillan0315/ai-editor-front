@@ -1,12 +1,10 @@
-import { fetchWithToken, fetchWithBasicAuth, handleResponse, SLS_VIDU_URL, SLS_API_URL } from '@/api/fetch';
+import { ApiError, fetchWithBasicAuth, handleResponse, SLS_VIDU_URL } from '@/api/fetch';
 import { IConnection } from '@/components/swingers/types';
 
 // NOTE: These API calls interact directly with the OpenVidu server via a proxy.
 // The `fetchWithBasicAuth` uses the VITE_SLS_API_KEY environment variable directly from the frontend.
 // In a production environment, it is recommended to proxy these calls through your own backend
 // to keep the OpenVidu secret server-side and only expose a generated token to the frontend.
-
-const API_CONNECTIONS_BASE_URL = `${SLS_API_URL}/connections`; // Direct OpenVidu API endpoint
 
 /**
  * Options for creating a new OpenVidu connection within a session.
@@ -47,12 +45,11 @@ export const createConnection = async (
   options?: ICreateConnectionOptions,
 ): Promise<IConnection> => {
   try {
-    const response = await fetchWithBasicAuth(
+    const response = await fetchWithBasicAuth<IConnection>(
       `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(options || {}),
+        data: options || {}, // Use 'data' for POST request body with Axios
       },
     );
     return handleResponse<IConnection>(response);
@@ -70,13 +67,13 @@ export const createConnection = async (
  */
 export const getConnections = async (sessionId: string): Promise<IConnection[]> => {
   try {
-    const response = await fetchWithBasicAuth( // Changed to fetchWithBasicAuth as it's directly with OV server
+    // The OpenVidu API returns a JSON object with a 'content' array for connections
+    const data = await fetchWithBasicAuth<{ content: IConnection[] }>(
       `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection`,
       { method: 'GET' },
     );
-    // The OpenVidu API returns a JSON object with a 'content' array for connections
-    const data = await handleResponse<{ content: IConnection[] }>(response);
-    return data.content;
+   return handleResponse<{content: IConnection[]}>(data);
+
   } catch (error) {
     console.error(`Error fetching OpenVidu connections for session ${sessionId}:`, error);
     throw error;
@@ -91,7 +88,7 @@ export const getConnections = async (sessionId: string): Promise<IConnection[]> 
  */
 export const getConnection = async (connectionId: string, sessionId: string): Promise<IConnection> => {
   try {
-    const response = await fetchWithBasicAuth( // Changed to fetchWithBasicAuth
+    const response = await fetchWithBasicAuth<IConnection>(
       `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection/${connectionId}`,
       { method: 'GET' },
     );
@@ -110,12 +107,12 @@ export const getConnection = async (connectionId: string, sessionId: string): Pr
  */
 export const deleteConnection = async (connectionId: string, sessionId: string): Promise<void> => {
   try {
-    const response = await fetchWithBasicAuth(
-     `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection/${connectionId}`,
+    // fetchWithBasicAuth now returns data directly, but for DELETE, we might not expect content.
+    // The success/failure is indicated by the promise resolving/rejecting.
+    await fetchWithBasicAuth<void>(
+      `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection/${connectionId}`,
       { method: 'DELETE' },
     );
-    // handleResponse will throw if response.ok is false, no content expected
-    await handleResponse(response);
   } catch (error) {
     console.error(`Error deleting OpenVidu connection with ID ${connectionId}:`, error);
     throw error;

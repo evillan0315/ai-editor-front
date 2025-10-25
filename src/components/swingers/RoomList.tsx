@@ -59,9 +59,10 @@ export const RoomList: React.FC = () => {
   // Callback for viewing room details
   const handleViewRoom = useCallback((roomId: string) => {
     // This handler can be implemented if there's a specific 'view' route/dialog for room info
-    // For now, it remains a stub as the main request is for joining.
+    // For now, it remains a stub as the main request is for joining. Just navigate to the room.
+    navigate(`/apps/swingers/${roomId}`);
     console.log(`Viewing details for room: ${roomId}`);
-  }, []);
+  }, [navigate]);
 
   // Callback for resetting/recreating a room's OpenVidu session
   const handleResetRoom = useCallback(async (roomId: string) => {

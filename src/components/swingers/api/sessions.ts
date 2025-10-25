@@ -1,4 +1,4 @@
-import { fetchWithBasicAuth, handleResponse, SLS_VIDU_URL, ApiError } from '@/api/fetch';
+import { fetchWithBasicAuth, handleResponse, ApiError, SLS_VIDU_URL } from '@/api/fetch';
 import { ISession } from '@/components/swingers/types';
 
 // NOTE: These API calls interact directly with the OpenVidu server via a proxy.
@@ -36,29 +36,15 @@ export interface ICreateSessionOptions {
  */
 export const createSession = async (options?: ICreateSessionOptions): Promise<ISession> => {
   try {
-    const response = await fetchWithBasicAuth(
+    return await fetchWithBasicAuth<ISession>(
       API_SESSIONS_BASE_URL,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(options || {}),
+        data: options || {}, // Use 'data' for POST request body with Axios
       },
     );
-    return handleResponse<ISession>(response); // This will return the session if OK, or throw ApiError
-  } catch (error: unknown) {
-    if (error instanceof ApiError && error.statusCode === 409) {
-      // If a 409 Conflict occurs, OpenVidu sends back the existing session object in the response body.
-      // handleResponse will have parsed this and attached it to error.data.
-      if (error.data && typeof error.data === 'object' && (error.data as ISession).sessionId) {
-        console.warn(`Session ${options?.customSessionId} already exists. Returning existing session from error data.`);
-        return error.data as ISession; // Return the existing session data
-      } else {
-        // If error.data is missing or malformed for a 409, it's an unexpected scenario.
-        // Re-throw or attempt to fetch if customSessionId is available (though error.data should be reliable).
-        console.error(`409 Conflict: Session exists but could not retrieve details from error.data.`, error);
-        throw new Error(`Session already exists but details could not be retrieved. Original error: ${error.message}`);
-      }
-    }
+  } catch (error) {
+    
     console.error(`Error creating OpenVidu session:`, error);
     throw error; // Re-throw if it's not a 409 or 409 handling failed.
   }
@@ -71,12 +57,11 @@ export const createSession = async (options?: ICreateSessionOptions): Promise<IS
  */
 export const getSessions = async (): Promise<ISession[]> => {
   try {
-    const response = await fetchWithBasicAuth(
+    // The OpenVidu API returns a JSON object with a 'content' array for sessions
+    const data = await fetchWithBasicAuth<{ content: ISession[] }>(
       API_SESSIONS_BASE_URL,
       { method: 'GET' },
     );
-    // The OpenVidu API returns a JSON object with a 'content' array for sessions
-    const data = await handleResponse<{ content: ISession[] }>(response);
     return data.content;
   } catch (error) {
     console.error(
@@ -95,11 +80,10 @@ export const getSessions = async (): Promise<ISession[]> => {
  */
 export const getSession = async (sessionId: string): Promise<ISession> => {
   try {
-    const response = await fetchWithBasicAuth(
+    return await fetchWithBasicAuth<ISession>(
       `${API_SESSIONS_BASE_URL}/${sessionId}`,
       { method: 'GET' },
     );
-    return handleResponse<ISession>(response);
   } catch (error) {
     console.error(
       `Error fetching OpenVidu session with ID ${sessionId}:`, // Corrected error message
@@ -117,12 +101,10 @@ export const getSession = async (sessionId: string): Promise<ISession> => {
  */
 export const deleteSession = async (sessionId: string): Promise<void> => {
   try {
-    const response = await fetchWithBasicAuth(
+    await fetchWithBasicAuth<void>(
       `${API_SESSIONS_BASE_URL}/${sessionId}`,
       { method: 'DELETE' },
     );
-    // handleResponse will throw if response.ok is false
-    await handleResponse(response);
   } catch (error) {
     console.error(
       `Error deleting OpenVidu session with ID ${sessionId}:`, // Corrected error message

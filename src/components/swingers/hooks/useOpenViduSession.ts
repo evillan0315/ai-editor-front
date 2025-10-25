@@ -38,10 +38,11 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   // --- Modified leaveSession to be async and awaitable --- 
   const leaveSession = useCallback(async () => {
     if (ovState.session) {
+      console.log(`Disconnecting from OpenVidu session ${ovState.session.sessionId}...`);
       ovState.session.disconnect();
       // Introduce a small delay to allow OpenVidu's internal WebSocket cleanup to begin.
       // This helps prevent race conditions if a new session connects immediately.
-      await new Promise(resolve => setTimeout(resolve, 100)); // Delay for 100ms
+      await new Promise(resolve => setTimeout(resolve, 200)); // Increased delay for robustness
     }
     resetOpenViduStore();
     // Update connection count to reflect leaving the room
@@ -134,7 +135,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     }
   }, [ovState.session, ovState.currentSessionId, ovState.isMicActive, ovState.isCameraActive, ovState.openViduInstance, ovState.publisher]);
 
-  // --- Modified joinSession to await leaveSession ---
+  // --- Modified joinSession to await leaveSession and handle auto-publish --- 
   const joinSession = useCallback(async (sessionIdToJoin?: string) => {
     // If there's an active session, ensure it's fully disconnected before proceeding.
     // Awaiting leaveSession here prevents race conditions where a new connection
@@ -207,7 +208,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
 
       await session.connect(token, { clientData: JSON.stringify({ USERNAME: currentUserDisplayName }) });
       
-      if (sessionIdToJoin) {
+      // Only start publishing if joining directly (e.g., via URL parameter), not if simply reconnecting
+      if (sessionIdToJoin) { // This condition is true when initialSessionId is passed to the hook and joinSession is called without args
         await startPublishingMedia();
       }
 
