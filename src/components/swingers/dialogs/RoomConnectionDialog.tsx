@@ -16,6 +16,7 @@ import CallIcon from '@mui/icons-material/Call';
 
 import { useOpenViduSession } from '@/components/swingers/hooks/useOpenViduSession';
 import { hideDialog } from '@/stores/dialogStore';
+import { OpenViduVideoRenderer } from '@/components/swingers/openvidu/OpenViduVideoRenderer'; // Import the renderer
 
 interface RoomConnectionDialogProps {
   roomId?: string; // Optional: If provided, connect to this specific room
@@ -34,18 +35,36 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
     handleSessionNameChange,
     joinSession,
     leaveSession,
+    initLocalMediaPreview, // NEW
+    destroyLocalMediaPreview, // NEW
     toggleCamera,
     toggleMic,
     isCameraActive,
     isMicActive,
     isLoading,
     error,
+    publisher, // NEW: Expose publisher for preview
+    currentSessionId, // NEW: Expose current session ID to know if already connected
   } = useOpenViduSession(roomId); // Pass roomId to hook for initial session name
 
-  // No need for a useEffect here to auto-join based on roomId if the 'Connect' button is the explicit trigger.
-  // The useOpenViduSession hook already handles pre-filling sessionNameInput if roomId is provided.
+  // Effect to initialize and destroy local media preview
+  useEffect(() => {
+    initLocalMediaPreview(); // Start local media acquisition when dialog mounts
+
+    return () => {
+      destroyLocalMediaPreview(); // Stop and destroy publisher when dialog unmounts
+    };
+  }, [initLocalMediaPreview, destroyLocalMediaPreview]);
+
 
   const handleConnect = useCallback(async () => {
+    // If already connected, do nothing or show a message
+    if (currentSessionId && currentSessionId === sessionNameInput) {
+        console.warn(`Already connected to session: ${sessionNameInput}`);
+        hideDialog();
+        return;
+    }
+
     if (!sessionNameInput) {
       console.error('Session name is required to connect.');
       return;
@@ -58,13 +77,16 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
       console.error('Failed to connect to room:', e);
       // Error feedback is handled by useOpenViduSession's error state
     }
-  }, [sessionNameInput, joinSession, onSuccess]);
+  }, [sessionNameInput, joinSession, onSuccess, hideDialog, currentSessionId]);
 
   const handleLeave = useCallback(async () => {
     await leaveSession();
-    // Optionally hide dialog after leaving, or keep it open for re-connection.
-    hideDialog();
-  }, [leaveSession]);
+    // After leaving, if still in dialog, re-init preview for potential re-connection
+    initLocalMediaPreview();
+  }, [leaveSession, initLocalMediaPreview]);
+
+  // Determine if already connected to this room
+  const isCurrentlyConnected = !!currentSessionId && currentSessionId === sessionNameInput;
 
   return (
     <Box
@@ -91,8 +113,17 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
         </Alert>
       )}
 
-      {/* Local Video Preview removed for simplicity as `useOpenViduSession` doesn't expose `publisher` easily here. */}
-      {/* The main OpenVidu page will display the video grid. This dialog focuses on connection setup. */}
+      {/* Local Video Preview */}
+      <Box className="w-full max-w-sm rounded-lg overflow-hidden shadow-lg border border-gray-700 aspect-video bg-black flex items-center justify-center">
+        {publisher ? (
+          <OpenViduVideoRenderer streamManager={publisher} isLocal={true} />
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            {isLoading ? 'Loading media...' : 'No media preview available'}
+          </Typography>
+        )}
+      </Box>
+
 
       {/* Controls for Camera/Mic */}
       <Box className="flex gap-4 justify-center w-full">
@@ -101,7 +132,7 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
           color={isCameraActive ? 'primary' : 'secondary'}
           onClick={toggleCamera}
           startIcon={isCameraActive ? <VideocamIcon /> : <VideocamOffIcon />}
-          disabled={isLoading}
+          disabled={isLoading && !publisher} // Disable only if loading AND no publisher yet
         >
           {isCameraActive ? 'Camera ON' : 'Camera OFF'}
         </Button>
@@ -110,7 +141,7 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
           color={isMicActive ? 'primary' : 'secondary'}
           onClick={toggleMic}
           startIcon={isMicActive ? <MicIcon /> : <MicOffIcon />}
-          disabled={isLoading}
+          disabled={isLoading && !publisher} // Disable only if loading AND no publisher yet
         >
           {isMicActive ? 'Mic ON' : 'Mic OFF'}
         </Button>
@@ -124,7 +155,7 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
           value={sessionNameInput}
           onChange={handleSessionNameChange}
           fullWidth
-          disabled={isLoading}
+          disabled={isLoading || isCurrentlyConnected}
           margin="normal"
         />
       )}
@@ -135,7 +166,7 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
           variant="outlined"
           color="error"
           onClick={handleLeave}
-          disabled={isLoading}
+          disabled={isLoading || !currentSessionId} // Disable if loading or not connected to any session
           startIcon={<CallEndIcon />}
         >
           Leave Session
@@ -144,10 +175,10 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
           variant="contained"
           color="primary"
           onClick={handleConnect}
-          disabled={isLoading || !sessionNameInput}
+          disabled={isLoading || !sessionNameInput || isCurrentlyConnected} // Disable if loading, no session name, or already connected
           startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <CallIcon />}
         >
-          {isLoading ? 'Connecting...' : 'Connect to Room'}
+          {isLoading ? 'Connecting...' : (isCurrentlyConnected ? 'Connected' : 'Connect to Room')}
         </Button>
       </Box>
     </Box>
