@@ -34,6 +34,10 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   const ovState = useStore(openViduStore);
   const $auth = useStore(authStore);
   const $currentDefaultConnection = useStore(currentDefaultConnection);
+  console.log($currentDefaultConnection, '$currentDefaultConnection');
+  // Add a ref to track if media initialization is in progress to prevent race conditions
+  const isMediaInitInProgress = React.useRef(false);
+
   // Ensure currentUserDisplayName is safely parsed or defaulted
   const currentUserDisplayName = React.useMemo(() => {
     try {
@@ -49,7 +53,9 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     if (ovState.session) {
       console.log(`Disconnecting from OpenVidu session ${ovState.session.sessionId}...`);
       ovState.session.disconnect();
-      await new Promise(resolve => setTimeout(resolve, 200)); // Give OpenVidu a moment to process
+      // Introduce a small delay to allow OpenVidu to process the disconnect before destroying publisher
+      // This can sometimes help prevent "device already in use" if the browser doesn't immediately release resources.
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
     // Always destroy the publisher if it exists, as part of a complete cleanup
     if (ovState.publisher) {
@@ -62,6 +68,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     }
     resetOpenViduStore();
     clearConnections(); // Clear connections from connectionStore
+    isMediaInitInProgress.current = false; // Reset flag on leaving session
   }, [ovState.session, ovState.currentSessionId, ovState.publisher, clearConnections]);
 
   // NEW: Function to destroy local publisher, used for cleaning up preview
@@ -70,6 +77,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       ovState.publisher.destroy();
       setOpenViduPublisher(null);
     }
+    isMediaInitInProgress.current = false; // Reset flag on destroying preview
   }, [ovState.publisher]);
 
 
@@ -93,6 +101,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       }
       resetOpenViduStore();
       clearConnections();
+      isMediaInitInProgress.current = false; // Ensure flag is reset on component unmount
     };
   }, [initialSessionId, ovState.sessionNameInput, ovState.openViduInstance, ovState.session, ovState.publisher, leaveSession, clearConnections, destroyLocalMediaPreview]);
 
@@ -118,18 +127,31 @@ export const useOpenViduSession = (initialSessionId?: string) => {
 
   // NEW: Function to initialize publisher for local preview without connecting to session
   const initLocalMediaPreview = useCallback(async () => {
+    // Guard against multiple simultaneous initialization calls
+    if (isMediaInitInProgress.current) {
+        console.warn('Media initialization already in progress, skipping.');
+        return;
+    }
     if (!ovState.openViduInstance) {
       setOpenViduError('OpenVidu instance not initialized.');
       return;
     }
+
     setOpenViduLoading(true);
     setOpenViduError(null);
+    isMediaInitInProgress.current = true; // Set flag to prevent re-entry
     try {
-      // If a publisher already exists, destroy it first to re-initialize with new settings (if any)
-      if (ovState.publisher) {
-        ovState.publisher.destroy();
-        setOpenViduPublisher(null);
+      // If a publisher already exists (read directly from store to avoid dependency issues),
+      // destroy it first to re-initialize (e.g., if camera/mic state changed).
+      const currentPublisher = openViduStore.get().publisher;
+      if (currentPublisher) {
+        currentPublisher.destroy();
+        setOpenViduPublisher(null); // Explicitly clear from store immediately
+        // Add a small delay to give the browser a moment to release the device if it was just destroyed.
+        // This is a common workaround for DEVICE_ALREADY_IN_USE errors.
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
+
       const publisher = await ovState.openViduInstance.initPublisherAsync(undefined, {
         audioSource: undefined,
         videoSource: undefined,
@@ -143,12 +165,13 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       setOpenViduPublisher(publisher);
     } catch (error: any) {
       console.error('Error initializing local publisher for preview:', error);
-      setOpenViduError(`Failed to start media preview: ${error.message || error}`);
-      setOpenViduPublisher(null);
+      setOpenViduError(`Failed to start media preview: ${error.message || error}. This might be due to the device being in use by another application or tab.`);
+      setOpenViduPublisher(null); // Ensure publisher is null on error
     } finally {
       setOpenViduLoading(false);
+      isMediaInitInProgress.current = false; // Reset flag
     }
-  }, [ovState.openViduInstance, ovState.isMicActive, ovState.isCameraActive, ovState.publisher]); // ovState.publisher is a dependency because its existence affects the logic of destroying it.
+  }, [ovState.openViduInstance, ovState.isMicActive, ovState.isCameraActive]); // Crucial: removed ovState.publisher from dependencies.
 
 
   const joinSession = useCallback(async (sessionIdToJoin?: string) => {
@@ -176,6 +199,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     setOpenViduLoading(true);
 
     try {
+      console.log(sessionIdToJoin, 'sessionIdToJoin');
       const token = await getToken(effectiveSessionId);
       const session = ovState.openViduInstance.initSession();
       setOpenViduSessionId(effectiveSessionId);
@@ -213,7 +237,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
         console.log('Network quality changed:', event);
       });
 
-      session.on('signal:chat', (event) => {
+      session.on('signal:global', (event) => {
         try {
           const signalData = JSON.parse(event.data || '{}');
           const connectionData = event.from?.data;
@@ -259,6 +283,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       }
       resetOpenViduStore();
       clearConnections(); // Clear connections from connectionStore on error
+      isMediaInitInProgress.current = false; // Reset flag on error
     } finally {
       setOpenViduLoading(false);
     }
@@ -267,20 +292,19 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   const toggleCamera = useCallback(() => {
     const newCameraState = !ovState.isCameraActive;
     setIsCameraActive(newCameraState); // Update store immediately
+    // initLocalMediaPreview will be triggered by `isCameraActive` dependency change
     if (ovState.publisher) {
       ovState.publisher.publishVideo(newCameraState);
     }
-    // Removed the else block: toggling should only affect an existing publisher.
-    // Initial acquisition/re-acquisition is handled by initLocalMediaPreview on mount/settings change.
   }, [ovState.publisher, ovState.isCameraActive]);
 
   const toggleMic = useCallback(() => {
     const newMicState = !ovState.isMicActive;
     setIsMicActive(newMicState); // Update store immediately
+    // initLocalMediaPreview will be triggered by `isMicActive` dependency change
     if (ovState.publisher) {
       ovState.publisher.publishAudio(newMicState);
     }
-    // Removed the else block for consistency with toggleCamera.
   }, [ovState.publisher, ovState.isMicActive]);
 
 
