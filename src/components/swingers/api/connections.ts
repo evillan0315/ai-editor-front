@@ -44,7 +44,7 @@ export const createConnection = async (
       `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection`,
       {
         method: 'POST',
-        data: options || {}, // Use 'data' for POST request body with Axios
+        data: options || {}, // Use 'data' for JSON body, handled by fetchWithBasicAuth
       },
     );
     return handleResponse<IConnection>(response);
