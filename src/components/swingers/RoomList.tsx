@@ -8,26 +8,25 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Grid
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import LiveTvIcon from '@mui/icons-material/LiveTv'; // Import LiveTvIcon
 import { roomStore, fetchRooms, fetchConnectionCountsForRooms } from './stores/roomStore';
+import { fetchDefaultConnection  } from './stores/connectionStore';
 import { RoomCard } from './RoomCard';
 import { deleteSession, createSession } from '@/components/swingers/api/sessions';
 import { IRoom } from '@/components/swingers/types';
 
 import { useNavigate } from 'react-router-dom';
+import { showDialog } from '@/stores/dialogStore';
+import { RoomConnectionDialog } from '@/components/swingers/dialogs/RoomConnectionDialog';
 
 const listContainerSx = {
   padding: '24px',
   '@media (max-width: 600px)': {
     padding: '16px',
   },
-};
-
-const titleSx = {
-  marginBottom: '24px',
-  fontWeight: 700,
-  textAlign: 'center',
 };
 
 const loadingContainerSx = {
@@ -65,12 +64,13 @@ export const RoomList: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    fetchDefaultConnection();
     fetchRooms();
   }, []);
 
   useEffect(() => {
     if (!loading && rooms.length > 0) {
-      fetchConnectionCountsForRooms(rooms);
+      //fetchConnectionCountsForRooms(rooms);
     }
   }, [loading, rooms]);
 
@@ -78,7 +78,7 @@ export const RoomList: React.FC = () => {
     setExpanded(isExpanded ? panel : false);
   };
 
-  // Callback for joining a room
+  // Callback for joining a room (navigates to OpenVidu page)
   const handleJoinRoom = useCallback(
     (roomId: string) => {
       navigate(`/apps/swingers/${roomId}`);
@@ -86,7 +86,7 @@ export const RoomList: React.FC = () => {
     [navigate],
   );
 
-  // Callback for viewing room details
+  // Callback for viewing room details (navigates to OpenVidu page)
   const handleViewRoom = useCallback(
     (roomId: string) => {
       navigate(`/apps/swingers/${roomId}`);
@@ -128,12 +128,53 @@ export const RoomList: React.FC = () => {
     [],
   );
 
-  // Memoize grouped and sorted rooms to prevent unnecessary re-renders
-  const groupedAndSortedRooms = useMemo(() => {
-    if (loading || error) return {};
+  // New callback for opening the connection dialog with a specific roomId
+  const handleConnectDefaultClient = useCallback((roomId: string) => {
+    showDialog({
+      title: 'Connect Default Client',
+      content: <RoomConnectionDialog roomId={roomId} />,
+      maxWidth: 'md',
+      fullWidth: true,
+      showCloseButton: true,
+    });
+  }, []);
 
+  // Memoize grouped and sorted rooms to prevent unnecessary re-renders
+  const allSortedRooms = useMemo(() => {
+    if (loading || error || rooms.length === 0) return [];
+
+    const sorted = [...rooms].sort((a, b) => {
+      const aConnections = a.roomId ? connectionCounts[a.roomId] || 0 : 0;
+      const bConnections = b.roomId ? connectionCounts[b.roomId] || 0 : 0;
+
+      // 1. Live rooms first
+      if (a.liveStream && !b.liveStream) return -1;
+      if (!a.liveStream && b.liveStream) return 1;
+
+      // If both are live or both are not live, proceed to secondary sorts
+      // 2. More connections first (descending)
+      if (aConnections !== bConnections) return bConnections - aConnections;
+
+      // 3. 'public' type first, then alphabetical by type
+      const aTypeLower = a.type?.toLowerCase();
+      const bTypeLower = b.type?.toLowerCase();
+      if (aTypeLower === 'public' && bTypeLower !== 'public') return -1;
+      if (aTypeLower !== 'public' && bTypeLower === 'public') return 1;
+      if (aTypeLower && bTypeLower && aTypeLower !== bTypeLower) return aTypeLower.localeCompare(bTypeLower);
+
+      // 4. Alphabetical by name (for stable sort)
+      return a.name.localeCompare(b.name);
+    });
+
+    return sorted;
+  }, [rooms, loading, error, connectionCounts]);
+
+  const sortedLiveRooms = useMemo(() => allSortedRooms.filter(room => room.liveStream), [allSortedRooms]);
+  const sortedNonLiveRooms = useMemo(() => allSortedRooms.filter(room => !room.liveStream), [allSortedRooms]);
+
+  const groupedNonLiveRooms = useMemo(() => {
     const grouped: Record<string, IRoom[]> = {};
-    rooms.forEach((room) => {
+    sortedNonLiveRooms.forEach(room => {
       if (!grouped[room.type]) {
         grouped[room.type] = [];
       }
@@ -141,32 +182,23 @@ export const RoomList: React.FC = () => {
     });
 
     const sortedTypes = Object.keys(grouped).sort((a, b) => {
-      if (a.toLowerCase() === 'public') return -1; // 'public' first
+      if (a.toLowerCase() === 'public') return -1;
       if (b.toLowerCase() === 'public') return 1;
-      return a.localeCompare(b); // Alphabetical for others
+      return a.localeCompare(b);
     });
 
-    const finalGroupedAndSorted: Record<string, IRoom[]> = {};
-    sortedTypes.forEach((type) => {
-      finalGroupedAndSorted[type] = grouped[type].sort((a, b) => {
-        const aConnections = a.roomId ? connectionCounts[a.roomId] || 0 : 0;
-        const bConnections = b.roomId ? connectionCounts[b.roomId] || 0 : 0;
-        return bConnections - aConnections; // Descending by connection count
-      });
+    const finalGrouped: Record<string, IRoom[]> = {};
+    sortedTypes.forEach(type => {
+      finalGrouped[type] = grouped[type]; // Rooms are already globally sorted, maintain order within type groups
     });
-
-    return finalGroupedAndSorted;
-  }, [rooms, loading, error, connectionCounts]);
+    return finalGrouped;
+  }, [sortedNonLiveRooms]);
 
   return (
-    <Box sx={listContainerSx} className="w-full flex flex-col items-center py-4 h-full">
-      <Typography variant="h4" component="h1" sx={titleSx} className="text-3xl md:text-4xl text-teal-600 dark:text-teal-400">
-        Rooms
-      </Typography>
-
+    <Box sx={listContainerSx} className="w-full flex flex-col items-center h-full">
       {loading && (
         <Box sx={loadingContainerSx}>
-          <CircularProgress color="primary" size={60} />
+          <CircularProgress color="primary" size={40} />
         </Box>
       )}
 
@@ -183,8 +215,43 @@ export const RoomList: React.FC = () => {
       )}
 
       {!loading && !error && rooms.length > 0 && (
-        <Box className="w-full max-w-7xl flex flex-col gap-4">
-          {Object.entries(groupedAndSortedRooms).map(([type, roomsForType]) => (
+        <Box className="w-full flex flex-col gap-4">
+          {sortedLiveRooms.length > 0 && (
+            <Accordion key="live-rooms" expanded={expanded === 'live-rooms'} onChange={handleChange('live-rooms')} className="w-full shadow-md rounded-lg overflow-hidden ">
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="live-rooms-content"
+                id="live-rooms-header"
+                sx={accordionSummarySx}
+              >
+                <Typography variant="h6" component="span" className="font-semibold text-lg text-red-500">
+                  <LiveTvIcon sx={{ mr: 1, verticalAlign: 'middle' }} /> Live Sessions
+                </Typography>
+                <Typography variant="body2" color="text.secondary" className="ml-4">
+                  ({sortedLiveRooms.length} {sortedLiveRooms.length === 1 ? 'room' : 'rooms'})
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={accordionDetailsSx}>
+                <Box className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3   gap-6 w-full justify-items-center">
+                  {sortedLiveRooms.map((room) => (
+                    <RoomCard
+                      key={room.id}
+                      room={room}
+                      connectionCount={room.roomId ? connectionCounts[room.roomId] : null}
+                      loadingConnections={room.roomId ? loadingConnectionCounts[room.roomId] || false : false}
+                      onJoinRoom={handleJoinRoom}
+                      onViewRoom={handleViewRoom}
+                      onResetRoom={handleResetRoom}
+                      resettingRoomId={resettingRoomId}
+                      onConnectDefaultClient={handleConnectDefaultClient} // Pass new handler
+                    />
+                  ))}
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+          )}
+
+          {Object.entries(groupedNonLiveRooms).map(([type, roomsForType]) => (
             <Accordion key={type} expanded={expanded === type} onChange={handleChange(type)} className="w-full shadow-md rounded-lg overflow-hidden">
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
@@ -200,18 +267,18 @@ export const RoomList: React.FC = () => {
                 </Typography>
               </AccordionSummary>
               <AccordionDetails sx={accordionDetailsSx}>
-                <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full justify-items-center">
-                  {roomsForType.map((room, index) => (
+                <Box className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-6 w-full justify-items-center">
+                  {roomsForType.map((room) => (
                     <RoomCard
                       key={room.id}
                       room={room}
                       connectionCount={room.roomId ? connectionCounts[room.roomId] : null}
                       loadingConnections={room.roomId ? loadingConnectionCounts[room.roomId] || false : false}
-                      isTopRoom={index === 0} // Highlight the top room within each group
                       onJoinRoom={handleJoinRoom}
                       onViewRoom={handleViewRoom}
                       onResetRoom={handleResetRoom}
                       resettingRoomId={resettingRoomId}
+                      onConnectDefaultClient={handleConnectDefaultClient} // Pass new handler
                     />
                   ))}
                 </Box>
