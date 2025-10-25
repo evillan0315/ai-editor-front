@@ -53,7 +53,7 @@ export const RoomList: React.FC = () => {
 
   // Callback for joining a room
   const handleJoinRoom = useCallback((roomId: string) => {
-    navigate(`/openvidu/${roomId}`);
+    navigate(`/apps/swingers/${roomId}`);
   }, [navigate]);
 
   // Callback for viewing room details

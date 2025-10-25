@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { OpenVidu } from 'openvidu-browser';
 import { useStore } from '@nanostores/react';
-import { nanoid } from 'nanoid';
 
-import { createSession, getSession } from '@/components/swingers/api/sessions';
+import { createSession } from '@/components/swingers/api/sessions';
 import { getConnections, createConnection } from '@/components/swingers/api/connections';
-import { IOpenViduPublisher, IOpenViduSubscriber, ISession } from '@/components/swingers/types';
+import { ISession } from '@/components/swingers/types';
 import {
   openViduStore,
   setOpenViduSessionId,
@@ -16,6 +15,10 @@ import {
   setOpenViduLoading,
   setOpenViduError,
   resetOpenViduStore,
+  setOpenViduInstance,
+  setIsCameraActive,
+  setIsMicActive,
+  setSessionNameInput as setOpenViduSessionNameInput,
 } from '@/components/swingers/stores/openViduStore';
 import { updateRoomConnectionCount } from '@/components/swingers/stores/roomStore';
 import { authStore } from '@/stores/authStore';
@@ -32,27 +35,15 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   const $auth = useStore(authStore);
   const currentUserDisplayName = $auth.user?.username || 'Guest User';
 
-  const [sessionNameInput, setSessionNameInput] = useState<string>(initialSessionId || '');
-  const [isCameraActive, setIsCameraActive] = useState(true);
-  const [isMicActive, setIsMicActive] = useState(true);
-
-  const OV_REF = useRef<OpenVidu | null>(null);
-  const SESSION_REF = useRef<openvidu_browser.Session | null>(null);
-  const PUBLISHER_REF = useRef<IOpenViduPublisher | null>(null);
-
-  // --- Modified leaveSession to be async and awaitable ---
+  // --- Modified leaveSession to be async and awaitable --- 
   const leaveSession = useCallback(async () => {
-    if (SESSION_REF.current) {
-      SESSION_REF.current.disconnect();
+    if (ovState.session) {
+      ovState.session.disconnect();
       // Introduce a small delay to allow OpenVidu's internal WebSocket cleanup to begin.
       // This helps prevent race conditions if a new session connects immediately.
       await new Promise(resolve => setTimeout(resolve, 100)); // Delay for 100ms
-      SESSION_REF.current = null;
     }
     resetOpenViduStore();
-    PUBLISHER_REF.current = null;
-    setIsCameraActive(true);
-    setIsMicActive(true);
     // Update connection count to reflect leaving the room
     if (ovState.currentSessionId) {
       try {
@@ -62,29 +53,30 @@ export const useOpenViduSession = (initialSessionId?: string) => {
         console.warn("Failed to update connection count after leaving session:", err);
       }
     }
-  }, [ovState.currentSessionId]); // Depends on currentSessionId to ensure connection count update is for the correct session
+  }, [ovState.session, ovState.currentSessionId]); // Depends on currentSessionId to ensure connection count update is for the correct session
 
-  // Initialize OpenVidu object once per hook instance
+  // Initialize OpenVidu object and session name once per hook instance
   useEffect(() => {
-    if (!OV_REF.current) {
-      OV_REF.current = new OpenVidu();
+    if (!ovState.openViduInstance) {
+      setOpenViduInstance(new OpenVidu());
     }
-    if (initialSessionId && sessionNameInput === '') {
-      setSessionNameInput(initialSessionId);
+    if (initialSessionId && ovState.sessionNameInput === '') {
+      setOpenViduSessionNameInput(initialSessionId);
     }
+
     return () => {
       // Ensure leaveSession is awaited during cleanup to prevent resource leaks
       (async () => {
-        if (SESSION_REF.current) { // Only call if a session was actually active
+        if (ovState.session) { // Only call if a session was actually active
           await leaveSession();
         }
         resetOpenViduStore(); // Ensure store is fully reset on unmount
       })();
     };
-  }, [initialSessionId, sessionNameInput, leaveSession]);
+  }, [initialSessionId, ovState.sessionNameInput, ovState.openViduInstance, ovState.session, leaveSession]);
 
   const handleSessionNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setSessionNameInput(event.target.value);
+    setOpenViduSessionNameInput(event.target.value);
   }, []);
 
   const getToken = useCallback(async (mySessionId: string): Promise<string> => {
@@ -106,24 +98,23 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   }, [currentUserDisplayName]);
 
   const startPublishingMedia = useCallback(async () => {
-    if (!ovState.session || !OV_REF.current) return;
+    if (!ovState.session || !ovState.openViduInstance) return;
 
     setOpenViduLoading(true);
     setOpenViduError(null);
 
     try {
-      const publisher = await OV_REF.current.initPublisherAsync(undefined, {
+      const publisher = await ovState.openViduInstance.initPublisherAsync(undefined, {
         audioSource: undefined,
         videoSource: undefined,
-        publishAudio: isMicActive,
-        publishVideo: isCameraActive,
+        publishAudio: ovState.isMicActive,
+        publishVideo: ovState.isCameraActive,
         resolution: '640x480',
         frameRate: 30,
         insertMode: 'APPEND',
         mirror: true,
-      }) as IOpenViduPublisher;
+      });
 
-      PUBLISHER_REF.current = publisher;
       setOpenViduPublisher(publisher);
       await ovState.session.publish(publisher);
 
@@ -134,29 +125,28 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     } catch (error: any) {
       console.error('Error publishing media:', error.code, error.message);
       setOpenViduError(`Failed to publish media: ${error.message || error}`);
-      if (PUBLISHER_REF.current) {
-        PUBLISHER_REF.current.destroy();
-        PUBLISHER_REF.current = null;
+      if (ovState.publisher) {
+        ovState.publisher.destroy();
         setOpenViduPublisher(null);
       }
     } finally {
       setOpenViduLoading(false);
     }
-  }, [ovState.session, ovState.currentSessionId, isMicActive, isCameraActive]);
+  }, [ovState.session, ovState.currentSessionId, ovState.isMicActive, ovState.isCameraActive, ovState.openViduInstance, ovState.publisher]);
 
   // --- Modified joinSession to await leaveSession ---
   const joinSession = useCallback(async (sessionIdToJoin?: string) => {
     // If there's an active session, ensure it's fully disconnected before proceeding.
     // Awaiting leaveSession here prevents race conditions where a new connection
     // attempts to initialize while resources from a previous session are still tearing down.
-    if (SESSION_REF.current || ovState.session) {
+    if (ovState.session) {
       console.warn('Attempting to join session while another might be active or pending. Cleaning up first.');
       await leaveSession();
     }
 
-    const effectiveSessionId = sessionIdToJoin || sessionNameInput;
+    const effectiveSessionId = sessionIdToJoin || ovState.sessionNameInput;
 
-    if (!effectiveSessionId || !OV_REF.current) {
+    if (!effectiveSessionId || !ovState.openViduInstance) {
       setOpenViduError('Session ID or OpenVidu object is missing.');
       return;
     }
@@ -166,8 +156,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
 
     try {
       const token = await getToken(effectiveSessionId);
-      const session = OV_REF.current.initSession();
-      SESSION_REF.current = session;
+      const session = ovState.openViduInstance.initSession();
       setOpenViduSessionId(effectiveSessionId);
       setOpenViduSession(session as ISession);
 
@@ -176,7 +165,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       });
 
       session.on('streamCreated', (event) => {
-        const subscriber = session.subscribe(event.stream, undefined) as IOpenViduSubscriber;
+        const subscriber = session.subscribe(event.stream, undefined);
         setOpenViduError(null);
         subscriber.on('streamPlaying', () => {}); // Renderer handles attachment
         addOpenViduSubscriber(subscriber);
@@ -227,29 +216,28 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       setOpenViduError(`Failed to connect to OpenVidu session: ${error.message || error}`);
       
       // Explicitly disconnect and clean up if connection fails mid-process
-      if (SESSION_REF.current) {
-         SESSION_REF.current.disconnect();
-         SESSION_REF.current = null;
+      if (ovState.session) {
+         ovState.session.disconnect();
       }
       resetOpenViduStore(); // Ensure store is in a clean state
     } finally {
       setOpenViduLoading(false);
     }
-  }, [sessionNameInput, getToken, startPublishingMedia, currentUserDisplayName, ovState.session, leaveSession]);
+  }, [ovState.sessionNameInput, ovState.openViduInstance, getToken, startPublishingMedia, currentUserDisplayName, ovState.session, leaveSession]);
 
   const toggleCamera = useCallback(() => {
     if (ovState.publisher) {
-      ovState.publisher.publishVideo(!isCameraActive);
-      setIsCameraActive(!isCameraActive);
+      ovState.publisher.publishVideo(!ovState.isCameraActive);
+      setIsCameraActive(!ovState.isCameraActive);
     }
-  }, [ovState.publisher, isCameraActive]);
+  }, [ovState.publisher, ovState.isCameraActive]);
 
   const toggleMic = useCallback(() => {
     if (ovState.publisher) {
-      ovState.publisher.publishAudio(!isMicActive);
-      setIsMicActive(!isMicActive);
+      ovState.publisher.publishAudio(!ovState.isMicActive);
+      setIsMicActive(!ovState.isMicActive);
     }
-  }, [ovState.publisher, isMicActive]);
+  }, [ovState.publisher, ovState.isMicActive]);
 
   const sendChatMessage = useCallback(async (messageText: string) => {
     if (!ovState.session || !ovState.currentSessionId) {
@@ -275,7 +263,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   }, [ovState.session, ovState.currentSessionId, currentUserDisplayName]);
 
   return {
-    sessionNameInput,
+    sessionNameInput: ovState.sessionNameInput,
     handleSessionNameChange,
     joinSession,
     leaveSession,
@@ -283,8 +271,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     toggleCamera,
     toggleMic,
     sendChatMessage,
-    isCameraActive,
-    isMicActive,
+    isCameraActive: ovState.isCameraActive,
+    isMicActive: ovState.isMicActive,
     isLoading: ovState.loading,
     error: ovState.error,
   };

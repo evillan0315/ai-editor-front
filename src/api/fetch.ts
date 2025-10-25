@@ -5,6 +5,7 @@ export const API_BASE_URL = `/api`;
 export interface ApiError extends Error {
   statusCode?: number;
   message: string;
+  data?: any; // To hold parsed error body
 }
 
 // Handles the response from a fetch call, checks for errors, and parses JSON or text.
@@ -45,7 +46,10 @@ export const handleResponse = async <T>(response: Response): Promise<T> => {
       detailedErrorMessage = data;
     }
 
-    throw new Error(detailedErrorMessage);
+    const error: ApiError = new Error(detailedErrorMessage);
+    error.statusCode = response.status;
+    error.data = data; // Attach the parsed (or raw) response body for further inspection
+    throw error;
   }
 
   return data as T;
@@ -73,9 +77,9 @@ export async function fetchWithToken(
     ...init?.headers,
   };
 
-  return fetch(url, {
+  return fetch(url, { 
     ...init,
-    headers,
+    headers, 
   });
 }
 

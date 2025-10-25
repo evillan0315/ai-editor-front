@@ -7,11 +7,12 @@ import CallIcon from '@mui/icons-material/Call';
 interface OpenViduSessionFormProps {
   sessionNameInput: string;
   handleSessionNameChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  joinSession: () => Promise<void>;
+  joinSession: (sessionId?: string) => Promise<void>;
   leaveSession: () => void;
   isLoading: boolean;
   currentSessionId: string | null;
   error: string | null;
+  isRoomIdFromUrl: boolean; // New prop to indicate if roomId came from URL
 }
 
 // --- Styles --- //
@@ -36,6 +37,7 @@ export const OpenViduSessionForm: React.FC<OpenViduSessionFormProps> = ({
   isLoading,
   currentSessionId,
   error,
+  isRoomIdFromUrl,
 }) => {
   return (
     <Box sx={formContainerSx}>
@@ -45,14 +47,14 @@ export const OpenViduSessionForm: React.FC<OpenViduSessionFormProps> = ({
         value={sessionNameInput}
         onChange={handleSessionNameChange}
         fullWidth
-        disabled={isLoading || !!currentSessionId}
+        disabled={isLoading || !!currentSessionId || isRoomIdFromUrl} // Disable if from URL or already connected
       />
       <Box className="flex gap-4 justify-end">
         {!currentSessionId ? (
           <Button
             variant="contained"
             color="primary"
-            onClick={joinSession}
+            onClick={() => joinSession()} // Call without argument, hook handles it
             disabled={isLoading || !sessionNameInput}
             startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <CallIcon />}
           >
