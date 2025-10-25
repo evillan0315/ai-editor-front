@@ -76,9 +76,7 @@ export const getConnections = async (sessionId: string): Promise<IConnection[]> 
       `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection`,
       { method: 'GET' },
     );
-    // The OpenVidu API returns a JSON object with a 'content' array for connections
-    const data = await handleResponse<{ content: IConnection[] }>(response);
-    return data.content;
+    return handleResponse<IConnection>(response);
   } catch (error) {
     console.error(`Error fetching OpenVidu connections for session ${sessionId}:`, error);
     throw error;
