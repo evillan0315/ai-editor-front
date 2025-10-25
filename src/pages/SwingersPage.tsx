@@ -6,7 +6,6 @@ import {
   SubscriberHeader,
   RoomList,
   RoomHeader,
-  OpenViduSessionConnector,
 } from '@/components/swingers';
 import { Box, Typography } from '@mui/material';
 
@@ -28,7 +27,7 @@ const SwingersPage: React.FC<SwingersPageProps> = () => {
       body={
         <Box className="flex flex-col lg:flex-row gap-6 p-6 w-full max-w-screen-2xl mx-auto h-full">
           <Box className="flex-1 min-w-0 flex flex-col gap-6">
-            <OpenViduSessionConnector />
+    
             <RoomList />
           </Box>
 
