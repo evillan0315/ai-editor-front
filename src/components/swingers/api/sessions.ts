@@ -44,8 +44,10 @@ export const createSession = async (options?: ICreateSessionOptions): Promise<IS
       },
     );
     return handleResponse<ISession>(response);
-  } catch (error) {
-    if (error  && error.status === 409) {
+  } catch (error: unknown) {
+    // Cast error to ApiError to check statusCode reliably
+    const apiError = error as ApiError;
+    if (apiError && apiError.statusCode === 409) {
       console.warn(`Session with ID ${options?.customSessionId} already exists. Attempting to retrieve existing session.`);
       if (options?.customSessionId) {
         try {

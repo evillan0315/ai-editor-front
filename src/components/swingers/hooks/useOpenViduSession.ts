@@ -29,8 +29,9 @@ import { authStore } from '@/stores/authStore';
  * Handles session connection, disconnection, publishing, subscribing, and media controls.
  * Includes functionality for sending and receiving chat messages via OpenVidu signals.
  * @param initialSessionId Optional: If provided, the session name input will be pre-filled and the session will attempt to auto-join.
+ * @param connectionRole Optional: Specifies if the client should connect as a 'PUBLISHER' or 'SUBSCRIBER'. Defaults to 'PUBLISHER'.
  */
-export const useOpenViduSession = (initialSessionId?: string) => {
+export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'PUBLISHER' | 'SUBSCRIBER' = 'PUBLISHER') => {
   const ovState = useStore(openViduStore);
   const $auth = useStore(authStore);
   const $currentDefaultConnection = useStore(currentDefaultConnection);
@@ -62,11 +63,14 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       // This can sometimes help prevent "device already in use" if the browser doesn't immediately release resources.
       await new Promise(resolve => setTimeout(resolve, 200));
     }
-    // Always destroy the publisher if it exists, as part of a complete cleanup
-    if (currentPublisher && typeof currentPublisher.destroy === 'function') {
+    // Always destroy the publisher if it exists, as part of a complete cleanup, but only if it was intended for PUBLISHER role
+    if (connectionRole === 'PUBLISHER' && currentPublisher && typeof currentPublisher.destroy === 'function') {
         currentPublisher.destroy();
         setOpenViduPublisher(null); // Ensure publisher is explicitly cleared from store
+    } else if (connectionRole === 'SUBSCRIBER') {
+        setOpenViduPublisher(null); // Ensure publisher is null for SUBSCRIBER role
     }
+
     if (currentSessionId) {
       // Only fetch connections if there was a session ID, otherwise it's moot
       await fetchSessionConnections(currentSessionId); // Fetching after disconnect should yield 0 connections
@@ -74,10 +78,15 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     resetOpenViduStore(); // This is the intentional full reset
     clearConnections(); // Clear connections from connectionStore
     isMediaInitInProgress.current = false; // Reset flag on leaving session
-  }, [clearConnections, fetchSessionConnections, resetOpenViduStore]);
+  }, [clearConnections, fetchSessionConnections, resetOpenViduStore, connectionRole]);
 
   // NEW: Function to initialize publisher for local preview without connecting to session
   const initLocalMediaPreview = useCallback(async () => {
+    if (connectionRole === 'SUBSCRIBER') {
+      setOpenViduPublisher(null); // No publisher for subscriber role
+      return;
+    }
+
     // Guard against multiple simultaneous initialization calls
     if (isMediaInitInProgress.current) {
         console.warn('Media initialization already in progress, skipping.');
@@ -127,7 +136,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       setOpenViduLoading(false);
       isMediaInitInProgress.current = false; // Reset flag
     }
-  }, []); // Dependencies removed: ovState.openViduInstance, ovState.isMicActive, ovState.isCameraActive because we read dynamically
+  }, [connectionRole]); // Dependencies removed: ovState.openViduInstance, ovState.isMicActive, ovState.isCameraActive because we read dynamically
 
   // NEW: Function to destroy local publisher, used for cleaning up preview
   const destroyLocalMediaPreview = useCallback(() => {
@@ -164,9 +173,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
           // If there's an active session, fully disconnect and reset. `leaveSession` handles this.
           // Calling it here ensures a clean shutdown when the component unmounts.
           leaveSession();
-      } else if (currentOvStateOnCleanup.publisher) {
-          // If only a preview publisher exists (no active session), destroy it.
-          // `destroyLocalMediaPreview` handles just destroying the publisher without a full store reset.
+      } else if (connectionRole === 'PUBLISHER' && currentOvStateOnCleanup.publisher) {
+          // If only a preview publisher exists (no active session), destroy it, but only if intended for PUBLISHER role.
           destroyLocalMediaPreview();
       }
       // IMPORTANT: `resetOpenViduStore()` and `clearConnections()` are NOT called directly here.
@@ -178,19 +186,23 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     // Dependencies are critical:
     // - `initialSessionId`, `ovState.openViduInstance`: For initial setup and instance availability.
     // - `leaveSession`, `destroyLocalMediaPreview`: These are stable `useCallback` functions and are needed for the cleanup to be up-to-date.
+    // - `connectionRole`: Needed to determine if a publisher should be destroyed during cleanup.
     // - `openViduStore.get().sessionNameInput` is read directly in the effect body now.
     // - We intentionally EXCLUDE `ovState.session` and `ovState.publisher` from dependencies here.
     //   Including them would cause the cleanup to re-run when their values change (e.g., to null after `leaveSession()致命), 
     //   leading to the infinite update loop when combined with `setOpenViduInstance` in the effect body.
-  }, [initialSessionId, ovState.openViduInstance, leaveSession, destroyLocalMediaPreview]);
+  }, [initialSessionId, ovState.openViduInstance, leaveSession, destroyLocalMediaPreview, connectionRole]);
 
   // Separate useEffect to manage local media preview state changes (camera/mic toggles)
   // This effect ensures `initLocalMediaPreview` runs when camera/mic state changes or OpenVidu instance becomes available,
-  // but ONLY when no actual session is active.
+  // but ONLY when no actual session is active and role is PUBLISHER.
   useEffect(() => {
-    // Only run if OpenVidu is initialized, not in an active session, and not already initializing media.
-    if (ovState.openViduInstance && !ovState.session && !isMediaInitInProgress.current) {
+    // Only run if connectionRole is PUBLISHER, OpenVidu is initialized, not in an active session, and not already initializing media.
+    if (connectionRole === 'PUBLISHER' && ovState.openViduInstance && !ovState.session && !isMediaInitInProgress.current) {
         initLocalMediaPreview();
+    } else if (connectionRole === 'SUBSCRIBER' && ovState.publisher) {
+        // If role changes to SUBSCRIBER and there's an existing publisher (e.g., from a prior PUBLISHER connection), destroy it.
+        destroyLocalMediaPreview();
     }
     // Cleanup for this specific media preview effect:
     // If a session becomes active, this effect is no longer responsible for the publisher.
@@ -200,11 +212,11 @@ export const useOpenViduSession = (initialSessionId?: string) => {
         const currentOvStateOnMediaCleanup = openViduStore.get();
         // If there's a publisher and no session is active, ensure it's destroyed.
         // This handles cases where `isCameraActive`/`isMicActive` dependencies change and a new preview is needed.
-        if (currentOvStateOnMediaCleanup.publisher && !currentOvStateOnMediaCleanup.session) {
+        if (connectionRole === 'PUBLISHER' && currentOvStateOnMediaCleanup.publisher && !currentOvStateOnMediaCleanup.session) {
              destroyLocalMediaPreview();
         }
     };
-  }, [ovState.openViduInstance, ovState.session, ovState.isCameraActive, ovState.isMicActive, initLocalMediaPreview, destroyLocalMediaPreview]);
+  }, [connectionRole, ovState.openViduInstance, ovState.session, ovState.isCameraActive, ovState.isMicActive, initLocalMediaPreview, destroyLocalMediaPreview]);
 
 
   const handleSessionNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -215,7 +227,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     try {
       const session = await createSession({ customSessionId: mySessionId });
       const connection = await createConnection(session.sessionId, {
-        role: 'PUBLISHER',
+        role: connectionRole, // Use the role passed to the hook
         data: JSON.stringify(currentUserDisplayName), // Pass client data
       });
       return connection.token;
@@ -224,7 +236,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       setOpenViduError(`Failed to get OpenVidu token: ${error.message || error}`);
       throw error;
     }
-  }, [currentUserDisplayName]);
+  }, [currentUserDisplayName, connectionRole]); // Add connectionRole to dependencies
 
   // Crucial: removed ovState.publisher from dependencies.
 
@@ -251,7 +263,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       return;
     }
 
-    if (!ovPublisher) { // Ensure publisher is ready before joining
+    // For PUBLISHER role, ensure publisher is ready before joining
+    if (connectionRole === 'PUBLISHER' && !ovPublisher) {
       setOpenViduError('Local media publisher not initialized. Please ensure camera/mic are configured.');
       setOpenViduLoading(false); // Make sure loading state is off if we error out here
       return;
@@ -291,12 +304,12 @@ export const useOpenViduSession = (initialSessionId?: string) => {
         setOpenViduError(null);
         subscriber.on('streamPlaying', () => {});
         addOpenViduSubscriber(subscriber);
-        await fetchSessionConnections(effectiveSessionId);
+        //await fetchSessionConnections(effectiveSessionId);
       });
 
       session.on('streamDestroyed', async (event) => {
         removeOpenViduSubscriber(event.stream.streamId);
-        await fetchSessionConnections(effectiveSessionId);
+        //await fetchSessionConnections(effectiveSessionId);
       });
 
       session.on('networkQualityChanged', (event) => {
@@ -329,9 +342,10 @@ export const useOpenViduSession = (initialSessionId?: string) => {
 
       await session.connect(token, { clientData: JSON.stringify(currentUserDisplayName) });
 
-      // Publish the existing preview publisher. We now require it to be initialized already.
-      await session.publish(ovPublisher);
-
+      // Publish the existing preview publisher only if the role is PUBLISHER
+      if (connectionRole === 'PUBLISHER' && ovPublisher) {
+        await session.publish(ovPublisher);
+      }
 
       // Fetch connections and update room store immediately after connecting
       await fetchSessionConnections(effectiveSessionId);
@@ -347,7 +361,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       if (latestOvSession) {
          latestOvSession.disconnect();
       }
-      if (latestOvPublisher && typeof latestOvPublisher.destroy === 'function') {
+      if (connectionRole === 'PUBLISHER' && latestOvPublisher && typeof latestOvPublisher.destroy === 'function') {
           latestOvPublisher.destroy();
       }
       resetOpenViduStore(); // Reset store on connection failure
@@ -356,9 +370,11 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     } finally {
       setOpenViduLoading(false);
     }
-  }, [getToken, currentUserDisplayName, leaveSession, fetchSessionConnections, clearConnections]); // Dependencies removed: ovState.session, ovState.publisher, ovState.sessionNameInput, ovState.openViduInstance
+  }, [getToken, currentUserDisplayName, leaveSession, fetchSessionConnections, clearConnections, connectionRole]); // Add connectionRole to dependencies
 
   const toggleCamera = useCallback(() => {
+    if (connectionRole === 'SUBSCRIBER') return; // Cannot toggle camera if not a publisher
+
     const currentPublisher = openViduStore.get().publisher;
     const currentIsCameraActive = openViduStore.get().isCameraActive;
     const newCameraState = !currentIsCameraActive;
@@ -367,9 +383,11 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     if (currentPublisher && typeof currentPublisher.publishVideo === 'function') {
       currentPublisher.publishVideo(newCameraState);
     }
-  }, []); // Dependencies removed: ovState.publisher, ovState.isCameraActive
+  }, [connectionRole]); // Add connectionRole to dependencies
 
   const toggleMic = useCallback(() => {
+    if (connectionRole === 'SUBSCRIBER') return; // Cannot toggle mic if not a publisher
+
     const currentPublisher = openViduStore.get().publisher;
     const currentIsMicActive = openViduStore.get().isMicActive;
     const newMicState = !currentIsMicActive;
@@ -378,7 +396,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     if (currentPublisher && typeof currentPublisher.publishAudio === 'function') {
       currentPublisher.publishAudio(newMicState);
     }
-  }, []); // Dependencies removed: ovState.publisher, ovState.isMicActive
+  }, [connectionRole]); // Add connectionRole to dependencies
 
 
   const sendChatMessage = useCallback(async (messageText: string) => {
@@ -424,5 +442,6 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     publisher: ovState.publisher,
     currentSessionId: ovState.currentSessionId,
     openViduInstance: ovState.openViduInstance,
+    connectionRole, // Expose connectionRole
   };
 };
