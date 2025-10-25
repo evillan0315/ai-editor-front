@@ -3,9 +3,9 @@ import { OpenVidu } from 'openvidu-browser';
 import { useStore } from '@nanostores/react';
 import { nanoid } from 'nanoid';
 
-import { createSession, deleteSession } from '@/components/swingers/api/sessions';
+import { createSession } from '@/components/swingers/api/sessions';
 import { getConnections, createConnection } from '@/components/swingers/api/connections';
-import { IOpenViduPublisher, IOpenViduSubscriber } from '@/components/swingers/types';
+import { IOpenViduPublisher, IOpenViduSubscriber, ISession } from '@/components/swingers/types';
 import {
   openViduStore,
   setOpenViduSessionId,
@@ -18,8 +18,7 @@ import {
   resetOpenViduStore,
 } from '@/components/swingers/stores/openViduStore';
 import { updateRoomConnectionCount } from '@/components/swingers/stores/roomStore';
-import { IConversationMessage } from '@/types/conversation';
-
+import { authStore } from '@/stores/authStore'; // Import authStore for user info
 
 
 /**
@@ -30,6 +29,9 @@ import { IConversationMessage } from '@/types/conversation';
  */
 export const useOpenViduSession = (initialSessionId?: string) => {
   const ovState = useStore(openViduStore);
+  const $auth = useStore(authStore); // Get auth state for user info
+  const currentUserDisplayName = $auth.user?.username || 'Guest User'; // Get current user's display name
+
   const [sessionNameInput, setSessionNameInput] = useState<string>(initialSessionId || '');
   const [isCameraActive, setIsCameraActive] = useState(true); // Tracks intended camera state
   const [isMicActive, setIsMicActive] = useState(true);     // Tracks intended mic state
@@ -62,14 +64,55 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       const session = await createSession({ customSessionId: mySessionId });
       const connection = await createConnection(session.sessionId, {
         role: 'PUBLISHER',
-        data: JSON.stringify({ USERNAME: ovState.currentSessionId || 'Codejector User' }), // Example client data
+        data: JSON.stringify({ USERNAME: currentUserDisplayName }), // Use consistent display name
       });
       return connection.token;
     } catch (error) {
       console.error('Error getting token:', error);
       throw new Error(`Failed to get OpenVidu token: ${error.message || error}`);
     }
-  }, [ovState.currentSessionId]);
+  }, [currentUserDisplayName]);
+
+  // startPublishingMedia needs to be defined before joinSession if it's called internally
+  const startPublishingMedia = useCallback(async () => {
+    if (!ovState.session || !OV_REF.current) return;
+
+    setOpenViduLoading(true);
+    setOpenViduError(null);
+
+    try {
+      const publisher = await OV_REF.current.initPublisherAsync(undefined, {
+        audioSource: undefined,
+        videoSource: undefined,
+        publishAudio: isMicActive,
+        publishVideo: isCameraActive,
+        resolution: '640x480',
+        frameRate: 30,
+        insertMode: 'APPEND',
+        mirror: true,
+      }) as IOpenViduPublisher;
+
+      PUBLISHER_REF.current = publisher;
+      setOpenViduPublisher(publisher);
+      await ovState.session.publish(publisher);
+
+      // Update connection count for the current session
+      if (ovState.currentSessionId) {
+        getConnections(ovState.currentSessionId).then(c => updateRoomConnectionCount(ovState.currentSessionId!, c.length));
+      }
+
+    } catch (error: any) {
+      console.error('Error publishing media:', error.code, error.message);
+      setOpenViduError(`Failed to publish media: ${error.message || error}`);
+      if (PUBLISHER_REF.current) {
+        PUBLISHER_REF.current.destroy();
+        PUBLISHER_REF.current = null;
+        setOpenViduPublisher(null);
+      }
+    } finally {
+      setOpenViduLoading(false);
+    }
+  }, [ovState.session, ovState.currentSessionId, isMicActive, isCameraActive]);
 
   const joinSession = useCallback(async (sessionIdToJoin?: string) => {
     const effectiveSessionId = sessionIdToJoin || sessionNameInput;
@@ -84,10 +127,12 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       const session = OV_REF.current.initSession();
       SESSION_REF.current = session;
       setOpenViduSessionId(effectiveSessionId);
-      setOpenViduSession(session as any);
+      setOpenViduSession(session as ISession); // Correct type assertion
+
       session.on('connectionCreated', (event) => {
          console.log('connectionCreated:', event);
       });
+
       session.on('streamCreated', (event) => {
         const subscriber = session.subscribe(event.stream, undefined) as IOpenViduSubscriber;
         setOpenViduError(null);
@@ -110,8 +155,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
         console.log('Network quality changed:', event);
       });
 
-      // New: Listen for custom 'chat' signals
-      session.on('signal:global', (event) => {
+      // Listen for custom 'chat' signals
+      session.on('signal:chat', (event) => { // Listen for 'chat' type signals specifically
         try {
           const signalData = JSON.parse(event.data || '{}');
           const connectionData = event.from?.data; // Connection data of the sender
@@ -119,27 +164,30 @@ export const useOpenViduSession = (initialSessionId?: string) => {
           let senderName = 'Unknown';
           if (connectionData) {
             try {
-              const clientDataMatch = connectionData.match(/"USERNAME":"([^"]+)"/);
-              if (clientDataMatch && clientDataMatch[1]) {
-                senderName = clientDataMatch[1];
-              } else {
-                const clientData = JSON.parse(connectionData);
-                senderName = clientData.USERNAME || 'Unknown';
-              }
+              const clientData = JSON.parse(connectionData);
+              senderName = clientData.USERNAME || 'Unknown';
             } catch (parseError) {
               // Fallback if connectionData is not JSON or unexpected format
               senderName = connectionData.replace('clientData_', '') || 'Unknown';
             }
           }
 
+          if (signalData.message) {
+            addMessage({ id: nanoid(), sender: senderName, content: signalData.message, timestamp: signalData.timestamp });
+            console.log('Received chat message:', signalData.message);
+          }
 
-          console.log('Received chat message:', message);
         } catch (parseError) {
           console.error('Error parsing chat signal data:', parseError, event.data);
         }
       });
 
-      await session.connect(token, { clientData: JSON.stringify({ USERNAME: 'Codejector User' }) });
+      await session.connect(token, { clientData: JSON.stringify({ USERNAME: currentUserDisplayName }) }); // Use consistent display name
+      
+      // Automatically start publishing media if joining a session from URL (e.g., a room link)
+      if (sessionIdToJoin) {
+        await startPublishingMedia();
+      }
 
     } catch (error: any) {
       console.error('Error connecting to session:', error.code, error.message);
@@ -148,44 +196,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     } finally {
       setOpenViduLoading(false);
     }
-  }, [sessionNameInput, getToken]);
-
-  const startPublishingMedia = useCallback(async (currentSessionId: string) => {
-    if (!ovState.session || !OV_REF.current) return;
-
-    setOpenViduLoading(true);
-    setOpenViduError(null);
-
-    try {
-      const publisher = await OV_REF.current.initPublisherAsync(undefined, {
-        audioSource: undefined,
-        videoSource: undefined,
-        publishAudio: isMicActive,
-        publishVideo: isCameraActive,
-        resolution: '640x480',
-        frameRate: 30,
-        insertMode: 'APPEND',
-        mirror: true,
-      }) as IOpenViduPublisher;
-
-      PUBLISHER_REF.current = publisher;
-      setOpenViduPublisher(publisher);
-      await ovState.session.publish(publisher);
-
-      getConnections(currentSessionId).then(c => updateRoomConnectionCount(currentSessionId, c.length));
-
-    } catch (error: any) {
-      console.error('Error publishing media:', error.code, error.message);
-      setOpenViduError(`Failed to publish media: ${error.message || error}`);
-      if (PUBLISHER_REF.current) {
-        PUBLISHER_REF.current.destroy();
-        PUBLISHER_REF.current = null;
-        setOpenViduPublisher(null);
-      }
-    } finally {
-      setOpenViduLoading(false);
-    }
-  }, [ovState.session, isMicActive, isCameraActive]);
+  }, [sessionNameInput, getToken, startPublishingMedia, currentUserDisplayName]); // Added startPublishingMedia and currentUserDisplayName to dependencies
 
   const leaveSession = useCallback(() => {
     if (SESSION_REF.current) {
@@ -222,33 +233,32 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       return;
     }
     try {
-      const senderName = ovState.currentSessionId || 'You'; // Placeholder, ideally get from authStore
       const messagePayload = {
-        sender: senderName,
+        sender: currentUserDisplayName,
         message: messageText,
         timestamp: Date.now(),
       };
 
       await ovState.session.signal({
-        type: 'chat',
+        type: 'chat', // Use a specific signal type for chat
         data: JSON.stringify(messagePayload),
       });
       // Optimistically add own message to conversation store
-      addMessage({ id: nanoid(), sender: senderName, content: messageText, timestamp: messagePayload.timestamp });
+      addMessage({ id: nanoid(), sender: currentUserDisplayName, content: messageText, timestamp: messagePayload.timestamp });
 
       console.log('Sent chat message:', messageText);
     } catch (error) {
       console.error('Error sending chat message via OpenVidu signal:', error);
       setOpenViduError(`Failed to send chat message: ${error.message || error}`);
     }
-  }, [ovState.session, ovState.currentSessionId]);
+  }, [ovState.session, ovState.currentSessionId, currentUserDisplayName]); // Added currentUserDisplayName to dependencies
 
   return {
     sessionNameInput,
     handleSessionNameChange,
     joinSession,
     leaveSession,
-    startPublishingMedia,
+    startPublishingMedia, // Still export if needed for manual calls
     toggleCamera,
     toggleMic,
     sendChatMessage,
