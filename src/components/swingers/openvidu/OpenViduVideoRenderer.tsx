@@ -64,19 +64,15 @@ export const OpenViduVideoRenderer: React.FC<OpenViduVideoRendererProps> = ({
 
   // Extract client data for display. The 'data' field often contains 'clientData_USERNAME' etc.
   // This parsing assumes a specific format from OpenVidu's connection.data
-  const connectionData = streamManager.stream.connection.data;
+  const connectionData = streamManager.stream.connection.data; // This is typically a JSON string
   let displayName = 'Guest';
   try {
-    const clientDataMatch = connectionData.match(/"USERNAME":"([^"]+)"/);
-    if (clientDataMatch && clientDataMatch[1]) {
-      displayName = clientDataMatch[1];
-    } else {
-       // Fallback for older formats or if USERNAME not found in JSON string
-      const clientData = JSON.parse(connectionData);
-      displayName = clientData.USERNAME || 'Guest';
-    }
+    const clientData = JSON.parse(connectionData);
+    displayName = clientData.USERNAME || 'Guest';
   } catch (e) {
-    // If it's not JSON, or parsing fails, just use the raw data (if meaningful) or default
+    // If parsing fails, or if it's an older format, attempt simple string extraction
+    console.warn('Failed to parse connectionData as JSON, falling back to string extraction:', e, connectionData);
+    // Attempt to extract from a non-JSON format like 'clientData_USERNAME'
     displayName = connectionData.replace('clientData_', '') || 'Guest';
   }
 
