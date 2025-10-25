@@ -2,7 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { OpenVidu } from 'openvidu-browser';
 import { useStore } from '@nanostores/react';
 
-import { createSession } from '@/components/swingers/api/sessions';
+import { createSession, getSession } from '@/components/swingers/api/sessions'; // Import getSession as well
 import { getConnections, createConnection } from '@/components/swingers/api/connections';
 import { ISession } from '@/components/swingers/types';
 import {
@@ -35,7 +35,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
   const $auth = useStore(authStore);
   const currentUserDisplayName = $auth.user?.username || 'Guest User';
 
-  // --- Modified leaveSession to be async and awaitable --- 
+  // --- Modified leaveSession to be async and awaitable ---
   const leaveSession = useCallback(async () => {
     if (ovState.session) {
       console.log(`Disconnecting from OpenVidu session ${ovState.session.sessionId}...`);
@@ -135,7 +135,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     }
   }, [ovState.session, ovState.currentSessionId, ovState.isMicActive, ovState.isCameraActive, ovState.openViduInstance, ovState.publisher]);
 
-  // --- Modified joinSession to await leaveSession and handle auto-publish --- 
+  // --- Modified joinSession to await leaveSession and handle auto-publish ---
   const joinSession = useCallback(async (sessionIdToJoin?: string) => {
     // If there's an active session, ensure it's fully disconnected before proceeding.
     // Awaiting leaveSession here prevents race conditions where a new connection
@@ -209,7 +209,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       await session.connect(token, { clientData: JSON.stringify({ USERNAME: currentUserDisplayName }) });
       
       // Only start publishing if joining directly (e.g., via URL parameter), not if simply reconnecting
-      if (sessionIdToJoin) { // This condition is true when initialSessionId is passed to the hook and joinSession is called without args
+      // This condition is true when initialSessionId is passed to the hook and joinSession is called without args
+      if (sessionIdToJoin) { 
         await startPublishingMedia();
       }
 
