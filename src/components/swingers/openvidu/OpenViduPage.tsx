@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, Typography, Alert, Card, CardContent, Divider } from '@mui/material';
 import { useStore } from '@nanostores/react';
+import { useParams } from 'react-router-dom';
 
 import { openViduStore } from '@/components/swingers/stores/openViduStore';
-import { useOpenViduSession } from '@/hooks/useOpenViduSession';
+import { useOpenViduSession } from '@/components/swingers/hooks/useOpenViduSession';
 import { OpenViduSessionForm } from './OpenViduSessionForm';
 import { OpenViduControls } from './OpenViduControls';
 import { OpenViduVideoGrid } from './OpenViduVideoGrid';
@@ -28,6 +29,7 @@ const alertSx = {
 
 export const OpenViduPage: React.FC = () => {
   const ovState = useStore(openViduStore);
+  const { roomId } = useParams<{ roomId: string }>(); // Get roomId from URL parameters
 
   const {
     sessionNameInput,
@@ -40,7 +42,23 @@ export const OpenViduPage: React.FC = () => {
     isMicActive,
     isLoading,
     error,
-  } = useOpenViduSession();
+    // Removed startPublishingMedia, it's now called internally by joinSession for simplicity
+    sendChatMessage, // New: Exposed function for sending chat messages
+  } = useOpenViduSession(roomId); // Pass roomId to the hook
+
+  // Effect to automatically join session if roomId is present in URL and not already connected
+  useEffect(() => {
+    if (roomId && !ovState.currentSessionId && !isLoading && !error) {
+      joinSession(roomId);
+    }
+  }, [roomId, ovState.currentSessionId, isLoading, error, joinSession]);
+
+  // Example of how to use sendChatMessage (e.g., in response to a button click)
+  const handleSendTestMessage = () => {
+    if (sendChatMessage) {
+      sendChatMessage('Hello from OpenViduPage!');
+    }
+  };
 
   return (
     <Box sx={containerSx} className="w-full flex flex-col items-center py-4 h-full">
@@ -57,6 +75,7 @@ export const OpenViduPage: React.FC = () => {
           isLoading={isLoading}
           currentSessionId={ovState.currentSessionId}
           error={error}
+          isRoomIdFromUrl={!!roomId} // Inform form if roomId came from URL
         />
 
         {error && (
@@ -77,6 +96,8 @@ export const OpenViduPage: React.FC = () => {
                 toggleMic={toggleMic}
                 publisher={ovState.publisher}
               />
+              {/* Example chat button, replace with actual chat input/display */}
+              {/*<Button onClick={handleSendTestMessage} variant="outlined" className="mt-4">Send Test Chat Message</Button>*/}
             </CardContent>
           </Card>
         )}
