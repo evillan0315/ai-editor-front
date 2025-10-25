@@ -20,7 +20,7 @@ import {
   setIsMicActive,
   setSessionNameInput as setOpenViduSessionNameInput,
 } from '@/components/swingers/stores/openViduStore';
-import { connectionStore, fetchSessionConnections, clearConnections, currentDefaultConnection } from '@/components/swingers/stores/connectionStore'; // Import new connection store actions
+import { fetchSessionConnections, clearConnections, currentDefaultConnection } from '@/components/swingers/stores/connectionStore'; // Import new connection store actions
 import { authStore } from '@/stores/authStore';
 
 
@@ -51,16 +51,27 @@ export const useOpenViduSession = (initialSessionId?: string) => {
       ovState.session.disconnect();
       await new Promise(resolve => setTimeout(resolve, 200)); // Give OpenVidu a moment to process
     }
-    // Also destroy the publisher if it exists, regardless of session status
+    // Always destroy the publisher if it exists, as part of a complete cleanup
     if (ovState.publisher) {
         ovState.publisher.destroy();
+        setOpenViduPublisher(null); // Ensure publisher is explicitly cleared from store
     }
     if (ovState.currentSessionId) {
+      // Only fetch connections if there was a session ID, otherwise it's moot
       await fetchSessionConnections(ovState.currentSessionId); // Fetching after disconnect should yield 0 connections
     }
     resetOpenViduStore();
     clearConnections(); // Clear connections from connectionStore
   }, [ovState.session, ovState.currentSessionId, ovState.publisher, clearConnections]);
+
+  // NEW: Function to destroy local publisher, used for cleaning up preview
+  const destroyLocalMediaPreview = useCallback(() => {
+    if (ovState.publisher) {
+      ovState.publisher.destroy();
+      setOpenViduPublisher(null);
+    }
+  }, [ovState.publisher]);
+
 
   // Initialize OpenVidu object and session name once per hook instance
   // This useEffect ensures the OpenVidu instance is ready and session name input is set if provided.
@@ -74,18 +85,16 @@ export const useOpenViduSession = (initialSessionId?: string) => {
 
     // Cleanup: Disconnect and reset store on component unmount
     return () => {
-      (async () => {
-        if (ovState.session) {
-          await leaveSession(); // This now includes publisher destroy
-        } else if (ovState.publisher) { // If there was a publisher but no active session (e.g., just preview)
-            ovState.publisher.destroy();
-            setOpenViduPublisher(null);
-        }
-        resetOpenViduStore();
-        clearConnections();
-      })();
+      // Ensure a full cleanup. If session is active, leave it. If only a preview publisher exists, destroy it.
+      if (ovState.session) {
+          leaveSession(); // Fully disconnect and destroy publisher
+      } else if (ovState.publisher) {
+          destroyLocalMediaPreview(); // Destroy publisher if no session was active (only preview)
+      }
+      resetOpenViduStore();
+      clearConnections();
     };
-  }, [initialSessionId, ovState.sessionNameInput, ovState.openViduInstance, ovState.session, ovState.publisher, leaveSession, clearConnections]);
+  }, [initialSessionId, ovState.sessionNameInput, ovState.openViduInstance, ovState.session, ovState.publisher, leaveSession, clearConnections, destroyLocalMediaPreview]);
 
 
   const handleSessionNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,15 +148,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     } finally {
       setOpenViduLoading(false);
     }
-  }, [ovState.openViduInstance, ovState.isMicActive, ovState.isCameraActive, ovState.publisher]);
-
-  // NEW: Function to destroy local publisher, used for cleaning up preview
-  const destroyLocalMediaPreview = useCallback(() => {
-    if (ovState.publisher) {
-      ovState.publisher.destroy();
-      setOpenViduPublisher(null);
-    }
-  }, [ovState.publisher]);
+  }, [ovState.openViduInstance, ovState.isMicActive, ovState.isCameraActive, ovState.publisher]); // ovState.publisher is a dependency because its existence affects the logic of destroying it.
 
 
   const joinSession = useCallback(async (sessionIdToJoin?: string) => {
@@ -163,6 +164,12 @@ export const useOpenViduSession = (initialSessionId?: string) => {
 
     if (!effectiveSessionId || !ovState.openViduInstance) {
       setOpenViduError('Session ID or OpenVidu object is missing.');
+      return;
+    }
+
+    if (!ovState.publisher) { // Ensure publisher is ready before joining
+      setOpenViduError('Local media publisher not initialized. Please ensure camera/mic are configured.');
+      setOpenViduLoading(false); // Make sure loading state is off if we error out here
       return;
     }
 
@@ -201,7 +208,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
         removeOpenViduSubscriber(event.stream.streamId);
         await fetchSessionConnections(effectiveSessionId);
       });
-      
+
       session.on('networkQualityChanged', (event) => {
         console.log('Network quality changed:', event);
       });
@@ -218,7 +225,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
               senderName = clientData.USERNAME || 'Unknown';
             } catch (parseError) {
               senderName = connectionData.replace('clientData_', '') || 'Unknown';
-            }  
+            }
           }
 
           if (signalData.message) {
@@ -232,32 +239,17 @@ export const useOpenViduSession = (initialSessionId?: string) => {
 
       await session.connect(token, { clientData: JSON.stringify(currentUserDisplayName) });
 
-      // Publish the existing preview publisher, or create a new one if preview was not started/failed
-      if (ovState.publisher) {
-        await session.publish(ovState.publisher);
-      } else {
-        // This case handles direct joins without preview or if preview failed
-        const publisher = await ovState.openViduInstance.initPublisherAsync(undefined, {
-          audioSource: undefined,
-          videoSource: undefined,
-          publishAudio: ovState.isMicActive,
-          publishVideo: ovState.isCameraActive,
-          resolution: '640x480',
-          frameRate: 30,
-          insertMode: 'APPEND',
-          mirror: true,
-        });
-        setOpenViduPublisher(publisher);
-        await session.publish(publisher);
-      }
+      // Publish the existing preview publisher. We now require it to be initialized already.
+      await session.publish(ovState.publisher);
+
 
       // Fetch connections and update room store immediately after connecting
       await fetchSessionConnections(effectiveSessionId);
-      
+
     } catch (error: any) {
       console.error('Error connecting to session:', error.code, error.message);
       setOpenViduError(`Failed to connect to OpenVidu session: ${error.message || error}`);
-      
+
       // Ensure full cleanup on connection error
       if (ovState.session) {
          ovState.session.disconnect();
@@ -270,35 +262,26 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     } finally {
       setOpenViduLoading(false);
     }
-  }, [ovState.sessionNameInput, ovState.openViduInstance, getToken, currentUserDisplayName, ovState.session, ovState.publisher, leaveSession, fetchSessionConnections, clearConnections, ovState.isMicActive, ovState.isCameraActive]);
+  }, [ovState.sessionNameInput, ovState.openViduInstance, getToken, currentUserDisplayName, ovState.session, ovState.publisher, leaveSession, fetchSessionConnections, clearConnections]);
 
   const toggleCamera = useCallback(() => {
     const newCameraState = !ovState.isCameraActive;
     setIsCameraActive(newCameraState); // Update store immediately
     if (ovState.publisher) {
       ovState.publisher.publishVideo(newCameraState);
-    } else {
-      // If no publisher exists yet (e.g., before preview starts),
-      // re-initialize preview with new setting if media is meant to be active.
-      // This ensures `initLocalMediaPreview` (which runs on mount) respects the toggle.
-      if (ovState.openViduInstance && newCameraState) {
-        initLocalMediaPreview();
-      }
     }
-  }, [ovState.publisher, ovState.isCameraActive, ovState.openViduInstance, initLocalMediaPreview]);
+    // Removed the else block: toggling should only affect an existing publisher.
+    // Initial acquisition/re-acquisition is handled by initLocalMediaPreview on mount/settings change.
+  }, [ovState.publisher, ovState.isCameraActive]);
 
   const toggleMic = useCallback(() => {
     const newMicState = !ovState.isMicActive;
     setIsMicActive(newMicState); // Update store immediately
     if (ovState.publisher) {
       ovState.publisher.publishAudio(newMicState);
-    } else {
-      // If no publisher exists yet, re-initialize preview with new setting if media is meant to be active.
-      if (ovState.openViduInstance && newMicState) {
-        initLocalMediaPreview();
-      }
     }
-  }, [ovState.publisher, ovState.isMicActive, ovState.openViduInstance, initLocalMediaPreview]);
+    // Removed the else block for consistency with toggleCamera.
+  }, [ovState.publisher, ovState.isMicActive]);
 
 
   const sendChatMessage = useCallback(async (messageText: string) => {
@@ -329,8 +312,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     handleSessionNameChange,
     joinSession,
     leaveSession,
-    initLocalMediaPreview, // NEW
-    destroyLocalMediaPreview, // NEW
+    initLocalMediaPreview,
+    destroyLocalMediaPreview,
     toggleCamera,
     toggleMic,
     sendChatMessage,
@@ -338,8 +321,8 @@ export const useOpenViduSession = (initialSessionId?: string) => {
     isMicActive: ovState.isMicActive,
     isLoading: ovState.loading,
     error: ovState.error,
-    publisher: ovState.publisher, // Expose publisher for preview
-    currentSessionId: ovState.currentSessionId, // Expose for status
-    openViduInstance: ovState.openViduInstance, // NEW: Expose OpenVidu instance
+    publisher: ovState.publisher,
+    currentSessionId: ovState.currentSessionId,
+    openViduInstance: ovState.openViduInstance,
   };
 };
