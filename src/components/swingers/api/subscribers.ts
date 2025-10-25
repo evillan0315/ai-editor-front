@@ -1,5 +1,5 @@
 import { fetchWithToken, SLS_API_URL } from '@/api/fetch';
-import { ISwinger } from '@/components/swingers/types';
+import { ISwingerSessionParticipant } from '@/components/swingers/types';
 
 const SWINGERS_SUBSCRIBERS = `${SLS_API_URL}/subscribers`;
 
@@ -8,17 +8,17 @@ const SWINGERS_SUBSCRIBERS = `${SLS_API_URL}/subscribers`;
  * where uniqueness is determined by the combination of 'member.email' and 'member.username'.
  * If either 'email' or 'username' is missing for a member, a placeholder string is used
  * in the composite key to ensure proper uniqueness tracking for all entries.
- * @returns A promise that resolves to an array of unique ISwinger objects.
+ * @returns A promise that resolves to an array of unique ISwingerSessionParticipant objects.
  */
-export const getSubscribers = async (): Promise<ISwinger[]> => {
+export const getSubscribers = async (): Promise<ISwingerSessionParticipant[]> => {
   try {
-    const allSubscribers = await fetchWithToken<ISwinger[]>(
+    const allSubscribers = await fetchWithToken<ISwingerSessionParticipant[]>(
       `${SWINGERS_SUBSCRIBERS}`,
       { method: 'GET' },
     );
 
     const seenKeys = new Set<string>();
-    const uniqueSubscribers: ISwinger[] = [];
+    const uniqueSubscribers: ISwingerSessionParticipant[] = [];
 
     for (const subscriber of allSubscribers) {
       // Safely access member properties, using placeholders for undefined/null values

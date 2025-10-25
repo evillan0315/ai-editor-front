@@ -136,25 +136,6 @@ export interface ISubscriberData {
 }
 
 /**
- * Represents a swinger participant (subscriber or streamer) in the context of a session.
- */
-export interface ISwingerSessionParticipant {
-  id: string;
-  member: IMember; // Detailed member information
-  room: IRoom; // Associated room information
-  active: boolean;
-  streamId?: string; // OpenVidu stream ID if applicable
-  // Add other relevant properties here based on API response
-}
-
-export interface IActivity {
-  id: string;
-  type: string;
-  description: string;
-  timestamp: string;
-}
-
-/**
  * Represents an OpenVidu Connection object, enriched with our backend's connection metadata.
  * The 'clientData' field is a JSON string that can be parsed into IClientDataPayload.
  */
@@ -186,23 +167,62 @@ export interface IConnection {
 }
 
 /**
+ * Represents a list of connections, typically found nested in session or room objects.
+ */
+export interface IConnectionList {
+  numberOfElements: number;
+  content: IConnection[];
+}
+
+/**
  * Represents a Room, potentially linked to an OpenVidu session.
  * `roomId` from backend maps to `customSessionId` in OpenVidu.
  */
 export interface IRoom {
-  id: string;
+  id: number; // Changed from string to number based on room.json
   name: string;
-  type: 'club' | 'public';
-  description: string;
-  ownerId: string;
-  members: string[]; // Array of member IDs
-  created_at: string; // Using string for date from backend
-  updatedAt: string;
+  active: boolean; // Added based on room.json
+  type: 'club' | 'public' | string; // Made more flexible, originally 'club' | 'public'
+  description: string | null; // Changed to allow null based on room.json
+  roomId: string; // This corresponds to OpenVidu's customSessionId
+  agreement: any | null; // Added based on room.json
+  reset: boolean; // Added based on room.json
+  allowTranscoding: boolean; // Added based on room.json
+  recording: boolean; // Existing
+  recordingMode: 'MANUAL' | 'ALWAYS' | string; // Added based on room.json, similar to ISession
+  map_sessions: any | null; // Added based on room.json
+  analytics: any | null; // Added based on room.json
+  liveStream: boolean; // Existing
+  shortName: string | null; // Added based on room.json
+  created_at: string; // Existing
+  updated_at: string; // Renamed from 'updatedAt' to 'updated_at' based on room.json
+  forceVideoCodec: string; // Added based on room.json
+  forcedVideoCodec: string; // Added based on room.json
+  defaultRecordingProperties: IDefaultRecordingProperties; // Added based on room.json structure
+  connections?: IConnection[]; // Added, optional field for the empty 'connections' array at room.json root
+  connect: IConnectionList; // Added to capture the actual connections data from 'connect' property in room.json
+  // Removed ownerId, members, openViduSessionId as they are not explicitly present in the provided room.json
+}
+
+/**
+ * Represents a swinger participant (subscriber or streamer) in the context of a session.
+ * Note: If IRoom no longer has `ownerId` or `members`, `ISwingerSessionParticipant`'s `member` and `room` fields should be
+ * understood in the context of the updated IRoom definition.
+ */
+export interface ISwingerSessionParticipant {
+  id: string;
+  member: IMember; // Detailed member information
+  room: IRoom; // Associated room information
   active: boolean;
-  recording: boolean;
-  liveStream: boolean;
-  roomId?: string; // Backend's room ID, can be used as customSessionId for OpenVidu
-  openViduSessionId?: string; // The actual session ID from OpenVidu if a session is created/active
+  streamId?: string; // OpenVidu stream ID if applicable
+  // Add other relevant properties here based on API response
+}
+
+export interface IActivity {
+  id: string;
+  type: string;
+  description: string;
+  timestamp: string;
 }
 
 /**
@@ -221,10 +241,7 @@ export interface ISession {
   customSessionId: string; // The custom session ID provided during session creation, often same as sessionId
   forcedVideoCodec: string; // e.g., "MEDIA_SERVER_PREFERRED"
   allowTranscoding: boolean;
-  connections: { // Connections currently in this session, structured as an object
-    numberOfElements: number;
-    content: IConnection[];
-  };
+  connections: IConnectionList; // Changed to use IConnectionList for consistency
 }
 
 export interface IStreamer extends ISwingerSessionParticipant {
