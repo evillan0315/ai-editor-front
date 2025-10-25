@@ -140,7 +140,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
           const videoElement = document.getElementById(`video-stream-${subscriber.streamId}`);
           if (videoElement) {
             subscriber.addVideoElement(videoElement as HTMLVideoElement);
-          }
+          }  
         });
         addOpenViduSubscriber(subscriber);
         getConnections(effectiveSessionId).then(c => updateRoomConnectionCount(effectiveSessionId, c.length));
@@ -173,7 +173,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
           }
 
           if (signalData.message) {
-            addMessage({ id: nanoid(), sender: senderName, content: signalData.message, timestamp: signalData.timestamp });
+            // addMessage({ id: nanoid(), sender: senderName, content: signalData.message, timestamp: signalData.timestamp });
             console.log('Received chat message:', signalData.message);
           }
 
@@ -244,7 +244,7 @@ export const useOpenViduSession = (initialSessionId?: string) => {
         data: JSON.stringify(messagePayload),
       });
       // Optimistically add own message to conversation store
-      addMessage({ id: nanoid(), sender: currentUserDisplayName, content: messageText, timestamp: messagePayload.timestamp });
+      // addMessage({ id: nanoid(), sender: currentUserDisplayName, content: messageText, timestamp: messagePayload.timestamp });
 
       console.log('Sent chat message:', messageText);
     } catch (error) {
