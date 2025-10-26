@@ -15,7 +15,6 @@ export interface TabConfig {
   content: ReactNode;
   icon?: ReactNode;
 }
-
 /**
  * @interface DynamicMuiTabsProps
  * @description Props for the DynamicMuiTabs component.
@@ -45,7 +44,44 @@ const dynamicTabsRootSx = {
 
 const tabsContainerSx = {
   borderBottom: 1,
-  borderColor: 'divider'
+  borderColor: 'divider',
+  // Fixed height for the tabs container, similar to FileTabs
+  height: '49px',
+  borderRadius: 0,
+  flexShrink: 0,
+  // Layout for content inside Paper
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'start',
+};
+
+// Styles for the Mui Tabs component itself
+const tabsComponentSx = (theme: ReturnType<typeof useTheme>) => ({
+  flexGrow: 1, // Allow tabs to grow horizontally within its container
+  // maxWidth: 'calc(100% - 160px)', // Only if there are consistent action buttons to reserve space
+  '& .MuiTabs-indicator': {
+    backgroundColor: theme.palette.primary.main,
+  },
+  '& .MuiTab-root': {
+    color: theme.palette.text.secondary,
+    minHeight: '48px', // Keep consistent with FileTabs
+    padding: '6px 12px',
+    textTransform: 'none', // Keep text as is
+    fontSize: '0.875rem',
+    '&.Mui-selected': {
+      color: theme.palette.text.primary,
+      fontWeight: 'bold',
+      backgroundColor: theme.palette.background.paper, // Differentiate active tab background
+    },
+    '&:hover': {
+      backgroundColor: theme.palette.action.hover,
+    },
+  },
+});
+
+const defaultTabPanelContentSx = {
+  flexGrow: 1, // Allow content area to take remaining vertical space
+  height: '100%', // Take full height within its flex item
 };
 
 export const DynamicMuiTabs: React.FC<DynamicMuiTabsProps> = ({
@@ -65,15 +101,6 @@ export const DynamicMuiTabs: React.FC<DynamicMuiTabsProps> = ({
   return (
     <Box sx={dynamicTabsRootSx} className="w-full h-full flex flex-col">
       <Paper sx={{ ...tabsContainerSx, ...tabsSx }} className={tabsClassName}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'start',
-            gap: 0,
-            mr: 1,
-            pl: 1,
-          }}
-        >
         <Tabs
           value={value}
           onChange={handleChange}
@@ -81,6 +108,7 @@ export const DynamicMuiTabs: React.FC<DynamicMuiTabsProps> = ({
           variant="scrollable"
           scrollButtons="auto"
           allowScrollButtonsMobile
+          sx={tabsComponentSx(theme)} // Apply new shared styles here
         >
           {tabs.map((tab, index) => (
             <Tab
@@ -89,39 +117,17 @@ export const DynamicMuiTabs: React.FC<DynamicMuiTabsProps> = ({
               icon={tab.icon}
               iconPosition="start"
               {...a11yProps(index)}
-              sx={{
-          flexGrow: 1, // Allow tabs to grow
-          maxWidth: 'calc(100% - 160px)', // Reserve space for buttons
-          '& .MuiTabs-indicator': {
-            backgroundColor: theme.palette.primary.main,
-          },
-          '& .MuiTab-root': {
-            color: theme.palette.text.secondary,
-            minHeight: '48px',
-            padding: '6px 12px',
-            textTransform: 'none', // Keep text as is
-            fontSize: '0.875rem',
-            '&.Mui-selected': {
-              color: theme.palette.text.primary,
-              fontWeight: 'bold',
-              backgroundColor: theme.palette.background.paper, // Differentiate active tab background
-            },
-            '&:hover': {
-              backgroundColor: theme.palette.action.hover,
-            },
-          },
-        }}
+              // No inline sx here for general tab styling, moved to tabsComponentSx
             />
           ))}
         </Tabs>
-        </Box>
       </Paper>
       {tabs.map((tab, index) => (
         <TabPanel
           key={index}
           value={value}
           index={index}
-          sx={tabPanelSx}
+          sx={{ ...defaultTabPanelContentSx, ...tabPanelSx }} // Merge with default content styles
           className={tabPanelClassName}
         >
           {tab.content}
