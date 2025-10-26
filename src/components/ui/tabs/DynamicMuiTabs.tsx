@@ -1,6 +1,8 @@
 import React, { useState, SyntheticEvent, ReactNode } from 'react';
 import { Tabs, Tab, Box, Paper, useTheme } from '@mui/material';
 import { TabPanel, a11yProps } from './TabPanel';
+import GlobalActionButton from '@/components/ui/GlobalActionButton';
+import { GlobalAction } from '@/types/app';
 
 // --- Interfaces ---
 /**
@@ -24,6 +26,8 @@ export interface TabConfig {
  * @property {object} [tabPanelSx] - Custom Material UI sx prop for the active TabPanel content wrapper.
  * @property {string} [tabsClassName] - Custom Tailwind CSS classes for the Tabs component.
  * @property {string} [tabPanelClassName] - Custom Tailwind CSS classes for the active TabPanel content wrapper.
+ * @property {GlobalAction[]} [leftActions] - Optional array of actions to display as buttons on the left.
+ * @property {GlobalAction[]} [rightActions] - Optional array of actions to display as buttons on the right.
  */
 export interface DynamicMuiTabsProps {
   tabs: TabConfig[];
@@ -32,6 +36,8 @@ export interface DynamicMuiTabsProps {
   tabPanelSx?: object;
   tabsClassName?: string;
   tabPanelClassName?: string;
+  leftActions?: GlobalAction[];
+  rightActions?: GlobalAction[];
 }
 
 // --- Styles ---
@@ -53,6 +59,12 @@ const tabsContainerSx = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'start',
+  overflowX: 'auto', // Allow horizontal scrolling if tabs and buttons combined are too wide
+  whiteSpace: 'nowrap', // Prevent wrapping if content needs it (mostly tabs)
+  scrollbarWidth: 'none', // Hide scrollbar for Firefox
+  '&::-webkit-scrollbar': {
+    display: 'none', // Hide scrollbar for Chrome, Safari, Edge
+  },
 };
 
 // Styles for the Mui Tabs component itself
@@ -91,6 +103,8 @@ export const DynamicMuiTabs: React.FC<DynamicMuiTabsProps> = ({
   tabPanelSx,
   tabsClassName,
   tabPanelClassName,
+  leftActions,
+  rightActions,
 }) => {
   const [value, setValue] = useState(initialTabIndex);
   const theme = useTheme();
@@ -101,6 +115,11 @@ export const DynamicMuiTabs: React.FC<DynamicMuiTabsProps> = ({
   return (
     <Box sx={dynamicTabsRootSx} className="w-full h-full flex flex-col">
       <Paper sx={{ ...tabsContainerSx, ...tabsSx }} className={tabsClassName}>
+        {leftActions && leftActions.length > 0 && (
+          <Box className="flex items-center gap-0 mr-1 pl-1">
+            <GlobalActionButton globalActions={leftActions} iconOnly={true} />
+          </Box>
+        )}
         <Tabs
           value={value}
           onChange={handleChange}
@@ -121,6 +140,11 @@ export const DynamicMuiTabs: React.FC<DynamicMuiTabsProps> = ({
             />
           ))}
         </Tabs>
+        {rightActions && rightActions.length > 0 && (
+          <Box className="flex items-center gap-0 ml-auto pr-1">
+            <GlobalActionButton globalActions={rightActions} iconOnly={true} />
+          </Box>
+        )}
       </Paper>
       {tabs.map((tab, index) => (
         <TabPanel
