@@ -364,11 +364,40 @@ export interface ISwingerSessionParticipant {
   // Add other relevant properties here based on API response
 }
 
+/**
+ * Represents a detailed activity event based on the structure of data/activities.json.
+ */
 export interface IActivity {
-  id: string;
-  type: string;
-  description: string;
+  id: number;
+  event: string; // e.g., "participantJoined", "signalSent", "webrtcConnectionDestroyed"
+  sessionId: string;
+  participantId: string | null;
+  clientData: IClientConnectionUserData | null;
+  platform: string | null;
   timestamp: string;
+  connectionId: string | null;
+  from: string | null;
+  connection: string | null; // e.g., "INBOUND", "OUTBOUND" or null
+  type: string | null; // e.g., "connect", "blocker", "whisper", "streamDestroyed", "userSettings"
+  duration: number | null;
+  receivingFrom: string | null;
+  streamId: string | null;
+  reason: string | null;
+  serverData: string | null;
+  location: string | null;
+  ip: string | null;
+  startTime: string | null; // ISO date string
+  videoSource: string | null; // e.g., "CAMERA"
+  room: IRoom | null;
+  member: IMemberFull | null;
+  data: any | null; // Flexible for various event-specific data
+  session_connection: any | null;
+  connectId: string | null;
+  name: string | null;
+  created_at: string; // ISO date string
+  updated_at: string; // ISO date string
+  date: string; // e.g., "09/19/2025"
+  hour: string; // e.g., "14:00 (9/19)"
 }
 
 /**
