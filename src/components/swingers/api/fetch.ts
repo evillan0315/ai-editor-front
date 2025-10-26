@@ -1,6 +1,8 @@
 import { getToken } from '@/stores/authStore'; // Import getToken from authStore
-
-export const API_BASE_URL = `/api`; 
+// Export URLs from Vite env for convenience
+export const SLS_API_URL = '/swingers';
+export const SLS_VIDU_URL = '/openvidu';
+export const SWINGERS_STREAMERS = `${SLS_API_URL}/streamers`;
 
 export interface ApiError extends Error {
   statusCode?: number;
@@ -52,26 +54,6 @@ export const handleResponse = async <T>(response: Response): Promise<T> => {
     return responseBody as T;
   }
 };
-
-// Generic fetch wrapper with token for authenticated requests
-export async function fetchWithAuth(
-  url: string,
-  options?: CustomRequestInit,
-): Promise<Response> {
-  const token = getToken();
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options?.headers,
-  };
-
-  let body = options?.body;
-  if (options?.data && options.method !== 'GET' && options.method !== 'HEAD') {
-    body = JSON.stringify(options.data);
-  }
-
-  return fetch(url, { ...options, headers, body });
-}
 
 // Generic fetch wrapper with API Key for authenticated requests to SLS API
 export async function fetchWithToken(
@@ -129,6 +111,4 @@ export async function fetchWithBasicAuth(
   });
 }
 
-// Export URLs from Vite env for convenience
-export const SLS_API_URL = '/swingers';
-export const SLS_VIDU_URL = '/openvidu';
+

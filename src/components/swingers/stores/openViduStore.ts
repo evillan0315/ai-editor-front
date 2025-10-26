@@ -1,5 +1,6 @@
 import { map } from 'nanostores';
 import { IOpenViduPublisher, IOpenViduSubscriber, ISession } from '@/components/swingers/types';
+import { OpenVidu } from 'openvidu-browser'; // Import OpenVidu class
 
 interface OpenViduStoreState {
   currentSessionId: string | null;
@@ -8,6 +9,10 @@ interface OpenViduStoreState {
   subscribers: IOpenViduSubscriber[]; // Remote subscribers
   loading: boolean;
   error: string | null;
+  openViduInstance: OpenVidu | null; // The OpenVidu object itself
+  isCameraActive: boolean; // Camera state
+  isMicActive: boolean; // Microphone state
+  sessionNameInput: string; // Input field for session name
 }
 
 export const openViduStore = map<OpenViduStoreState>({
@@ -17,6 +22,10 @@ export const openViduStore = map<OpenViduStoreState>({
   subscribers: [],
   loading: false,
   error: null,
+  openViduInstance: null, // Initialize OpenVidu instance as null
+  isCameraActive: true, // Default to camera active
+  isMicActive: true, // Default to microphone active
+  sessionNameInput: '', // Default empty
 });
 
 export const resetOpenViduStore = () => {
@@ -27,6 +36,10 @@ export const resetOpenViduStore = () => {
     subscribers: [],
     loading: false,
     error: null,
+    openViduInstance: null, // Reset instance
+    isCameraActive: true, // Reset to default
+    isMicActive: true, // Reset to default
+    sessionNameInput: '', // Reset to default
   });
 };
 
@@ -59,4 +72,20 @@ export const setOpenViduLoading = (loading: boolean) => {
 
 export const setOpenViduError = (error: string | null) => {
   openViduStore.setKey('error', error);
+};
+
+export const setOpenViduInstance = (instance: OpenVidu | null) => {
+  openViduStore.setKey('openViduInstance', instance);
+};
+
+export const setIsCameraActive = (active: boolean) => {
+  openViduStore.setKey('isCameraActive', active);
+};
+
+export const setIsMicActive = (active: boolean) => {
+  openViduStore.setKey('isMicActive', active);
+};
+
+export const setSessionNameInput = (name: string) => {
+  openViduStore.setKey('sessionNameInput', name);
 };

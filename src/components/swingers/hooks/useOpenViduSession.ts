@@ -189,7 +189,7 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
     // - `connectionRole`: Needed to determine if a publisher should be destroyed during cleanup.
     // - `openViduStore.get().sessionNameInput` is read directly in the effect body now.
     // - We intentionally EXCLUDE `ovState.session` and `ovState.publisher` from dependencies here.
-    //   Including them would cause the cleanup to re-run when their values change (e.g., to null after `leaveSession()致命), 
+    //   Including them would cause the cleanup to re-run when their values change (e.g., to null after `leaveSession()`), 
     //   leading to the infinite update loop when combined with `setOpenViduInstance` in the effect body.
   }, [initialSessionId, ovState.openViduInstance, leaveSession, destroyLocalMediaPreview, connectionRole]);
 
@@ -232,7 +232,7 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       });
       return connection.token;
     } catch (error: any) {
-      console.error('Error in getToken:', error);
+      console.error('Error in getToken:', error); // Log full error object for debugging
       setOpenViduError(`Failed to get OpenVidu token: ${error.message || error}`);
       throw error;
     }
@@ -252,7 +252,7 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
     // If already connected to a session, disconnect first.
     if (ovSession) {
       console.warn('Attempting to join session while another might be active. Cleaning up first.');
-      await leaveSession(); // This will also destroy any existing publisher and reset the store.
+     // await leaveSession(); // This will also destroy any existing publisher and reset the store.
     }
 
     const effectiveSessionId = sessionIdToJoin || ovSessionNameInput;
@@ -278,7 +278,7 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       const session = ovInstance.initSession();
       setOpenViduSessionId(effectiveSessionId);
       setOpenViduSession(session as ISession);
-
+       console.log(token, 'token');
       session.on('connectionCreated', async (event) => {
          console.log('connectionCreated:', event);
          // Filter out our own connectionCreated event, as we handle local publisher separately
@@ -304,12 +304,12 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
         setOpenViduError(null);
         subscriber.on('streamPlaying', () => {});
         addOpenViduSubscriber(subscriber);
-        //await fetchSessionConnections(effectiveSessionId);
+        await fetchSessionConnections(effectiveSessionId);
       });
 
       session.on('streamDestroyed', async (event) => {
         removeOpenViduSubscriber(event.stream.streamId);
-        //await fetchSessionConnections(effectiveSessionId);
+        await fetchSessionConnections(effectiveSessionId);
       });
 
       session.on('networkQualityChanged', (event) => {
@@ -341,7 +341,7 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       });
 
       await session.connect(token, { clientData: JSON.stringify(currentUserDisplayName) });
-
+      console.log(`Received tolen: ${token}`, currentUserDisplayName);
       // Publish the existing preview publisher only if the role is PUBLISHER
       if (connectionRole === 'PUBLISHER' && ovPublisher) {
         await session.publish(ovPublisher);
@@ -351,7 +351,13 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       await fetchSessionConnections(effectiveSessionId);
 
     } catch (error: any) {
-      console.error('Error connecting to session:', error.code, error.message);
+      // Safely access error properties and log the full error object for debugging
+      console.error(
+        'Error connecting to session:',
+        (error as any).code || 'NoErrorCode', // Default 'NoErrorCode' if .code is undefined
+        (error as Error).message || String(error), // Ensure message is always a string
+        error // Log full error object
+      );
       setOpenViduError(`Failed to connect to OpenVidu session: ${error.message || error}`);
 
       // Ensure full cleanup on connection error

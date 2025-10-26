@@ -429,6 +429,69 @@ export interface IStreamer extends ISwingerSessionParticipant {
 }
 
 /**
+ * Sub-interface for the 'member' property within IStreamerEntity (from streamers.json).
+ */
+interface IStreamerEntityMember {
+  id: number;
+  username: string;
+  userId: number;
+}
+
+/**
+ * Sub-interface for the 'room' property within IStreamerEntity (from streamers.json).
+ */
+interface IStreamerEntityRoom {
+  id: number;
+  name: string;
+  roomId: string; // Corresponds to OpenVidu's customSessionId
+}
+
+/**
+ * Sub-interface for the 'connection' property within IStreamerEntity (from streamers.json).
+ */
+interface IStreamerEntityConnection {
+  id: number; // A numeric ID for this specific connection entry in streamers.json
+  name: string;
+  status: string;
+  member: number; // Foreign key to member ID
+  timestamp: string;
+  room: number; // Foreign key to room ID
+  PRIVATE: boolean; // Note the casing, distinct from 'private' in IStreamerEntity itself
+  ip: string;
+  platform: string;
+  GENDER_DESC: string | null;
+  connectionId: string; // This is the OpenVidu connectionId
+  USERID: number;
+  active: boolean;
+  end_connection: any | null;
+  session: any | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Represents a top-level streamer entry as found in data/streamers.json.
+ */
+export interface IStreamerEntity {
+  id: number;
+  name: string;
+  connectionId: string;
+  private: boolean; // 'private' in IStreamerEntity
+  json: any | null;
+  timestamp: string; // ISO date string
+  active: boolean;
+  member: IStreamerEntityMember;
+  room: IStreamerEntityRoom;
+  connection: IStreamerEntityConnection;
+  streamId: string;
+  end_date: string | null;
+  stream_duration: any | null;
+  created_at: string; // ISO date string
+  updated_at: string; // ISO date string
+  member_subscribers: ISubscriber[]; // Reusing existing ISubscriber
+}
+
+/**
  * Represents a detailed subscriber entry based on the structure of data/subscribers.json.
  * This interface provides a comprehensive view of a subscriber, including nested member, streamer, and room details.
  */

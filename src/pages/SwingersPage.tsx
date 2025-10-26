@@ -1,13 +1,11 @@
 import React from 'react';
 import PageLayout from '@/components/layouts/PageLayout';
-import PageHeader from '@/components/layouts/PageHeader'; // Keep for header content
+import PageHeader from '@/components/layouts/PageHeader';
 import {
-  SubscriberList,
-  SubscriberHeader,
   RoomList,
   RoomHeader,
 } from '@/components/swingers';
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 
 /**
  * @interface SwingersPageProps
@@ -23,17 +21,17 @@ interface SwingersPageProps {}
 const SwingersPage: React.FC<SwingersPageProps> = () => {
   return (
     <PageLayout
-      //header={<PageHeader title="Swingers Platform" subtitle="Connect, Explore, Engage" />}
+      header={<RoomHeader />}
       body={
         <Box className="flex flex-col lg:flex-row gap-6 p-6 w-full max-w-screen-2xl mx-auto h-full">
+          {/* Rooms Section */}
           <Box className="flex-1 min-w-0 flex flex-col gap-6">
-    
+            
             <RoomList />
           </Box>
 
         </Box>
       }
-
       bodyPosition={'top'}
       centerBodyPostition={false}
     />

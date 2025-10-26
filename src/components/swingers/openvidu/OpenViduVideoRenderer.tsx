@@ -10,7 +10,7 @@ interface OpenViduVideoRendererProps {
   isLocal: boolean;
 }
 
-// --- Styles --- //
+// --- Styles ---
 const videoCardSx = {
   position: 'relative',
   width: '100%',
@@ -62,18 +62,30 @@ export const OpenViduVideoRenderer: React.FC<OpenViduVideoRendererProps> = ({
     };
   }, [streamManager]); // Rerun effect if streamManager object changes
 
-  // Extract client data for display. The 'data' field often contains 'clientData_USERNAME' etc.
-  // This parsing assumes a specific format from OpenVidu's connection.data
-  const connectionData = streamManager.stream.connection.data; // This is typically a JSON string
   let displayName = 'Guest';
-  try {
-    const clientData = JSON.parse(connectionData);
-    displayName = clientData.USERNAME || 'Guest';
-  } catch (e) {
-    // If parsing fails, or if it's an older format, attempt simple string extraction
-    console.warn('Failed to parse connectionData as JSON, falling back to string extraction:', e, connectionData);
-    // Attempt to extract from a non-JSON format like 'clientData_USERNAME'
-    displayName = connectionData.replace('clientData_', '') || 'Guest';
+
+  // Add null/undefined checks for stream and connection before accessing data
+  if (streamManager.stream?.connection) {
+    const connectionData = streamManager.stream.connection.data; // This is typically a JSON string
+    try {
+      const clientData = JSON.parse(connectionData);
+      displayName = clientData.USERNAME || 'Guest';
+    } catch (e) {
+      // If parsing fails, or if it's an older format, attempt simple string extraction
+      console.warn('Failed to parse connectionData as JSON, falling back to string extraction:', e, connectionData);
+      // Attempt to extract from a non-JSON format like 'clientData_USERNAME'
+      displayName = connectionData.replace('clientData_', '') || 'Guest';
+    }
+    // If connection data is available and it's a local stream, append "(You)"
+    if (isLocal) {
+      displayName = `${displayName} (You)`;
+    }
+  } else if (isLocal) {
+    // If it's a local stream but connection data is not yet available (e.g., in preview state)
+    displayName = 'You (Preview)';
+  } else {
+    // If it's a remote stream but connection data is not yet available (e.g., connecting)
+    displayName = 'Remote User (Connecting...)';
   }
 
   return (
@@ -86,7 +98,6 @@ export const OpenViduVideoRenderer: React.FC<OpenViduVideoRendererProps> = ({
       />
       <Typography sx={videoLabelSx}>
         {displayName}
-        {isLocal ? ' (You)' : ''}
       </Typography>
     </Card>
   );

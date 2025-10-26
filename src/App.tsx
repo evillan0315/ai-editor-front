@@ -52,7 +52,8 @@ const AIChatPage = lazy(() => import('./pages/AIChatPage'));
 const SchemeGeneratorPage = lazy(() => import('./pages/SchemeGeneratorPage')); // New: Lazy load SchemeGeneratorPage
 const ChatAppComponent = lazy(() => import('./components/chat/ChatApp')); // NEW: Lazy load ChatApp
 const PlaywrightPage = lazy(() => import('./pages/PlaywrightPage')); // NEW: Lazy load PlaywrightPage
-const SwingersPage = lazy(() => import('./pages/SwingersPage')); // NEW: Lazy load SwingersPage
+const SwingersPage = lazy(() => import('./pages/SwingersPage')); 
+const OpenViduPage = lazy(() => import('./pages/OpenViduPage')); 
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -278,6 +279,19 @@ const router = createBrowserRouter(
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 <SwingersPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/apps/swingers/:roomId"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <OpenViduPage />
               </ErrorBoundary>
             </Suspense>
           </RequireAuth>

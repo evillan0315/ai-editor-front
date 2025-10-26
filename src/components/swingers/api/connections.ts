@@ -1,4 +1,4 @@
-import { ApiError, fetchWithBasicAuth, handleResponse, SLS_VIDU_URL } from '@/api/fetch';
+import { ApiError, fetchWithBasicAuth, handleResponse, SLS_VIDU_URL } from './fetch';
 import { IConnection, IConnectionList } from '@/components/swingers/types';
 
 /**
@@ -67,10 +67,16 @@ export const getConnections = async (sessionId: string): Promise<IConnection[]> 
       `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection`,
       { method: 'GET' },
     );
-    return handleResponse<IConnectionList>(response).content;
+    const data = await handleResponse<IConnectionList>(response);
+    // Ensure 'content' property exists and is an array, otherwise default to an empty array.
+    // This handles cases where the API might return an empty object or a malformed response
+    // without a 'content' field when no connections are present.
+    return data?.content || [];
   } catch (error) {
     console.error(`Error fetching OpenVidu connections for session ${sessionId}:`, error);
-    throw error;
+    // In case of any error during fetching or parsing, return an empty array
+    // to prevent downstream TypeError: connections is undefined when accessing .length
+    return [];
   }
 };
 

@@ -131,7 +131,7 @@ export const loadInitialTree = async (projectRoot: string) => {
     if (!isConnected.get()) socketService.connect(getToken(), projectRoot);
     // Fetch top-level directories and files
     const apiNodes = await fetchDirectoryContents(projectRoot);
-    console.log(apiNodes, 'apiNodes');
+    //console.log(apiNodes, 'apiNodes');
     const initialTreeNodes: FileEntry[] = apiNodes.map((node) => ({
       ...node,
       depth: 0,

@@ -13,7 +13,7 @@ interface OpenViduControlsProps {
   toggleCamera: () => void;
   isMicActive: boolean;
   toggleMic: () => void;
-  publisher: IOpenViduPublisher | null;
+  publisher: IOpenViduPublisher | null; // Publisher is now always passed from the hook
 }
 
 // --- Styles --- //
@@ -38,7 +38,7 @@ export const OpenViduControls: React.FC<OpenViduControlsProps> = ({
         color={isCameraActive ? 'primary' : 'secondary'}
         onClick={toggleCamera}
         startIcon={isCameraActive ? <VideocamIcon /> : <VideocamOffIcon />}
-        disabled={!publisher}
+        disabled={!publisher} // Only disable if no publisher (e.g., media not acquired)
       >
         {isCameraActive ? 'Camera ON' : 'Camera OFF'}
       </Button>
@@ -47,7 +47,7 @@ export const OpenViduControls: React.FC<OpenViduControlsProps> = ({
         color={isMicActive ? 'primary' : 'secondary'}
         onClick={toggleMic}
         startIcon={isMicActive ? <MicIcon /> : <MicOffIcon />}
-        disabled={!publisher}
+        disabled={!publisher} // Only disable if no publisher (e.g., media not acquired)
       >
         {isMicActive ? 'Mic ON' : 'Mic OFF'}
       </Button>

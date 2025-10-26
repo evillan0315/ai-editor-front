@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box, Avatar } from '@mui/material';
-import { ISwinger } from '@/components/swingers/types';
+import { ISwingerSessionParticipant } from '@/components/swingers/types';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EmailIcon from '@mui/icons-material/Email';
 import PersonIcon from '@mui/icons-material/Person';
@@ -8,7 +8,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
 interface SubscriberCardProps {
-  subscriber: ISwinger;
+  subscriber: ISwingerSessionParticipant;
 }
 
 const cardSx = {
@@ -66,11 +66,11 @@ export const SubscriberCard: React.FC<SubscriberCardProps> = ({ subscriber }) =>
             },
           }}
         >
-          {!PICTUREFULL && username ? username[0].toUpperCase() : <PersonIcon sx={{ fontSize: '3rem' }} />}
+          {!PICTUREFULL && username ? username[0].toUpperCase() : <PersonIcon sx={{ fontSize: '3rem' }} />} 
         </Avatar>
         <Box className="absolute top-2 right-2 flex items-center gap-1 p-1 rounded-full text-white text-xs font-semibold"
              sx={{ bgcolor: active ? 'success.main' : 'error.main' }}>
-          {active ? <CheckCircleIcon fontSize="small" /> : <CancelIcon fontSize="small" />}
+          {active ? <CheckCircleIcon fontSize="small" /> : <CancelIcon fontSize="small" />} 
           {active ? 'Active' : 'Inactive'}
         </Box>
       </Box>

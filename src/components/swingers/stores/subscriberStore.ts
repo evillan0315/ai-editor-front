@@ -1,9 +1,9 @@
 import { map } from 'nanostores';
-import { ISwinger } from '@/components/swingers/types';
+import { ISwingerSessionParticipant } from '@/components/swingers/types';
 import { getSubscribers } from '@/components/swingers/api/subscribers';
 
 interface SubscriberStoreState {
-  subscribers: ISwinger[];
+  subscribers: ISwingerSessionParticipant[];
   loading: boolean;
   error: string | null;
 }

@@ -1,7 +1,7 @@
 import { map } from 'nanostores';
 import { IRoom } from '@/components/swingers/types';
 import { getRooms } from '@/components/swingers/api/rooms';
-import { getConnections } from '@/components/swingers'; // Import getConnections
+import { getConnections } from '@/components/swingers/api/connections'; // Import getConnections
 
 interface RoomStoreState {
   rooms: IRoom[];
@@ -36,6 +36,9 @@ export const fetchRooms = async () => {
 
 /**
  * Fetches connection counts for a given list of rooms and updates the store.
+ * This function is primarily used by the RoomList to display initial counts for all rooms.
+ * For the *active* OpenVidu session, `connectionStore.fetchSessionConnections` should be used
+ * as it also updates this roomStore's connection count for consistency.
  * @param rooms An array of IRoom objects.
  */
 export const fetchConnectionCountsForRooms = async (rooms: IRoom[]) => {
@@ -54,7 +57,6 @@ export const fetchConnectionCountsForRooms = async (rooms: IRoom[]) => {
     if (room.roomId) {
       try {
         const connections = await getConnections(room.roomId);
-        console.log(connections, 'connections fetchConnectionCountsForRooms');
         newConnectionCounts[room.roomId] = connections.length;
       } catch (err) {
         console.error(`Failed to fetch connections for room ${room.roomId}:`, err);
@@ -74,7 +76,7 @@ export const fetchConnectionCountsForRooms = async (rooms: IRoom[]) => {
 
 /**
  * Updates the connection count for a specific room.
- * This is intended for real-time updates from a WebSocket or similar.
+ * This is intended for real-time updates from a WebSocket or `connectionStore`.
  * @param roomId The ID of the room whose connection count to update.
  * @param count The new connection count for the room.
  */

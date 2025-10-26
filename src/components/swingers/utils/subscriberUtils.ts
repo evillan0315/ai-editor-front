@@ -1,11 +1,11 @@
-import { ISwinger } from '@/components/swingers/types';
+import { ISwingerSessionParticipant } from '@/components/swingers/types';
 
 /**
  * Filters an array of subscribers to return only unique ones based on their 'id'.
  * @param subscribers The array of subscribers to filter.
  * @returns An array containing only unique subscribers.
  */
-export const getUniqueSubscribers = (subscribers: ISwinger[]): ISwinger[] => {
+export const getUniqueSubscribers = (subscribers: ISwingerSessionParticipant[]): ISwingerSessionParticipant[] => {
   const seenIds = new Set<string>();
   return subscribers.filter((subscriber) => {
     if (!subscriber.id) {

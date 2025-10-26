@@ -1,4 +1,4 @@
-import { fetchWithToken, handleResponse, SLS_API_URL } from '@/api/fetch';
+import { fetchWithToken, handleResponse, SLS_API_URL } from './fetch';
 import { IRoom, IDefaultRecordingProperties } from '@/components/swingers/types';
 
 const SWINGERS_ROOMS_BASE_URL = `${SLS_API_URL}/rooms`;
@@ -68,7 +68,7 @@ export const createRoom = async (roomData: ICreateRoomDto): Promise<IRoom> => {
       SWINGERS_ROOMS_BASE_URL,
       {
         method: 'POST',
-        data: roomData, // Use 'data' for POST request body with Axios
+        data: roomData, // Use 'data' for JSON body, handled by fetchWithToken
       },
     );
     return handleResponse<IRoom>(response);
@@ -93,7 +93,7 @@ export const updateRoom = async (
       `${SWINGERS_ROOMS_BASE_URL}/${id}`,
       {
         method: 'PUT',
-        data: roomData, // Use 'data' for PUT request body with Axios
+        data: roomData, // Use 'data' for JSON body, handled by fetchWithToken
       },
     );
     return handleResponse<IRoom>(response);

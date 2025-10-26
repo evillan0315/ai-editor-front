@@ -50,7 +50,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = () => {
   const handleConnectDefaultClientGlobally = useCallback(() => {
     showDialog({
       title: 'Connect Default Client',
-      content: <RoomConnectionDialog />, // Pass the refactored component
+      content: <RoomConnectionDialog connectionRole={'SUBSCRIBER'}/>, // Pass connectionRole as SUBSCRIBER
       maxWidth: 'md',
       fullWidth: true,
       showCloseButton: true,

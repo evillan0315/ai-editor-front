@@ -70,7 +70,7 @@ export const RoomList: React.FC = () => {
 
   useEffect(() => {
     if (!loading && rooms.length > 0) {
-      //fetchConnectionCountsForRooms(rooms);
+      fetchConnectionCountsForRooms(rooms);
     }
   }, [loading, rooms]);
 
@@ -131,8 +131,8 @@ export const RoomList: React.FC = () => {
   // New callback for opening the connection dialog with a specific roomId
   const handleConnectDefaultClient = useCallback((roomId: string) => {
     showDialog({
-      title: `Connect to Room: ${roomId}`, // Dynamically set title based on room ID
-      content: <RoomConnectionDialog roomId={roomId} />, // Pass the refactored component with prop
+      title: `Connect to Room: ${roomId}`,
+      content: <RoomConnectionDialog roomId={roomId} connectionRole={'SUBSCRIBER'}/>, // Pass connectionRole as SUBSCRIBER
       maxWidth: 'md',
       fullWidth: true,
       showCloseButton: true,

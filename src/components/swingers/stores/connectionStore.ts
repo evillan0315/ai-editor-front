@@ -1,7 +1,7 @@
 import { map } from 'nanostores';
 import { persistentAtom } from '@/utils/persistentAtom';
 import { IConnection } from '@/components/swingers/types';
-import { getConnection } from '@/components/swingers/api/connections';
+import { getConnection, getConnections } from '@/components/swingers/api/connections';
 import { getDefaultClient } from '@/components/swingers/api/activities';
 import { updateRoomConnectionCount } from '@/components/swingers/stores/roomStore';
 

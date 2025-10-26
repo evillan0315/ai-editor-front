@@ -13,6 +13,7 @@ interface OpenViduSessionFormProps {
   currentSessionId: string | null;
   error: string | null;
   isRoomIdFromUrl: boolean; // New prop to indicate if roomId came from URL
+  // No longer needs a publisher prop as controls are separate now.
 }
 
 // --- Styles --- //

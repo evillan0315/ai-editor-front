@@ -21,6 +21,7 @@ import { OpenViduVideoRenderer } from '@/components/swingers/openvidu/OpenViduVi
 interface RoomConnectionDialogProps {
   roomId?: string; // Optional: If provided, connect to this specific room
   onSuccess?: () => void; // Optional callback on successful connection
+  connectionRole?: 'PUBLISHER' | 'SUBSCRIBER'; // NEW: Role for the connection
 }
 
 // No longer directly renders a Dialog, just its content.
@@ -29,6 +30,7 @@ interface RoomConnectionDialogProps {
 export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
   roomId,
   onSuccess,
+  connectionRole = 'PUBLISHER', // Default to PUBLISHER
 }) => {
   const {
     sessionNameInput,
@@ -46,19 +48,24 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
     publisher, // NEW: Expose publisher for preview
     currentSessionId, // NEW: Expose current session ID to know if already connected
     openViduInstance, // NEW: Expose OpenVidu instance to guard useEffect
-  } = useOpenViduSession(roomId); // Pass roomId to hook for initial session name
+  } = useOpenViduSession(roomId, connectionRole); // Pass roomId and connectionRole to hook
 
   // Effect to initialize and destroy local media preview
   useEffect(() => {
-    // Only initialize if OpenVidu instance is ready
-    if (openViduInstance) {
+    // Only initialize if OpenVidu instance is ready AND if the role is PUBLISHER
+    if (connectionRole === 'PUBLISHER' && openViduInstance) {
       initLocalMediaPreview(); // Start local media acquisition when dialog mounts
 
       return () => {
         destroyLocalMediaPreview(); // Stop and destroy publisher when dialog unmounts
       };
+    } else if (connectionRole === 'SUBSCRIBER') {
+      // Ensure no publisher is active if switching to SUBSCRIBER role
+      destroyLocalMediaPreview();
     }
-  }, [initLocalMediaPreview, destroyLocalMediaPreview, openViduInstance]);
+    // No cleanup for subscriber role here, as initLocalMediaPreview won't be called
+    // and the main cleanup in useOpenViduSession handles it.
+  }, [initLocalMediaPreview, destroyLocalMediaPreview, openViduInstance, connectionRole]);
 
 
   const handleConnect = useCallback(async () => {
@@ -86,8 +93,10 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
   const handleLeave = useCallback(async () => {
     await leaveSession();
     // After leaving, if still in dialog, re-init preview for potential re-connection
-    initLocalMediaPreview();
-  }, [leaveSession, initLocalMediaPreview]);
+    if (connectionRole === 'PUBLISHER') {
+      initLocalMediaPreview();
+    }
+  }, [leaveSession, initLocalMediaPreview, connectionRole]);
 
   // Determine if already connected to this room
   const isCurrentlyConnected = !!currentSessionId && currentSessionId === sessionNameInput;
@@ -108,7 +117,9 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
         {roomId ? `Connect to Room: ${roomId}` : 'Configure & Connect to Room'}
       </Typography>
       <Typography color="text.secondary">
-        Configure your camera and microphone before joining the session.
+        {connectionRole === 'PUBLISHER'
+          ? 'Configure your camera and microphone before joining the session.'
+          : 'Connect as a viewer to see available streams.'}
       </Typography>
 
       {error && (
@@ -117,39 +128,42 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
         </Alert>
       )}
 
-      {/* Local Video Preview */}
-      <Box className="w-full max-w-sm rounded-lg overflow-hidden shadow-lg border border-gray-700 aspect-video bg-black flex items-center justify-center">
-        {publisher ? (
-          <OpenViduVideoRenderer streamManager={publisher} isLocal={true} />
-        ) : (
-          <Typography variant="body2" color="text.secondary">
-            {isLoading ? 'Loading media...' : 'No media preview available'}
-          </Typography>
-        )}
-      </Box>
+      {/* Local Video Preview and Controls for PUBLISHER role only */}
+      {connectionRole === 'PUBLISHER' && (
+        <>
+          <Box className="w-full max-w-sm rounded-lg overflow-hidden shadow-lg border border-gray-700 aspect-video bg-black flex items-center justify-center">
+            {publisher ? (
+              <OpenViduVideoRenderer streamManager={publisher} isLocal={true} />
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                {isLoading ? 'Loading media...' : 'No media preview available'}
+              </Typography>
+            )}
+          </Box>
 
-
-      {/* Controls for Camera/Mic */}
-      <Box className="flex gap-4 justify-center w-full">
-        <Button
-          variant="contained"
-          color={isCameraActive ? 'primary' : 'secondary'}
-          onClick={toggleCamera}
-          startIcon={isCameraActive ? <VideocamIcon /> : <VideocamOffIcon />}
-          disabled={isLoading && !publisher} // Disable only if loading AND no publisher yet
-        >
-          {isCameraActive ? 'Camera ON' : 'Camera OFF'}
-        </Button>
-        <Button
-          variant="contained"
-          color={isMicActive ? 'primary' : 'secondary'}
-          onClick={toggleMic}
-          startIcon={isMicActive ? <MicIcon /> : <MicOffIcon />}
-          disabled={isLoading && !publisher} // Disable only if loading AND no publisher yet
-        >
-        {isMicActive ? 'Mic ON' : 'Mic OFF'}
-        </Button>
-      </Box>
+          {/* Controls for Camera/Mic */}
+          <Box className="flex gap-4 justify-center w-full">
+            <Button
+              variant="contained"
+              color={isCameraActive ? 'primary' : 'secondary'}
+              onClick={toggleCamera}
+              startIcon={isCameraActive ? <VideocamIcon /> : <VideocamOffIcon />}
+              disabled={isLoading && !publisher} // Disable only if loading AND no publisher yet
+            >
+              {isCameraActive ? 'Camera ON' : 'Camera OFF'}
+            </Button>
+            <Button
+              variant="contained"
+              color={isMicActive ? 'primary' : 'secondary'}
+              onClick={toggleMic}
+              startIcon={isMicActive ? <MicIcon /> : <MicOffIcon />}
+              disabled={isLoading && !publisher} // Disable only if loading AND no publisher yet
+            >
+            {isMicActive ? 'Mic ON' : 'Mic OFF'}
+            </Button>
+          </Box>
+        </>
+      )}
 
       {/* Session Name Input */}
       {!roomId && (

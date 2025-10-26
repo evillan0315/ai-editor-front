@@ -1,4 +1,4 @@
-import { fetchWithBasicAuth, handleResponse, ApiError, SLS_VIDU_URL } from '@/api/fetch';
+import { fetchWithBasicAuth, handleResponse, ApiError, SLS_VIDU_URL } from './fetch';
 import { ISession } from '@/components/swingers/types';
 
 // NOTE: These API calls interact directly with the OpenVidu server via a proxy.
@@ -45,9 +45,10 @@ export const createSession = async (options?: ICreateSessionOptions): Promise<IS
     );
     return handleResponse<ISession>(response);
   } catch (error: unknown) {
-    // Cast error to ApiError to check statusCode reliably
-    const apiError = error as ApiError;
-    if (apiError && apiError.statusCode === 409) {
+    // Cast error to a more general type for robust property access at runtime
+    const err = error as { statusCode?: number; message?: string; };
+
+    if (err && err.statusCode === 409) {
       console.warn(`Session with ID ${options?.customSessionId} already exists. Attempting to retrieve existing session.`);
       if (options?.customSessionId) {
         try {
@@ -56,10 +57,10 @@ export const createSession = async (options?: ICreateSessionOptions): Promise<IS
           return existingSession;
         } catch (getSessionError: unknown) {
           console.error(`Failed to retrieve existing session ${options.customSessionId} after 409 conflict:`, getSessionError);
-          throw new Error('Failed to create or retrieve session due to conflict.');
+          throw new Error(`Failed to create or retrieve OpenVidu session '${options.customSessionId}' due to conflict or subsequent error.`);
         }
       } else {
-        throw new Error('Session already exists, but no customSessionId provided to retrieve it.');
+        throw new Error('OpenVidu session already exists, but no customSessionId was provided to retrieve it.');
       }
     }
     console.error(`Error creating OpenVidu session:`, error);
