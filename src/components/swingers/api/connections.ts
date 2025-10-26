@@ -50,7 +50,7 @@ export const createConnection = async (
     return handleResponse<IConnection>(response);
   } catch (error) {
     console.error(`Error creating OpenVidu connection for session ${sessionId}:`, error);
-    throw error;
+    return error;
   }
 };
 
@@ -95,7 +95,7 @@ export const getConnection = async (connectionId: string, sessionId: string): Pr
     return handleResponse<IConnection>(response);
   } catch (error) {
     console.error(`Error fetching OpenVidu connection with ID ${connectionId}:`, error);
-    throw error;
+    return error;
   }
 };
 

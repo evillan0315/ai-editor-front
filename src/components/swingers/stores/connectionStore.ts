@@ -2,6 +2,7 @@ import { map } from 'nanostores';
 import { persistentAtom } from '@/utils/persistentAtom';
 import { IConnection } from '@/components/swingers/types';
 import { getConnection, getConnections } from '@/components/swingers/api/connections';
+import { getSessions, getSession } from '@/components/swingers/api/sessions';
 import { getDefaultClient } from '@/components/swingers/api/activities';
 import { updateRoomConnectionCount } from '@/components/swingers/stores/roomStore';
 
@@ -105,9 +106,11 @@ export const fetchSessionConnections = async (sessionId: string) => {
   connectionStore.setKey('currentSessionId', sessionId); // Ensure currentSessionId is set even before fetch completes
 
   try {
-    const connections = await getConnections(sessionId);
-    setConnections(sessionId, connections);
-    updateRoomConnectionCount(sessionId, connections.length);
+    const sessionConnections = await getSession(sessionId);
+    console.log(sessionConnections, 'fetchSessionConnections');
+    const { connections } = sessionConnections;
+    setConnections(sessionId, connections.content);
+    updateRoomConnectionCount(sessionId, connections.numberOfElements);
   } catch (err: any) {
     console.error(`Failed to fetch connections for session ${sessionId}:`, err);
     setConnectionError(`Failed to load connections: ${err.message || err}`);
