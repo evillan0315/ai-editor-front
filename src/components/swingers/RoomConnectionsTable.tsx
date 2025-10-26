@@ -13,6 +13,8 @@ import {
   Alert,
   Tooltip,
 } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'; // New import
+import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled'; // New import
 import { IConnection, IClientConnectionUserData } from '@/components/swingers/types';
 import { getConnections } from '@/components/swingers/api/connections';
 
@@ -107,6 +109,7 @@ export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ room
             <TableHead>
               <TableRow>
                 <TableCell sx={headerCellSx}>ID</TableCell>
+                <TableCell sx={headerCellSx}>Status</TableCell>{/* New Status Header */}
                 <TableCell sx={headerCellSx}>User/Client</TableCell>
                 <TableCell sx={headerCellSx}>Role</TableCell>
                 <TableCell sx={headerCellSx}>Type</TableCell>
@@ -126,6 +129,17 @@ export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ room
                           {connection.id.substring(0, 8)}...
                         </Typography>
                       </Tooltip>
+                    </TableCell>
+                    <TableCell> {/* New Status Cell */}
+                      {connection.status === 'active' ? (
+                        <Tooltip title="Active" placement="top">
+                          <CheckCircleIcon color="success" fontSize="small" />
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="Pending / Inactive" placement="top">
+                          <AccessTimeFilledIcon color="warning" fontSize="small" />
+                        </Tooltip>
+                      )}
                     </TableCell>
                     <TableCell>
                       {clientData?.USERNAME ? (
