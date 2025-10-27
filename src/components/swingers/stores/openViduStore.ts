@@ -1,6 +1,7 @@
 import { map } from 'nanostores';
 import { IOpenViduPublisher, IOpenViduSubscriber, ISession } from '@/components/swingers/types';
 import { OpenVidu } from 'openvidu-browser'; // Import OpenVidu class
+import { getSession } from '@/components/swingers/api/sessions';
 
 interface OpenViduStoreState {
   currentSessionId: string | null;
