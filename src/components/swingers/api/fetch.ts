@@ -1,8 +1,15 @@
 import { getToken } from '@/stores/authStore'; // Import getToken from authStore
-// Export URLs from Vite env for convenience
+
 export const SLS_API_URL = '/swingers';
 export const SLS_VIDU_URL = '/openvidu';
 export const SWINGERS_STREAMERS = `${SLS_API_URL}/streamers`;
+export const SWINGERS_SUBSCRIBERS = `${SLS_API_URL}/subscribers`;
+export const SWINGERS_ACTIVITIES = `${SLS_API_URL}/activities`;
+export const SWINGERS_ROOMS_BASE_URL = `${SLS_API_URL}/rooms`;
+export const API_SESSIONS_BASE_URL = `${SLS_VIDU_URL}/api/sessions`;
+
+export const TOKEN = `${import.meta.env.VITE_SLS_API_KEY}`;
+export const OPENVIDU_SERVER_USERNAME = import.meta.env.VITE_SLS_USERNAME || 'OPENVIDUAPP';
 
 export interface ApiError extends Error {
   statusCode?: number;
@@ -60,9 +67,8 @@ export async function fetchWithToken(
   input: RequestInfo | URL,
   init?: CustomRequestInit,
 ): Promise<Response> {
-  const token = `${import.meta.env.VITE_SLS_API_KEY}`;
   // Safely append token to the URL, handling existing query parameters
-  const url = `${input}${String(input).includes('?') ? '&' : '?'}token=${token}`;
+  const url = `${input}${String(input).includes('?') ? '&' : '?'}token=${TOKEN}`;
   const headers = {
     'Content-Type': 'application/json',
     ...init?.headers,
@@ -85,14 +91,12 @@ export async function fetchWithBasicAuth(
   input: RequestInfo | URL,
   init?: CustomRequestInit,
 ): Promise<Response> {
-  const OPENVIDU_SERVER_SECRET = import.meta.env.VITE_SLS_API_KEY;
-  const OPENVIDU_SERVER_USERNAME = import.meta.env.VITE_SLS_USERNAME || 'OPENVIDUAPP'; // Default OpenVidu username
-  
-  if (!OPENVIDU_SERVER_SECRET) {
+
+  if (!TOKEN) {
     throw new Error('VITE_SLS_API_KEY is not defined in environment variables.');
   }
 
-  const basicAuth = btoa(`${OPENVIDU_SERVER_USERNAME}:${OPENVIDU_SERVER_SECRET}`);
+  const basicAuth = btoa(`${OPENVIDU_SERVER_USERNAME}:${TOKEN}`);
   const headers = {
     'Authorization': `Basic ${basicAuth}`,
     'Content-Type': 'application/json',
