@@ -122,12 +122,12 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       const publisher = await ovInstance.initPublisherAsync(undefined, {
         audioSource: undefined,
         videoSource: undefined,
-        publishAudio: isMic,
-        publishVideo: isCam,
+        publishAudio: false,
+        publishVideo: false,
         resolution: '640x480',
         frameRate: 30,
         insertMode: 'APPEND',
-        mirror: true,
+        mirror: false,
       });
       setOpenViduPublisher(publisher);
     } catch (error: any) {
@@ -226,12 +226,13 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
   }, []);
 
   const getToken = useCallback(async (mySessionId: string): Promise<string> => {
+    
     try {
-      let session = await getSession(mySessionId);
-      if (!session) {
-        session = await createSession({ customSessionId: mySessionId });
-      }
-      const connection = await createConnection(session.sessionId, {
+
+      
+      const session = await getSession(mySessionId);
+
+      const connection = await createConnection(mySessionId, {
         role: connectionRole, // Use the role passed to the hook
         //data: JSON.stringify(currentUserDisplayName), // Pass client data
       });
@@ -240,9 +241,13 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       if(error.statusCode === 409){
         
       } else {
-        console.error(`Error in getToken: ${error.statusCode}`, error); // Log full error object for debugging
-      setOpenViduError(`Failed to get OpenVidu token: ${error.message || error}`);
-      throw error;
+        const session = await createSession({ customSessionId: mySessionId });
+        console.log(session, 'session getToken');
+        const connection = await createConnection(session.sessionId, {
+		role: connectionRole, // Use the role passed to the hook
+		//data: JSON.stringify(currentUserDisplayName), // Pass client data
+	      });
+	 return connection.token;
       }
       
     }
@@ -253,16 +258,16 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
 
   const joinSession = useCallback(async (sessionIdToJoin?: string) => {
     setOpenViduError(null);
-
+    
     const ovSession = openViduStore.get().session; // Get latest
     const ovPublisher = openViduStore.get().publisher; // Get latest
     const ovInstance = openViduStore.get().openViduInstance; // Get latest
     const ovSessionNameInput = openViduStore.get().sessionNameInput; // Get latest
-
+    
     // If already connected to a session, disconnect first.
     if (ovSession) {
       console.warn('Attempting to join session while another might be active. Cleaning up first.');
-      await leaveSession(); // This will also destroy any existing publisher and reset the store.
+      //await leaveSession(); // This will also destroy any existing publisher and reset the store.
     }
 
     const effectiveSessionId = sessionIdToJoin || ovSessionNameInput;
@@ -284,12 +289,14 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
     clearChat(); // NEW: Clear chat messages on joining a new session
 
     try {
-
+      console.log(effectiveSessionId, 'effectiveSessionId joinSession' );
       const token = await getToken(effectiveSessionId);
       const session = ovInstance.initSession();
       setOpenViduSessionId(effectiveSessionId);
       setOpenViduSession(session as ISession);
+      
       await ovInstance.enableProdMode();
+      
   //ovInstance.setAdvancedConfiguration({ forceMediaReconnectionAfterNetworkDrop: true });
       const devices = await ovInstance.getDevices()
       console.log(devices, 'devices')
@@ -503,9 +510,8 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
 
       // Optimistically add message to local store if it's sent successfully
       // The session.on('signal:chat') listener will also pick this up, but this ensures immediate display
-      // It's crucial to correctly identify if this is indeed an echo or the original send.
-      // For now, if send succeeded, assume it's local and add.
-      addChatMessage({ ...messagePayload, isLocal: true });
+      // It's crucial to correctly identify if this is indeed an echo or the original send. Added localConnectionId for check
+      addChatMessage({ ...messagePayload, isLocal: localConnectionId === ovSession.connection?.connectionId });
 
     } catch (error: any) {
       console.error('Error sending chat message via OpenVidu signal:', error);
@@ -529,6 +535,7 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
     isLoading: ovState.loading,
     error: ovState.error,
     publisher: ovState.publisher,
+    subscribers: ovState.subscribers,
     currentSessionId: ovState.currentSessionId,
     openViduInstance: ovState.openViduInstance,
     connectionRole, // Expose connectionRole
