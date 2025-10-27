@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LiveTvIcon from '@mui/icons-material/LiveTv'; // Import LiveTvIcon
-import { roomStore, fetchRooms, fetchConnectionCountsForRooms } from './stores/roomStore';
+import { roomStore, fetchRooms } from './stores/roomStore'; // Removed fetchConnectionCountsForRooms from import
 import { fetchDefaultConnection } from './stores/connectionStore';
 import { deleteSession, createSession } from '@/components/swingers/api/sessions';
 import { IRoom } from '@/components/swingers/types'; // Import ISession
@@ -19,9 +19,8 @@ import { IRoom } from '@/components/swingers/types'; // Import ISession
 import { useNavigate } from 'react-router-dom';
 import { showDialog } from '@/stores/dialogStore';
 import { RoomConnectionDialog } from '@/components/swingers/dialogs/RoomConnectionDialog';
-import { RoomCard } from './RoomCard'; 
+import { RoomCard } from './RoomCard';
 import { RoomConnectionsTable } from './RoomConnectionsTable'; // New import
-import { sessionStore, fetchSessions } from './stores/sessionStore'; // Import sessionStore and fetchSessions
 import { fetchSessionConnections } from './stores/connectionStore';
 import Loading from '@/components/Loading'; // Import the new Loading component
 import { openViduEntitiesStore, fetchOpenViduSessions } from './stores/openViduEntitiesStore'; // Import the new central store
@@ -61,22 +60,21 @@ const accordionDetailsSx = {
 
 export const RoomList: React.FC = () => {
   const { rooms, loading, error, connectionCounts, loadingConnectionCounts } = useStore(roomStore);
-  // `sessions` are now indirectly managed, listening to changes in `openViduEntitiesStore` for the full list
   const { sessions: openViduActiveSessionsMap, loading: loadingOpenViduEntities, error: openViduEntitiesError } = useStore(openViduEntitiesStore);
-  const [resettingRoomId, setResettingRoomId] = useState<string | null>(null); // State to track which room is being reset
-  const [expanded, setExpanded] = useState<string | false>('public'); // 'public' accordion expanded by default
+  const [resettingRoomId, setResettingRoomId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | false>('public');
   const navigate = useNavigate();
 
-  // Combine loading states and errors for display
   const overallLoading = loading || loadingOpenViduEntities;
   const overallError = error || openViduEntitiesError;
 
   useEffect(() => {
+    // These fetches are now the primary triggers for data loading.
+    // roomStore's listener will react to openViduEntitiesStore changes.
     fetchDefaultConnection();
-    // Fetch rooms and trigger global OpenVidu session fetch which populates `openViduEntitiesStore`
     fetchRooms();
-    fetchOpenViduSessions(); // Ensure this is called to populate the central store
-  }, []);
+    fetchOpenViduSessions(); // This populates `openViduEntitiesStore` which `roomStore` now listens to.
+  }, []); // Empty dependency array means this runs once on mount.
 
   // NEW LOGIC: Augment rooms with live status based on active OpenVidu sessions from the central store
   const roomsWithSessionStatus = useMemo(() => {
@@ -91,19 +89,22 @@ export const RoomList: React.FC = () => {
       return {
         ...room,
         active: isActive,      // Set room's 'active' status based on session presence
-        liveStream: isActive,  // Set room's 'liveStream' status based on session presence (as per existing logic)
+        //liveStream: isActive,  // Set room's 'liveStream' status based on session presence (as per existing logic)
       };
     });
   }, [rooms, openViduActiveSessionsMap]); // Re-run when rooms or openViduActiveSessionsMap change
 
-  // Effect to fetch connection counts for rooms, now dependent on roomsWithSessionStatus
+  // REMOVED: No longer need this useEffect to explicitly call fetchConnectionCountsForRooms
+  // as the roomStore now listens to openViduEntitiesStore directly.
+  /*
   useEffect(() => {
     // Only fetch connection counts if rooms have been loaded and there are rooms to process.
     // `fetchConnectionCountsForRooms` now uses `openViduEntitiesStore` internally.
     if (!loading && roomsWithSessionStatus.length > 0) {
       fetchConnectionCountsForRooms(roomsWithSessionStatus);
     }
-  }, [loading, roomsWithSessionStatus]); // Depend on roomsWithSessionStatus
+  }, [loading, roomsWithSessionStatus]);
+  */
 
   const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
@@ -113,8 +114,9 @@ export const RoomList: React.FC = () => {
   const handleJoinRoom = useCallback(
     (roomId: string) => {
       // To do: implement logic for connecting to room. Connection should open in a dialog modal
+      // This is currently unused, `onConnectDefaultClient` is used for connecting
     },
-    [navigate],
+    [],
   );
 
   // Callback for viewing room details (navigates to OpenVidu page)
@@ -129,7 +131,7 @@ export const RoomList: React.FC = () => {
       showCloseButton: true,
     });
     },
-    [navigate],
+    [],
   );
 
   // Callback for resetting/recreating a room's OpenVidu session
