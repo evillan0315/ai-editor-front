@@ -30,6 +30,10 @@ export const openViduStore = map<OpenViduStoreState>({
 });
 
 export const resetOpenViduStore = () => {
+  // Preserve the existing OpenVidu instance instead of setting to null
+  // This prevents unnecessary re-initialization of the OpenVidu object itself
+  // when only the session/publisher state needs to be reset.
+  const currentOpenViduInstance = openViduStore.get().openViduInstance;
   openViduStore.set({
     currentSessionId: null,
     session: null,
@@ -37,7 +41,7 @@ export const resetOpenViduStore = () => {
     subscribers: [],
     loading: false,
     error: null,
-    openViduInstance: null, // Reset instance
+    openViduInstance: currentOpenViduInstance, // Re-use the existing instance
     isCameraActive: true, // Reset to default
     isMicActive: true, // Reset to default
     sessionNameInput: '', // Reset to default
