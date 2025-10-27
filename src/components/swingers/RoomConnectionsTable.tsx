@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useStore } from '@nanostores/react'; // Import useStore
 import {
   Box,
@@ -16,6 +16,7 @@ import {
   Checkbox,
   IconButton,
   Toolbar,
+  TableSortLabel,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
@@ -28,6 +29,77 @@ interface RoomConnectionsTableProps {
   roomId: string;
 }
 
+// --- Interfaces and Types for Sorting ---
+interface HeadCell {
+  id: ConnectionKeys;
+  numeric: boolean;
+  disablePadding: boolean;
+  label: string;
+}
+
+type Order = 'asc' | 'desc';
+
+// Define sortable keys explicitly, including properties from IConnection and parsed clientData
+type ConnectionKeys =
+  | keyof IConnection
+  | 'clientDataUsername'
+  | 'clientDataUserId';
+
+// --- Sorting Helper Functions ---
+
+// Comparator type for IConnection objects
+type Comparator<T> = (a: T, b: T) => number;
+
+function getComparator(
+  order: Order,
+  orderBy: ConnectionKeys,
+  parseClientData: (json: string) => IClientConnectionUserData | null,
+): Comparator<IConnection> {
+  return (a, b) => {
+    let aValue: any;
+    let bValue: any;
+
+    if (orderBy === 'clientDataUsername') {
+      aValue = parseClientData(a.clientData)?.USERNAME || '';
+      bValue = parseClientData(b.clientData)?.USERNAME || '';
+    } else if (orderBy === 'clientDataUserId') {
+      aValue = parseClientData(a.clientData)?.USERID || 0;
+      bValue = parseClientData(b.clientData)?.USERID || 0;
+    } else {
+      // Direct property from IConnection
+      // Safely cast orderBy to keyof IConnection as it's guaranteed by type if not clientData specific
+      aValue = a[orderBy as keyof IConnection];
+      bValue = b[orderBy as keyof IConnection];
+    }
+
+    let comparison = 0;
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      comparison = aValue.localeCompare(bValue);
+    } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+      comparison = aValue - bValue;
+    } else {
+      // Fallback for mixed types or other cases, though should be type-guarded by orderBy
+      if (aValue < bValue) comparison = -1;
+      else if (aValue > bValue) comparison = 1;
+    }
+
+    return order === 'desc' ? -comparison : comparison;
+  };
+}
+
+function stableSort<T>(array: T[], comparator: Comparator<T>) {
+  const stabilizedThis = array.map((el, index) => [el, index] as [T, number]);
+  stabilizedThis.sort((a, b) => {
+    const order = comparator(a[0], b[0]);
+    if (order !== 0) {
+      return order;
+    }
+    return a[1] - b[1];
+  });
+  return stabilizedThis.map((el) => el[0]);
+}
+
+// --- Component Styles ---
 const tableContainerSx = {
   my: 1,
   maxHeight: '400px',
@@ -54,10 +126,43 @@ const connectionsTitleSx = {
 };
 
 export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ roomId }) => {
-  // Use useStore to get reactive state from connectionStore
   const { connections, loading, error } = useStore(connectionStore);
   const [selected, setSelected] = useState<readonly string[]>([]);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [order, setOrder] = useState<Order>('asc');
+  const [orderBy, setOrderBy] = useState<ConnectionKeys>('createdAt'); // Default sort by connected at
+
+  const headCells: HeadCell[] = [
+    { id: 'id', numeric: false, disablePadding: true, label: 'ID' },
+    { id: 'status', numeric: false, disablePadding: false, label: 'Status' },
+    { id: 'clientDataUsername', numeric: false, disablePadding: false, label: 'User/Client' },
+    { id: 'role', numeric: false, disablePadding: false, label: 'Role' },
+    { id: 'type', numeric: false, disablePadding: false, label: 'Type' },
+    { id: 'platform', numeric: false, disablePadding: false, label: 'Platform' },
+    { id: 'ip', numeric: false, disablePadding: false, label: 'IP Address' },
+    { id: 'createdAt', numeric: true, disablePadding: false, label: 'Connected At' },
+  ];
+
+  const handleRequestSort = useCallback(
+    (event: React.MouseEvent<unknown>, property: ConnectionKeys) => {
+      const isAsc = orderBy === property && order === 'asc';
+      setOrder(isAsc ? 'desc' : 'asc');
+      setOrderBy(property);
+    },
+    [order, orderBy],
+  );
+
+  const parseClientData = useCallback((clientDataJson: string): IClientConnectionUserData | null => {
+    try {
+      const parsed = JSON.parse(clientDataJson);
+      return parsed.clientData || parsed; // Handle cases where clientData might be directly the object or nested
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Use useStore to get reactive state from connectionStore
+  // const { connections, loading, error } = useStore(connectionStore); // Already declared above
 
   // Use useCallback to memoize fetch function for useEffect dependency
   const fetchRoomConnections = useCallback(() => {
@@ -67,15 +172,6 @@ export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ room
   useEffect(() => {
     fetchRoomConnections();
   }, [fetchRoomConnections]); // Depend on memoized fetchRoomConnections
-
-  const parseClientData = (clientDataJson: string): IClientConnectionUserData | null => {
-    try {
-      const parsed = JSON.parse(clientDataJson);
-      return parsed.clientData || parsed; // Handle cases where clientData might be directly the object or nested
-    } catch {
-      return null;
-    }
-  };
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
@@ -109,17 +205,13 @@ export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ room
     if (selected.length === 0) return;
 
     setIsDeleting(true);
-    // Error is now handled by the connectionStore
     try {
       const successfulDeletes: string[] = [];
       const failedDeletes: string[] = [];
 
-      // Execute deletes sequentially or with Promise.allSettled
-      // For immediate reactivity, we can remove from store after each successful delete
       await Promise.allSettled(
         selected.map(async (connectionId) => {
           try {
-            // NOTE: The deleteConnection API function no longer needs sessionId in its arguments
             await deleteConnection(connectionId);
             console.log(`Connection ${connectionId} deleted.`);
             successfulDeletes.push(connectionId);
@@ -130,13 +222,10 @@ export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ room
         }),
       );
 
-      // If any connections were successfully deleted, update the store reactively
       if (successfulDeletes.length > 0) {
         deleteConnectionsFromStore(successfulDeletes, roomId); // Update store
       }
 
-      // Re-fetch only if some deletions failed, to ensure UI is in sync
-      // or if we want to confirm the final state from the server regardless.
       if (failedDeletes.length > 0 || successfulDeletes.length > 0) {
         await fetchRoomConnections(); // Re-fetch all connections to ensure consistency
       }
@@ -144,15 +233,19 @@ export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ room
       setSelected([]); // Clear selection after deletion attempt
     } catch (err: any) {
       console.error('Error during bulk deletion operation:', err);
-      // setConnectionError is handled by fetchSessionConnections or individual deleteConnection
     } finally {
       setIsDeleting(false);
     }
-  }, [selected, roomId, fetchRoomConnections]); // Include fetchRoomConnections as dependency
+  }, [selected, roomId, fetchRoomConnections]);
 
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
   const numSelected = selected.length;
   const rowCount = connections.length;
+
+  const sortedConnections = useMemo(() => {
+    if (!connections || connections.length === 0) return [];
+    return stableSort(connections, getComparator(order, orderBy, parseClientData));
+  }, [connections, order, orderBy, parseClientData]);
 
   return (
     <Box className="w-full p-4">
@@ -221,18 +314,32 @@ export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ room
                     inputProps={{ 'aria-label': 'select all connections' }}
                   />
                 </TableCell>
-                <TableCell sx={headerCellSx}>ID</TableCell>
-                <TableCell sx={headerCellSx}>Status</TableCell>
-                <TableCell sx={headerCellSx}>User/Client</TableCell>
-                <TableCell sx={headerCellSx}>Role</TableCell>
-                <TableCell sx={headerCellSx}>Type</TableCell>
-                <TableCell sx={headerCellSx}>Platform</TableCell>
-                <TableCell sx={headerCellSx}>IP Address</TableCell>
-                <TableCell sx={headerCellSx}>Connected At</TableCell>
+                {headCells.map((headCell) => (
+                  <TableCell
+                    key={headCell.id}
+                    align={headCell.numeric ? 'right' : 'left'}
+                    padding={headCell.disablePadding ? 'none' : 'normal'}
+                    sortDirection={orderBy === headCell.id ? order : false}
+                    sx={headerCellSx}
+                  >
+                    <TableSortLabel
+                      active={orderBy === headCell.id}
+                      direction={orderBy === headCell.id ? order : 'asc'}
+                      onClick={() => handleRequestSort(null, headCell.id)} // Pass null for event as it's not used, but property is
+                    >
+                      {headCell.label}
+                      {orderBy === headCell.id ? (
+                        <Box component="span" sx={{ position: 'absolute', clip: 'rect(0 0 0 0)', width: 1, height: 1, margin: -1, padding: 0, overflow: 'hidden' }}>
+                          {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
+                        </Box>
+                      ) : null}
+                    </TableSortLabel>
+                  </TableCell>
+                ))}
               </TableRow>
             </TableHead>
             <TableBody>
-              {connections.map((connection) => {
+              {sortedConnections.map((connection) => {
                 const isItemSelected = isSelected(connection.id);
                 const labelId = `enhanced-table-checkbox-${connection.id}`;
                 const clientData = parseClientData(connection.clientData);
