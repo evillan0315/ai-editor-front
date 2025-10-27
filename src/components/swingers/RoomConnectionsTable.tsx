@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useStore } from '@nanostores/react'; // Import useStore
 import {
   Box,
   Typography,
@@ -18,9 +19,10 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
-import DeleteIcon from '@mui/icons-material/Delete'; // New import for delete icon
+import DeleteIcon from '@mui/icons-material/Delete';
 import { IConnection, IClientConnectionUserData } from '@/components/swingers/types';
-import { getConnections, deleteConnection } from '@/components/swingers/api/connections';
+import { deleteConnection } from '@/components/swingers/api/connections';
+import { connectionStore, fetchSessionConnections, deleteConnectionsFromStore } from '@/components/swingers/stores/connectionStore'; // Import store actions
 
 interface RoomConnectionsTableProps {
   roomId: string;
@@ -52,30 +54,19 @@ const connectionsTitleSx = {
 };
 
 export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ roomId }) => {
-  const [connections, setConnections] = useState<IConnection[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<readonly string[]>([]); // State for selected connection IDs
-  const [isDeleting, setIsDeleting] = useState<boolean>(false); // State for delete operation
+  // Use useStore to get reactive state from connectionStore
+  const { connections, loading, error } = useStore(connectionStore);
+  const [selected, setSelected] = useState<readonly string[]>([]);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  const fetchRoomConnections = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const fetchedConnections = await getConnections(roomId);
-      setConnections(fetchedConnections);
-      setSelected([]); // Clear selection on refetch
-    } catch (err: any) {
-      console.error(`Error fetching connections for room ${roomId}:`, err);
-      setError(`Failed to load connections: ${err.message || String(err)}`);
-    } finally {
-      setLoading(false);
-    }
+  // Use useCallback to memoize fetch function for useEffect dependency
+  const fetchRoomConnections = useCallback(() => {
+    fetchSessionConnections(roomId); // Dispatch action to fetch connections
   }, [roomId]);
 
   useEffect(() => {
     fetchRoomConnections();
-  }, [fetchRoomConnections]);
+  }, [fetchRoomConnections]); // Depend on memoized fetchRoomConnections
 
   const parseClientData = (clientDataJson: string): IClientConnectionUserData | null => {
     try {
@@ -118,34 +109,46 @@ export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ room
     if (selected.length === 0) return;
 
     setIsDeleting(true);
-    setError(null);
+    // Error is now handled by the connectionStore
     try {
-      const deletePromises = selected.map(async (connectionId) => {
-        const connectionToDelete = connections.find(conn => conn.id === connectionId);
-        if (connectionToDelete) {
-          await deleteConnection(connectionToDelete.id, connectionToDelete.sessionId);
-          console.log(`Connection ${connectionToDelete.id} for session ${connectionToDelete.sessionId} deleted.`);
-        } else {
-          console.warn(`Connection with ID ${connectionId} not found in current list.`);
-        }
-      });
+      const successfulDeletes: string[] = [];
+      const failedDeletes: string[] = [];
 
-      const results = await Promise.allSettled(deletePromises);
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          console.error(`Failed to delete connection ${selected[index]}:`, result.reason);
-        }
-      });
+      // Execute deletes sequentially or with Promise.allSettled
+      // For immediate reactivity, we can remove from store after each successful delete
+      await Promise.allSettled(
+        selected.map(async (connectionId) => {
+          try {
+            // NOTE: The deleteConnection API function no longer needs sessionId in its arguments
+            await deleteConnection(connectionId);
+            console.log(`Connection ${connectionId} deleted.`);
+            successfulDeletes.push(connectionId);
+          } catch (err: any) {
+            console.error(`Failed to delete connection ${connectionId}:`, err);
+            failedDeletes.push(connectionId);
+          }
+        }),
+      );
 
-      await fetchRoomConnections(); // Re-fetch all connections to update the table
+      // If any connections were successfully deleted, update the store reactively
+      if (successfulDeletes.length > 0) {
+        deleteConnectionsFromStore(successfulDeletes, roomId); // Update store
+      }
+
+      // Re-fetch only if some deletions failed, to ensure UI is in sync
+      // or if we want to confirm the final state from the server regardless.
+      if (failedDeletes.length > 0 || successfulDeletes.length > 0) {
+        await fetchRoomConnections(); // Re-fetch all connections to ensure consistency
+      }
+
       setSelected([]); // Clear selection after deletion attempt
     } catch (err: any) {
-      console.error('Error during bulk deletion:', err);
-      setError(`Failed to delete some connections: ${err.message || String(err)}`);
+      console.error('Error during bulk deletion operation:', err);
+      // setConnectionError is handled by fetchSessionConnections or individual deleteConnection
     } finally {
       setIsDeleting(false);
     }
-  }, [selected, connections, roomId, fetchRoomConnections]);
+  }, [selected, roomId, fetchRoomConnections]); // Include fetchRoomConnections as dependency
 
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
   const numSelected = selected.length;
@@ -186,7 +189,7 @@ export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ room
         )}
       </Toolbar>
 
-      {loading && !isDeleting && (
+      {loading && (
         <Box className="flex justify-center items-center p-4">
           <CircularProgress size={40} />
         </Box>
@@ -198,7 +201,7 @@ export const RoomConnectionsTable: React.FC<RoomConnectionsTableProps> = ({ room
         </Alert>
       )}
 
-      {!loading && !isDeleting && !error && connections.length === 0 && (
+      {!loading && !error && connections.length === 0 && (
         <Alert severity="info" className="m-4">
           No active connections found for this room.
         </Alert>
