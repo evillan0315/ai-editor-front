@@ -115,7 +115,7 @@ export const RoomList: React.FC = () => {
       // To do: implement logic for Viewing room details. Connection should open in a dialog modal
       showDialog({
       title: `View Room: ${roomId}`,
-      content: <RoomConnectionDialog connectionRole={'PUBLISHER'} />,
+      content: <RoomConnectionDialog roomId={roomId} connectionRole={'PUBLISHER'} />,
       maxWidth: 'md',
       fullWidth: true,
       showCloseButton: true,

@@ -58,7 +58,7 @@ const infoItemSx = {
 };
 
 export const StreamerCard: React.FC<StreamerCardProps> = ({ streamer }) => {
-  const { name, active, private: isPrivate, member, room, connection, streamId, created_at } = streamer;
+  const { name, active, private: isPrivate, member, room, connection, streamId, created_at, updated_at, end_date } = streamer;
   const theme = useTheme();
 
   const isLive = active && streamId; // Consider a streamer \"live\" if active and has a streamId
@@ -143,12 +143,22 @@ export const StreamerCard: React.FC<StreamerCardProps> = ({ streamer }) => {
             </Typography>
           </Box>
         )}
+        
         <Box sx={infoItemSx}>
           <Typography variant="body2" color="text.secondary" className="font-semibold">Started:</Typography>
           <Typography variant="body2" color="text.secondary">
             {new Date(created_at).toLocaleDateString()} {new Date(created_at).toLocaleTimeString()}
           </Typography>
         </Box>
+        {end_date && (
+      <Box sx={infoItemSx}>
+          <Typography variant="body2" color="text.secondary" className="font-semibold">End:</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {new Date(updated_at).toLocaleDateString()} {new Date(updated_at).toLocaleTimeString()}
+          </Typography>
+        </Box>
+        )}
+        
       </CardContent>
     </Card>
   );
