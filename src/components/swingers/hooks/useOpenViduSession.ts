@@ -339,19 +339,21 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
 
       session.on('streamCreated', async (event) => {
         
-        
+        console.log('streamCreated', event);
         const subscriber = session.subscribe(event.stream, undefined);
+        
         setOpenViduError(null);
         subscriber.on('streamPlaying', () => {
           
         });
         addOpenViduSubscriber(subscriber);
-        await fetchSessionConnections(effectiveSessionId); // Only fetch connections when explicitly needed (e.g. after user action, not for every stream)
+        //await fetchSessionConnections(effectiveSessionId); // Only fetch connections when explicitly needed (e.g. after user action, not for every stream)
       });
 
       session.on('streamDestroyed', async (event) => {
+        console.log('streamDestroyed', event);
         removeOpenViduSubscriber(event.stream.streamId);
-        await fetchSessionConnections(effectiveSessionId); // Only fetch connections when explicitly needed (e.g. after user action, not for every stream)
+        //await fetchSessionConnections(effectiveSessionId); // Only fetch connections when explicitly needed (e.g. after user action, not for every stream)
       });
 
       session.on('networkQualityChanged', (event) => {
@@ -359,6 +361,7 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       });
       // NEW: Add handler for "chat" signal type
       session.on(`signal:global`, (event) => {
+        console.log(`Chat messge from room ${effectiveSessionId} global`, event);
         try {
           const signalData = JSON.parse(event.data || '{}');
           const connectionData = event.from?.data; // Connection data of the sender
@@ -382,16 +385,19 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
             }
           }
 
-          if (signalData.message) {
-            console.log('Received chat message:', signalData.message);
+          if (signalData.MESSAGE) { // Use MESSAGE field from signalData
+            console.log('Received chat message:', signalData.MESSAGE);
             const chatMessage: IChatMessage = {
-              sender: senderName,
-              message: signalData.message,
-              timestamp: signalData.timestamp || Date.now(),
+              MESSAGE: signalData.MESSAGE,
+              SENDER: signalData.SENDER,
+              SENDER_NAME: signalData.SENDER_NAME || senderName, // Prioritize SENDER_NAME from signal, fallback to derived senderName
+              SENDER_PICTURE: signalData.SENDER_PICTURE,
+              RECEIVER: signalData.RECEIVER,
+              TYPE: signalData.TYPE || 'chat',
+              TIME: signalData.TIME,
+              textColor: signalData.textColor,
               isLocal: isMessageLocal,
-              id: signalData.id, // Extract new optional fields
-              senderUserId: signalData.senderUserId,
-              senderPicture: signalData.senderPicture,
+              id: signalData.id || nanoid(), // Use existing ID from signal or generate new one
             };
             addChatMessage(chatMessage); // Add message to the chat store
           }
@@ -400,40 +406,29 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
           console.error('Error parsing chat signal data:', parseError, event.data);
         }
       });
+      let messageCount = 1;
       session.on(`signal:${effectiveSessionId}`, (event) => {
          console.log(`Chat messge from room ${effectiveSessionId}`, event);
         try {
-        let messageCount = 1;
+        
         const from = event.from.data;
         const parFrom = JSON.parse(from).clientData;
         const data = JSON.parse(event.data);
-
-          let senderName = 'Unknown';
-          let isMessageLocal = false; // Flag to check if message is from current user
-
-          // Determine sender name and if it's a local message
-          if (data) {
-            try {
-              const clientDataPayload: IClientDataPayload = JSON.parse(data);
-              senderName = data.SENDER_NAME || 'Unknown';
-              
-            } catch (parseError) {
-              // Fallback for malformed or older clientData structure
-              //senderName = data.replace('clientData_', '') || 'Unknown';
-              console.warn('Failed to parse connectionData as IClientDataPayload, falling back.', parseError);
-            }
-          }
-
-          if (data.message) {
-            console.log('Received chat message:', data.message);
-            const chatMessage: IChatMessage = {
+        
+          // The incoming 'data' object already contains fields matching the new IChatMessage structure
+          if (data.MESSAGE) {
+            console.log('Received chat message:', data.MESSAGE);
+        const chatMessage: IChatMessage = {
             messageCount: messageCount ++,
-            USERNAME: data.SENDER_NAME,
-            PICTURE: data.SENDER_PICTURE,
-            USERID: data.SENDER,
-            message: data.MESSAGE,
-            date: data.TIME,
-            type: data.TYPE,
+            SENDER_NAME: data.SENDER_NAME,
+            SENDER_PICTURE: data.SENDER_PICTURE,
+            SENDER: data.SENDER,
+            MESSAGE: data.MESSAGE,
+            TIME: data.TIME,
+            TYPE: data.TYPE,
+            textColor: data?.textColor, // Add this if present in the signal data
+            id: nanoid(), // Generate a unique ID for received messages for React keys
+            //isLocal: false, // Messages received are never local
         };
             addChatMessage(chatMessage); // Add message to the chat store
           }
@@ -443,10 +438,28 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
         }
       });
       session.on("signal:whisper", (event) => {
-        const data = JSON.parse(event.data);
+        console.log('Received whisper message:', event.data);
+        const data = event.data;
         const from = event.from.data;
-        const parFrom = JSON.parse(from).clientData;
-        console.log(`whisper messge `, data);
+        const fromData = JSON.parse(from)
+        //const parFrom = JSON.parse(from).clientData;
+        const encrypted_data = JSON.parse(decrypt(data));
+        console.log(JSON.parse(from), JSON.parse(decrypt(data)));
+        const chatMessage: IChatMessage = {
+            messageCount: messageCount ++,
+            SENDER_NAME: encrypted_data.SENDER_NAME,
+            SENDER_PICTURE: encrypted_data.SENDER_PICTURE,
+            SENDER: encrypted_data.SENDER,
+            MESSAGE: encrypted_data.MESSAGE,
+            TIME: encrypted_data.TIME,
+            TYPE: encrypted_data.TYPE,
+            textColor: encrypted_data?.textColor, // Add this if present in the signal data
+            id: nanoid(), // Generate a unique ID for received messages for React keys
+            RECEIVER_NAME: encrypted_data.RECEIVER_NAME,
+            RECEIVER: encrypted_data.RECEIVER
+            //isLocal: false, // Messages received are never local
+        };
+        addChatMessage(chatMessage); 
       });
       
  
@@ -504,13 +517,12 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
     // If publisher already exists, toggle its video. If not, initLocalMediaPreview will pick up new state.
     if (currentPublisher && typeof currentPublisher.publishVideo === 'function') {
       currentPublisher.publishVideo(newCameraState);
-    } else {
-      // If no publisher, triggering initLocalMediaPreview will respect the new `isCameraActive` state
-      // (which `initLocalMediaPreview` now reads directly from the store).
-      // This ensures that when a publisher is later initialized, it respects the desired camera state.
-      initLocalMediaPreview();
     }
-  }, [connectionRole, initLocalMediaPreview]); // Add initLocalMediaPreview dependency
+    // If no publisher, triggering initLocalMediaPreview will respect the new `isCameraActive` state
+    // (which `initLocalMediaPreview` now reads directly from the store).
+    // This ensures that when a publisher is later initialized, it respects the desired camera state.
+    // initLocalMediaPreview(); // Removed this line as it could cause unwanted re-initializations
+  }, [connectionRole]); // Removed initLocalMediaPreview dependency
 
   const toggleMic = useCallback(() => {
     if (connectionRole === 'SUBSCRIBER') return; // Cannot toggle mic if not a publisher
@@ -522,11 +534,10 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
     // If publisher already exists, toggle its audio. If not, initLocalMediaPreview will pick up new state.
     if (currentPublisher && typeof currentPublisher.publishAudio === 'function') {
       currentPublisher.publishAudio(newMicState);
-    } else {
-      // If no publisher, triggering initLocalMediaPreview will respect the new `isMicActive` state.
-      initLocalMediaPreview();
     }
-  }, [connectionRole, initLocalMediaPreview]); // Add initLocalMediaPreview dependency
+    // If no publisher, triggering initLocalMediaPreview will respect the new `isMicActive` state.
+    // initLocalMediaPreview(); // Removed this line as it could cause unwanted re-initializations
+  }, [connectionRole]); // Removed initLocalMediaPreview dependency
 
 
   const sendChatMessage = useCallback(async (messageText: string) => {
@@ -539,13 +550,16 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
     }
     try {
       const mySenderName = currentUserDisplayName?.USERNAME || 'You';
-      const messagePayload: Omit<IChatMessage, 'isLocal'> = {
-        sender: mySenderName,
-        message: messageText,
-        timestamp: Date.now(),
+      const messagePayload: Omit<IChatMessage, 'isLocal' | 'messageCount'> = {
+        MESSAGE: messageText,
+        SENDER: currentUserDisplayName?.USERID?.toString() || 'unknown_user_id',
+        SENDER_NAME: mySenderName,
+        SENDER_PICTURE: currentUserDisplayName?.PICTURE,
+        RECEIVER: undefined, // Or populate if it's a private message
+        TYPE: 'global', // Default to 'chat'
+        TIME: Date.now(),
+        textColor: undefined, // Or populate if theme-dependent
         id: nanoid(), // Assign a unique ID
-        senderUserId: currentUserDisplayName?.USERID?.toString(), // Include sender user ID
-        senderPicture: currentUserDisplayName?.PICTURE, // Include sender picture URL/base64
       };
       console.log(ovSession, 'ovSession');
       await ovSession.signal({

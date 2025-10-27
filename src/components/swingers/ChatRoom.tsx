@@ -12,6 +12,7 @@ import {
   CircularProgress,
   Alert,
   Avatar,
+  useTheme, // ADDED: Import useTheme
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CallEndIcon from '@mui/icons-material/CallEnd'; // Import CallEndIcon
@@ -33,7 +34,7 @@ const chatContainerSx = {
   overflow: 'hidden',
   border: '1px solid',
   borderColor: 'divider',
-  borderRadius: 2,
+  borderRadius: 0,
   backgroundColor: 'background.paper',
   boxShadow: 3,
 };
@@ -61,9 +62,9 @@ const messageInputContainerSx = {
   backgroundColor: 'background.default',
 };
 
-const messageBubbleSx = (isLocal: boolean, type: string) => ({
+const messageBubbleSx = (isLocal: boolean, type: string, theme: ReturnType<typeof useTheme>) => ({
   display: 'flex',
-  justifyContent: isLocal ? 'flex-end' : 'flex-start',
+  justifyContent: isLocal ? 'flex-end' : type === 'whisper' ? 'flex-center' : 'flex-start',
   marginBottom: '8px',
   '& .MuiListItemText-root': {
     maxWidth: '75%', // Limit bubble width
@@ -77,8 +78,16 @@ const messageBubbleSx = (isLocal: boolean, type: string) => ({
     wordBreak: 'break-word', // Break long words
     borderRadius: '16px',
     padding: '8px 12px',
-    backgroundColor: isLocal ? 'background.default' : type === 'whisper' ? 'warning.main' : 'primary.dark',
-    color: isLocal ? 'text.primary' : 'common.white', // MODIFIED: Adjusted for better contrast
+    backgroundColor: isLocal
+      ? theme.palette.background.default
+      : type === 'whisper'
+        ? theme.palette.warning.main
+        : theme.palette.primary.dark,
+    color: isLocal
+      ? theme.palette.text.primary
+      : type === 'whisper'
+        ? theme.palette.warning.contrastText
+        : theme.palette.common.white, // MODIFIED: Adjusted for better contrast
   },
 });
 
@@ -91,6 +100,7 @@ const avatarSx = {
 
 export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
   const { messages, loading, error } = useStore(chatStore);
+  const theme = useTheme(); // ADDED: Use the theme hook
 
   const {
     // sessionNameInput, // Removed as it's managed internally or by initial prop
@@ -171,7 +181,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
   const overallLoading = loading || isOVSessionLoading;
 
   return (
-    <Paper sx={chatContainerSx} className="w-full flex-1 max-w-full md:max-w-7xl"> {/* Paper is now a flex container */}
+    <Paper sx={chatContainerSx} className="w-full flex-1 max-w-full md:max-w-7xl rounded-none"> {/* Paper is now a flex container */}
       <Box className="flex flex-col md:flex-row flex-1 overflow-auto "> {/* Main flex container for video & chat, takes 100% height of Paper */}
         {/* Left Section: Video Display & Controls */}
         <Box className="flex flex-col flex-1 md:flex-[2] p-4 h-full overflow-y-auto ">
@@ -191,7 +201,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
           )}
           {currentSessionId ? (
             <>
-              <OpenViduVideoGrid publisher={publisher} subscribers={subscribers} />
+              <OpenViduVideoGrid subscribers={subscribers} />
               <OpenViduControls
                 isCameraActive={isCameraActive}
                 toggleCamera={toggleCamera}
@@ -219,8 +229,8 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
         </Box>
 
         {/* Right Section: Chat Messages */}
-        <Box className="flex flex-col flex-1 md:flex-1 border-t md:border-t-0 md:border-l border-divider">
-          <Box className="p-4 border-b border-divider">
+        <Box className="flex flex-col flex-1 md:flex-1 " sx={{borderTop: `1px solid ${theme.palette.divider}`, borderLeft: `1px solid ${theme.palette.divider}`}}>
+          <Box className="p-4" sx={{borderBottom: `1px solid ${theme.palette.divider}`}}>
             <Typography variant="h6" component="div" className="font-bold text-center" color="text.primary">
               Room Chat
             </Typography>
@@ -228,11 +238,12 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
 
           <List sx={messageListSx}>
             {messages.map((msg) => (
-              <ListItem key={msg.id} sx={messageBubbleSx(msg.isLocal, msg.type)} className="flex-col items-stretch">
+              <ListItem key={msg.id} sx={messageBubbleSx(msg.isLocal, msg.TYPE, theme)} className="flex-col items-stretch">
                 <Box className={`flex items-center ${msg.isLocal ? 'justify-end' : 'justify-start'} w-full`}>
                   {!msg.isLocal && (
                     <Avatar sx={avatarSx} src={msg.SENDER_PICTURE}> 
-                      {msg.SENDER_NAME ? msg.SENDER_NAME[0].toUpperCase() : '?'}
+                      {msg.SENDER_NAME ? msg.SENDER_NAME[0].toUpperCase() : '?'} 
+                      
                     </Avatar>
                   )}
                   <ListItemText
@@ -252,9 +263,13 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
                       {msg.SENDER_NAME ? msg.SENDER_NAME[0].toUpperCase() : '?'}
                     </Avatar>
                   )}
+                  
                 </Box>
-                <Typography variant="caption" color="text.secondary" className={`text-xs mt-1 ${msg.isLocal ? 'self-end pr-14' : 'self-start pl-14'}`}>
-                  {new Date(msg.TIME).toLocaleTimeString()}
+                <Typography variant="caption" color={msg.TYPE === 'whisper' ? 'warning.dark' : 'text.primary'} className={`text-xs mt-1 ${msg.isLocal ? 'self-end pr-14' : 'self-start pl-14'}`}>
+                  <span>{msg.TYPE === 'whisper' ? ' whispered to ' : ''}</span>
+                  <span>{msg.TYPE === 'whisper' ? msg.RECEIVER_NAME : ''}</span>
+                  <span>{msg.TYPE === 'whisper' ? ' on ' : ''}  </span>
+                  <span>{new Date(msg.TIME).toLocaleTimeString()}</span>
                 </Typography>
               </ListItem>
             ))}
