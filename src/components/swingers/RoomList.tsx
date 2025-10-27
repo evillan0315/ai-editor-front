@@ -8,12 +8,12 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Grid
+  Grid,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LiveTvIcon from '@mui/icons-material/LiveTv'; // Import LiveTvIcon
 import { roomStore, fetchRooms, fetchConnectionCountsForRooms } from './stores/roomStore';
-import { fetchDefaultConnection  } from './stores/connectionStore';
+import { fetchDefaultConnection } from './stores/connectionStore';
 import { RoomCard } from './RoomCard';
 import { deleteSession, createSession } from '@/components/swingers/api/sessions';
 import { IRoom } from '@/components/swingers/types';
@@ -21,11 +21,12 @@ import { IRoom } from '@/components/swingers/types';
 import { useNavigate } from 'react-router-dom';
 import { showDialog } from '@/stores/dialogStore';
 import { RoomConnectionDialog } from '@/components/swingers/dialogs/RoomConnectionDialog';
+import { RoomConnectionsTable } from './RoomConnectionsTable'; // New import
 
 const listContainerSx = {
-  padding: '24px',
+  padding: '0 24px 24px 24px', // Modified: Removed top padding
   '@media (max-width: 600px)': {
-    padding: '16px',
+    padding: '0 16px 16px 16px', // Modified: Removed top padding
   },
 };
 
@@ -81,7 +82,7 @@ export const RoomList: React.FC = () => {
   // Callback for joining a room (navigates to OpenVidu page)
   const handleJoinRoom = useCallback(
     (roomId: string) => {
-      navigate(`/apps/swingers/${roomId}`);
+      // To do: implement logic for connecting to room. Connection should open in a dialog modal
     },
     [navigate],
   );
@@ -89,8 +90,14 @@ export const RoomList: React.FC = () => {
   // Callback for viewing room details (navigates to OpenVidu page)
   const handleViewRoom = useCallback(
     (roomId: string) => {
-      navigate(`/apps/swingers/${roomId}`);
-      console.log(`Viewing details for room: ${roomId}`);
+      // To do: implement logic for Viewing room details. Connection should open in a dialog modal
+      showDialog({
+      title: `View Room: ${roomId}`,
+      content: <RoomConnectionDialog roomId={roomId} connectionRole={'PUBLISHER'} />,
+      maxWidth: 'md',
+      fullWidth: true,
+      showCloseButton: true,
+    });
     },
     [navigate],
   );
@@ -132,10 +139,26 @@ export const RoomList: React.FC = () => {
   const handleConnectDefaultClient = useCallback((roomId: string) => {
     showDialog({
       title: `Connect to Room: ${roomId}`,
-      content: <RoomConnectionDialog roomId={roomId} connectionRole={'SUBSCRIBER'}/>, // Pass connectionRole as SUBSCRIBER
+      content: <RoomConnectionDialog roomId={roomId} connectionRole={'PUBLISHER'} />,
       maxWidth: 'md',
       fullWidth: true,
       showCloseButton: true,
+    });
+  }, []);
+
+  // New callback for viewing connections in a dialog
+  const handleViewConnections = useCallback((roomId: string) => {
+    showDialog({
+      title: `Room Connections ${roomId}`,
+      content: <RoomConnectionsTable roomId={roomId} />,
+      maxWidth: 'lg',
+      fullWidth: true,
+      showCloseButton: true,
+      paperPropsSx: {
+        maxHeight: '80vh', // Limit dialog height
+        display: 'flex',
+        flexDirection: 'column',
+      },
     });
   }, []);
 
@@ -169,12 +192,12 @@ export const RoomList: React.FC = () => {
     return sorted;
   }, [rooms, loading, error, connectionCounts]);
 
-  const sortedLiveRooms = useMemo(() => allSortedRooms.filter(room => room.liveStream), [allSortedRooms]);
-  const sortedNonLiveRooms = useMemo(() => allSortedRooms.filter(room => !room.liveStream), [allSortedRooms]);
+  const sortedLiveRooms = useMemo(() => allSortedRooms.filter((room) => room.liveStream), [allSortedRooms]);
+  const sortedNonLiveRooms = useMemo(() => allSortedRooms.filter((room) => !room.liveStream), [allSortedRooms]);
 
   const groupedNonLiveRooms = useMemo(() => {
     const grouped: Record<string, IRoom[]> = {};
-    sortedNonLiveRooms.forEach(room => {
+    sortedNonLiveRooms.forEach((room) => {
       if (!grouped[room.type]) {
         grouped[room.type] = [];
       }
@@ -188,7 +211,7 @@ export const RoomList: React.FC = () => {
     });
 
     const finalGrouped: Record<string, IRoom[]> = {};
-    sortedTypes.forEach(type => {
+    sortedTypes.forEach((type) => {
       finalGrouped[type] = grouped[type]; // Rooms are already globally sorted, maintain order within type groups
     });
     return finalGrouped;
@@ -217,7 +240,12 @@ export const RoomList: React.FC = () => {
       {!loading && !error && rooms.length > 0 && (
         <Box className="w-full flex flex-col gap-4">
           {sortedLiveRooms.length > 0 && (
-            <Accordion key="live-rooms" expanded={expanded === 'live-rooms'} onChange={handleChange('live-rooms')} className="w-full shadow-md rounded-lg overflow-hidden ">
+            <Accordion
+              key="live-rooms"
+              expanded={expanded === 'live-rooms'}
+              onChange={handleChange('live-rooms')}
+              className="w-full shadow-md rounded-lg overflow-hidden "
+            >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls="live-rooms-content"
@@ -244,6 +272,7 @@ export const RoomList: React.FC = () => {
                       onResetRoom={handleResetRoom}
                       resettingRoomId={resettingRoomId}
                       onConnectDefaultClient={handleConnectDefaultClient} // Pass new handler
+                      onViewConnections={handleViewConnections} // Pass the new handler
                     />
                   ))}
                 </Box>
@@ -252,7 +281,12 @@ export const RoomList: React.FC = () => {
           )}
 
           {Object.entries(groupedNonLiveRooms).map(([type, roomsForType]) => (
-            <Accordion key={type} expanded={expanded === type} onChange={handleChange(type)} className="w-full shadow-md rounded-lg overflow-hidden">
+            <Accordion
+              key={type}
+              expanded={expanded === type}
+              onChange={handleChange(type)}
+              className="w-full shadow-md rounded-lg overflow-hidden"
+            >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls={`${type}-content`}
@@ -279,6 +313,7 @@ export const RoomList: React.FC = () => {
                       onResetRoom={handleResetRoom}
                       resettingRoomId={resettingRoomId}
                       onConnectDefaultClient={handleConnectDefaultClient} // Pass new handler
+                      onViewConnections={handleViewConnections} // Pass the new handler
                     />
                   ))}
                 </Box>
