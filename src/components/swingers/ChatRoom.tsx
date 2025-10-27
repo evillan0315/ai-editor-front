@@ -28,6 +28,8 @@ interface ChatRoomProps {
 // --- Styles --- //
 const chatContainerSx = {
   height: '100%',
+  display: 'flex', // ADDED: Make Paper a flex container
+  flexDirection: 'column', // ADDED: Stack children vertically
   overflow: 'hidden',
   border: '1px solid',
   borderColor: 'divider',
@@ -59,7 +61,7 @@ const messageInputContainerSx = {
   backgroundColor: 'background.default',
 };
 
-const messageBubbleSx = (isLocal: boolean) => ({
+const messageBubbleSx = (isLocal: boolean, type: string) => ({
   display: 'flex',
   justifyContent: isLocal ? 'flex-end' : 'flex-start',
   marginBottom: '8px',
@@ -75,8 +77,8 @@ const messageBubbleSx = (isLocal: boolean) => ({
     wordBreak: 'break-word', // Break long words
     borderRadius: '16px',
     padding: '8px 12px',
-    backgroundColor: isLocal ? 'background.default' : 'primary.dark',
-    color: isLocal ? 'primary.light' : 'primary.dark',
+    backgroundColor: isLocal ? 'background.default' : type === 'whisper' ? 'warning.main' : 'primary.dark',
+    color: isLocal ? 'text.primary' : 'common.white', // MODIFIED: Adjusted for better contrast
   },
 });
 
@@ -169,8 +171,8 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
   const overallLoading = loading || isOVSessionLoading;
 
   return (
-    <Paper sx={chatContainerSx} className="w-full flex-1 max-w-full md:max-w-7xl">
-      <Box className="flex flex-col md:flex-row flex-1 overflow-auto "> {/* Main flex container for video & chat */}
+    <Paper sx={chatContainerSx} className="w-full flex-1 max-w-full md:max-w-7xl"> {/* Paper is now a flex container */}
+      <Box className="flex flex-col md:flex-row flex-1 overflow-auto "> {/* Main flex container for video & chat, takes 100% height of Paper */}
         {/* Left Section: Video Display & Controls */}
         <Box className="flex flex-col flex-1 md:flex-[2] p-4 h-full overflow-y-auto ">
           <Typography variant="h6" component="div" className="font-bold text-center mb-4" color="text.primary">
@@ -226,10 +228,10 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
 
           <List sx={messageListSx}>
             {messages.map((msg) => (
-              <ListItem key={msg.id} sx={messageBubbleSx(msg.isLocal)} className="flex-col items-stretch">
+              <ListItem key={msg.id} sx={messageBubbleSx(msg.isLocal, msg.type)} className="flex-col items-stretch">
                 <Box className={`flex items-center ${msg.isLocal ? 'justify-end' : 'justify-start'} w-full`}>
                   {!msg.isLocal && (
-                    <Avatar sx={avatarSx} src={msg.SENDER_PICTURE}> {/* Use SENDER_PICTURE for avatar */}
+                    <Avatar sx={avatarSx} src={msg.SENDER_PICTURE}> 
                       {msg.SENDER_NAME ? msg.SENDER_NAME[0].toUpperCase() : '?'}
                     </Avatar>
                   )}
@@ -240,14 +242,13 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
                       component: 'div',
                       className: `text-sm ${msg.isLocal ? '' : ''} rounded-lg p-2 max-w-xs`
                     }}
-                    sx={{bgColor:'background,paper'}}
                     primaryTypographyProps={{
                       className: `text-xs font-semibold mb-1 ${msg.isLocal ? 'text-right pr-2' : 'text-left pl-2'}`
                     }}
                     className={`flex flex-col ${msg.isLocal ? 'items-end' : 'items-start'}`}
                   />
                   {msg.isLocal && (
-                    <Avatar sx={avatarSx} src={msg.SENDER_PICTURE}> {/* Use SENDER_PICTURE for avatar */}
+                    <Avatar sx={avatarSx} src={msg.SENDER_PICTURE}> 
                       {msg.SENDER_NAME ? msg.SENDER_NAME[0].toUpperCase() : '?'}
                     </Avatar>
                   )}
