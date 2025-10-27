@@ -65,42 +65,46 @@ export const RoomList: React.FC = () => {
   const [resettingRoomId, setResettingRoomId] = useState<string | null>(null); // State to track which room is being reset
   const [expanded, setExpanded] = useState<string | false>('public'); // 'public' accordion expanded by default
   const navigate = useNavigate();
-
+  // Combine loading states and errors for display
+  const overallLoading = loading || loadingSessions;
+  const overallError = error || sessionsError;
   useEffect(() => {
     fetchDefaultConnection();
-    fetchSessions(); // Fetch OpenVidu sessions
+    fetchSessions(); 
     fetchRooms();
-    
   }, []);
-
-  useEffect(() => {
-    if (!loading && rooms.length > 0) {
-      fetchConnectionCountsForRooms(rooms);
-    }
-  }, [loading, rooms]);
-
-  const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-    setExpanded(isExpanded ? panel : false);
-  };
 
   // NEW LOGIC: Augment rooms with live status based on active OpenVidu sessions
   const roomsWithSessionStatus = useMemo(() => {
     if (!rooms || rooms.length === 0) return [];
-    
+    // Fetch OpenVidu sessions
     // Create a Set of active session IDs for quick lookup
     // Guard against 'sessions' being undefined or null before mapping over it.
-    const activeSessionIds = new Set(sessions?.map(s => s.sessionId) || []);
-    console.log(activeSessionIds, 'activeSessionIds');
+    const activeSessionIds = new Set(sessions?.map(s => s.sessionId	) || []);
+    
     return rooms.map(room => {
       // Determine if the room's OpenVidu ID (roomId) has a corresponding active session
       const isActive = room.roomId ? activeSessionIds.has(room.roomId) : false;
       return {
         ...room,
-        //active: isActive,      // Set room's 'active' status based on session presence
+        active: isActive,      // Set room's 'active' status based on session presence
         //liveStream: isActive,  // Set room's 'liveStream' status based on session presence
       };
     });
   }, [rooms, sessions]); // Re-run when rooms or sessions change
+
+  // Effect to fetch connection counts for rooms, now dependent on roomsWithSessionStatus
+  useEffect(() => {
+    // Only fetch connection counts if rooms have been loaded and there are rooms to process.
+    // Pass roomsWithSessionStatus to ensure live status is considered.
+    if (!loading && roomsWithSessionStatus.length > 0) {
+      fetchConnectionCountsForRooms(roomsWithSessionStatus);
+    }
+  }, [loading, roomsWithSessionStatus, rooms]); // Depend on roomsWithSessionStatus
+
+  const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+    setExpanded(isExpanded ? panel : false);
+  };
 
   // Callback for joining a room (navigates to OpenVidu page)
   const handleJoinRoom = useCallback(
@@ -127,36 +131,38 @@ export const RoomList: React.FC = () => {
 
   // Callback for resetting/recreating a room's OpenVidu session
   const handleResetRoom = useCallback(
-    async (roomId: string) => {
-      if (!roomId) {
-        console.error('Cannot reset room: roomId is missing.');
+    async (room: IRoom) => { // MODIFIED: Accepts full room object
+      if (!room || !room.roomId) {
+        console.error('Cannot reset room: room object or roomId is missing.');
         return;
       }
 
-      setResettingRoomId(roomId); // Set loading state for this specific room
+      setResettingRoomId(room.roomId); // Set loading state for this specific room
       try {
-        // 1. Delete the existing OpenVidu session
-        await deleteSession(roomId);
-        console.log(`OpenVidu session ${roomId} deleted.`);
+        if (room.active) { // Check if the room has an active session
+          // 1. Delete the existing OpenVidu session
+          await deleteSession(room.roomId);
+          console.log(`OpenVidu session ${room.roomId} deleted.`);
+        }
 
         // 2. Create a new OpenVidu session with the same customSessionId
         // The createSession API function now handles 409 (conflict/already exists) by returning the existing session
         // So, if we deleted it, it will be truly recreated. If delete failed silently, createSession would return the existing.
-        await createSession({ customSessionId: roomId });
-        console.log(`OpenVidu session ${roomId} recreated.`);
+        await createSession({ customSessionId: room.roomId });
+        console.log(`OpenVidu session ${room.roomId} ${room.active ? 'recreated' : 'created'}.`);
 
         // 3. Refresh rooms and connection counts to update UI
         // fetchRooms will update the roomStore, and the useEffect will trigger fetchConnectionCountsForRooms
         await fetchRooms();
-        fetchSessions(); // Re-fetch sessions to update live status
+        await fetchSessions(); // Re-fetch sessions to update live status
       } catch (error) {
-        console.error(`Error resetting room ${roomId}:`, error);
+        console.error(`Error resetting room ${room.roomId}:`, error);
         // TODO: Implement a global snackbar/toast for user feedback
       } finally {
         setResettingRoomId(null); // Clear loading state
       }
     },
-    [],
+    [], // Dependencies are stable (functions from imports), so empty array is appropriate.
   );
 
   // New callback for opening the connection dialog with a specific roomId
@@ -188,7 +194,7 @@ export const RoomList: React.FC = () => {
 
   // Memoize grouped and sorted rooms to prevent unnecessary re-renders
   const allSortedRooms = useMemo(() => {
-    if (loading || error || roomsWithSessionStatus.length === 0) return []; // Use roomsWithSessionStatus here
+    if (overallLoading || overallError || roomsWithSessionStatus.length === 0) return []; // Use roomsWithSessionStatus here
 
     const sorted = [...roomsWithSessionStatus].sort((a, b) => { // Sort roomsWithSessionStatus
       const aConnections = a.roomId ? connectionCounts[a.roomId] || 0 : 0;
@@ -214,7 +220,7 @@ export const RoomList: React.FC = () => {
     });
 
     return sorted;
-  }, [loading, error, connectionCounts]); // roomsWithSessionStatus as dependency
+  }, [overallLoading, overallError, roomsWithSessionStatus, connectionCounts]); // roomsWithSessionStatus as dependency
 
   const sortedLiveRooms = useMemo(() => allSortedRooms.filter((room) => room.liveStream), [allSortedRooms]);
   const sortedNonLiveRooms = useMemo(() => allSortedRooms.filter((room) => !room.liveStream), [allSortedRooms]);
@@ -241,9 +247,7 @@ export const RoomList: React.FC = () => {
     return finalGrouped;
   }, [sortedNonLiveRooms]);
 
-  // Combine loading states and errors for display
-  const overallLoading = loading || loadingSessions;
-  const overallError = error || sessionsError;
+  
 
   return (
     <Box sx={listContainerSx} className="w-full flex flex-col items-center h-full">
@@ -297,7 +301,7 @@ export const RoomList: React.FC = () => {
                       loadingConnections={room.roomId ? loadingConnectionCounts[room.roomId] || false : false}
                       onJoinRoom={handleJoinRoom}
                       onViewRoom={handleViewRoom}
-                      onResetRoom={handleResetRoom}
+                      onResetRoom={(r) => handleResetRoom(r)} // MODIFIED: Pass the full room object
                       resettingRoomId={resettingRoomId}
                       onConnectDefaultClient={handleConnectDefaultClient} // Pass new handler
                       onViewConnections={handleViewConnections} // Pass the new handler
@@ -338,7 +342,7 @@ export const RoomList: React.FC = () => {
                       loadingConnections={room.roomId ? loadingConnectionCounts[room.roomId] || false : false}
                       onJoinRoom={handleJoinRoom}
                       onViewRoom={handleViewRoom}
-                      onResetRoom={handleResetRoom}
+                      onResetRoom={(r) => handleResetRoom(r)} // MODIFIED: Pass the full room object
                       resettingRoomId={resettingRoomId}
                       onConnectDefaultClient={handleConnectDefaultClient} // Pass new handler
                       onViewConnections={handleViewConnections} // Pass the new handler

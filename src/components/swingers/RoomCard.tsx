@@ -4,8 +4,6 @@ import { IRoom } from '@/components/swingers/types';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
-import DoneIcon from '@mui/icons-material/Done';
-import CloseIcon from '@mui/icons-material/Close';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import CallIcon from '@mui/icons-material/Call'; // Icon for joining a room
 import VisibilityIcon from '@mui/icons-material/Visibility'; // Icon for viewing a room
@@ -18,9 +16,10 @@ interface RoomCardProps {
   loadingConnections: boolean;
   onJoinRoom?: (roomId: string) => void;
   onViewRoom?: (roomId: string) => void;
-  onResetRoom?: (roomId: string) => void;
+  onResetRoom?: (room: IRoom) => void; // MODIFIED: Changed signature to pass the full room object
   resettingRoomId?: string | null;
   onConnectDefaultClient?: (roomId: string) => void; // New prop for connecting default client
+  onViewConnections?: (roomId: string) => void; // New prop for viewing connections
 }
 
 const baseCardSx = {
@@ -77,7 +76,8 @@ const stickyFooterSx = (theme: ReturnType<typeof useTheme>) => ({
   borderTop: `1px solid ${theme.palette.divider}`,
   padding: '8px 16px',
   display: 'flex',
-  justifyContent: 'flex-end',
+  justifyContent: 'space-between', // Changed to space-between to align items to left and right
+  alignItems: 'center',
   gap: '8px',
 });
 
@@ -90,6 +90,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   onResetRoom,
   resettingRoomId,
   onConnectDefaultClient, // New prop
+  onViewConnections, // New prop
 }) => {
   const { name, type, active, description, roomId, recording, liveStream, created_at } = room;
   const theme = useTheme();
@@ -144,74 +145,93 @@ export const RoomCard: React.FC<RoomCardProps> = ({
             {new Date(created_at).toLocaleDateString()}
           </Typography>
         </Box>
-        <Box sx={infoItemSx}>
-          <PeopleAltIcon color="action" fontSize="small" />
-         
-          {loadingConnections ? (
+      </CardContent>
+
+      {/* New: Sticky Footer for Action buttons and Connection Count */}
+      <Box sx={stickyFooterSx(theme)}>
+        {/* Connection count and view connections button on the left side of the footer */}
+        <Box className="flex items-center gap-1">
+
+          
+          {roomId && onViewConnections && (
+            <Tooltip title="View detailed connections">
+            
+              <IconButton
+                aria-label="view connections"
+                color="info"
+                onClick={() => onViewConnections(roomId)}
+                size="small"
+                className="flex items-center gap-1"
+              >
+                <PeopleAltIcon />
+                {loadingConnections ? (
             <CircularProgress size={16} color="inherit" />
           ) : (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" className="font-semibold">
               {connectionCount !== null ? connectionCount : 'N/A'}
             </Typography>
           )}
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
-      </CardContent>
 
-      {/* New: Sticky Footer for Action buttons */}
-      <Box sx={stickyFooterSx(theme)}>
-        {roomId && onResetRoom && (
-          <Tooltip title="Reset Room Session">
-            <IconButton
-              aria-label="reset room"
-              color="secondary"
-              onClick={() => onResetRoom(roomId)}
-              disabled={isResetting}
-              sx={{ '&:hover': { bgcolor: 'secondary.light' } }}
-            >
-              {isResetting ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <ReplayIcon />
-              )}
-            </IconButton>
-          </Tooltip>
-        )}
-        {roomId && onViewRoom && (
-          <Tooltip title="View Room Details">
-            <IconButton
-              aria-label="view room details"
-              color="info"
-              onClick={() => onViewRoom(roomId)}
-              sx={{ '&:hover': { bgcolor: 'info.light' } }}
-            >
-              <VisibilityIcon />
-            </IconButton>
-          </Tooltip>
-        )}
-        {roomId && onConnectDefaultClient && (
-          <Tooltip title="Connect to Room with Default Client">
-            <IconButton
-              aria-label="connect default client"
-              color="primary"
-              onClick={() => onConnectDefaultClient(roomId)}
-              sx={{ '&:hover': { bgcolor: 'primary.light' } }}
-            >
-              <VideocamIcon />
-            </IconButton>
-          </Tooltip>
-        )}
-        {roomId && onJoinRoom && (
-          <Tooltip title="Join Room">
-            <IconButton
-              aria-label="join room"
-              color="success"
-              onClick={() => onJoinRoom(roomId)}
-              sx={{ '&:hover': { bgcolor: 'success.light' } }}
-            >
-              <CallIcon />
-            </IconButton>
-          </Tooltip>
-        )}
+        {/* Action buttons grouped on the right side of the footer */}
+        <Box className="flex items-center gap-1">
+          {roomId && onResetRoom && (
+            <Tooltip title="Reset Room Session">
+              <IconButton
+                aria-label="reset room"
+                color="secondary"
+                onClick={() => onResetRoom(room)} // MODIFIED: Pass the full room object
+                disabled={isResetting}
+                sx={{ '&:hover': { bgcolor: 'secondary.light' } }}
+              >
+                {isResetting ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <ReplayIcon />
+                )}
+              </IconButton>
+            </Tooltip>
+          )}
+          {roomId && onViewRoom && (
+            <Tooltip title="View Room Details">
+              <IconButton
+                aria-label="view room details"
+                color="info"
+                onClick={() => onViewRoom(roomId)}
+                sx={{ '&:hover': { bgcolor: 'info.light' } }}
+              >
+                <VisibilityIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          {roomId && onConnectDefaultClient && (
+            <Tooltip title="Connect to Room with Default Client">
+              <IconButton
+                aria-label="connect default client"
+                color="primary"
+                onClick={() => onConnectDefaultClient(roomId)}
+                sx={{ '&:hover': { bgcolor: 'primary.light' } }}
+              >
+                <VideocamIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          {roomId && onJoinRoom && (
+            <Tooltip title="Join Room">
+              <IconButton
+                aria-label="join room"
+                color="success"
+                onClick={() => onJoinRoom(roomId)}
+                sx={{ '&:hover': { bgcolor: 'success.light' } }}
+              >
+                <CallIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
       </Box>
     </Card>
   );
