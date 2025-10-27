@@ -260,17 +260,29 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
     setOpenViduError(null);
     
     const ovSession = openViduStore.get().session; // Get latest
-    const ovPublisher = openViduStore.get().publisher; // Get latest
+    let ovPublisher = openViduStore.get().publisher; // Get latest
     const ovInstance = openViduStore.get().openViduInstance; // Get latest
     const ovSessionNameInput = openViduStore.get().sessionNameInput; // Get latest
     
-    // If already connected to a session, disconnect first.
-    if (ovSession) {
-      console.warn('Attempting to join session while another might be active. Cleaning up first.');
-      //await leaveSession(); // This will also destroy any existing publisher and reset the store.
+    const effectiveSessionId = sessionIdToJoin || ovSessionNameInput;
+
+    // If already connected to a DIFFERENT session, disconnect first.
+    if (ovSession && ovSession.sessionId !== effectiveSessionId) {
+      console.warn(`Attempting to join session '${effectiveSessionId}' while active in '${ovSession.sessionId}'. Cleaning up old session first.`);
+      await leaveSession(); // Ensure old session is properly disconnected and resources released
+      // After leaveSession, ovSession, ovPublisher, etc., will be reset by resetOpenViduStore().
+      // Re-read latest state after cleanup. ovPublisher needs to be re-assigned from store
+      // if it was destroyed and recreated by a subsequent media init effect.
+      ovPublisher = openViduStore.get().publisher; 
+      console.log(ovPublisher);
     }
 
-    const effectiveSessionId = sessionIdToJoin || ovSessionNameInput;
+    // If we are already connected to the *same* session, just return.
+    if (ovSession && ovSession.sessionId === effectiveSessionId) {
+      console.log(`Already connected to session: ${effectiveSessionId}. Skipping join.`);
+      setOpenViduLoading(false); // Ensure loading state is off if we early exit
+      return;
+    }
 
     if (!effectiveSessionId || !ovInstance) {
       setOpenViduError('Session ID or OpenVidu object is missing.');
@@ -279,6 +291,7 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
     }
 
     // For PUBLISHER role, ensure publisher is ready before joining
+    // Re-check ovPublisher after potential leaveSession call
     if (connectionRole === 'PUBLISHER' && !ovPublisher) {
       setOpenViduError('Local media publisher not initialized. Please ensure camera/mic are configured.');
       setOpenViduLoading(false); // Make sure loading state is off if we error out here
@@ -538,7 +551,7 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
     subscribers: ovState.subscribers,
     currentSessionId: ovState.currentSessionId,
     openViduInstance: ovState.openViduInstance,
-    connectionRole, // Expose connectionRole
-    currentUserDisplayName, // Expose for ChatRoom to display sender
+    connectionRole,
+    currentUserDisplayName,
   };
 };
