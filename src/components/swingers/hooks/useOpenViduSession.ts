@@ -393,6 +393,42 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       });
       session.on(`signal:${effectiveSessionId}`, (event) => {
          console.log(`Chat messge from room ${effectiveSessionId}`, event);
+        try {
+          const signalData = JSON.parse(event.data || '{}');
+          const connectionData = event.from?.data; // Connection data of the sender
+
+          let senderName = 'Unknown';
+          let isMessageLocal = false; // Flag to check if message is from current user
+
+          // Determine sender name and if it's a local message
+          if (connectionData) {
+            try {
+              const clientData = JSON.parse(connectionData);
+              senderName = clientData.USERNAME || 'Unknown';
+              const localClientData = currentUserDisplayName; // Data of the current local user
+              // Compare connection IDs to identify local sender
+              if (event.from?.connectionId === openViduStore.get().publisher?.stream?.connection?.connectionId) {
+                isMessageLocal = true;
+              }
+            } catch (parseError) {
+              senderName = connectionData.replace('clientData_', '') || 'Unknown';
+            }
+          }
+
+          if (signalData.message) {
+            console.log('Received chat message:', signalData.message);
+            const chatMessage: IChatMessage = {
+              sender: senderName,
+              message: signalData.message,
+              timestamp: signalData.timestamp || Date.now(),
+              isLocal: isMessageLocal,
+            };
+            addChatMessage(chatMessage); // Add message to the chat store
+          }
+
+        } catch (parseError) {
+          console.error('Error parsing chat signal data:', parseError, event.data);
+        }
       });
       session.on("signal:whisper", (event) => {
         const data = JSON.parse(event.data);

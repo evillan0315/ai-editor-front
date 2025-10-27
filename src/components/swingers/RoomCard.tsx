@@ -9,6 +9,7 @@ import CallIcon from '@mui/icons-material/Call'; // Icon for joining a room
 import VisibilityIcon from '@mui/icons-material/Visibility'; // Icon for viewing a room
 import ReplayIcon from '@mui/icons-material/Replay'; // Icon for reset/refresh
 import VideocamIcon from '@mui/icons-material/Videocam'; // New icon for connecting default client
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // NEW: For chat button
 
 interface RoomCardProps {
   room: IRoom;
@@ -20,6 +21,7 @@ interface RoomCardProps {
   resettingRoomId?: string | null;
   onConnectDefaultClient?: (roomId: string) => void; // New prop for connecting default client
   onViewConnections?: (roomId: string) => void; // New prop for viewing connections
+  onOpenChat?: (roomId: string) => void; // NEW PROP: Handler for opening chat
 }
 
 const baseCardSx = {
@@ -91,6 +93,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   resettingRoomId,
   onConnectDefaultClient, // New prop
   onViewConnections, // New prop
+  onOpenChat, // NEW PROP
 }) => {
   const { name, type, active, description, roomId, recording, liveStream, created_at } = room;
   const theme = useTheme();
@@ -117,20 +120,16 @@ export const RoomCard: React.FC<RoomCardProps> = ({
         {/* Original Active/Inactive label at top-right */}
       </Box>
       <CardContent sx={contentSx} className="flex flex-col flex-grow p-4">
-        <Typography variant="h6" component="div" className="mb-2 font-bold text-center" color="text.primary">
+        <Tooltip title={`${name} ${description? ' - ' : ''} ${description ? description :''}`}>
+        <Typography variant="h6" component="div" className="mb-2 font-bold text-center truncate" color="text.primary">
           {name}
         </Typography>
+        </Tooltip>
         <Box className="flex justify-center flex-wrap gap-2 mb-2">
           <Chip label={type.toUpperCase()} size="small" color="primary" />
           {recording && <Chip label="RECORDING" size="small" icon={<FiberManualRecordIcon />} color="warning" />}
         </Box>
-        {description && (
-          <Box sx={infoItemSx}>
-            <Typography variant="body2" color="text.secondary" className="italic">
-              {description}
-            </Typography>
-          </Box>
-        )}
+        
         {roomId && (
           <Box sx={infoItemSx}>
             <Typography variant="body2" color="text.secondary" className="font-semibold">Room ID:</Typography>
@@ -178,6 +177,20 @@ export const RoomCard: React.FC<RoomCardProps> = ({
 
         {/* Action buttons grouped on the right side of the footer */}
         <Box className="flex items-center gap-1">
+          {/* NEW: Chat Button */}
+          {roomId && onOpenChat && (
+            <Tooltip title="Open Chat">
+              <IconButton
+                aria-label="open chat"
+                color="default" // Or a suitable color
+                onClick={() => onOpenChat(roomId)}
+                sx={{ '&:hover': { bgcolor: 'grey.300' } }}
+              >
+                <ChatBubbleOutlineIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+
           {roomId && onResetRoom && (
             <Tooltip title="Reset Room Session">
               <IconButton

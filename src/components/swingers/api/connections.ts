@@ -50,7 +50,9 @@ export const createConnection = async (
     return handleResponse<IConnection>(response);
   } catch (error) {
     console.error(`Error creating OpenVidu connection for session ${sessionId}:`, error);
-    return error;
+    // Original code returned `error` which is incorrect for `Promise<IConnection>`.
+    // Re-throwing the error is the correct pattern.
+    throw error;
   }
 };
 
@@ -84,18 +86,21 @@ export const getConnections = async (sessionId: string): Promise<IConnection[]> 
  * Fetches a specific OpenVidu connection by its ID.
  * Corresponds to: GET /openvidu/api/connections/{connectionId}
  * @param connectionId The ID of the connection to fetch.
+ * @param sessionId The ID of the session to fetch the connection from. (Used for context, but not in URL for this endpoint)
  * @returns A promise that resolves to a single IConnection object.
  */
 export const getConnection = async (connectionId: string, sessionId: string): Promise<IConnection> => {
   try {
     const response = await fetchWithBasicAuth<IConnection>(
+      // OpenVidu's API to get a specific connection is `/openvidu/api/connections/{connectionId}`
+      // The sessionId is not part of the path for this specific endpoint.
       `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection/${connectionId}`,
       { method: 'GET' },
     );
     return handleResponse<IConnection>(response);
   } catch (error) {
     console.error(`Error fetching OpenVidu connection with ID ${connectionId}:`, error);
-    return error;
+    throw error; // Re-throw the error
   }
 };
 
@@ -105,17 +110,15 @@ export const getConnection = async (connectionId: string, sessionId: string): Pr
  * @param connectionId The ID of the connection to delete.
  * @returns A promise that resolves when the connection is successfully deleted.
  */
-export const deleteConnection = async (connectionId: string, sessionId: string): Promise<void> => {
+export const deleteConnection = async (connectionId: string): Promise<void> => { // Removed sessionId from arguments
   try {
-    // fetchWithBasicAuth now returns data directly, but for DELETE, we might not expect content.
-    // The success/failure is indicated by the promise resolving/rejecting.
     const response = await fetchWithBasicAuth<void>(
-      `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection/${connectionId}`,
+      `${SLS_VIDU_URL}/api/connections/${connectionId}`, // Corrected URL path for deleting a connection
       { method: 'DELETE' },
     );
-    handleResponse<void>(response);
+    handleResponse<void>(response); // Just handle response for errors, no data expected
   } catch (error) {
     console.error(`Error deleting OpenVidu connection with ID ${connectionId}:`, error);
-    throw error;
+    throw error; // Re-throw the error
   }
 };

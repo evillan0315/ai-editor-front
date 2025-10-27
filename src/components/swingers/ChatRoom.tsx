@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CallEndIcon from '@mui/icons-material/CallEnd'; // Import CallEndIcon
-
+import { fetchDefaultConnection } from './stores/connectionStore';
 import { chatStore, IChatMessage, setChatError, setChatLoading, clearChat } from './stores/chatStore';
 import { useOpenViduSession } from './hooks/useOpenViduSession';
 import { OpenViduVideoGrid } from './openvidu/OpenViduVideoGrid'; // NEW
@@ -91,8 +91,8 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
   const { messages, loading, error } = useStore(chatStore);
 
   const {
-    sessionNameInput,
-    handleSessionNameChange,
+    // sessionNameInput, // Removed as it's managed internally or by initial prop
+    // handleSessionNameChange, // Removed as it's managed internally or by initial prop
     joinSession,
     leaveSession,
     initLocalMediaPreview,
@@ -110,7 +110,6 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
     connectionRole,
     currentUserDisplayName,
     sendChatMessage,
-    isLoading: isSending,
   } = useOpenViduSession(roomId, 'PUBLISHER'); // Always publisher for this component
 
   const [messageInput, setMessageInput] = useState('');
@@ -120,14 +119,15 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // NEW: Effect to auto-join session when component mounts, if roomId is available
+  // Effect to auto-join session when component mounts/roomId changes, if OpenVidu instance is ready
   useEffect(() => {
     // Ensure OpenVidu instance is ready and we're not already connected to this room
     if (roomId && openViduInstance && currentSessionId !== roomId) {
+      fetchDefaultConnection();
       console.log(`Attempting to auto-join OpenVidu session: ${roomId}`);
       joinSession(roomId);
     }
-  }, [roomId, openViduInstance, currentSessionId]);
+  }, [roomId, openViduInstance, currentSessionId, joinSession, fetchDefaultConnection]); // Added joinSession to dependencies
 
   useEffect(() => {
     scrollToBottom();
@@ -148,7 +148,6 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
     setChatLoading(true);
     setChatError(null);
     try {
-      // The `sendChatMessage` is now destructured at the top from useOpenViduSession.
       await sendChatMessage(messageInput);
       setMessageInput('');
     } catch (e: any) {
@@ -166,11 +165,12 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
   }, [handleSendMessage]);
 
   const allErrors = error || ovSessionError;
-  const overallLoading = loading || isSending || isOVSessionLoading;
+  // `isSending` is not exposed by `useOpenViduSession` anymore, remove it from `overallLoading`
+  const overallLoading = loading || isOVSessionLoading;
 
   return (
-    <Paper sx={chatContainerSx} className="w-full flex-1 max-w-full md:max-w-7xl h-auto">
-      <Box className="flex flex-col md:flex-row flex-1 overflow-hidden "> {/* Main flex container for video & chat */}
+    <Paper sx={chatContainerSx} className="w-full flex-1 max-w-full md:max-w-7xl">
+      <Box className="flex flex-col md:flex-row flex-1 "> {/* Main flex container for video & chat */}
         {/* Left Section: Video Display & Controls */}
         <Box className="flex flex-col flex-1 md:flex-[2] p-4 bg-background-default overflow-y-auto ">
           <Typography variant="h6" component="div" className="font-bold text-center mb-4" color="text.primary">
@@ -211,7 +211,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
             </>
           ) : (
             <Typography variant="body1" color="text.secondary" className="text-center mt-4">
-              No active session. Please wait for connection or refresh.
+              No active session. Waiting to connect...
             </Typography>
           )}
         </Box>

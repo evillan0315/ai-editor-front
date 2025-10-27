@@ -1,10 +1,11 @@
 import { map } from 'nanostores';
 import { persistentAtom } from '@/utils/persistentAtom';
 import { IConnection } from '@/components/swingers/types';
-import { getConnection, getConnections } from '@/components/swingers/api/connections';
-import { getSessions, getSession } from '@/components/swingers/api/sessions';
+import { getConnection } from '@/components/swingers/api/connections';
+import { getSession } from '@/components/swingers/api/sessions';
 import { getDefaultClient } from '@/components/swingers/api/activities';
 import { updateRoomConnectionCount } from '@/components/swingers/stores/roomStore';
+import { addOrUpdateOpenViduSession, updateSessionConnectionCount as updateOpenViduSessionConnectionCount } from '@/components/swingers/stores/openViduEntitiesStore'; // Import actions from new store
 
 /**
  * @interface ConnectionStoreState
@@ -32,7 +33,7 @@ export const connectionStore = map<ConnectionStoreState>({
   currentSessionId: null,
 });
 
-export const currentDefaultConnection = persistentAtom<IConnection>('currentDefaultConnection', {});
+export const currentDefaultConnection = persistentAtom<IConnection>('currentDefaultConnection', {} as IConnection); // Initialize with an empty IConnection object
 
 /**
  * @function setConnections
@@ -49,12 +50,48 @@ export const setConnections = (sessionId: string, connections: IConnection[]) =>
   });
 };
 
+/**
+ * @function deleteConnectionsFromStore
+ * @description Removes specified connections from the store and updates the room connection count.
+ * It also updates the global `openViduEntitiesStore`.
+ * @param {string[]} connectionIds - An array of IDs of connections to delete.
+ * @param {string} sessionId - The ID of the session these connections belong to.
+ */
+export const deleteConnectionsFromStore = (connectionIds: string[], sessionId: string) => {
+  const currentConnections = connectionStore.get().connections;
+  const updatedConnections = currentConnections.filter(
+    (conn) => !connectionIds.includes(conn.id),
+  );
+  connectionStore.setKey('connections', updatedConnections);
+  updateRoomConnectionCount(sessionId, updatedConnections.length, updatedConnections); // Update room store with full content
+};
+
 export const fetchDefaultConnection = async () => {
-  const getDefaultClientConnection = await getDefaultClient();
-  console.log(getDefaultClientConnection, 'getDefaultClientConnection');
-  const { participantId, sessionId } = getDefaultClientConnection[1];
-  const getClientConnection =  await getConnection(participantId,sessionId);
-  currentDefaultConnection.set( getClientConnection);
+  try {
+    const defaultClientActivities = await getDefaultClient();
+    console.log(defaultClientActivities, 'defaultClientActivities');
+    // Assuming defaultClientActivities[1] gives the relevant object
+    if (defaultClientActivities && defaultClientActivities.length > 1) {
+      const defaultActivity = defaultClientActivities[1];
+      const participantId = defaultActivity.participantId;
+      const sessionId = defaultActivity.sessionId;
+
+      if (participantId && sessionId) {
+        const getClientConnection = await getConnection(participantId, sessionId);
+        console.log(getClientConnection, 'getClientConnection')
+        currentDefaultConnection.set(getClientConnection);
+      } else {
+        console.warn('Participant ID or Session ID not found in default client connection data.');
+        currentDefaultConnection.set({} as IConnection); // Clear if data is incomplete
+      }
+    } else {
+      console.warn('No default client connection activities found or array is too short.');
+      currentDefaultConnection.set({} as IConnection); // Clear if no data
+    }
+  } catch (error) {
+    console.error('Error fetching default connection:', error);
+    currentDefaultConnection.set({} as IConnection); // Clear on error
+  }
 };
 /**
  * @function setConnectionLoading
@@ -90,14 +127,13 @@ export const clearConnections = () => {
 /**
  * @function fetchSessionConnections
  * @description Fetches all active OpenVidu connections for a specific session
- * and updates both `connectionStore` and `roomStore`'s connection count.
+ * and updates `connectionStore`, `roomStore`, and the `openViduEntitiesStore`.
  * @param {string} sessionId - The ID of the session to fetch connections for.
  */
 export const fetchSessionConnections = async (sessionId: string) => {
   if (!sessionId) {
     console.warn('fetchSessionConnections called with null/undefined sessionId');
     clearConnections();
-    updateRoomConnectionCount(sessionId, 0); // Update room count to 0 if session is invalid
     return;
   }
 
@@ -106,16 +142,27 @@ export const fetchSessionConnections = async (sessionId: string) => {
   connectionStore.setKey('currentSessionId', sessionId); // Ensure currentSessionId is set even before fetch completes
 
   try {
-    const sessionConnections = await getSession(sessionId);
-    console.log(sessionConnections, 'fetchSessionConnections');
-    const { connections } = sessionConnections;
-    setConnections(sessionId, connections.content);
-    updateRoomConnectionCount(sessionId, connections.numberOfElements);
+    const session = await getSession(sessionId); // This fetches session details, including connections
+    if (session && session.connections) {
+      const connections = session.connections;
+      const content = connections.content || [];
+      const numberOfElements = connections.numberOfElements || 0;
+
+      setConnections(sessionId, content); // Update local connection store
+      updateRoomConnectionCount(sessionId, numberOfElements, content); // Update room store
+      addOrUpdateOpenViduSession(session); // Update global OpenVidu entities store
+    } else {
+      console.warn(`Session ${sessionId} found, but no connections data.`);
+      setConnections(sessionId, []); // Clear local connections
+      updateRoomConnectionCount(sessionId, 0); // Update room count to 0
+      updateOpenViduSessionConnectionCount(sessionId, 0); // Update global OpenVidu entities store
+    }
   } catch (err: any) {
     console.error(`Failed to fetch connections for session ${sessionId}:`, err);
     setConnectionError(`Failed to load connections: ${err.message || err}`);
-    setConnections(sessionId, []); // Clear connections on error
+    setConnections(sessionId, []); // Clear local connections on error
     updateRoomConnectionCount(sessionId, 0); // Update room count to 0 on error
+    updateOpenViduSessionConnectionCount(sessionId, 0); // Update global OpenVidu entities store on error
   } finally {
     setConnectionLoading(false);
   }

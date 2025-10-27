@@ -1,6 +1,21 @@
 import { Session, Publisher, Subscriber, Stream, StreamManager } from 'openvidu-browser';
 
 /**
+ * @interface IChatMessage
+ * @description Represents a single chat message.
+ * @property {string} sender - The display name of the message sender.
+ * @property {string} message - The content of the chat message.
+ * @property {number} timestamp - The timestamp when the message was sent (milliseconds since epoch).
+ * @property {boolean} isLocal - True if the message was sent by the local client.
+ */
+export interface IChatMessage {
+  sender: string;
+  message: string;
+  timestamp: number;
+  isLocal: boolean;
+}
+
+/**
  * Represents various properties for default session recording.
  */
 export interface IDefaultRecordingProperties {
@@ -259,6 +274,8 @@ export interface IMemberJsonData {
 
 /**
  * Represents a detailed member object as found in subscribers.json's 'member' or 'subscribed_member' fields.
+ * Note: This interface's 'id' is a number, while the Member API uses string (UUID) IDs.
+ * Use IMemberResponse for interactions with the new Member API.
  */
 export interface IMemberFull {
   id: number;
@@ -310,11 +327,10 @@ export interface IStreamerFull {
 
 /**
  * Represents a member within the Swingers ecosystem (simplified for generic usage).
- * This is a more detailed type for the 'member' object often nested in ISwingerSessionParticipant.
- * Assuming `id` is a string as it might be a UUID from a database, not necessarily a numeric OpenVidu `USERID`.
+ * Note: This type is likely for simpler contexts and may not align with the full Member API response.
  */
 export interface IMember {
-  id: string;
+  id: string; // Changed from string to be more general, but existing usage might dictate 'number'
   username: string;
   email: string;
   json_data: { [key: string]: any }; // Flexible for various user profile data
@@ -532,3 +548,65 @@ export interface IOpenViduStream extends Stream {}
  * Represents an OpenVidu StreamManager object.
  */
 export interface IOpenViduStreamManager extends StreamManager {}
+
+// ----------------------------------------------------------------------------
+// New Interfaces for Member API (from NestJS MemberModule)
+// ----------------------------------------------------------------------------
+
+/**
+ * Represents the data transfer object for creating or updating a Member.
+ * Closely mirrors NestJS CreateMemberDto, but uses string for Dates for consistency with JSON parsing.
+ */
+export interface IMemberDto {
+  username: string;
+  email: string;
+  provider?: string; // Optional in DTO
+  confirmed: boolean;
+  blocked: boolean;
+  role: number;
+  memberSystemId: number; // Corresponds to `userId` in IMemberFull
+  jsonData: any; // Generic for JSON data as per backend DTO
+  blockedExpire?: string | null; // ISO Date string
+  blockedStart?: string | null; // ISO Date string
+  isPaid: boolean;
+  createGroup: boolean;
+  isEmployee: boolean;
+  isOnline: boolean;
+  memberType: string;
+  picture?: string | null; // Optional in DTO
+  adminUser?: any | null;
+  latString?: string | null;
+  lonString?: string | null;
+  userSetting?: any | null;
+  terms?: any | null;
+}
+
+/**
+ * Represents a Member entity as returned from the API, including its ID and timestamps.
+ */
+export interface IMemberResponse extends IMemberDto {
+  id: string; // UUID from the database/API
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+  createdById?: string; // Optional field, if the API returns the creator's ID
+}
+
+/**
+ * Query parameters for paginated member searches, matching NestJS PaginationMemberQueryDto.
+ */
+export interface IMemberQueryDto extends Partial<IMemberDto> {
+  page?: number;
+  pageSize?: number;
+  // All other fields from IMemberDto are optional for filtering
+}
+
+/**
+ * Paginated result structure for member searches, matching NestJS PaginationMemberResultDto.
+ */
+export interface IMemberPaginatedResult {
+  items: IMemberResponse[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}

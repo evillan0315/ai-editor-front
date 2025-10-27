@@ -188,7 +188,13 @@ export const RoomList: React.FC = () => {
 
   // NEW: Callback for opening the chat room page
   const handleOpenChat = useCallback((roomId: string) => {
-    navigate(`/apps/swingers/room/${roomId}/chat`);
+    if (!roomId) {
+      console.warn('Attempted to open chat for a room with no ID.');
+      return;
+    }
+    // Ensure roomId is URL-encoded for safety, especially if it contains special characters
+    const encodedRoomId = encodeURIComponent(roomId);
+    navigate(`/apps/swingers/room/${encodedRoomId}/chat`);
   }, [navigate]);
 
   // Memoize grouped and sorted rooms to prevent unnecessary re-renders
