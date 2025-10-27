@@ -23,7 +23,8 @@ import { RoomCard } from './RoomCard';
 import { RoomConnectionsTable } from './RoomConnectionsTable'; // New import
 import { fetchSessionConnections } from './stores/connectionStore';
 import Loading from '@/components/Loading'; // Import the new Loading component
-import { openViduEntitiesStore, fetchOpenViduSessions } from './stores/openViduEntitiesStore'; // Import the new central store
+// MODIFIED: Import openViduEntitiesStore for loading/error, and openViduActiveSessionsMap (the new computed store)
+import { openViduEntitiesStore, openViduActiveSessionsMap, fetchOpenViduSessions } from './stores/openViduEntitiesStore'; 
 
 const listContainerSx = {
   padding: '0 24px 24px 24px', // Modified: Removed top padding
@@ -60,7 +61,11 @@ const accordionDetailsSx = {
 
 export const RoomList: React.FC = () => {
   const { rooms, loading, error, connectionCounts, loadingConnectionCounts } = useStore(roomStore);
-  const { sessions: openViduActiveSessionsMap, loading: loadingOpenViduEntities, error: openViduEntitiesError } = useStore(openViduEntitiesStore);
+  // MODIFIED: Use separate useStore hooks for the main store (for loading/error)
+  // and the new computed store (for the active sessions map itself).
+  const { loading: loadingOpenViduEntities, error: openViduEntitiesError } = useStore(openViduEntitiesStore);
+  const $openViduActiveSessionsMap = useStore(openViduActiveSessionsMap); // Use the new computed store directly
+
   const [resettingRoomId, setResettingRoomId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | false>('public');
   const navigate = useNavigate();
@@ -69,42 +74,27 @@ export const RoomList: React.FC = () => {
   const overallError = error || openViduEntitiesError;
 
   useEffect(() => {
-    // These fetches are now the primary triggers for data loading.
-    // roomStore's listener will react to openViduEntitiesStore changes.
     fetchDefaultConnection();
     fetchRooms();
-    fetchOpenViduSessions(); // This populates `openViduEntitiesStore` which `roomStore` now listens to.
-  }, []); // Empty dependency array means this runs once on mount.
+    fetchOpenViduSessions();
+  }, []); 
 
   // NEW LOGIC: Augment rooms with live status based on active OpenVidu sessions from the central store
   const roomsWithSessionStatus = useMemo(() => {
     if (!rooms || rooms.length === 0) return [];
     
-    // Get current OpenVidu sessions from the central store
-    const activeSessionIds = new Set(Object.keys(openViduActiveSessionsMap));
-    
+    // Get current OpenVidu sessions from the computed store's value
+    const activeSessionIds = new Set(Object.keys($openViduActiveSessionsMap));
+    console.log(activeSessionIds, 'activeSessionIds');
     return rooms.map(room => {
       // Determine if the room's OpenVidu ID (roomId) has a corresponding active session
       const isActive = room.roomId ? activeSessionIds.has(room.roomId) : false;
       return {
         ...room,
-        active: isActive,      // Set room's 'active' status based on session presence
-        //liveStream: isActive,  // Set room's 'liveStream' status based on session presence (as per existing logic)
+        active: isActive      // Set room's 'active' status based on session presence
       };
     });
-  }, [rooms, openViduActiveSessionsMap]); // Re-run when rooms or openViduActiveSessionsMap change
-
-  // REMOVED: No longer need this useEffect to explicitly call fetchConnectionCountsForRooms
-  // as the roomStore now listens to openViduEntitiesStore directly.
-  /*
-  useEffect(() => {
-    // Only fetch connection counts if rooms have been loaded and there are rooms to process.
-    // `fetchConnectionCountsForRooms` now uses `openViduEntitiesStore` internally.
-    if (!loading && roomsWithSessionStatus.length > 0) {
-      fetchConnectionCountsForRooms(roomsWithSessionStatus);
-    }
-  }, [loading, roomsWithSessionStatus]);
-  */
+  }, [rooms, $openViduActiveSessionsMap]); // MODIFIED: Depend on the value of the computed store
 
   const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
@@ -125,7 +115,7 @@ export const RoomList: React.FC = () => {
       // To do: implement logic for Viewing room details. Connection should open in a dialog modal
       showDialog({
       title: `View Room: ${roomId}`,
-      content: <RoomConnectionDialog roomId={roomId} connectionRole={'PUBLISHER'} />,
+      content: <RoomConnectionDialog connectionRole={'PUBLISHER'} />,
       maxWidth: 'md',
       fullWidth: true,
       showCloseButton: true,
@@ -196,6 +186,11 @@ export const RoomList: React.FC = () => {
     });
   }, []);
 
+  // NEW: Callback for opening the chat room page
+  const handleOpenChat = useCallback((roomId: string) => {
+    navigate(`/apps/swingers/room/${roomId}/chat`);
+  }, [navigate]);
+
   // Memoize grouped and sorted rooms to prevent unnecessary re-renders
   const allSortedRooms = useMemo(() => {
     if (overallLoading || overallError || roomsWithSessionStatus.length === 0) return []; // Use roomsWithSessionStatus here
@@ -207,7 +202,8 @@ export const RoomList: React.FC = () => {
       // 1. Live rooms first
       if (a.liveStream && !b.liveStream) return -1;
       if (!a.liveStream && b.liveStream) return 1;
-
+      if (a.active && !b.active) return -1;
+      if (!a.active && b.active) return 1;
       // If both are live or both are not live, proceed to secondary sorts
       // 2. More connections first (descending)
       if (aConnections !== bConnections) return bConnections - aConnections;
@@ -307,10 +303,11 @@ export const RoomList: React.FC = () => {
                       loadingConnections={room.roomId ? loadingConnectionCounts[room.roomId] || false : false}
                       onJoinRoom={handleJoinRoom}
                       onViewRoom={handleViewRoom}
-                      onResetRoom={(r) => handleResetRoom(r)} // MODIFIED: Pass the full room object
+                      onResetRoom={(r) => handleResetRoom(r)} 
                       resettingRoomId={resettingRoomId}
-                      onConnectDefaultClient={handleConnectDefaultClient} // Pass new handler
-                      onViewConnections={handleViewConnections} // Pass the new handler
+                      onConnectDefaultClient={handleConnectDefaultClient} 
+                      onViewConnections={handleViewConnections} 
+                      onOpenChat={handleOpenChat}
                     />
                   ))}
                 </Box>
@@ -352,6 +349,7 @@ export const RoomList: React.FC = () => {
                       resettingRoomId={resettingRoomId}
                       onConnectDefaultClient={handleConnectDefaultClient} // Pass new handler
                       onViewConnections={handleViewConnections} // Pass the new handler
+                      onOpenChat={handleOpenChat} 
                     />
                   ))}
                 </Box>
