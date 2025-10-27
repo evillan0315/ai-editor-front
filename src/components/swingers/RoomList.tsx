@@ -3,7 +3,6 @@ import { useStore } from '@nanostores/react';
 import {
   Box,
   Typography,
-  CircularProgress,
   Alert,
   Accordion,
   AccordionSummary,
@@ -14,16 +13,18 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LiveTvIcon from '@mui/icons-material/LiveTv'; // Import LiveTvIcon
 import { roomStore, fetchRooms, fetchConnectionCountsForRooms } from './stores/roomStore';
 import { fetchDefaultConnection } from './stores/connectionStore';
-import { RoomCard } from './RoomCard';
-import { deleteSession, createSession, getSessions } from '@/components/swingers/api/sessions';
-import { IRoom, ISession } from '@/components/swingers/types'; // Import ISession
+import { deleteSession, createSession } from '@/components/swingers/api/sessions';
+import { IRoom } from '@/components/swingers/types'; // Import ISession
 
 import { useNavigate } from 'react-router-dom';
 import { showDialog } from '@/stores/dialogStore';
 import { RoomConnectionDialog } from '@/components/swingers/dialogs/RoomConnectionDialog';
+import { RoomCard } from './RoomCard'; 
 import { RoomConnectionsTable } from './RoomConnectionsTable'; // New import
 import { sessionStore, fetchSessions } from './stores/sessionStore'; // Import sessionStore and fetchSessions
-import { fetchSessionConnections } from './stores/connectionStore'; 
+import { fetchSessionConnections } from './stores/connectionStore';
+import Loading from '@/components/Loading'; // Import the new Loading component
+import { openViduEntitiesStore, fetchOpenViduSessions } from './stores/openViduEntitiesStore'; // Import the new central store
 
 const listContainerSx = {
   padding: '0 24px 24px 24px', // Modified: Removed top padding
@@ -32,10 +33,8 @@ const listContainerSx = {
   },
 };
 
+// Simplified loadingContainerSx, as Loading component handles most layout
 const loadingContainerSx = {
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
   minHeight: '200px',
   width: '100%',
 };
@@ -62,26 +61,29 @@ const accordionDetailsSx = {
 
 export const RoomList: React.FC = () => {
   const { rooms, loading, error, connectionCounts, loadingConnectionCounts } = useStore(roomStore);
-  const { sessions, loading: loadingSessions, error: sessionsError } = useStore(sessionStore); // Fetch sessions from store
+  // `sessions` are now indirectly managed, listening to changes in `openViduEntitiesStore` for the full list
+  const { sessions: openViduActiveSessionsMap, loading: loadingOpenViduEntities, error: openViduEntitiesError } = useStore(openViduEntitiesStore);
   const [resettingRoomId, setResettingRoomId] = useState<string | null>(null); // State to track which room is being reset
   const [expanded, setExpanded] = useState<string | false>('public'); // 'public' accordion expanded by default
   const navigate = useNavigate();
+
   // Combine loading states and errors for display
-  const overallLoading = loading || loadingSessions;
-  const overallError = error || sessionsError;
+  const overallLoading = loading || loadingOpenViduEntities;
+  const overallError = error || openViduEntitiesError;
+
   useEffect(() => {
     fetchDefaultConnection();
-    fetchSessions(); 
+    // Fetch rooms and trigger global OpenVidu session fetch which populates `openViduEntitiesStore`
     fetchRooms();
+    fetchOpenViduSessions(); // Ensure this is called to populate the central store
   }, []);
 
-  // NEW LOGIC: Augment rooms with live status based on active OpenVidu sessions
+  // NEW LOGIC: Augment rooms with live status based on active OpenVidu sessions from the central store
   const roomsWithSessionStatus = useMemo(() => {
     if (!rooms || rooms.length === 0) return [];
-    // Fetch OpenVidu sessions
-    // Create a Set of active session IDs for quick lookup
-    // Guard against 'sessions' being undefined or null before mapping over it.
-    const activeSessionIds = new Set(sessions?.map(s => s.sessionId) || []);
+    
+    // Get current OpenVidu sessions from the central store
+    const activeSessionIds = new Set(Object.keys(openViduActiveSessionsMap));
     
     return rooms.map(room => {
       // Determine if the room's OpenVidu ID (roomId) has a corresponding active session
@@ -89,19 +91,19 @@ export const RoomList: React.FC = () => {
       return {
         ...room,
         active: isActive,      // Set room's 'active' status based on session presence
-        //liveStream: isActive,  // Set room's 'liveStream' status based on session presence
+        liveStream: isActive,  // Set room's 'liveStream' status based on session presence (as per existing logic)
       };
     });
-  }, [rooms, sessions]); // Re-run when rooms or sessions change
+  }, [rooms, openViduActiveSessionsMap]); // Re-run when rooms or openViduActiveSessionsMap change
 
   // Effect to fetch connection counts for rooms, now dependent on roomsWithSessionStatus
   useEffect(() => {
     // Only fetch connection counts if rooms have been loaded and there are rooms to process.
-    // Pass roomsWithSessionStatus to ensure live status is considered.
+    // `fetchConnectionCountsForRooms` now uses `openViduEntitiesStore` internally.
     if (!loading && roomsWithSessionStatus.length > 0) {
       fetchConnectionCountsForRooms(roomsWithSessionStatus);
     }
-  }, [loading, roomsWithSessionStatus, rooms]); // Depend on roomsWithSessionStatus
+  }, [loading, roomsWithSessionStatus]); // Depend on roomsWithSessionStatus
 
   const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
@@ -153,7 +155,7 @@ export const RoomList: React.FC = () => {
         console.log(`OpenVidu session ${room.roomId} ${room.active ? 'recreated' : 'created'}.`);
 
         // 3. Refresh sessions and connection counts to update UI reactively
-        fetchSessions(); // This will update sessionStore.sessions, triggering roomsWithSessionStatus re-evaluation
+        fetchOpenViduSessions(); // Refresh the global list of sessions
         fetchSessionConnections(room.roomId); // Re-fetch connections for this specific room to update its count
       } catch (error) {
         console.error(`Error resetting room ${room.roomId}:`, error);
@@ -251,16 +253,18 @@ export const RoomList: React.FC = () => {
 
   return (
     <Box sx={listContainerSx} className="w-full flex flex-col items-center h-full">
-      {overallLoading && (
-        <Box sx={loadingContainerSx}>
-          <CircularProgress color="primary" size={40} />
-        </Box>
-      )}
+
 
       {overallError && (
         <Alert severity="error" sx={errorAlertSx} className="max-w-xl">
           {overallError}
         </Alert>
+      )}
+
+      {overallLoading && !overallError && (
+        <Box sx={loadingContainerSx}>
+          <Loading type="circular" message="Loading rooms and sessions..." />
+        </Box>
       )}
 
       {!overallLoading && !overallError && roomsWithSessionStatus.length === 0 && ( // Use roomsWithSessionStatus here
