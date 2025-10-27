@@ -44,11 +44,11 @@ const messageListSx = {
     width: '8px',
   },
   '&::-webkit-scrollbar-thumb': {
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    //backgroundColor: 'rgba(0,0,0,0.2)',
     borderRadius: '4px',
   },
   '&::-webkit-scrollbar-track': {
-    backgroundColor: 'transparent',
+    //backgroundColor: 'transparent',
   },
 };
 
@@ -75,8 +75,8 @@ const messageBubbleSx = (isLocal: boolean) => ({
     wordBreak: 'break-word', // Break long words
     borderRadius: '16px',
     padding: '8px 12px',
-    backgroundColor: isLocal ? 'primary.light' : 'grey.300',
-    color: isLocal ? 'primary.contrastText' : 'text.primary',
+    backgroundColor: isLocal ? 'background.default' : 'primary.dark',
+    color: isLocal ? 'primary.light' : 'primary.dark',
   },
 });
 
@@ -172,7 +172,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
     <Paper sx={chatContainerSx} className="w-full flex-1 max-w-full md:max-w-7xl">
       <Box className="flex flex-col md:flex-row flex-1 overflow-auto "> {/* Main flex container for video & chat */}
         {/* Left Section: Video Display & Controls */}
-        <Box className="flex flex-col flex-1 md:flex-[2] p-4 bg-background-default h-full overflow-y-auto ">
+        <Box className="flex flex-col flex-1 md:flex-[2] p-4 h-full overflow-y-auto ">
           <Typography variant="h6" component="div" className="font-bold text-center mb-4" color="text.primary">
             Live Streams
           </Typography>
@@ -225,34 +225,35 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
           </Box>
 
           <List sx={messageListSx}>
-            {messages.map((msg, index) => (
-              <ListItem key={index} sx={messageBubbleSx(msg.isLocal)} className="flex-col items-stretch">
+            {messages.map((msg) => (
+              <ListItem key={msg.id} sx={messageBubbleSx(msg.isLocal)} className="flex-col items-stretch">
                 <Box className={`flex items-center ${msg.isLocal ? 'justify-end' : 'justify-start'} w-full`}>
                   {!msg.isLocal && (
-                    <Avatar sx={avatarSx}>
-                      {msg.sender ? msg.sender[0].toUpperCase() : '?'}
+                    <Avatar sx={avatarSx} src={msg.SENDER_PICTURE}> {/* Use SENDER_PICTURE for avatar */}
+                      {msg.SENDER_NAME ? msg.SENDER_NAME[0].toUpperCase() : '?'}
                     </Avatar>
                   )}
                   <ListItemText
-                    primary={msg.sender}
-                    secondary={msg.message}
+                    primary={msg.SENDER_NAME}
+                    secondary={msg.MESSAGE}
                     secondaryTypographyProps={{
                       component: 'div',
-                      className: `text-sm ${msg.isLocal ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'} rounded-lg p-2 max-w-xs`
+                      className: `text-sm ${msg.isLocal ? '' : ''} rounded-lg p-2 max-w-xs`
                     }}
+                    sx={{bgColor:'background,paper'}}
                     primaryTypographyProps={{
                       className: `text-xs font-semibold mb-1 ${msg.isLocal ? 'text-right pr-2' : 'text-left pl-2'}`
                     }}
                     className={`flex flex-col ${msg.isLocal ? 'items-end' : 'items-start'}`}
                   />
                   {msg.isLocal && (
-                    <Avatar sx={avatarSx}>
-                      {msg.sender ? msg.sender[0].toUpperCase() : '?'}
+                    <Avatar sx={avatarSx} src={msg.SENDER_PICTURE}> {/* Use SENDER_PICTURE for avatar */}
+                      {msg.SENDER_NAME ? msg.SENDER_NAME[0].toUpperCase() : '?'}
                     </Avatar>
                   )}
                 </Box>
                 <Typography variant="caption" color="text.secondary" className={`text-xs mt-1 ${msg.isLocal ? 'self-end pr-14' : 'self-start pl-14'}`}>
-                  {new Date(msg.timestamp).toLocaleTimeString()}
+                  {new Date(msg.TIME).toLocaleTimeString()}
                 </Typography>
               </ListItem>
             ))}
