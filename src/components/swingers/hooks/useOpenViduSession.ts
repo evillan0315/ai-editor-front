@@ -501,7 +501,7 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       // If no publisher, triggering initLocalMediaPreview will respect the new `isCameraActive` state
       // (which `initLocalMediaPreview` now reads directly from the store).
       // This ensures that when a publisher is later initialized, it respects the desired camera state.
-      initLocalMediaPreview();
+      //initLocalMediaPreview();
     }
   }, [connectionRole, initLocalMediaPreview]); // Add initLocalMediaPreview dependency
 
