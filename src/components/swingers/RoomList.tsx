@@ -15,13 +15,14 @@ import LiveTvIcon from '@mui/icons-material/LiveTv'; // Import LiveTvIcon
 import { roomStore, fetchRooms, fetchConnectionCountsForRooms } from './stores/roomStore';
 import { fetchDefaultConnection } from './stores/connectionStore';
 import { RoomCard } from './RoomCard';
-import { deleteSession, createSession } from '@/components/swingers/api/sessions';
-import { IRoom } from '@/components/swingers/types';
+import { deleteSession, createSession, getSessions } from '@/components/swingers/api/sessions';
+import { IRoom, ISession } from '@/components/swingers/types'; // Import ISession
 
 import { useNavigate } from 'react-router-dom';
 import { showDialog } from '@/stores/dialogStore';
 import { RoomConnectionDialog } from '@/components/swingers/dialogs/RoomConnectionDialog';
 import { RoomConnectionsTable } from './RoomConnectionsTable'; // New import
+import { sessionStore, fetchSessions } from './stores/sessionStore'; // Import sessionStore and fetchSessions
 
 const listContainerSx = {
   padding: '0 24px 24px 24px', // Modified: Removed top padding
@@ -60,13 +61,16 @@ const accordionDetailsSx = {
 
 export const RoomList: React.FC = () => {
   const { rooms, loading, error, connectionCounts, loadingConnectionCounts } = useStore(roomStore);
+  const { sessions, loading: loadingSessions, error: sessionsError } = useStore(sessionStore); // Fetch sessions from store
   const [resettingRoomId, setResettingRoomId] = useState<string | null>(null); // State to track which room is being reset
   const [expanded, setExpanded] = useState<string | false>('public'); // 'public' accordion expanded by default
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchDefaultConnection();
+    fetchSessions(); // Fetch OpenVidu sessions
     fetchRooms();
+    
   }, []);
 
   useEffect(() => {
@@ -78,6 +82,24 @@ export const RoomList: React.FC = () => {
   const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
   };
+
+  // NEW LOGIC: Augment rooms with live status based on active OpenVidu sessions
+  const roomsWithSessionStatus = useMemo(() => {
+    if (!rooms || rooms.length === 0) return [];
+    
+    // Create a Set of active session IDs for quick lookup
+    const activeSessionIds = new Set(sessions.map(s => s.sessionId));
+    
+    return rooms.map(room => {
+      // Determine if the room's OpenVidu ID (roomId) has a corresponding active session
+      const isActive = room.roomId ? activeSessionIds.has(room.roomId) : false;
+      return {
+        ...room,
+        active: isActive,      // Set room's 'active' status based on session presence
+        liveStream: isActive,  // Set room's 'liveStream' status based on session presence
+      };
+    });
+  }, [rooms, sessions]); // Re-run when rooms or sessions change
 
   // Callback for joining a room (navigates to OpenVidu page)
   const handleJoinRoom = useCallback(
@@ -125,6 +147,7 @@ export const RoomList: React.FC = () => {
         // 3. Refresh rooms and connection counts to update UI
         // fetchRooms will update the roomStore, and the useEffect will trigger fetchConnectionCountsForRooms
         await fetchRooms();
+        fetchSessions(); // Re-fetch sessions to update live status
       } catch (error) {
         console.error(`Error resetting room ${roomId}:`, error);
         // TODO: Implement a global snackbar/toast for user feedback
@@ -164,9 +187,9 @@ export const RoomList: React.FC = () => {
 
   // Memoize grouped and sorted rooms to prevent unnecessary re-renders
   const allSortedRooms = useMemo(() => {
-    if (loading || error || rooms.length === 0) return [];
+    if (loading || error || roomsWithSessionStatus.length === 0) return []; // Use roomsWithSessionStatus here
 
-    const sorted = [...rooms].sort((a, b) => {
+    const sorted = [...roomsWithSessionStatus].sort((a, b) => { // Sort roomsWithSessionStatus
       const aConnections = a.roomId ? connectionCounts[a.roomId] || 0 : 0;
       const bConnections = b.roomId ? connectionCounts[b.roomId] || 0 : 0;
 
@@ -190,7 +213,7 @@ export const RoomList: React.FC = () => {
     });
 
     return sorted;
-  }, [rooms, loading, error, connectionCounts]);
+  }, [roomsWithSessionStatus, loading, error, connectionCounts]); // roomsWithSessionStatus as dependency
 
   const sortedLiveRooms = useMemo(() => allSortedRooms.filter((room) => room.liveStream), [allSortedRooms]);
   const sortedNonLiveRooms = useMemo(() => allSortedRooms.filter((room) => !room.liveStream), [allSortedRooms]);
@@ -217,27 +240,31 @@ export const RoomList: React.FC = () => {
     return finalGrouped;
   }, [sortedNonLiveRooms]);
 
+  // Combine loading states and errors for display
+  const overallLoading = loading || loadingSessions;
+  const overallError = error || sessionsError;
+
   return (
     <Box sx={listContainerSx} className="w-full flex flex-col items-center h-full">
-      {loading && (
+      {overallLoading && (
         <Box sx={loadingContainerSx}>
           <CircularProgress color="primary" size={40} />
         </Box>
       )}
 
-      {error && (
+      {overallError && (
         <Alert severity="error" sx={errorAlertSx} className="max-w-xl">
-          {error}
+          {overallError}
         </Alert>
       )}
 
-      {!loading && !error && rooms.length === 0 && (
+      {!overallLoading && !overallError && roomsWithSessionStatus.length === 0 && ( // Use roomsWithSessionStatus here
         <Alert severity="info" className="max-w-xl">
           No rooms found.
         </Alert>
       )}
 
-      {!loading && !error && rooms.length > 0 && (
+      {!overallLoading && !overallError && roomsWithSessionStatus.length > 0 && ( // Use roomsWithSessionStatus here
         <Box className="w-full flex flex-col gap-4">
           {sortedLiveRooms.length > 0 && (
             <Accordion
