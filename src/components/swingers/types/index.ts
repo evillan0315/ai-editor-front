@@ -100,6 +100,7 @@ export interface IClientConnectionUserData {
 
 /**
  * Represents the full payload parsed from the 'clientData' string in an OpenVidu connection.
+ * This structure is typically `{"clientData": { ...IClientConnectionUserData... }, "publicKey": "..."}`.
  */
 export interface IClientDataPayload {
   clientData: IClientConnectionUserData;
