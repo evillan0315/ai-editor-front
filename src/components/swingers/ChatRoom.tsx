@@ -92,7 +92,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
 
   const {
     sessionNameInput,
-    handleSessionNameChange, // Not used directly, as roomId is fixed
+    handleSessionNameChange,
     joinSession,
     leaveSession,
     initLocalMediaPreview,
@@ -109,6 +109,8 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
     openViduInstance,
     connectionRole,
     currentUserDisplayName,
+    sendChatMessage,
+    isLoading: isSending,
   } = useOpenViduSession(roomId, 'PUBLISHER'); // Always publisher for this component
 
   const [messageInput, setMessageInput] = useState('');
@@ -120,13 +122,12 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
 
   // NEW: Effect to auto-join session when component mounts, if roomId is available
   useEffect(() => {
-    console.log(openViduInstance, currentSessionId);
     // Ensure OpenVidu instance is ready and we're not already connected to this room
-    if (roomId && openViduInstance && !currentSessionId) {
+    if (roomId && openViduInstance && currentSessionId !== roomId) {
       console.log(`Attempting to auto-join OpenVidu session: ${roomId}`);
       joinSession(roomId);
     }
-  }, [roomId, openViduInstance, currentSessionId, joinSession]);
+  }, [roomId, openViduInstance, currentSessionId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -147,34 +148,15 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
     setChatLoading(true);
     setChatError(null);
     try {
-      const mySenderName = currentUserDisplayName?.USERNAME || 'You';
-      // We don't add to chatStore.messages directly here because useOpenViduSession's signal handler will add it
-      // after it's sent and echoed back (or just sent if not echoed back).
-      // For now, let's just send and rely on the hook's signal listener to update.
-
-      // useOpenViduSession needs to expose sendChatMessage for this to work
-      // Temporarily assuming sendChatMessage is part of the hook return. If not, it needs to be added.
-      // Assuming the useOpenViduSession hook already includes sendChatMessage
-      const {
-        sendChatMessage
-      } = useOpenViduSession(roomId, connectionRole); // Re-destructure here or pass as prop if from parent
-
-      await sendChatMessage(messageInput); // This needs to be correctly sourced
+      // The `sendChatMessage` is now destructured at the top from useOpenViduSession.
+      await sendChatMessage(messageInput);
       setMessageInput('');
     } catch (e: any) {
       setChatError(`Failed to send message: ${e.message || e}`);
     } finally {
       setChatLoading(false);
     }
-  }, [messageInput, currentUserDisplayName, roomId, connectionRole]); // Added roomId and connectionRole for sendChatMessage
-
-  // Re-declare useOpenViduSession to get sendChatMessage if it's not stable or directly available
-  // A better pattern would be to destructure all needed values from useOpenViduSession at the top level
-  const { sendChatMessage, isLoading: isSending } = useOpenViduSession(roomId, connectionRole); // This re-calls the hook. Better to get it from the top-level destructuring.
-
-  // For now, let's assume sendChatMessage and isSending are already destructured at the top.
-  // If they were not, the above line would be problematic due to re-calling the hook.
-  // Let's ensure sendChatMessage and isSending are from the initial destructuring.
+  }, [messageInput, sendChatMessage]);
 
   const handleKeyPress = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {

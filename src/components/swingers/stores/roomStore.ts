@@ -1,14 +1,14 @@
 import { map } from 'nanostores';
 import { IRoom, ISession, IConnectionList } from '@/components/swingers/types';
 import { getRooms } from '@/components/swingers/api/rooms';
-import { openViduEntitiesStore, fetchOpenViduSessions, updateSessionConnectionCount as updateOpenViduSessionConnectionCount, addOrUpdateOpenViduSession } from '@/components/swingers/stores/openViduEntitiesStore';
+import { openViduEntitiesStore, fetchOpenViduSessions, updateSessionConnectionCount as updateOpenViduSessionConnectionCount } from '@/components/swingers/stores/openViduEntitiesStore';
 
 interface RoomStoreState {
   rooms: IRoom[];
   loading: boolean;
   error: string | null;
   connectionCounts: Record<string, number | null>; // Map roomId to connection count
-  loadingConnectionCounts: Record<string, boolean>; // Map roomId to loading state for connections
+  loadingConnectionCounts: Record<string, boolean>; // Map roomId to loading state for connections (mostly false now)
 }
 
 export const roomStore = map<RoomStoreState>({
@@ -34,45 +34,66 @@ export const fetchRooms = async () => {
   }
 };
 
-/**
- * Fetches connection counts for a given list of rooms and updates the store.
- * This function now leverages the `openViduEntitiesStore` to avoid redundant API calls.
- * It first ensures the global list of OpenVidu sessions is fetched, then derives connection counts from it.
- * @param rooms An array of IRoom objects. These rooms should ideally already have their `liveStream` status determined.
- */
-export const fetchConnectionCountsForRooms = async (rooms: IRoom[]) => {
-  // Ensure global OpenVidu sessions are fetched first.
-  // This acts as a single API call for all sessions.
-  await fetchOpenViduSessions(); 
-
-  const currentOpenViduSessions = openViduEntitiesStore.get().sessions;
+// Listener for openViduEntitiesStore to automatically update connectionCounts
+// This will run whenever the openViduEntitiesStore updates, ensuring roomStore's connectionCounts
+// are always in sync with the global OpenVidu sessions.
+openViduEntitiesStore.listen(({ sessions: activeOpenViduSessions }) => {
+  const currentRooms = roomStore.get().rooms;
   const newConnectionCounts: Record<string, number | null> = {};
-  const newLoadingState: Record<string, boolean> = {};
+  const newLoadingState: Record<string, boolean> = {}; // These will mostly be false
 
-  rooms.forEach((room) => {
+  currentRooms.forEach(room => {
     if (room.roomId) {
-      const session = currentOpenViduSessions[room.roomId];
-      // If the room has an active session in our global store, get its connection count.
-      if (session) {
-        newConnectionCounts[room.roomId] = session.connections?.numberOfElements || 0;
-        newLoadingState[room.roomId] = false; // No longer loading since we have data
-      } else {
-        // If no session found in global store, it's considered to have 0 connections.
-        newConnectionCounts[room.roomId] = 0;
-        newLoadingState[room.roomId] = false;
-      }
+      const session = activeOpenViduSessions[room.roomId];
+      newConnectionCounts[room.roomId] = session?.connections?.numberOfElements || 0;
+      newLoadingState[room.roomId] = false; // Connection count is now resolved
     }
   });
 
-  // Update store with fetched counts and final loading states
-  roomStore.setKey('connectionCounts', newConnectionCounts);
+  // Only update if there are actual changes to avoid unnecessary re-renders for the RoomList component
+  const currentConnectionCounts = roomStore.get().connectionCounts;
+  const currentLoadingConnectionCounts = roomStore.get().loadingConnectionCounts;
+
+  const hasConnectionCountChanges = Object.keys(newConnectionCounts).some(
+    (roomId) => newConnectionCounts[roomId] !== currentConnectionCounts[roomId]
+  ) || Object.keys(currentConnectionCounts).length !== Object.keys(newConnectionCounts).length; // Check for added/removed rooms
+
+  if (hasConnectionCountChanges) {
+    roomStore.setKey('connectionCounts', newConnectionCounts);
+  }
+  // Loading state for connection counts can be updated without full re-eval of connectionCounts map
+  // However, since it's derived from the same source, it's fine to set it along with connectionCounts.
+  // The 'loadingConnectionCounts' for individual rooms will primarily be managed by initial fetches or explicit actions
+  // where a single room's connections are being loaded.
   roomStore.setKey('loadingConnectionCounts', newLoadingState);
+});
+
+
+/**
+ * @function fetchConnectionCountsForRooms
+ * @description (DEPRECATED for direct component usage) This function is now largely a no-op
+ * for its original purpose of fetching. Its primary purpose is to be called by other stores
+ * if they need to *trigger* a re-evaluation of connection counts in `roomStore` based on the
+ * *current* state of `openViduEntitiesStore`. However, the `listen` already handles this reactivity.
+ *
+ * It is advisable to remove calls to this function from components and rely on the `listen` hook.
+ * For now, making it effectively a passthrough to avoid breaking existing code that might call it.
+ *
+ * @param rooms An array of IRoom objects.
+ */
+export const fetchConnectionCountsForRooms = async (rooms: IRoom[]) => {
+  console.warn("`fetchConnectionCountsForRooms` is deprecated. Connection counts are now reactive via `openViduEntitiesStore` listener.");
+  // No explicit fetch needed here, the listener on `openViduEntitiesStore` handles updates.
+  // This function can remain as a no-op if no other module critically relies on its side effects other than
+  // triggering the listener (which `openViduEntitiesStore` updates already do).
+  // If `rooms` themselves change, the `openViduEntitiesStore.listen` will react to `currentRooms` inside.
+  // So, calling this function directly from RoomList is indeed redundant now.
 };
 
 /**
  * Updates the connection count for a specific room.
- * This is intended for real-time updates from a WebSocket or `connectionStore`.
- * It now also updates the global `openViduEntitiesStore` for consistency.
+ * This function now *only* delegates to `openViduEntitiesStore` to update the global source of truth.
+ * The `roomStore`'s listener will then react to this global update.
  * @param roomId The ID of the room whose connection count to update.
  * @param count The new connection count for the room.
  * @param connectionsContent Optional: The actual array of connections, for full consistency with `ISession.connections.content`.
@@ -82,15 +103,16 @@ export const updateRoomConnectionCount = (
   count: number,
   connectionsContent: IConnectionList['content'] = [],
 ) => {
-  roomStore.setKey('connectionCounts', {
-    ...roomStore.get().connectionCounts,
-    [roomId]: count,
-  });
+  // Update the centralized openViduEntitiesStore first.
+  // This update will then trigger the `roomStore`'s listener, which will re-calculate
+  // `connectionCounts` for all rooms, including the one being updated here.
+  updateOpenViduSessionConnectionCount(roomId, count, connectionsContent);
+
+  // We might still want to explicitly set `loadingConnectionCounts[roomId]` to false here
+  // if this update signifies that the connection count for *this specific room* has finished loading/being determined.
+  // This is separate from the general re-calculation.
   roomStore.setKey('loadingConnectionCounts', {
     ...roomStore.get().loadingConnectionCounts,
     [roomId]: false,
   });
-
-  // Also update the centralized openViduEntitiesStore for consistency
-  updateOpenViduSessionConnectionCount(roomId, count, connectionsContent);
 };

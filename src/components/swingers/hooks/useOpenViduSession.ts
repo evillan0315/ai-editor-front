@@ -122,8 +122,8 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       const publisher = await ovInstance.initPublisherAsync(undefined, {
         audioSource: undefined,
         videoSource: undefined,
-        publishAudio: false,
-        publishVideo: false,
+        publishAudio: false, // Default to audio off
+        publishVideo: false, // Default to video off
         resolution: '640x480',
         frameRate: 30,
         insertMode: 'APPEND',
