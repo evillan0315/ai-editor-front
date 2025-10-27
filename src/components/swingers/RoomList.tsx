@@ -23,6 +23,7 @@ import { showDialog } from '@/stores/dialogStore';
 import { RoomConnectionDialog } from '@/components/swingers/dialogs/RoomConnectionDialog';
 import { RoomConnectionsTable } from './RoomConnectionsTable'; // New import
 import { sessionStore, fetchSessions } from './stores/sessionStore'; // Import sessionStore and fetchSessions
+import { fetchSessionConnections } from './stores/connectionStore'; 
 
 const listContainerSx = {
   padding: '0 24px 24px 24px', // Modified: Removed top padding
@@ -154,7 +155,8 @@ export const RoomList: React.FC = () => {
         // 3. Refresh rooms and connection counts to update UI
         // fetchRooms will update the roomStore, and the useEffect will trigger fetchConnectionCountsForRooms
         await fetchRooms();
-        await fetchSessions(); // Re-fetch sessions to update live status
+        fetchSessions();
+        fetchSessionConnections(room.roomId); // Re-fetch sessions to update live status
       } catch (error) {
         console.error(`Error resetting room ${room.roomId}:`, error);
         // TODO: Implement a global snackbar/toast for user feedback
