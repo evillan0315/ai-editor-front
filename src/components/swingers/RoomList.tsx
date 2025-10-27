@@ -88,15 +88,16 @@ export const RoomList: React.FC = () => {
     if (!rooms || rooms.length === 0) return [];
     
     // Create a Set of active session IDs for quick lookup
-    const activeSessionIds = new Set(sessions.map(s => s.sessionId));
-    
+    // Guard against 'sessions' being undefined or null before mapping over it.
+    const activeSessionIds = new Set(sessions?.map(s => s.sessionId) || []);
+    console.log(activeSessionIds, 'activeSessionIds');
     return rooms.map(room => {
       // Determine if the room's OpenVidu ID (roomId) has a corresponding active session
       const isActive = room.roomId ? activeSessionIds.has(room.roomId) : false;
       return {
         ...room,
-        active: isActive,      // Set room's 'active' status based on session presence
-        liveStream: isActive,  // Set room's 'liveStream' status based on session presence
+        //active: isActive,      // Set room's 'active' status based on session presence
+        //liveStream: isActive,  // Set room's 'liveStream' status based on session presence
       };
     });
   }, [rooms, sessions]); // Re-run when rooms or sessions change
@@ -213,7 +214,7 @@ export const RoomList: React.FC = () => {
     });
 
     return sorted;
-  }, [roomsWithSessionStatus, loading, error, connectionCounts]); // roomsWithSessionStatus as dependency
+  }, [loading, error, connectionCounts]); // roomsWithSessionStatus as dependency
 
   const sortedLiveRooms = useMemo(() => allSortedRooms.filter((room) => room.liveStream), [allSortedRooms]);
   const sortedNonLiveRooms = useMemo(() => allSortedRooms.filter((room) => !room.liveStream), [allSortedRooms]);

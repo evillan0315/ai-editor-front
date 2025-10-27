@@ -1,7 +1,8 @@
 import { map } from 'nanostores';
-import { IRoom } from '@/components/swingers/types';
+import { IRoom, IConnectionList } from '@/components/swingers/types';
 import { getRooms } from '@/components/swingers/api/rooms';
-import { getConnections } from '@/components/swingers/api/connections'; // Import getConnections
+import { getSessions, getSession } from '@/components/swingers/api/sessions';
+import { getConnections } from '@/components/swingers/api/connections'; 
 
 interface RoomStoreState {
   rooms: IRoom[];
@@ -56,11 +57,12 @@ export const fetchConnectionCountsForRooms = async (rooms: IRoom[]) => {
   const promises = rooms.map(async (room) => {
     if (room.roomId) {
       try {
-        const connections = await getConnections(room.roomId);
-        newConnectionCounts[room.roomId] = connections.length;
+        const session = await getSession(room.roomId);
+        const connections = session?.connections as IConnectionList;
+        newConnectionCounts[room.roomId] = connections?.numberOfElements || 0;
       } catch (err) {
-        console.error(`Failed to fetch connections for room ${room.roomId}:`, err);
-        newConnectionCounts[room.roomId] = null; // Indicate error/failure to fetch
+        console.log(`Failed to fetch connections for room ${room.roomId}:`, err);
+        newConnectionCounts[room.roomId] = 0; // Indicate error/failure to fetch
       } finally {
         newLoadingState[room.roomId] = false; // Mark as no longer loading for this room
       }
