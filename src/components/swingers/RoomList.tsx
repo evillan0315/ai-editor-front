@@ -81,7 +81,7 @@ export const RoomList: React.FC = () => {
     // Fetch OpenVidu sessions
     // Create a Set of active session IDs for quick lookup
     // Guard against 'sessions' being undefined or null before mapping over it.
-    const activeSessionIds = new Set(sessions?.map(s => s.sessionId	) || []);
+    const activeSessionIds = new Set(sessions?.map(s => s.sessionId) || []);
     
     return rooms.map(room => {
       // Determine if the room's OpenVidu ID (roomId) has a corresponding active session
@@ -152,11 +152,9 @@ export const RoomList: React.FC = () => {
         await createSession({ customSessionId: room.roomId });
         console.log(`OpenVidu session ${room.roomId} ${room.active ? 'recreated' : 'created'}.`);
 
-        // 3. Refresh rooms and connection counts to update UI
-        // fetchRooms will update the roomStore, and the useEffect will trigger fetchConnectionCountsForRooms
-        await fetchRooms();
-        fetchSessions();
-        fetchSessionConnections(room.roomId); // Re-fetch sessions to update live status
+        // 3. Refresh sessions and connection counts to update UI reactively
+        fetchSessions(); // This will update sessionStore.sessions, triggering roomsWithSessionStatus re-evaluation
+        fetchSessionConnections(room.roomId); // Re-fetch connections for this specific room to update its count
       } catch (error) {
         console.error(`Error resetting room ${room.roomId}:`, error);
         // TODO: Implement a global snackbar/toast for user feedback
