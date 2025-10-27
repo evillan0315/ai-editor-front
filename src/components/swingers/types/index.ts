@@ -2,17 +2,45 @@ import { Session, Publisher, Subscriber, Stream, StreamManager } from 'openvidu-
 
 /**
  * @interface IChatMessage
- * @description Represents a single chat message.
- * @property {string} sender - The display name of the message sender.
- * @property {string} message - The content of the chat message.
- * @property {number} timestamp - The timestamp when the message was sent (milliseconds since epoch).
+ * @description Represents a single chat message, incorporating details for sender, receiver, and message metadata.
+ * @property {string} sender - The display name of the message sender (derived from `data.SENDER_NAME`).
+ * @property {string} message - The content of the chat message (derived from `data.MESSAGE`).
+ * @property {number} timestamp - The timestamp when the message was sent (derived from `data.TIME`, converted to number, or `Date.now()`).
  * @property {boolean} isLocal - True if the message was sent by the local client.
+ *
+ * @property {string} [id] - A unique identifier for the chat message (derived from `data.message_id`).
+ * @property {number} [messageCount] - An optional sequential count for messages.
+ * @property {string} [senderPicture] - URL or base64 of sender's picture (derived from `data.SENDER_PICTURE`).
+ * @property {string} [senderUserId] - The unique ID of the sender (derived from `data.SENDER`).
+ * @property {any} [senderInfo] - Additional sender information (derived from an external `response` variable).
+ * @property {string} [senderGender] - Gender of the sender (derived from `data.SENDER_GENDER`).
+ * @property {string} [receiverName] - Display name of the message receiver (derived from `data.RECEIVER_NAME`).
+ * @property {string} [receiverUserId] - The unique ID of the receiver (derived from `data.RECEIVER`).
+ * @property {string} [receiverGender] - Gender of the receiver (derived from `data.RECEIVER_GENDER`).
+ * @property {string} [sentDateRaw] - The raw string representation of the message date/time (derived from `data.TIME`).
+ * @property {string} [textColor] - The color of the message text (derived from `data.textColor`).
  */
 export interface IChatMessage {
-  sender: string;
-  message: string;
-  timestamp: number;
-  isLocal: boolean;
+  // Core fields, directly used for display and currently populated
+  sender: string; // The display name of the message sender.
+  message: string; // The content of the chat message.
+  timestamp: number; // The timestamp when the message was sent (milliseconds since epoch).
+  isLocal: boolean; // True if the message was sent by the local client.
+
+  // Additional fields from the provided object, all optional for compatibility
+  id?: string;             // A unique identifier for the chat message (from data.message_id)
+  messageCount?: number;   // A sequential count for messages
+  senderPicture?: string;  // URL or base64 of sender's picture (from data.SENDER_PICTURE)
+  senderUserId?: string;   // The unique ID of the sender (from data.SENDER)
+  senderInfo?: any;        // Additional sender information (from 'response' variable)
+  senderGender?: string;   // Gender of the sender (from data.SENDER_GENDER)
+
+  receiverName?: string;   // Display name of the message receiver (from data.RECEIVER_NAME)
+  receiverUserId?: string; // The unique ID of the receiver (from data.RECEIVER)
+  receiverGender?: string; // Gender of the receiver
+
+  sentDateRaw?: string;    // The raw string representation of the message date/time (from data.TIME)
+  textColor?: string;      // The color of the message text (from data.textColor)
 }
 
 /**

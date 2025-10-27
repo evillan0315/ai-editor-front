@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CallEndIcon from '@mui/icons-material/CallEnd'; // Import CallEndIcon
-import { fetchDefaultConnection } from './stores/connectionStore';
+//import { fetchDefaultConnection } from './stores/connectionStore';
 import { chatStore, IChatMessage, setChatError, setChatLoading, clearChat } from './stores/chatStore';
 import { useOpenViduSession } from './hooks/useOpenViduSession';
 import { OpenViduVideoGrid } from './openvidu/OpenViduVideoGrid'; // NEW
@@ -121,13 +121,13 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
 
   // Effect to auto-join session when component mounts/roomId changes, if OpenVidu instance is ready
   useEffect(() => {
+    
     // Ensure OpenVidu instance is ready and we're not already connected to this room
     if (roomId && openViduInstance && currentSessionId !== roomId) {
-      fetchDefaultConnection();
-      console.log(`Attempting to auto-join OpenVidu session: ${roomId}`);
+      //fetchDefaultConnection();
       joinSession(roomId);
     }
-  }, [roomId, openViduInstance, currentSessionId, joinSession, fetchDefaultConnection]); // Added joinSession to dependencies
+  }, [roomId, openViduInstance, currentSessionId, joinSession]); // Added joinSession to dependencies
 
   useEffect(() => {
     scrollToBottom();
@@ -152,7 +152,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
       setMessageInput('');
     } catch (e: any) {
       setChatError(`Failed to send message: ${e.message || e}`);
-    } finally {
+    npx  } finally {
       setChatLoading(false);
     }
   }, [messageInput, sendChatMessage]);
@@ -170,9 +170,9 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
 
   return (
     <Paper sx={chatContainerSx} className="w-full flex-1 max-w-full md:max-w-7xl">
-      <Box className="flex flex-col md:flex-row flex-1 "> {/* Main flex container for video & chat */}
+      <Box className="flex flex-col md:flex-row flex-1 overflow-auto "> {/* Main flex container for video & chat */}
         {/* Left Section: Video Display & Controls */}
-        <Box className="flex flex-col flex-1 md:flex-[2] p-4 bg-background-default overflow-y-auto ">
+        <Box className="flex flex-col flex-1 md:flex-[2] p-4 bg-background-default h-full overflow-y-auto ">
           <Typography variant="h6" component="div" className="font-bold text-center mb-4" color="text.primary">
             Live Streams
           </Typography>

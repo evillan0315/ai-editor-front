@@ -23,6 +23,7 @@ import {
 import { fetchSessionConnections, clearConnections, currentDefaultConnection, fetchDefaultConnection } from '@/components/swingers/stores/connectionStore';
 import { authStore } from '@/stores/authStore';
 import { addChatMessage, clearChat } from '@/components/swingers/stores/chatStore'; // NEW: Import chat store actions
+import { nanoid } from 'nanoid'; // Import nanoid
 
 
 /**
@@ -42,8 +43,10 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
 
   // Ensure currentUserDisplayName is safely parsed or defaulted
   const currentUserDisplayName = React.useMemo(() => {
+    
     try {
       if ($currentDefaultConnection.clientData) {
+        console.log($currentDefaultConnection, '$currentDefaultConnection')
         const parsedPayload: IClientDataPayload = JSON.parse($currentDefaultConnection.clientData);
         return parsedPayload.clientData; // This should be IClientConnectionUserData
       } else {
@@ -53,8 +56,9 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       }
       
     } catch (e) {
-      console.error('Error parsing clientData for currentUserDisplayName:', e, $currentDefaultConnection.clientData);
-      return { USERNAME: 'Guest' } as IClientConnectionUserData;
+      fetchDefaultConnection();
+      const parsedPayload: IClientDataPayload = JSON.parse($currentDefaultConnection.clientData);
+        return parsedPayload.clientData; 
     }
   }, [$currentDefaultConnection.clientData]);
 
@@ -384,7 +388,10 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
               sender: senderName,
               message: signalData.message,
               timestamp: signalData.timestamp || Date.now(),
-              isLocal: isMessageLocal, // Correctly set local flag
+              isLocal: isMessageLocal,
+              id: signalData.id, // Extract new optional fields
+              senderUserId: signalData.senderUserId,
+              senderPicture: signalData.senderPicture,
             };
             addChatMessage(chatMessage); // Add message to the chat store
           }
@@ -396,37 +403,38 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       session.on(`signal:${effectiveSessionId}`, (event) => {
          console.log(`Chat messge from room ${effectiveSessionId}`, event);
         try {
-          const signalData = JSON.parse(event.data || '{}');
-          const connectionData = event.from?.data; // Connection data of the sender
-          console.log(`signalData ${effectiveSessionId}`, signalData);
-          console.log(`connectionData ${effectiveSessionId}`, connectionData);
+        let messageCount = 1;
+        const from = event.from.data;
+        const parFrom = JSON.parse(from).clientData;
+        const data = JSON.parse(event.data);
+
           let senderName = 'Unknown';
           let isMessageLocal = false; // Flag to check if message is from current user
 
           // Determine sender name and if it's a local message
-          if (connectionData) {
+          if (data) {
             try {
-              const clientDataPayload: IClientDataPayload = JSON.parse(connectionData);
-              senderName = clientDataPayload.clientData.USERNAME || 'Unknown';
-              // Compare connection IDs to identify local sender
-              if (event.from?.connectionId === openViduStore.get().publisher?.stream?.connection?.connectionId) {
-                isMessageLocal = true;
-              }
+              const clientDataPayload: IClientDataPayload = JSON.parse(data);
+              senderName = data.SENDER_NAME || 'Unknown';
+              
             } catch (parseError) {
               // Fallback for malformed or older clientData structure
-              senderName = connectionData.replace('clientData_', '') || 'Unknown';
+              //senderName = data.replace('clientData_', '') || 'Unknown';
               console.warn('Failed to parse connectionData as IClientDataPayload, falling back.', parseError);
             }
           }
 
-          if (signalData.message) {
-            console.log('Received chat message:', signalData.message);
+          if (data.message) {
+            console.log('Received chat message:', data.message);
             const chatMessage: IChatMessage = {
-              sender: senderName,
-              message: signalData.message,
-              timestamp: signalData.timestamp || Date.now(),
-              isLocal: isMessageLocal,
-            };
+            messageCount: messageCount ++,
+            USERNAME: data.SENDER_NAME,
+            PICTURE: data.SENDER_PICTURE,
+            USERID: data.SENDER,
+            message: data.MESSAGE,
+            date: data.TIME,
+            type: data.TYPE,
+        };
             addChatMessage(chatMessage); // Add message to the chat store
           }
 
@@ -445,7 +453,6 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       // currentUserDisplayName is IClientConnectionUserData. Stringify it directly.
       const userDataString = JSON.stringify({ // Wrap in an object matching IClientDataPayload for consistency
         clientData: { ...currentUserDisplayName, USERGROUPID: effectiveSessionId, ROOMNAME: "" },
-        publicKey: "" // Add a placeholder if publicKey is not available, or retrieve it from currentUserDisplayName if it exists
       });
       
       await session.connect(token, userDataString);
@@ -501,7 +508,7 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
       // If no publisher, triggering initLocalMediaPreview will respect the new `isCameraActive` state
       // (which `initLocalMediaPreview` now reads directly from the store).
       // This ensures that when a publisher is later initialized, it respects the desired camera state.
-      //initLocalMediaPreview();
+      initLocalMediaPreview();
     }
   }, [connectionRole, initLocalMediaPreview]); // Add initLocalMediaPreview dependency
 
@@ -525,7 +532,6 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
   const sendChatMessage = useCallback(async (messageText: string) => {
     const ovSession = openViduStore.get().session;
     const ovCurrentSessionId = openViduStore.get().currentSessionId;
-    const localConnectionId = openViduStore.get().publisher?.stream?.connection?.connectionId;
 
     if (!ovSession || !ovCurrentSessionId) {
       console.warn('Cannot send chat message: No active OpenVidu session.');
@@ -537,6 +543,9 @@ export const useOpenViduSession = (initialSessionId?: string, connectionRole: 'P
         sender: mySenderName,
         message: messageText,
         timestamp: Date.now(),
+        id: nanoid(), // Assign a unique ID
+        senderUserId: currentUserDisplayName?.USERID?.toString(), // Include sender user ID
+        senderPicture: currentUserDisplayName?.PICTURE, // Include sender picture URL/base64
       };
       console.log(ovSession, 'ovSession');
       await ovSession.signal({
