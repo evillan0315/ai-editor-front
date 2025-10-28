@@ -3,7 +3,7 @@ import { Box, LinearProgress } from '@mui/material';
 import { RecordingControls } from './RecordingControls';
 import { RecordingStatus } from './RecordingStatus';
 import { RecordingsTable } from './RecordingsTable';
-import { RecordingSearchBar } from './RecordingSearchBar';
+// import { RecordingSearchBar } from './RecordingSearchBar'; // Removed
 import { RecordingInfoDrawer } from './RecordingInfoDrawer';
 import { RecordingSettingsDialog } from './RecordingSettingsDialog';
 import {
@@ -68,6 +68,8 @@ import VideoModal from '@/components/VideoModal';
 import path from 'path-browserify';
 import { showDialog, hideDialog } from '@/stores/dialogStore';
 import AudioDeviceSelector from './AudioDeviceSelector';
+import { TableListToolbar, FilterOption } from '@/components/ui/views/table/TableListToolbar'; // Added
+import SettingsIcon from '@mui/icons-material/Settings'; // Added for settings button
 
 const RECORDING_TYPES: RecordingType[] = ['screenRecord', 'screenShot', 'cameraRecord'];
 
@@ -415,6 +417,12 @@ export function Recording() {
     setIsRecordingSettingsDialogOpen(false);
   };
 
+  // Prepare filter options for TableListToolbar
+  const typeFilterOptions: FilterOption[] = RECORDING_TYPES.map((type) => ({
+    value: type,
+    label: type,
+  }));
+
   return (
     <Box className="flex flex-col gap-6 p-6">
       {(isLoading('recordingsList') ||
@@ -438,19 +446,27 @@ export function Recording() {
           onStartCameraRecording={handleStartCameraRecording}
           onStopCameraRecording={handleStopCameraRecording}
           onCapture={handleCaptureScreenshot}
-          onOpenSettings={handleOpenSettingsDialog}
         />
-       
       </Box>
 
-      <RecordingSearchBar
+      <TableListToolbar
+        title="Recordings"
         searchQuery={searchQuery}
         onSearchChange={setRecordingsSearchQuery}
-        onSearch={handleSearch}
-        typeFilter={typeFilter}
-        onTypeFilterChange={setRecordingTypeFilter}
-        typeOptions={RECORDING_TYPES}
+        onApplySearch={handleSearch}
+        filterBy={typeFilter}
+        onFilterChange={setRecordingTypeFilter}
+        filterOptions={typeFilterOptions}
         onRefresh={fetchRecordings}
+        rightActions={[
+          {
+            id: 'recording-settings',
+            label: 'Recording Settings',
+            icon: <SettingsIcon />,
+            action: handleOpenSettingsDialog,
+            tooltip: 'Open recording settings',
+          },
+        ]}
       />
 
       <RecordingsTable
