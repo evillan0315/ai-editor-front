@@ -1,20 +1,15 @@
 import React, { useEffect } from 'react';
 import { useStore } from '@nanostores/react';
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
+import { Box, CircularProgress, Alert } from '@mui/material'; // Removed Typography as title is moved to header
 import { subscriberStore, fetchSubscribers } from './stores/subscriberStore';
+import { addMembers } from './stores/memberStore'; // Import the new action
 import { SubscriberCard } from './SubscriberCard';
 
 const listContainerSx = {
-  padding: '24px',
+  padding: '0 24px 24px 24px', // Modified: Removed top padding
   '@media (max-width: 600px)': {
-    padding: '16px',
+    padding: '0 16px 16px 16px', // Modified: Removed top padding
   },
-};
-
-const titleSx = {
-  marginBottom: '24px',
-  fontWeight: 700,
-  textAlign: 'center',
 };
 
 const loadingContainerSx = {
@@ -34,15 +29,21 @@ export const SubscriberList: React.FC = () => {
   const { subscribers, loading, error } = useStore(subscriberStore);
 
   useEffect(() => {
-    fetchSubscribers();
+    const loadSubscribers = async () => {
+      await fetchSubscribers();
+      const fetchedSubscribers = subscriberStore.get().subscribers;
+      // Extract unique IMemberFull objects and add them to the memberStore
+      const membersToStore = fetchedSubscribers.map(sub => sub.member).filter(Boolean);
+      if (membersToStore.length > 0) {
+        addMembers(membersToStore);
+      }
+    };
+    loadSubscribers();
   }, []);
 
   return (
     <Box sx={listContainerSx} className="w-full flex flex-col items-center py-4 h-full">
-      <Typography variant="h4" component="h1" sx={titleSx} className="text-3xl md:text-4xl text-blue-600 dark:text-blue-400">
-        Subscribers
-      </Typography>
-
+      {/* Title removed, now handled by SubscriberHeader component in SwingersPage.tsx */}
       {loading && (
         <Box sx={loadingContainerSx}>
           <CircularProgress color="primary" size={60} />
@@ -61,7 +62,7 @@ export const SubscriberList: React.FC = () => {
         </Alert>
       )}
 
-      <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full max-w-7xl justify-items-center">
+      <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 w-full max-w-7xl justify-items-center">
         {!loading &&
           subscribers.map((subscriber) => (
             <SubscriberCard key={subscriber.id} subscriber={subscriber} />

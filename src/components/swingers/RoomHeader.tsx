@@ -1,9 +1,8 @@
 import React, { useCallback } from 'react';
-import { Box, IconButton, useTheme, Paper, ButtonGroup, Tooltip, Typography } from '@mui/material';
+import { Box, IconButton, ButtonGroup, Tooltip, Typography } from '@mui/material';
 import DragIndicatorOutlinedIcon from '@mui/icons-material/DragIndicatorOutlined';
-import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
-import VideoCallIcon from '@mui/icons-material/VideoCall'; // For connectClientData
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'; // Alternative for getClientData
+import VideoCallIcon from '@mui/icons-material/VideoCall';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import { showDialog } from '@/stores/dialogStore';
 import { RoomConnectionDialog } from '@/components/swingers/dialogs/RoomConnectionDialog';
@@ -11,11 +10,10 @@ import { useStore } from '@nanostores/react';
 import { currentDefaultConnection } from '@/components/swingers/stores/connectionStore';
 
 interface RoomHeaderProps {
-  // Define any props here
+  // No props needed for this context
 }
 
 export const RoomHeader: React.FC<RoomHeaderProps> = () => {
-  const theme = useTheme();
   const $currentDefaultConnection = useStore(currentDefaultConnection);
 
   const handleShowDefaultClientData = useCallback(() => {
@@ -50,7 +48,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = () => {
   const handleConnectDefaultClientGlobally = useCallback(() => {
     showDialog({
       title: 'Connect Default Client',
-      content: <RoomConnectionDialog connectionRole={'SUBSCRIBER'}/>, // Pass connectionRole as SUBSCRIBER
+      content: <RoomConnectionDialog connectionRole={'SUBSCRIBER'}/>,
       maxWidth: 'md',
       fullWidth: true,
       showCloseButton: true,
@@ -58,51 +56,20 @@ export const RoomHeader: React.FC<RoomHeaderProps> = () => {
   }, []);
 
   return (
-    <Paper
-      sx={{
-        position: 'sticky',
-        top: 0,
-        left: 0,
-        borderRadius: 0,
-        backgroundColor: theme.palette.background.paper,
-        color: theme.palette.text.primary,
-        borderBottom: `1px solid ${theme.palette.divider}`,
-        zIndex: 1,
-        p: 0.6,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: 0,
-        width:'100%'
-      }}
-      className="w-full"
-    >
-      <Box className="flex items-center gap-0">
-        <IconButton sx={{ color: theme.palette.text.secondary, mr: 1 }}>
-          <MenuOutlinedIcon />
+    <ButtonGroup variant="outlined" aria-label="room actions button group" size="small">
+      <Tooltip title="Show Default Client Data">
+        <IconButton size="small" onClick={handleShowDefaultClientData} color="info">
+          <AccountCircleIcon />
         </IconButton>
-      </Box>
-      <Box sx={{ flexGrow: 1, textAlign: 'center' }}>
-        <Typography variant="h6" component="span" className="font-semibold">
-          Rooms
-        </Typography>
-      </Box>
-      
-      <ButtonGroup variant="outlined" aria-label="room actions button group" size="small">
-        <Tooltip title="Show Default Client Data">
-          <IconButton size="small" onClick={handleShowDefaultClientData} color="info">
-            <AccountCircleIcon />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Connect Default Client (Global)">
-          <IconButton size="small" onClick={handleConnectDefaultClientGlobally} color="primary">
-            <VideoCallIcon />
-          </IconButton>
-        </Tooltip>
-        <IconButton size="small" sx={{ color: theme.palette.text.secondary }}>
-          <DragIndicatorOutlinedIcon />
+      </Tooltip>
+      <Tooltip title="Connect Default Client (Global)">
+        <IconButton size="small" onClick={handleConnectDefaultClientGlobally} color="primary">
+          <VideoCallIcon />
         </IconButton>
-      </ButtonGroup>
-    </Paper>
+      </Tooltip>
+      <IconButton size="small">
+        <DragIndicatorOutlinedIcon />
+      </IconButton>
+    </ButtonGroup>
   );
 };

@@ -75,13 +75,15 @@ export const fetchDefaultConnection = async () => {
       const defaultActivity = defaultClientActivities[1];
       const participantId = defaultActivity.participantId;
       const sessionId = defaultActivity.sessionId;
+      // MODIFIED: sessionId is no longer needed for `getConnection` in `api/connections.ts`
+      // const sessionId = defaultActivity.sessionId;
 
-      if (participantId && sessionId) {
-        const getClientConnection = await getConnection(participantId, sessionId);
+      if (participantId) { // Check only for participantId
+        const getClientConnection = await getConnection(participantId, sessionId); // MODIFIED: Call with only connectionId
         console.log(getClientConnection, 'getClientConnection')
         currentDefaultConnection.set(getClientConnection);
       } else {
-        console.warn('Participant ID or Session ID not found in default client connection data.');
+        console.warn('Participant ID not found in default client connection data.');
         currentDefaultConnection.set({} as IConnection); // Clear if data is incomplete
       }
     } else {

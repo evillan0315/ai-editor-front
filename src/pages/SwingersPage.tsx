@@ -7,13 +7,14 @@ import PeopleAltIcon from '@mui/icons-material/PeopleAlt'; // Using PeopleAltIco
 
 import {
   RoomList,
-  RoomHeader,
-  StreamerList, // Import StreamerList
-  StreamerHeader, // Import StreamerHeader
-  SubscriberList, // Import SubscriberList
-  SubscriberHeader, // Import SubscriberHeader
+  RoomHeader, // Import RoomHeader
+  StreamerList,
+  StreamerHeader,
+  SubscriberList,
+  SubscriberHeader,
 } from '@/components/swingers';
-import { DynamicMuiTabs, TabConfig } from '@/components/ui/tabs'; // Corrected import path for DynamicMuiTabs
+import { DynamicMuiTabs, TabConfig } from '@/components/ui/tabs';
+import { GlobalAction } from '@/types/app'; // Import GlobalAction type
 
 /**
  * @interface SwingersPageProps
@@ -52,6 +53,13 @@ const SwingersPage: React.FC<SwingersPageProps> = () => {
     },
   ];
 
+  // Define the right actions, including the RoomHeader as a custom component
+  const rightActions: GlobalAction[] = [
+    {
+      component: <RoomHeader />, // Pass RoomHeader directly as a component
+    },
+  ];
+
   return (
     <PageLayout
       body={
@@ -60,6 +68,7 @@ const SwingersPage: React.FC<SwingersPageProps> = () => {
             tabs={tabsConfig}
             tabsClassName="bg-background-paper sticky top-0 z-10 shadow-sm  h-10 p-0 "
             tabPanelClassName="flex-grow p-0 overflow-y-auto"
+            rightActions={rightActions} // Pass the right actions here
           />
         </Box>
       }

@@ -1,4 +1,4 @@
-import { map } from 'nanostores';
+import { map, computed } from 'nanostores';
 import { ISession, IConnectionList } from '@/components/swingers/types';
 import { getSessions, getSession as fetchSingleSessionApi } from '@/components/swingers/api/sessions';
 
@@ -27,6 +27,14 @@ export const openViduEntitiesStore = map<OpenViduEntitiesStoreState>({
   loading: false,
   error: null,
 });
+
+/**
+ * @const openViduActiveSessionsMap
+ * @description A computed Nanostore that provides a reactive map of all active OpenVidu sessions.
+ * This is derived from the `sessions` property of `openViduEntitiesStore`.
+ * Components can `useStore(openViduActiveSessionsMap)` to directly get the sessions map.
+ */
+export const openViduActiveSessionsMap = computed(openViduEntitiesStore, (store) => store.sessions);
 
 /**
  * @function setOpenViduEntitiesLoading

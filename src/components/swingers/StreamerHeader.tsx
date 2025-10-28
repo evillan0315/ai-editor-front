@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, IconButton, useTheme, Paper, Typography } from '@mui/material';
+import { Box, IconButton, useTheme, Paper, Typography } from '@mui/material'; // Ensure Typography is imported
 import DragIndicatorOutlinedIcon from '@mui/icons-material/DragIndicatorOutlined';
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
 

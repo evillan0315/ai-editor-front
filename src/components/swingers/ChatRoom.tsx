@@ -12,15 +12,14 @@ import {
   CircularProgress,
   Alert,
   Avatar,
-  useTheme, // ADDED: Import useTheme
+  useTheme,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
-import CallEndIcon from '@mui/icons-material/CallEnd'; // Import CallEndIcon
-//import { fetchDefaultConnection } from './stores/connectionStore';
+import CallEndIcon from '@mui/icons-material/CallEnd';
 import { chatStore, IChatMessage, setChatError, setChatLoading, clearChat } from './stores/chatStore';
 import { useOpenViduSession } from './hooks/useOpenViduSession';
-import { OpenViduVideoGrid } from './openvidu/OpenViduVideoGrid'; // NEW
-import { OpenViduControls } from './openvidu/OpenViduControls'; // NEW
+import { OpenViduVideoGrid } from './openvidu/OpenViduVideoGrid';
+import { OpenViduControls } from './openvidu/OpenViduControls';
 
 interface ChatRoomProps {
   roomId?: string;
@@ -29,8 +28,8 @@ interface ChatRoomProps {
 // --- Styles --- //
 const chatContainerSx = {
   height: '100%',
-  display: 'flex', // ADDED: Make Paper a flex container
-  flexDirection: 'column', // ADDED: Stack children vertically
+  display: 'flex',
+  flexDirection: 'column',
   overflow: 'hidden',
   border: '1px solid',
   borderColor: 'divider',
@@ -67,15 +66,15 @@ const messageBubbleSx = (isLocal: boolean, type: string, theme: ReturnType<typeo
   justifyContent: isLocal ? 'flex-end' : type === 'whisper' ? 'flex-center' : 'flex-start',
   marginBottom: '8px',
   '& .MuiListItemText-root': {
-    maxWidth: '75%', // Limit bubble width
+    maxWidth: '75%',
   },
   '& .MuiListItemText-primary': {
     fontWeight: 'bold',
     marginBottom: '2px',
   },
   '& .MuiListItemText-secondary': {
-    whiteSpace: 'pre-wrap', // Preserve line breaks
-    wordBreak: 'break-word', // Break long words
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
     borderRadius: '16px',
     padding: '8px 12px',
     backgroundColor: isLocal
@@ -87,7 +86,7 @@ const messageBubbleSx = (isLocal: boolean, type: string, theme: ReturnType<typeo
       ? theme.palette.text.primary
       : type === 'whisper'
         ? theme.palette.warning.contrastText
-        : theme.palette.common.white, // MODIFIED: Adjusted for better contrast
+        : theme.palette.common.white,
   },
 });
 
@@ -100,11 +99,9 @@ const avatarSx = {
 
 export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
   const { messages, loading, error } = useStore(chatStore);
-  const theme = useTheme(); // ADDED: Use the theme hook
+  const theme = useTheme();
 
   const {
-    // sessionNameInput, // Removed as it's managed internally or by initial prop
-    // handleSessionNameChange, // Removed as it's managed internally or by initial prop
     joinSession,
     leaveSession,
     initLocalMediaPreview,
@@ -113,8 +110,8 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
     toggleMic,
     isCameraActive,
     isMicActive,
-    isLoading: isOVSessionLoading, // Rename to avoid conflict with chat loading
-    error: ovSessionError, // Rename to avoid conflict with chat error
+    isLoading: isOVSessionLoading,
+    error: ovSessionError,
     publisher,
     subscribers,
     currentSessionId,
@@ -122,7 +119,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
     connectionRole,
     currentUserDisplayName,
     sendChatMessage,
-  } = useOpenViduSession(roomId, 'PUBLISHER'); // Always publisher for this component
+  } = useOpenViduSession(roomId, 'PUBLISHER');
 
   const [messageInput, setMessageInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -131,15 +128,11 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // Effect to auto-join session when component mounts/roomId changes, if OpenVidu instance is ready
   useEffect(() => {
-    
-    // Ensure OpenVidu instance is ready and we're not already connected to this room
     if (roomId && openViduInstance && currentSessionId !== roomId) {
-      //fetchDefaultConnection();
       joinSession(roomId);
     }
-  }, [roomId, openViduInstance, currentSessionId, joinSession]); // Added joinSession to dependencies
+  }, [roomId, openViduInstance, currentSessionId, joinSession]);
 
   useEffect(() => {
     scrollToBottom();
@@ -164,26 +157,24 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
       setMessageInput('');
     } catch (e: any) {
       setChatError(`Failed to send message: ${e.message || e}`);
-    npx  } finally {
+    } finally {
       setChatLoading(false);
     }
   }, [messageInput, sendChatMessage]);
 
   const handleKeyPress = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault(); // Prevent new line in text area
+      event.preventDefault();
       handleSendMessage();
     }
   }, [handleSendMessage]);
 
   const allErrors = error || ovSessionError;
-  // `isSending` is not exposed by `useOpenViduSession` anymore, remove it from `overallLoading`
   const overallLoading = loading || isOVSessionLoading;
 
   return (
-    <Paper sx={chatContainerSx} className="w-full flex-1 max-w-full md:max-w-7xl rounded-none"> {/* Paper is now a flex container */}
-      <Box className="flex flex-col md:flex-row flex-1 overflow-auto "> {/* Main flex container for video & chat, takes 100% height of Paper */}
-        {/* Left Section: Video Display & Controls */}
+    <Paper sx={chatContainerSx} className="w-full flex-1 max-w-full md:max-w-7xl rounded-none">
+      <Box className="flex flex-col md:flex-row flex-1 overflow-auto ">
         <Box className="flex flex-col flex-1 md:flex-[2] p-4 h-full overflow-y-auto ">
           <Typography variant="h6" component="div" className="font-bold text-center mb-4" color="text.primary">
             Live Streams
@@ -201,7 +192,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
           )}
           {currentSessionId ? (
             <>
-              <OpenViduVideoGrid subscribers={subscribers} />
+              <OpenViduVideoGrid publisher={publisher} subscribers={subscribers} />
               <OpenViduControls
                 isCameraActive={isCameraActive}
                 toggleCamera={toggleCamera}
@@ -228,7 +219,6 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
           )}
         </Box>
 
-        {/* Right Section: Chat Messages */}
         <Box className="flex flex-col flex-1 md:flex-1 " sx={{borderTop: `1px solid ${theme.palette.divider}`, borderLeft: `1px solid ${theme.palette.divider}`}}>
           <Box className="p-4" sx={{borderBottom: `1px solid ${theme.palette.divider}`}}>
             <Typography variant="h6" component="div" className="font-bold text-center" color="text.primary">
@@ -238,12 +228,11 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
 
           <List sx={messageListSx}>
             {messages.map((msg) => (
-              <ListItem key={msg.id} sx={messageBubbleSx(msg.isLocal, msg.TYPE, theme)} className="flex-col items-stretch">
+              <ListItem key={msg.id} sx={messageBubbleSx(msg.isLocal, msg.TYPE || 'chat', theme)} className="flex-col items-stretch">
                 <Box className={`flex items-center ${msg.isLocal ? 'justify-end' : 'justify-start'} w-full`}>
                   {!msg.isLocal && (
                     <Avatar sx={avatarSx} src={msg.SENDER_PICTURE}> 
-                      {msg.SENDER_NAME ? msg.SENDER_NAME[0].toUpperCase() : '?'} 
-                      
+                      {msg.SENDER_NAME ? msg.SENDER_NAME[0].toUpperCase() : '?'}
                     </Avatar>
                   )}
                   <ListItemText
@@ -263,7 +252,6 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
                       {msg.SENDER_NAME ? msg.SENDER_NAME[0].toUpperCase() : '?'}
                     </Avatar>
                   )}
-                  
                 </Box>
                 <Typography variant="caption" color={msg.TYPE === 'whisper' ? 'warning.dark' : 'text.primary'} className={`text-xs mt-1 ${msg.isLocal ? 'self-end pr-14' : 'self-start pl-14'}`}>
                   <span>{msg.TYPE === 'whisper' ? ' whispered to ' : ''}</span>

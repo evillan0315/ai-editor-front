@@ -129,6 +129,4 @@ export async function fetchWithBasicAuth(
   });
 }
 
-// Export URLs from Vite env for convenience
-export const SLS_API_URL = '/swingers';
-export const SLS_VIDU_URL = '/openvidu';
+

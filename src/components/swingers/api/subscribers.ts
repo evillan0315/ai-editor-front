@@ -1,7 +1,6 @@
-import { fetchWithToken, SLS_API_URL } from './fetch';
+import { fetchWithToken, handleResponse, SWINGERS_SUBSCRIBERS } from './fetch';
 import { ISubscriber } from '@/components/swingers/types';
 
-const SWINGERS_SUBSCRIBERS = `${SLS_API_URL}/subscribers`;
 
 /**
  * Fetches all subscribers and returns a list of unique subscribers,
@@ -12,11 +11,12 @@ const SWINGERS_SUBSCRIBERS = `${SLS_API_URL}/subscribers`;
  */
 export const getSubscribers = async (): Promise<ISubscriber[]> => {
   try {
-    const allSubscribers = await fetchWithToken<ISubscriber[]>(
+    const response = await fetchWithToken<ISubscriber[]>(
       `${SWINGERS_SUBSCRIBERS}`,
       { method: 'GET' },
     );
-
+    const allSubscribers = await handleResponse<IConnection>(response);
+    console.log(allSubscribers, 'allSubscribers');
     const seenKeys = new Set<string>();
     const uniqueSubscribers: ISubscriber[] = [];
 

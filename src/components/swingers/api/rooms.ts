@@ -1,7 +1,5 @@
-import { fetchWithToken, handleResponse, SLS_API_URL } from './fetch';
+import { fetchWithToken, handleResponse, SLS_API_URL, SWINGERS_ROOMS_BASE_URL } from './fetch';
 import { IRoom, IDefaultRecordingProperties } from '@/components/swingers/types';
-
-const SWINGERS_ROOMS_BASE_URL = `${SLS_API_URL}/rooms`;
 
 export interface ICreateRoomDto {
   name: string;

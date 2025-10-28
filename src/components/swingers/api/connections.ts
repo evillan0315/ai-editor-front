@@ -86,7 +86,6 @@ export const getConnections = async (sessionId: string): Promise<IConnection[]> 
  * Fetches a specific OpenVidu connection by its ID.
  * Corresponds to: GET /openvidu/api/connections/{connectionId}
  * @param connectionId The ID of the connection to fetch.
- * @param sessionId The ID of the session to fetch the connection from. (Used for context, but not in URL for this endpoint)
  * @returns A promise that resolves to a single IConnection object.
  */
 export const getConnection = async (connectionId: string, sessionId: string): Promise<IConnection> => {
@@ -94,7 +93,7 @@ export const getConnection = async (connectionId: string, sessionId: string): Pr
     const response = await fetchWithBasicAuth<IConnection>(
       // OpenVidu's API to get a specific connection is `/openvidu/api/connections/{connectionId}`
       // The sessionId is not part of the path for this specific endpoint.
-      `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection/${connectionId}`,
+      `${SLS_VIDU_URL}/api/sessions/${sessionId}/connection/${connectionId}`, // CORRECTED URL
       { method: 'GET' },
     );
     return handleResponse<IConnection>(response);

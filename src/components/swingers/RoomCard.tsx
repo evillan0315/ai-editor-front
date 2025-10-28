@@ -95,18 +95,18 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   onViewConnections, // New prop
   onOpenChat, // NEW PROP
 }) => {
-  const { name, type, active, description, roomId, recording, liveStream, created_at } = room;
+  const { name, type, active, description, roomId, recording, created_at } = room;
   const theme = useTheme();
 
   const isResetting = resettingRoomId === roomId;
 
   return (
-    <Card sx={{ ...baseCardSx, ...(liveStream && liveCardHighlightSx) }} className="flex-none w-full min-h-60 h-auto" elevation={2}>
+    <Card sx={{ ...baseCardSx, ...(active && liveCardHighlightSx) }} className="flex-none w-full min-h-60 h-auto" elevation={2}>
       <Box className={`relative h-28 w-full overflow-hidden bg-gradient-to-br ${active ? 'from-teal-500 to-cyan-600' : 'from-red-500 to-orange-600'} flex items-center justify-center p-4`}>
         <MeetingRoomIcon className="text-white" sx={{ fontSize: '4rem' }} />
         
         {/* New: Live label at top-left */}
-        {liveStream && (
+        {active && (
           <Chip
             label="LIVE"
             size="small"

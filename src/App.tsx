@@ -36,6 +36,8 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const SpotifyAppPage = lazy(() => import('./pages/SpotifyAppPage'));
+const TranslatorAppPage = lazy(() => import('./pages/TranslatorAppPage'));
+const GeminiLiveAudioPage = lazy(() => import('./pages/GeminiLiveAudioPage'));
 const PreviewAppPage = lazy(() => import('./pages/PreviewAppPage'));
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
@@ -52,8 +54,8 @@ const AIChatPage = lazy(() => import('./pages/AIChatPage'));
 const SchemeGeneratorPage = lazy(() => import('./pages/SchemeGeneratorPage')); // New: Lazy load SchemeGeneratorPage
 const ChatAppComponent = lazy(() => import('./components/chat/ChatApp')); // NEW: Lazy load ChatApp
 const PlaywrightPage = lazy(() => import('./pages/PlaywrightPage')); // NEW: Lazy load PlaywrightPage
-const SwingersPage = lazy(() => import('./pages/SwingersPage')); 
-const OpenViduPage = lazy(() => import('./pages/OpenViduPage')); 
+const SwingersRoomChatPage = lazy(() => import('./pages/SwingersRoomChatPage'));
+const SwingersPage = lazy(() => import('./pages/SwingersPage'));
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -147,8 +149,30 @@ const router = createBrowserRouter(
           </RequireAuth>
         }
       />
-
-    
+      <Route
+        path="/apps/translator"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <TranslatorAppPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/apps/gemini-live-audio"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <GeminiLiveAudioPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
       <Route
         path="/apps/preview"
         element={
@@ -245,6 +269,30 @@ const router = createBrowserRouter(
           </RequireAuth>
         }
       />
+      <Route
+        path="/apps/swingers"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <SwingersPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/apps/swingers/room/:roomId/chat"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <SwingersRoomChatPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
       {/* New: Route for Schema Generator Page */}
       <Route
         path="/apps/schema-generator"
@@ -266,32 +314,6 @@ const router = createBrowserRouter(
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 <PlaywrightPage />
-              </ErrorBoundary>
-            </Suspense>
-          </RequireAuth>
-        }
-      />
-      {/* NEW: Route for Swingers Page */}
-      <Route
-        path="/apps/swingers"
-        element={
-          <RequireAuth>
-            <Suspense fallback={<Loading />}>
-              <ErrorBoundary>
-                <SwingersPage />
-              </ErrorBoundary>
-            </Suspense>
-          </RequireAuth>
-        }
-      />
-
-      <Route
-        path="/apps/swingers/:roomId"
-        element={
-          <RequireAuth>
-            <Suspense fallback={<Loading />}>
-              <ErrorBoundary>
-                <OpenViduPage />
               </ErrorBoundary>
             </Suspense>
           </RequireAuth>

@@ -15,7 +15,6 @@ import { Session, Publisher, Subscriber, Stream, StreamManager } from 'openvidu-
  * @property {boolean} isLocal - True if the message was sent by the local client (client-side specific).
  * @property {string} id - Unique identifier for the chat message (generated client-side, e.g., by nanoid).
  *
- * @property {number} [messageCount] - Optional sequential count for messages (used for display in specific contexts).
  * @property {any} [senderInfo] - Additional sender information (if available from other sources).
  * @property {string} [senderGender] - Gender of the sender (if available).
  * @property {string} [receiverName] - Display name of the receiver (if available or derivable).
@@ -34,7 +33,6 @@ export interface IChatMessage {
   isLocal: boolean; 
   id: string; 
 
-  messageCount?: number; 
   senderInfo?: any;
   senderGender?: string;
   receiverName?: string; 

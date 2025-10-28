@@ -44,7 +44,7 @@ const GlobalDialog: React.FC = () => {
       fullWidth={fullWidth}
       PaperProps={{
         sx: {
-          bgColor: theme.palette.background.paper,
+          bgcolor: theme.palette.background.paper,
           color: theme.palette.text.primary,
           ...paperPropsSx,
         },

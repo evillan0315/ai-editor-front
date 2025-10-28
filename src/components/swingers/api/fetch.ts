@@ -1,14 +1,15 @@
 import { getToken } from '@/stores/authStore'; // Import getToken from authStore
 
 export const SLS_API_URL = '/swingers';
-export const SLS_VIDU_URL = '/openvidu';
+export const SLS_VIDU_URL = `${import.meta.env.VITE_SLS_VIDU_URL}`;
 export const SWINGERS_STREAMERS = `${SLS_API_URL}/streamers`;
 export const SWINGERS_SUBSCRIBERS = `${SLS_API_URL}/subscribers`;
 export const SWINGERS_ACTIVITIES = `${SLS_API_URL}/activities`;
 export const SWINGERS_ROOMS_BASE_URL = `${SLS_API_URL}/rooms`;
 export const API_SESSIONS_BASE_URL = `${SLS_VIDU_URL}/api/sessions`;
+export const API_MEMBERS_BASE_URL = `/api/member`; // New: Base URL for Member API, routed via Vite's /api proxy
 
-export const TOKEN = `${import.meta.env.VITE_SLS_API_KEY}`;
+export const SLS_API_KEY = `${import.meta.env.VITE_SLS_API_KEY}`;
 export const OPENVIDU_SERVER_USERNAME = import.meta.env.VITE_SLS_USERNAME || 'OPENVIDUAPP';
 
 export interface ApiError extends Error {
@@ -61,14 +62,36 @@ export const handleResponse = async <T>(response: Response): Promise<T> => {
     return responseBody as T;
   }
 };
+// Generic fetch wrapper with token for authenticated requests
+export async function fetchWithAuth(
+  url: string,
+  options?: CustomRequestInit,
+): Promise<Response> {
+  const token = getToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options?.headers,
+  };
 
+  let body = options?.body;
+  if (options?.data && options.method !== 'GET' && options.method !== 'HEAD') {
+    body = JSON.stringify(options.data);
+  }
+
+  return fetch(url, { ...options, headers, body });
+}
 // Generic fetch wrapper with API Key for authenticated requests to SLS API
-export async function fetchWithToken(
+export async function fetchWithToken( // Renamed `fetchWithAuthToken` to `fetchWithToken` to match common naming convention
   input: RequestInfo | URL,
   init?: CustomRequestInit,
 ): Promise<Response> {
   // Safely append token to the URL, handling existing query parameters
-  const url = `${input}${String(input).includes('?') ? '&' : '?'}token=${TOKEN}`;
+  //const token = getToken(); // Get token from authStore
+  if (!SLS_API_KEY) {
+    throw new Error('Authentication SLS_API_KEY is missing.');
+  }
+  const url = `${input}${String(input).includes('?') ? '&' : '?'}token=${SLS_API_KEY}`;
   const headers = {
     'Content-Type': 'application/json',
     ...init?.headers,
@@ -92,11 +115,11 @@ export async function fetchWithBasicAuth(
   init?: CustomRequestInit,
 ): Promise<Response> {
 
-  if (!TOKEN) {
+  if (!SLS_API_KEY) {
     throw new Error('VITE_SLS_API_KEY is not defined in environment variables.');
   }
 
-  const basicAuth = btoa(`${OPENVIDU_SERVER_USERNAME}:${TOKEN}`);
+  const basicAuth = btoa(`${OPENVIDU_SERVER_USERNAME}:${SLS_API_KEY}`);
   const headers = {
     'Authorization': `Basic ${basicAuth}`,
     'Content-Type': 'application/json',
@@ -114,5 +137,3 @@ export async function fetchWithBasicAuth(
     body,
   });
 }
-
-

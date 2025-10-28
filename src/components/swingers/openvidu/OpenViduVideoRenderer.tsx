@@ -1,8 +1,8 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { Card, Typography } from '@mui/material';
 import { StreamManager } from 'openvidu-browser';
 
-import { IOpenViduPublisher, IOpenViduSubscriber } from '@/components/swingers/types';
+import { IOpenViduPublisher, IOpenViduSubscriber, IClientDataPayload, IClientConnectionUserData } from '@/components/swingers/types';
 
 // --- Interfaces ---
 interface OpenViduVideoRendererProps {
@@ -47,10 +47,11 @@ export const OpenViduVideoRenderer: React.FC<OpenViduVideoRendererProps> = ({
   streamManager,
   isLocal,
 }) => {
-  const videoId = `video-stream-${streamManager.streamId}`;
+  const videoId = `video-stream-${streamManager?.stream?.streamId}`;
   const videoRef = React.useRef<HTMLVideoElement>(null);
-
-  React.useEffect(() => {
+  
+  useEffect(() => {
+    console.log('streamManager', streamManager)
     if (videoRef.current) {
       // Ensure the video element is attached when component mounts or stream changes
       streamManager.addVideoElement(videoRef.current);
@@ -68,8 +69,10 @@ export const OpenViduVideoRenderer: React.FC<OpenViduVideoRendererProps> = ({
   if (streamManager.stream?.connection) {
     const connectionData = streamManager.stream.connection.data; // This is typically a JSON string
     try {
-      const clientData = JSON.parse(connectionData);
-      displayName = clientData.USERNAME || 'Guest';
+      const clientDataPayload: IClientDataPayload = JSON.parse(connectionData);
+      // Access nested clientData if present, otherwise fallback to root
+      const clientData: IClientConnectionUserData = clientDataPayload.clientData || clientDataPayload as unknown as IClientConnectionUserData;
+      displayName = clientData?.USERNAME || 'Guest';
     } catch (e) {
       // If parsing fails, or if it's an older format, attempt simple string extraction
       console.warn('Failed to parse connectionData as JSON, falling back to string extraction:', e, connectionData);
@@ -89,10 +92,11 @@ export const OpenViduVideoRenderer: React.FC<OpenViduVideoRendererProps> = ({
   }
 
   return (
-    <Card key={streamManager.streamId} sx={videoCardSx}>
+    <Card key={streamManager?.stream.streamId} sx={videoCardSx}>
       <video
         ref={videoRef}
         id={videoId}
+        controls={true}
         autoPlay={true}
         muted={isLocal} // Mute local video to prevent echo
       />

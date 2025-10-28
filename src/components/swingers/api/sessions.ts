@@ -1,4 +1,4 @@
-import { fetchWithBasicAuth, handleResponse, ApiError, SLS_VIDU_URL } from './fetch';
+import { fetchWithBasicAuth, handleResponse, ApiError, API_SESSIONS_BASE_URL, SLS_VIDU_URL } from './fetch';
 import { ISession } from '@/components/swingers/types';
 
 // NOTE: These API calls interact directly with the OpenVidu server via a proxy.
@@ -6,7 +6,6 @@ import { ISession } from '@/components/swingers/types';
 // In a production environment, it is recommended to proxy these calls through your own backend
 // to keep the OpenVidu secret server-side and only expose a generated token to the frontend.
 
-const API_SESSIONS_BASE_URL = `${SLS_VIDU_URL}/api/sessions`;
 
 /**
  * Options for creating a new OpenVidu session.
@@ -43,6 +42,7 @@ export const createSession = async (options?: ICreateSessionOptions): Promise<IS
         data: options || {},
       },
     );
+
     return handleResponse<ISession>(response);
   } catch (error: unknown) {
     // Cast error to a more general type for robust property access at runtime
@@ -73,14 +73,14 @@ export const createSession = async (options?: ICreateSessionOptions): Promise<IS
  * Corresponds to: GET /openvidu/api/sessions
  * @returns A promise that resolves to an array of ISession objects.
  */
-export const getSessions = async (): Promise<ISession[]> => {
+export const getSessions = async (): Promise<ISessionList> => {
   try {
     // The OpenVidu API returns a JSON object with a 'content' array for sessions
-    const response = await fetchWithBasicAuth<{ content: ISession[] }>(
-      API_SESSIONS_BASE_URL,
+    const response = await fetchWithBasicAuth<ISessionList>(
+    `${API_SESSIONS_BASE_URL}`,
       { method: 'GET' },
     );
-    return handleResponse<{ content: ISession[] }>(response).content;
+    return handleResponse<ISessionList>(response);
   } catch (error) {
     console.error(
       `Error fetching OpenVidu sessions:`,

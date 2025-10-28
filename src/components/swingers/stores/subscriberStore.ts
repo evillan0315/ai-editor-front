@@ -1,9 +1,9 @@
 import { map } from 'nanostores';
-import { ISwingerSessionParticipant } from '@/components/swingers/types';
+import { ISwingerSessionParticipant, ISubscriber } from '@/components/swingers/types';
 import { getSubscribers } from '@/components/swingers/api/subscribers';
 
 interface SubscriberStoreState {
-  subscribers: ISwingerSessionParticipant[];
+  subscribers: ISubscriber[];
   loading: boolean;
   error: string | null;
 }
@@ -19,6 +19,7 @@ export const fetchSubscribers = async () => {
   subscriberStore.setKey('error', null);
   try {
     const data = await getSubscribers();
+    console.log(data, 'data')
     subscriberStore.setKey('subscribers', data);
   } catch (err) {
     console.error('Failed to fetch subscribers:', err);

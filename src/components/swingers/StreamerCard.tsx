@@ -10,6 +10,7 @@ import MeetingRoomIcon from '@mui/icons-material/MeetingRoom'; // For room icon
 
 interface StreamerCardProps {
   streamer: IStreamerEntity;
+  isLive: boolean; // NEW: Prop to indicate if the streamer is actively live streaming
 }
 
 const baseCardSx = {
@@ -57,11 +58,14 @@ const infoItemSx = {
   wordBreak: 'break-word',
 };
 
-export const StreamerCard: React.FC<StreamerCardProps> = ({ streamer }) => {
+export const StreamerCard: React.FC<StreamerCardProps> = ({
+  streamer,
+  isLive,
+}) => {
   const { name, active, private: isPrivate, member, room, connection, streamId, created_at, updated_at, end_date } = streamer;
   const theme = useTheme();
 
-  const isLive = active && streamId; // Consider a streamer \"live\" if active and has a streamId
+  // Removed internal isLive calculation. Now derived from prop.
 
   return (
     <Card sx={{ ...baseCardSx, ...(isLive && liveCardHighlightSx) }} className="flex-none w-full min-h-60 h-auto" elevation={2}>

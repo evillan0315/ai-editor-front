@@ -24,7 +24,7 @@ export const openViduStore = map<OpenViduStoreState>({
   loading: false,
   error: null,
   openViduInstance: null, // Initialize OpenVidu instance as null
-  isCameraActive: true, // Default to camera active
+  isCameraActive: false, // Default to camera inactive
   isMicActive: true, // Default to microphone active
   sessionNameInput: '', // Default empty
 });
@@ -42,8 +42,8 @@ export const resetOpenViduStore = () => {
     loading: false,
     error: null,
     openViduInstance: currentOpenViduInstance, // Re-use the existing instance
-    isCameraActive: true, // Reset to default
-    isMicActive: true, // Reset to default
+    isCameraActive: false, // Reset to default inactive
+    isMicActive: true, // Reset to default active
     sessionNameInput: '', // Reset to default
   });
 };

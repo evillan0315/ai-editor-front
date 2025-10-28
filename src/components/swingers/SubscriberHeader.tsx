@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, IconButton, useTheme, Paper } from '@mui/material';
+import { Box, IconButton, useTheme, Paper, Typography } from '@mui/material'; // Ensure Typography is imported
 import DragIndicatorOutlinedIcon from '@mui/icons-material/DragIndicatorOutlined';
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
 interface SubscriberHeaderProps {
@@ -31,7 +31,13 @@ export const SubscriberHeader: React.FC<SubscriberHeaderProps> = () => {
           <MenuOutlinedIcon />
         </IconButton>
       </Box>
-      <Box>Subscribers</Box>
+      <Box sx={{ flexGrow: 1, textAlign: 'center' }}>
+        {' '}
+        {/* Wrap in Box for centering */}
+        <Typography variant="h6" component="span" className="font-semibold">
+          Subscribers
+        </Typography>
+      </Box>
 
       <Box className="flex items-center gap-0">
         <IconButton size="small" sx={{ color: theme.palette.text.secondary }}>
@@ -41,4 +47,3 @@ export const SubscriberHeader: React.FC<SubscriberHeaderProps> = () => {
     </Paper>
   );
 };
-

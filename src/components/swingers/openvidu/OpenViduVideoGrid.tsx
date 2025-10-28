@@ -28,7 +28,7 @@ export const OpenViduVideoGrid: React.FC<OpenViduVideoGridProps> = ({
     allStreams.push({ streamManager: publisher, isLocal: true });
   }
   subscribers.forEach((sub) => allStreams.push({ streamManager: sub, isLocal: false }));
-
+  //console.log(allStreams[1], allStreams[1].streamManager);
   return (
     <Box sx={videoContainerSx} className="max-w-7xl">
       {allStreams.map(({ streamManager, isLocal }) => (

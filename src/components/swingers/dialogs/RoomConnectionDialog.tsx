@@ -83,7 +83,7 @@ export const RoomConnectionDialog: React.FC<RoomConnectionDialogProps> = ({
     try {
       await joinSession(sessionNameInput);
       onSuccess && onSuccess();
-      hideDialog(); // Close dialog on success
+      //hideDialog(); // Close dialog on success
     } catch (e) {
       console.error('Failed to connect to room:', e);
       // Error feedback is handled by useOpenViduSession's error state

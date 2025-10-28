@@ -205,12 +205,11 @@ export const RoomList: React.FC = () => {
       const aConnections = a.roomId ? connectionCounts[a.roomId] || 0 : 0;
       const bConnections = b.roomId ? connectionCounts[b.roomId] || 0 : 0;
 
-      // 1. Live rooms first
-      if (a.liveStream && !b.liveStream) return -1;
-      if (!a.liveStream && b.liveStream) return 1;
+      // 1. Live rooms first (based on active OpenVidu session)
       if (a.active && !b.active) return -1;
       if (!a.active && b.active) return 1;
-      // If both are live or both are not live, proceed to secondary sorts
+
+      // If both are active or both are not active, proceed to secondary sorts
       // 2. More connections first (descending)
       if (aConnections !== bConnections) return bConnections - aConnections;
 
@@ -228,8 +227,8 @@ export const RoomList: React.FC = () => {
     return sorted;
   }, [overallLoading, overallError, roomsWithSessionStatus, connectionCounts]); // roomsWithSessionStatus as dependency
 
-  const sortedLiveRooms = useMemo(() => allSortedRooms.filter((room) => room.liveStream), [allSortedRooms]);
-  const sortedNonLiveRooms = useMemo(() => allSortedRooms.filter((room) => !room.liveStream), [allSortedRooms]);
+  const sortedLiveRooms = useMemo(() => allSortedRooms.filter((room) => room.active), [allSortedRooms]);
+  const sortedNonLiveRooms = useMemo(() => allSortedRooms.filter((room) => !room.active), [allSortedRooms]);
 
   const groupedNonLiveRooms = useMemo(() => {
     const grouped: Record<string, IRoom[]> = {};
@@ -248,8 +247,7 @@ export const RoomList: React.FC = () => {
 
     const finalGrouped: Record<string, IRoom[]> = {};
     sortedTypes.forEach((type) => {
-      finalGrouped[type] = grouped[type]; // Rooms are already globally sorted, maintain order within type groups
-    });
+      finalGrouped[type] = grouped[type];     });
     return finalGrouped;
   }, [sortedNonLiveRooms]);
 
@@ -266,19 +264,20 @@ export const RoomList: React.FC = () => {
       )}
 
       {overallLoading && !overallError && (
-        <Box sx={loadingContainerSx}>
-          <Loading type="circular" message="Loading rooms and sessions..." />
-        </Box>
-      )}
+   <Box sx={loadingContainerSx}>
+<Loading type="circular" message="Loading rooms and sessions..." />
+</Box>
+)}
 
-      {!overallLoading && !overallError && roomsWithSessionStatus.length === 0 && ( // Use roomsWithSessionStatus here
-        <Alert severity="info" className="max-w-xl">
+      {!overallLoading && !overallError && roomsWithSessionStatus.length === 0 && (
+<Alert severity="info" className="max-w-xl">
           No rooms found.
         </Alert>
       )}
 
-      {!overallLoading && !overallError && roomsWithSessionStatus.length > 0 && ( // Use roomsWithSessionStatus here
-        <Box className="w-full flex flex-col gap-4">
+      {!overallLoading && !overallError && roomsWithSessionStatus.length > 0 && ( 
+
+<Box className="w-full flex flex-col gap-4">
           {sortedLiveRooms.length > 0 && (
             <Accordion
               key="live-rooms"

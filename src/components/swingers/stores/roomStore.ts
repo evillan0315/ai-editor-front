@@ -52,19 +52,15 @@ openViduEntitiesStore.listen(({ sessions: activeOpenViduSessions }) => {
 
   // Only update if there are actual changes to avoid unnecessary re-renders for the RoomList component
   const currentConnectionCounts = roomStore.get().connectionCounts;
-  const currentLoadingConnectionCounts = roomStore.get().loadingConnectionCounts;
-
+  // Check for any actual difference in connection counts or if a room was added/removed.
   const hasConnectionCountChanges = Object.keys(newConnectionCounts).some(
     (roomId) => newConnectionCounts[roomId] !== currentConnectionCounts[roomId]
-  ) || Object.keys(currentConnectionCounts).length !== Object.keys(newConnectionCounts).length; // Check for added/removed rooms
+  ) || Object.keys(currentConnectionCounts).length !== Object.keys(newConnectionCounts).length;
 
   if (hasConnectionCountChanges) {
     roomStore.setKey('connectionCounts', newConnectionCounts);
   }
-  // Loading state for connection counts can be updated without full re-eval of connectionCounts map
-  // However, since it's derived from the same source, it's fine to set it along with connectionCounts.
-  // The 'loadingConnectionCounts' for individual rooms will primarily be managed by initial fetches or explicit actions
-  // where a single room's connections are being loaded.
+  // Always update loading state, as it might represent an ongoing fetch somewhere else
   roomStore.setKey('loadingConnectionCounts', newLoadingState);
 });
 

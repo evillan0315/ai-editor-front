@@ -112,12 +112,28 @@ export const DynamicMuiTabs: React.FC<DynamicMuiTabsProps> = ({
     setValue(newValue);
   };
 
+  // Separate actions into custom components and standard GlobalActions
+  const customRightComponents = rightActions?.filter(action => action.component);
+  const standardRightActions = rightActions?.filter(action => !action.component);
+
+  const customLeftComponents = leftActions?.filter(action => action.component);
+  const standardLeftActions = leftActions?.filter(action => !action.component);
+
+
   return (
     <Box sx={dynamicTabsRootSx} className="w-full h-full flex flex-col">
       <Paper sx={{ ...tabsContainerSx, ...tabsSx }} className={tabsClassName}>
-        {leftActions && leftActions.length > 0 && (
+        {customLeftComponents && customLeftComponents.length > 0 && (
           <Box className="flex items-center gap-0 mr-1 pl-1">
-            <GlobalActionButton globalActions={leftActions} iconOnly={true} />
+            {customLeftComponents.map((action, index) => (
+              <React.Fragment key={index}>{action.component}</React.Fragment>
+            ))
+            }
+          </Box>
+        )}
+        {standardLeftActions && standardLeftActions.length > 0 && (
+          <Box className="flex items-center gap-0 mr-1 pl-1">
+            <GlobalActionButton globalActions={standardLeftActions} iconOnly={true} />
           </Box>
         )}
         <Tabs
@@ -140,9 +156,17 @@ export const DynamicMuiTabs: React.FC<DynamicMuiTabsProps> = ({
             />
           ))}
         </Tabs>
-        {rightActions && rightActions.length > 0 && (
+        {standardRightActions && standardRightActions.length > 0 && (
           <Box className="flex items-center gap-0 ml-auto pr-1">
-            <GlobalActionButton globalActions={rightActions} iconOnly={true} />
+            <GlobalActionButton globalActions={standardRightActions} iconOnly={true} />
+          </Box>
+        )}
+        {customRightComponents && customRightComponents.length > 0 && (
+          <Box className="flex items-center gap-0 ml-auto pr-1">
+            {customRightComponents.map((action, index) => (
+              <React.Fragment key={index}>{action.component}</React.Fragment>
+            ))
+            }
           </Box>
         )}
       </Paper>
