@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, useTheme, Button, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Typography, useTheme, Button, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { useStore } from '@nanostores/react';
 import { themeStore } from '@/stores/themeStore';
 import { Diagnostic } from '@codemirror/lint';
@@ -8,7 +8,7 @@ import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
-
+import AutoFixHighOutlinedIcon from '@mui/icons-material/AutoFixHighOutlined';
 interface CodeMirrorStatusProps {
   languageName: string;
   line: number;
@@ -18,9 +18,18 @@ interface CodeMirrorStatusProps {
   buildErrorMessage: string | null;
   diagnostics: Diagnostic[];
   editorViewInstance: EditorView | null;
-  onGoToLine?: (line: number) => void; // NEW: Callback to navigate to a specific line
+  onGoToLine?: (line: number) => void;
+  onAutoFix?: (fixableDiagnostics: Diagnostic[]) => void;
 }
-
+// Define the messages for auto-fixable diagnostics
+const AUTO_FIXABLE_MESSAGES = [
+  'Avoid console statements in production code',
+  'Debugger statement found',
+  'Empty line',
+];
+const getFixableDiagnostics = (allDiagnostics: Diagnostic[]): Diagnostic[] => {
+  return allDiagnostics.filter(diag => AUTO_FIXABLE_MESSAGES.includes(diag.message));
+};
 const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
   languageName,
   line,
@@ -31,21 +40,18 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
   diagnostics,
   editorViewInstance,
   onGoToLine,
+  onAutoFix,
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
-
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
-
   const handleClose = () => {
     setAnchorEl(null);
   };
-
   // Function to handle clicking an issue item
   const handleIssueClick = (diagnostic: Diagnostic) => {
     const lineNumber = getLineNumber(diagnostic.from);
@@ -54,11 +60,18 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
     }
     handleClose();
   };
-
+  const handleAutoFixClick = () => {
+    if (onAutoFix) {
+      const fixable = getFixableDiagnostics(diagnostics);
+      onAutoFix(fixable);
+    }
+    handleClose();
+  };
   // Extract filename if filePath is provided
   const filename = filePath ? filePath.split('/').pop() || 'No file open' : 'No file open';
   const lintStatusText = lintIssuesCount > 0 ? `Issues: ${lintIssuesCount}` : 'No issues';
-
+  const fixableDiagnostics = getFixableDiagnostics(diagnostics);
+  const hasFixableIssues = fixableDiagnostics.length > 0;
   // Define general status item styles
   const sxStatusItem = {
     color: muiTheme.palette.text.secondary,
@@ -67,7 +80,6 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
     display: 'flex',
     alignItems: 'center',
   };
-
   // Menu specific styles
   const sxMenuPaper = {
     maxHeight: 250,
@@ -77,14 +89,12 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
     backgroundColor: muiTheme.palette.background.default,
     border: `1px solid ${muiTheme.palette.divider}`,
   };
-
   const sxMenuItem = {
     p: 1,
     '&:hover': {
       backgroundColor: muiTheme.palette.action.hover,
     },
   };
-
   const getLineNumber = (from: number) => {
     if (!editorViewInstance) return null;
     try {
@@ -93,7 +103,6 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
       return null;
     }
   };
-
   return (
     <Box
       className="flex items-center justify-between px-2 py-1 h-8"
@@ -113,7 +122,6 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
           Ln {line}, Col {column}
         </Typography>
       </Box>
-
       <Box className="flex items-center">
         {buildErrorMessage && (
           <Typography
@@ -127,7 +135,6 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
             Build Error: {buildErrorMessage}
           </Typography>
         )}
-
         <Button
           variant="text"
           size="small"
@@ -169,6 +176,20 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
           transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           PaperProps={{ sx: sxMenuPaper }}
         >
+          {hasFixableIssues && (
+            <MenuItem onClick={handleAutoFixClick} sx={sxMenuItem}>
+              <ListItemIcon>
+                <AutoFixHighOutlinedIcon fontSize="small" color="primary" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Auto-fix Issues"
+                secondary={`Fix ${fixableDiagnostics.length} auto-fixable issue(s)`}
+                primaryTypographyProps={{ sx: { fontSize: '0.875rem', fontWeight: 'bold' } }}
+                secondaryTypographyProps={{ sx: { fontSize: '0.75rem', color: muiTheme.palette.text.secondary } }}
+              />
+            </MenuItem>
+          )}
+          {hasFixableIssues && <Divider sx={{ my: 0.5 }} />}
           {diagnostics.length === 0 ? (
             <MenuItem onClick={handleClose} sx={sxMenuItem}>
               <ListItemText primary="No issues found." />
@@ -176,6 +197,7 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
           ) : (
             diagnostics.map((diagnostic, index) => {
               const lineNumber = getLineNumber(diagnostic.from);
+              const isFixable = AUTO_FIXABLE_MESSAGES.includes(diagnostic.message);
               return (
                 <MenuItem key={index} onClick={() => handleIssueClick(diagnostic)} sx={sxMenuItem}>
                   <ListItemIcon>
@@ -186,7 +208,7 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
                   <ListItemText
                     primary={diagnostic.message}
                     secondary={lineNumber !== null ? `Line ${lineNumber}` : undefined}
-                    primaryTypographyProps={{ sx: { fontSize: '0.875rem' } }}
+                    primaryTypographyProps={{ sx: { fontSize: '0.875rem', color: isFixable ? muiTheme.palette.primary.main : 'inherit' } }}
                     secondaryTypographyProps={{ sx: { fontSize: '0.75rem', color: muiTheme.palette.text.secondary } }}
                   />
                 </MenuItem>
@@ -198,5 +220,4 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
     </Box>
   );
 };
-
 export default CodeMirrorStatus;

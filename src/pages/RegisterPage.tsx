@@ -189,7 +189,7 @@ const RegisterPage: React.FC = () => {
             Already have an account? Sign in
           </Link>
         </Box>
-      </Paper>
+    
     </Container>
   );
 };
