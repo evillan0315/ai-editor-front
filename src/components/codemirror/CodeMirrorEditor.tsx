@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useStore } from '@nanostores/react';
 import { EditorView, Line } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
@@ -12,6 +12,26 @@ import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
 import { llmStore } from '@/stores/llmStore';
 import { fileStore } from '@/stores/fileStore';
 import CodeMirrorStatus from './CodeMirrorStatus';
+import CodeMirrorContextMenu from './CodeMirrorContextMenu';
+import { codeMirrorContextMenuStore, showCodeMirrorContextMenu, hideCodeMirrorContextMenu } from './stores/codeMirrorContextMenuStore';
+import { ICodeMirrorContextMenuItem } from './types';
+// CodeMirror commands for the context menu
+import {
+  undo,
+  redo,
+  selectAll,
+  indentSelection,
+  historyField,
+  history,
+} from '@codemirror/commands';
+// Material Icons for context menu
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ContentCutIcon from '@mui/icons-material/ContentCut';
+import ContentPasteIcon from '@mui/icons-material/ContentPaste';
+import UndoIcon from '@mui/icons-material/Undo';
+import RedoIcon from '@mui/icons-material/Redo';
+import SelectAllIcon from '@mui/icons-material/SelectAll';
+import FormatAlignLeftIcon from '@mui/icons-material/FormatAlignLeft';
 interface CodeMirrorEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -54,17 +74,17 @@ const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
           source: 'editor-linter',
         });
       }
-      // 3. Detect  statements
-      const Regex = /?/g;
-      while ((match = Regex.exec(lineText)) !== null) {
-        diagnostics.push({
-          from: line.from + match.index,
-          to: line.from + match.index + match[0].length,
-          severity: 'warning',
-          message: 'Debugger statement found',
-          source: 'editor-linter',
-        });
-      }
+     // Detect  statements
+const debuggerRegex = /\bdebugger\b/g;
+while ((match = debuggerRegex.exec(lineText)) !== null) {
+  diagnostics.push({
+    from: line.from + match.index,
+    to: line.from + match.index + match[0].length,
+    severity: 'warning',
+    message: 'Debugger statement found',
+    source: 'editor-linter',
+  });
+}
     }
     // 4. Detect generic syntax errors from CodeMirror's language parser
     syntaxTree(view.state).iterate({
@@ -82,7 +102,6 @@ const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
       },
     });
   } catch (e) {
-// //     console.error('Error in generateBasicDiagnostics:', e);
     diagnostics.push({
       from: 0,
       to: doc.length,
@@ -109,13 +128,15 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const { mode } = useStore(themeStore);
   const { buildOutput } = useStore(llmStore);
   const { saveFileContentError } = useStore(fileStore);
+  const editorRef = useRef<HTMLDivElement>(null);
   const [editorViewInstance, setEditorViewInstance] = useState<EditorView | null>(null);
   const [currentLine, setCurrentLine] = useState(1);
   const [currentColumn, setCurrentColumn] = useState(1);
   const [currentLanguageName, setCurrentLanguageName] = useState('Plain Text');
   const [lintIssuesCount, setLintIssuesCount] = useState(0);
-  const [allDiagnostics, setAllDiagnostics] = useState<Diagnostic[]>([]); // State to store all diagnostics
-  const handleChange = React.useCallback(
+  const [allDiagnostics, setAllDiagnostics] = useState<Diagnostic[]>([]);
+  const { visible: contextMenuVisible } = useStore(codeMirrorContextMenuStore);
+  const handleChange = useCallback(
     (val: string) => onChange(val),
     [onChange],
   );
@@ -124,11 +145,11 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     return linter((view) => {
       const diagnostics = generateBasicDiagnostics(view);
       setLintIssuesCount(diagnostics.length);
-      setAllDiagnostics(diagnostics); // Store all diagnostics
+      setAllDiagnostics(diagnostics);
       return diagnostics;
     });
   }, []);
-  const handleUpdate = React.useCallback(
+  const handleUpdate = useCallback(
     (viewUpdate: { view: EditorView; state: EditorState }) => {
       const { view } = viewUpdate;
       if (!view) return;
@@ -156,21 +177,21 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     [onEditorViewChange, editorViewInstance, language, filePath],
   );
   // Function to scroll to a specific line in the editor
-  const handleGoToLine = React.useCallback(
+  const handleGoToLine = useCallback(
     (lineNumber: number) => {
       if (!editorViewInstance) return;
       const line = editorViewInstance.state.doc.line(lineNumber);
       editorViewInstance.dispatch({
-        selection: { anchor: line.from }, // Place cursor at the start of the line
+        selection: { anchor: line.from },
         effects: EditorView.scrollIntoView(line.from, {
-          y: 'center', // Scroll to center the line
+          y: 'center',
         }),
       });
     },
     [editorViewInstance],
   );
   // Function to automatically fix issues
-  const handleAutoFix = React.useCallback(
+  const handleAutoFix = useCallback(
     (fixableDiagnostics: Diagnostic[]) => {
       if (!editorViewInstance) return;
       const changes: ChangeSpec[] = [];
@@ -184,7 +205,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           const lineContent = editorViewInstance.state.doc.sliceString(line.from, line.to);
           change = { from: line.from, to: line.to, insert: `// ${lineContent}` };
         } else if (diag.message.includes('Debugger statement found')) {
-          // Remove the  statement
+          // Remove the statement
           change = { from: diag.from, to: diag.to, insert: '' };
         } else if (diag.message.includes('Empty line')) {
           // Remove the entire empty line, including the newline character if not the last line
@@ -202,6 +223,92 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     },
     [editorViewInstance],
   );
+  // NEW: Context menu handler
+  const handleContextMenu = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!editorViewInstance || isDisabled) return;
+      event.preventDefault(); // Prevent default browser context menu
+      const { clientX, clientY } = event;
+      // Check history state for undo/redo
+      const historyState = editorViewInstance.state.field(historyField, false);
+      const canUndo = historyState ? historyState.done.length > 0 : false;
+      const canRedo = historyState ? historyState.undone.length > 0 : false;
+      const isSelectionEmpty = editorViewInstance.state.selection.main.empty;
+      const items: ICodeMirrorContextMenuItem[] = [
+        {
+          id: 'undo',
+          label: 'Undo',
+          icon: <UndoIcon fontSize="small" />,
+          onClick: (view) => undo(view),
+          disabled: !canUndo,
+        },
+        {
+          id: 'redo',
+          label: 'Redo',
+          icon: <RedoIcon fontSize="small" />,
+          onClick: (view) => redo(view),
+          disabled: !canRedo,
+        },
+        { id: 'divider-1', isDivider: true },
+        {
+          id: 'cut',
+          label: 'Cut',
+          icon: <ContentCutIcon fontSize="small" />,
+          onClick: (view) => cut(view),
+          disabled: isSelectionEmpty,
+        },
+        {
+          id: 'copy',
+          label: 'Copy',
+          icon: <ContentCopyIcon fontSize="small" />,
+          onClick: (view) => copy(view),
+          disabled: isSelectionEmpty,
+        },
+        {
+          id: 'paste',
+          label: 'Paste',
+          icon: <ContentPasteIcon fontSize="small" />,
+          onClick: (view) => paste(view),
+          // It's hard to reliably check if paste is possible or if clipboard has text
+          // via CodeMirror API directly due to browser security.
+          // We can leave it always enabled, or disable if the editor itself is disabled.
+          disabled: isDisabled,
+        },
+        { id: 'divider-2', isDivider: true },
+        {
+          id: 'selectAll',
+          label: 'Select All',
+          icon: <SelectAllIcon fontSize="small" />,
+          onClick: (view) => selectAll(view),
+        },
+        {
+          id: 'formatSelection',
+          label: 'Format Selection',
+          icon: <FormatAlignLeftIcon fontSize="small" />,
+          onClick: (view) => {
+            // This is a basic indent. For full "format document"
+            // a language-specific formatter extension would be needed.
+            indentSelection(view);
+          },
+          disabled: isSelectionEmpty,
+        },
+      ];
+      showCodeMirrorContextMenu(clientX, clientY, items);
+    },
+    [editorViewInstance, isDisabled],
+  );
+  // NEW: Global click listener to hide context menu
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenuVisible) {
+        hideCodeMirrorContextMenu();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [contextMenuVisible]);
   const extensions = React.useMemo(() => {
     const langExtensions: LanguageSupport[] = [];
     if (language) {
@@ -215,6 +322,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     }
     return [
       ...langExtensions,
+      history(),
       createCodeMirrorTheme(muiTheme),
       EditorView.lineWrapping,
       lintGutter(),
@@ -225,8 +333,10 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const buildErrorMessage = buildOutput?.stderr || saveFileContentError || null;
   return (
     <Box
+      ref={editorRef}
       className={`flex flex-col ${classNames || ''}`}
       sx={{ height: height || '100%', width: width || '100%' }}
+      onContextMenu={handleContextMenu}
     >
       <Box className="flex-grow overflow-auto">
         <CodeMirror
@@ -252,6 +362,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         onGoToLine={handleGoToLine}
         onAutoFix={handleAutoFix}
       />
+   
+      <CodeMirrorContextMenu editorView={editorViewInstance} />
     </Box>
   );
 };
