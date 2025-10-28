@@ -70,7 +70,7 @@ export function RecordingControls({
   const theme = useTheme();
 
   return (
-    <Box className="flex items-center gap-4">
+    <Box className="flex items-center justify-end gap-2">
       {!isScreenRecording && (
         <Tooltip title="Start Screen Recording">
           <IconButton

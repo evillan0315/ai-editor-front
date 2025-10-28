@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@nanostores/react';
 import { authStore, setError as setAuthError } from '@/stores/authStore';
 import { registerLocal } from '@/services/authService';
-import { APP_NAME } from '@/constants'; // Import APP_NAME
+import { APP_NAME } from '@/constants/app'; // Import APP_NAME from app.ts
 
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
@@ -189,7 +189,7 @@ const RegisterPage: React.FC = () => {
             Already have an account? Sign in
           </Link>
         </Box>
-      </Box>
+      </Paper>
     </Container>
   );
 };

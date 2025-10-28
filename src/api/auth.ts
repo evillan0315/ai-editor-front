@@ -6,7 +6,7 @@ import {
   getToken,
 } from '@/stores/authStore';
 import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
-import { UserProfile, LoginRequest, RegisterRequest } from '@/types/auth';
+import { UserProfile, LoginRequest, RegisterRequest, IForgotPasswordRequest, IForgotPasswordResponse, IResetPasswordRequest, IResetPasswordResponse } from '@/types/auth';
 
 export interface LoginLocalResponse {
   access_token: string;
@@ -69,12 +69,16 @@ export const checkAuthStatus = async (): Promise<CheckAuthResponse> => {
     });
     const authData = await handleResponse<CheckAuthResponse>(response);
     if (authData && getToken()) {
-      loginSuccess(authData.user, getToken());
+      // The user property is directly on authData, not authData.user
+      // This needs a careful check if backend /me endpoint returns user data directly at root
+      // Assuming `authData` IS the user profile as per CheckAuthResponse type
+      loginSuccess(authData, getToken());
     }
     return authData;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to check authentication', error);
     setError(error.message || 'You are not logged in. Please login.');
+    throw error; // Re-throw to be caught by higher-level components if needed
   } finally {
     setLoading(false);
   }
@@ -103,6 +107,7 @@ export const loginLocal = async (
     setError(
       error.message || 'An unknown error message occurred during login.',
     );
+    throw error; // Re-throw to be caught by the component
   } finally {
     setLoading(false);
   }
@@ -120,18 +125,60 @@ export const registerLocal = async (
   try {
     const response = await fetchWithAuth(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
-      body: JSON.stringify(credentials),
+      body: JSON.stringify(userData),
     });
-    if (response && response.access_token) {
-      loginSuccess(response.user, response.access_token);
+    const authData = await handleResponse<RegisterLocalResponse>(response);
+    if (authData && authData.access_token) {
+      loginSuccess(authData.user, authData.access_token);
     }
-    return handleResponse<RegisterLocalResponse>(response);
+    return authData;
   } catch (error: ApiError) {
     console.error('Registration failed', error);
     setError(
       error.message || 'An unknown error message occurred during registration.',
     );
+    throw error; // Re-throw to be caught by the component
   } finally {
     setLoading(false);
+  }
+};
+
+/**
+ * Handles requesting a password reset link.
+ * @param email The email address for the password reset.
+ */
+export const requestPasswordReset = async (
+  email: string,
+): Promise<IForgotPasswordResponse> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/auth/forgot-password`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+    return handleResponse<IForgotPasswordResponse>(response);
+  } catch (error: ApiError) {
+    console.error('Forgot password request failed', error);
+    throw error; // Re-throw to be caught by the component
+  }
+};
+
+/**
+ * Handles password reset request.
+ * @param token The reset token received via email.
+ * @param newPassword The new password.
+ */
+export const resetPassword = async (
+  token: string,
+  newPassword: string,
+): Promise<IResetPasswordResponse> => {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/auth/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+    return handleResponse<IResetPasswordResponse>(response);
+  } catch (error: ApiError) {
+    console.error('Password reset failed', error);
+    throw error; // Re-throw to be caught by the component
   }
 };

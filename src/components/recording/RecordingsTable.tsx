@@ -35,6 +35,12 @@ import { TableList, TableListColumn } from '@/components/ui/views/table/TableLis
 import { showDialog, hideDialog } from '@/stores/dialogStore';
 
 interface RecordingsTableProps {
+  recordings: RecordingItem[];
+  total: number; // New prop for pagination
+  page: number; // New prop for pagination
+  rowsPerPage: number; // New prop for pagination
+  onPageChange: (newPage: number) => void; // New prop for pagination
+  onRowsPerPageChange: (rowsPerPage: number) => void; // New prop for pagination
   onPlay: (recording: RecordingItem) => void;
   onDelete: (id: string) => void;
   onView: (recording: RecordingItem) => void;
@@ -58,6 +64,12 @@ const stopRecordingIconSx: SxProps<Theme> = (theme) => ({
 });
 
 const RecordingsTable: React.FC<RecordingsTableProps> = ({
+  recordings,
+  total,
+  page,
+  rowsPerPage,
+  onPageChange,
+  onRowsPerPageChange,
   onPlay,
   onDelete,
   onView,
@@ -65,7 +77,6 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   onStopRecording,
 }) => {
   const theme = useTheme();
-  const recordings = useStore(recordingsListStore);
   const sortBy = useStore(recordingsSortByStore);
   const sortOrder = useStore(recordingsSortOrderStore);
 
@@ -273,6 +284,11 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
       sortColumn={sortBy}
       sortDirection={sortOrder}
       onSort={handleTableListSort}
+      total={total}
+      page={page}
+      rowsPerPage={rowsPerPage}
+      onPageChange={(event, newPage) => onPageChange(newPage)} // Pass newPage directly
+      onRowsPerPageChange={(event) => onRowsPerPageChange(parseInt(event.target.value, 10))} // Pass parsed value
       // Custom styling for the TableList container to match original Paper styling
       containerSx={(theme) => ({
         borderRadius: '8px',

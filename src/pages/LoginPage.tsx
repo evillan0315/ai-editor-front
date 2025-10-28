@@ -7,7 +7,7 @@ import {
   setError as setAuthError,
 } from '@/stores/authStore';
 import { loginLocal } from '@/api/auth'; // Changed to '@/api/auth'
-import { APP_NAME } from '@/constants'; // Import APP_NAME
+import { APP_NAME } from '@/constants/app'; // Import APP_NAME from app.ts
 
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
@@ -64,7 +64,8 @@ const LoginPage: React.FC = () => {
         image: userImage ? decodeURIComponent(userImage) : undefined,
         role: (userRole as UserProfile['role']) || 'USER',
         username: username ? decodeURIComponent(username) : undefined,
-        provider: (provider as UserProfile['provider']) || undefined,
+        provider:
+          (provider as UserProfile['provider']) || undefined,
         // accessToken is not stored in user profile for HTTP-only cookie use case, but might be passed for CLI
       };
       loginSuccess(user, accessToken); // Pass token to loginSuccess if needed for client-side storage

@@ -12,11 +12,19 @@ import CustomSnackbar from '@/components/Snackbar';
 import { useStore } from '@nanostores/react';
 import { snackbarState, hideGlobalSnackbar } from '@/stores/snackbarStore';
 import { authStore } from '@/stores/authStore';
-import { GlobalDialog } from '@/components/dialogs'; 
+import { GlobalDialog } from '@/components/dialogs';
 
 import '@xterm/xterm/css/xterm.css';
 import ErrorBoundary from './components/ErrorBoundary';
 import ErrorPage from './components/ErrorPage';
+
+// Import new page components
+const AIPlaygroundPage = lazy(() => import('./pages/AIChatPage')); // Generic AI Assistant/Chat
+const DocumentationEditorPage = lazy(() => import('./pages/AiEditorPage')); // Using AI Editor for docs
+const TaskManagerPage = lazy(() => import('./pages/KanbanBoardPage')); // Using Kanban for tasks
+const CodePlaygroundPage = lazy(() => import('./pages/AiEditorPage')); // Using AI Editor for code playground
+const FileExplorerPage = lazy(() => import('./pages/AiEditorPage')); // Using AI Editor for file explorer
+const NetworkMonitorPage = lazy(() => import('./pages/TerminalPage')); // Using Terminal for network monitor
 
 // ✅ Route guard component
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -51,12 +59,14 @@ const LlmGenerationPage = lazy(() => import('./pages/LlmGenerationPage'));
 const ResumeBuilderPage = lazy(() => import('./pages/ResumeBuilderPage'));
 const RecordingPage = lazy(() => import('./pages/RecordingPage'));
 const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage'));
-const GitPage = lazy(() =>  import('@/components/git/GitPage'));
+const GitPage = lazy(() => import('@/components/git/GitPage'));
 const AIChatPage = lazy(() => import('./pages/AIChatPage'));
 const SchemeGeneratorPage = lazy(() => import('./pages/SchemeGeneratorPage')); // New: Lazy load SchemeGeneratorPage
 const ChatAppComponent = lazy(() => import('./components/chat/ChatApp')); // NEW: Lazy load ChatApp
 const PlaywrightPage = lazy(() => import('./pages/PlaywrightPage')); // NEW: Lazy load PlaywrightPage
-const SwingersRoomChatPage = lazy(() => import('./pages/SwingersRoomChatPage'));
+const SwingersRoomChatPage = lazy(
+  () => import('./pages/SwingersRoomChatPage'),
+);
 const SwingersPage = lazy(() => import('./pages/SwingersPage'));
 
 const router = createBrowserRouter(
@@ -109,6 +119,66 @@ const router = createBrowserRouter(
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 <AppsPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/apps/ai-assistant"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <AIPlaygroundPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/apps/documentation-editor"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <DocumentationEditorPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/apps/code-playground"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <CodePlaygroundPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/apps/file-explorer"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <FileExplorerPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/apps/network-monitor"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <NetworkMonitorPage />
               </ErrorBoundary>
             </Suspense>
           </RequireAuth>
@@ -254,6 +324,18 @@ const router = createBrowserRouter(
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 <KanbanBoardPage />
+              </ErrorBoundary>
+            </Suspense>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/apps/task-manager"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                <TaskManagerPage />
               </ErrorBoundary>
             </Suspense>
           </RequireAuth>
@@ -414,10 +496,10 @@ const router = createBrowserRouter(
         }
       />
     </Route>,
-  ),
+  )
 );
+const App: React.FC = () => {
 
-function App() {
   const snackbar = useStore(snackbarState);
 
   const handleSnackbarClose = () => {
@@ -435,7 +517,7 @@ function App() {
         onClose={handleSnackbarClose}
         autoHideDuration={3000}
       />
-      <GlobalDialog /> 
+      <GlobalDialog />
     </>
   );
 }

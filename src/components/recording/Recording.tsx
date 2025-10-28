@@ -3,7 +3,6 @@ import { Box, LinearProgress } from '@mui/material';
 import { RecordingControls } from './RecordingControls';
 import { RecordingStatus } from './RecordingStatus';
 import { RecordingsTable } from './RecordingsTable';
-import { RecordingsPagination } from './RecordingsPagination';
 import { RecordingSearchBar } from './RecordingSearchBar';
 import { RecordingInfoDrawer } from './RecordingInfoDrawer';
 import { RecordingSettingsDialog } from './RecordingSettingsDialog';
@@ -96,6 +95,7 @@ export function Recording() {
   const currentPlayingVideoSrc = useStore(currentPlayingVideoSrcStore);
   const currentPlayingMediaType = useStore(currentPlayingMediaTypeStore);
   const availableAudioInputDevices = useStore(availableAudioInputDevicesStore);
+  const availableVideoInputDevices = useStore(availableVideoInputDevicesStore);
 
   // Ref for media element
   const mediaElementRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
@@ -371,15 +371,6 @@ export function Recording() {
     [],
   );
 
-  const handlePageChange = (_: unknown, newPage: number) =>
-    setRecordingsPage(newPage);
-  const handleRowsPerPageChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setRecordingsRowsPerPage(parseInt(event.target.value, 10));
-    setRecordingsPage(0);
-  };
-
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
       setRecordingsSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -464,6 +455,11 @@ export function Recording() {
 
       <RecordingsTable
         recordings={recordings}
+        total={totalRecordings}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        onPageChange={setRecordingsPage}
+        onRowsPerPageChange={setRecordingsRowsPerPage}
         onPlay={handlePlay}
         onDelete={handleDelete}
         onView={openDrawer}
@@ -474,13 +470,6 @@ export function Recording() {
         onStopRecording={handleStopRecording} // New prop
       />
 
-      <RecordingsPagination
-        total={totalRecordings}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        onPageChange={handlePageChange}
-        onRowsPerPageChange={handleRowsPerPageChange}
-      />
       <RecordingInfoDrawer
         open={drawerOpen}
         onClose={closeDrawer}

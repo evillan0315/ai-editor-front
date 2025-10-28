@@ -8,6 +8,7 @@ import {
   currentCameraRecordingIdStore,
   setIsCameraRecording,
   recorderSettingsStore, // Import recorderSettingsStore
+  setIsRecordingSettingsDialogOpen, // <-- NEW: Import the setter for settings dialog
 } from '@/components/recording/stores/recordingStore';
 import { recordingApi } from '@/components/recording/api/recording';
 import { setSnackbarState } from '@/stores/snackbarStore';
@@ -43,7 +44,17 @@ const Footer = () => {
 
   const handleStartScreenRecording = async () => {
     try {
-      const recordingData = await recordingApi.startRecording();
+      // NOTE: The full Recording component handles the audio device selection dialog.
+      // For simplified footer controls, we'll start without audio or with a default.
+      // If the full dialog flow is desired here, it needs to be replicated.
+      const dto = {
+        name: `${currentRecorderSettings.namePrefix}-screen-record-${Date.now()}`,
+        enableAudio: currentRecorderSettings.enableScreenAudio,
+        audioDevice: currentRecorderSettings.enableScreenAudio
+          ? currentRecorderSettings.screenAudioDevice
+          : undefined,
+      };
+      const recordingData = await recordingApi.startRecording(dto);
       if (recordingData?.id) {
         currentRecordingIdStore.set(recordingData.id);
         setIsScreenRecording(true);
@@ -125,10 +136,9 @@ const Footer = () => {
     setLogDrawerOpen(false);
   };
 
-  // No change needed for onOpenSettings in Footer, as the Recording component handles the settings dialog state.
+  // NEW: Directly open the recording settings dialog using the store setter
   const handleOpenSettings = () => {
-    // This handler can remain empty or trigger a notification if settings are only editable via RecordingPage
-    notify('Recording settings are managed on the Recordings page.', 'info');
+    setIsRecordingSettingsDialogOpen(true);
   };
 
   return (
