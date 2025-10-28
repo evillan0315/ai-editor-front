@@ -68,7 +68,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         <MediaPlayerControls />
               {/* Visualizer at the top (only for audio files) */}
  
-       <Box>
+       <Box className="flex flex-col items-center w-full">
          <AudioVisualizer />
       </Box>
  
