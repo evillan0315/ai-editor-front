@@ -449,7 +449,7 @@ export function Recording() {
           onCapture={handleCaptureScreenshot}
           onOpenSettings={handleOpenSettingsDialog}
         />
-        <RecordingStatus />
+       
       </Box>
 
       <RecordingSearchBar

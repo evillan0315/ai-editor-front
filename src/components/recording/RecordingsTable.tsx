@@ -5,12 +5,9 @@ import {
   SxProps,
   Theme,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Button,
+  DialogContentText,
+  Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -35,6 +32,7 @@ import {
 } from './stores/recordingStore';
 
 import { TableList, TableListColumn } from '@/components/ui/views/table/TableList'; // Import TableList
+import { showDialog, hideDialog } from '@/stores/dialogStore';
 
 interface RecordingsTableProps {
   onPlay: (recording: RecordingItem) => void;
@@ -71,10 +69,6 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   const sortBy = useStore(recordingsSortByStore);
   const sortOrder = useStore(recordingsSortOrderStore);
 
-  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
-  const [recordingToDelete, setRecordingToDelete] = useState<string | null>(null);
-  const [recordingNameToDelete, setRecordingNameToDelete] = useState<string | null>(null);
-
   const formatBytes = (bytes: number, decimals = 2) => {
     if (!+bytes) return '0 Bytes';
     const k = 1024;
@@ -91,24 +85,49 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   };
 
   const handleDeleteClick = (id: string, name: string) => {
-    setRecordingToDelete(id);
-    setRecordingNameToDelete(name);
-    setOpenConfirmDialog(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (recordingToDelete) {
-      onDelete(recordingToDelete);
-    }
-    setOpenConfirmDialog(false);
-    setRecordingToDelete(null);
-    setRecordingNameToDelete(null);
-  };
-
-  const handleCancelDelete = () => {
-    setOpenConfirmDialog(false);
-    setRecordingToDelete(null);
-    setRecordingNameToDelete(null);
+    showDialog({
+      title: (
+        <Box
+          sx={{
+            backgroundColor: theme.palette.error.main,
+            color: theme.palette.error.contrastText,
+            p: 2,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="h6" component="span" sx={{ fontWeight: 'bold' }}>
+            Confirm Deletion
+          </Typography>
+        </Box>
+      ),
+      content: (
+        <DialogContentText id="alert-dialog-description" sx={{ p: 2 }}>
+          Are you sure you want to delete the recording \"{name}\" This action cannot be undone."
+        </DialogContentText>
+      ),
+      actions: (
+        <>
+          <Button onClick={hideDialog} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              onDelete(id);
+              hideDialog();
+            }}
+            variant="contained"
+            color="error"
+            autoFocus
+          >
+            Delete
+          </Button>
+        </>
+      ),
+      maxWidth: 'xs',
+      fullWidth: true,
+      showCloseButton: true,
+    });
   };
 
   const columns: TableListColumn<RecordingItem>[] = [
@@ -247,11 +266,6 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
     },
   ];
 
-  const dialogTitleSx: SxProps<Theme> = (theme) => ({
-    backgroundColor: theme.palette.error.main,
-    color: theme.palette.error.contrastText,
-  });
-
   return (
     <TableList
       columns={columns}
@@ -291,31 +305,6 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
         textOverflow: 'ellipsis',
       })}
     />
-
-    // Dialog remains outside TableList as it's specific interaction logic
-    <Dialog
-      open={openConfirmDialog}
-      onClose={handleCancelDelete}
-      aria-labelledby="alert-dialog-title"
-      aria-describedby="alert-dialog-description"
-    >
-      <DialogTitle id="alert-dialog-title" sx={dialogTitleSx(theme)}>
-        Confirm Deletion
-      </DialogTitle>
-      <DialogContent>
-        <DialogContentText id="alert-dialog-description">
-          Are you sure you want to delete the recording "{recordingNameToDelete}"? This action cannot be undone.
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleCancelDelete} variant="outlined">
-          Cancel
-        </Button>
-        <Button onClick={handleConfirmDelete} variant="contained" color="error" autoFocus>
-          Delete
-        </Button>
-      </DialogActions>
-    </Dialog>
   );
 };
 
