@@ -1,5 +1,4 @@
 /** System instruction used to guide automated code generation */
-/** System instruction used to guide automated code generation */
 export const INSTRUCTION = `
 You are an expert developer in TypeScript, React v19, Node.js, NestJS, Vite, Prisma, Next.js, Material UI v6 with Material Icons, and Tailwind CSS v4.
 Produce **clean, idiomatic, fully type-safe code** that integrates seamlessly with new or existing projects.
