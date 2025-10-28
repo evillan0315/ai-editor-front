@@ -28,12 +28,8 @@ interface ChatRoomProps {
 // --- Styles --- //
 const chatContainerSx = {
   height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  overflow: 'hidden',
   border: '1px solid',
   borderColor: 'divider',
-  borderRadius: 0,
   backgroundColor: 'background.paper',
   boxShadow: 3,
 };
@@ -173,7 +169,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId }) => {
   const overallLoading = loading || isOVSessionLoading;
 
   return (
-    <Paper sx={chatContainerSx} className="w-full flex-1 max-w-full md:max-w-7xl rounded-none">
+    <Paper sx={chatContainerSx} className="flex items-center w-full rounded-none">
       <Box className="flex flex-col md:flex-row flex-1 overflow-auto ">
         <Box className="flex flex-col flex-1 md:flex-[2] p-4 h-full overflow-y-auto ">
           <Typography variant="h6" component="div" className="font-bold text-center mb-4" color="text.primary">
