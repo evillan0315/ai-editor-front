@@ -15,19 +15,26 @@ export const codeMirrorContextMenuStore = map<ICodeMirrorContextMenuState>({
 /**
  * @function showCodeMirrorContextMenu
  * @description Displays the CodeMirror context menu at the specified coordinates with given items.
- * @param {number} x - The x-coordinate for the menu.
- * @param {number} y - The y-coordinate for the menu.
+ *              A small offset is applied to prevent the menu from directly covering the click point.
+ * @param {number} clientX - The x-coordinate of the mouse click event.
+ * @param {number} clientY - The y-coordinate of the mouse click event.
  * @param {ICodeMirrorContextMenuItem[]} items - An array of menu items to display.
  */
 export const showCodeMirrorContextMenu = (
-  x: number,
-  y: number,
+  clientX: number,
+  clientY: number,
   items: ICodeMirrorContextMenuItem[],
 ) => {
+  // Apply a small offset to the context menu position
+  // This prevents the menu from appearing directly under the mouse cursor,
+  // improving UX by not immediately obscuring the clicked element.
+  const offsetX = 2;
+  const offsetY = 2;
+
   codeMirrorContextMenuStore.set({
     visible: true,
-    x,
-    y,
+    x: clientX + offsetX,
+    y: clientY + offsetY,
     items,
   });
 };
