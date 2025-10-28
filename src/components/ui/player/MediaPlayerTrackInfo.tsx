@@ -13,7 +13,7 @@ const trackInfoWrapperStyles: SxProps = {
   display: 'flex',
   alignItems: 'center',
   minWidth: 0,
-  width: '30%',
+  width: 300,
   overflow: 'hidden',
   flexShrink: 0,
 };
