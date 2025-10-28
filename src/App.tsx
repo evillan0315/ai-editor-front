@@ -35,6 +35,8 @@ const AiEditorPage = lazy(() => import('./pages/AiEditorPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage')); // New: Lazy load ForgotPasswordPage
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage')); // New: Lazy load ResetPasswordPage
 const SpotifyAppPage = lazy(() => import('./pages/SpotifyAppPage'));
 const TranslatorAppPage = lazy(() => import('./pages/TranslatorAppPage'));
 const GeminiLiveAudioPage = lazy(() => import('./pages/GeminiLiveAudioPage'));
@@ -384,6 +386,22 @@ const router = createBrowserRouter(
         element={
           <Suspense fallback={<Loading />}>
             <RegisterPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <Suspense fallback={<Loading />}>
+            <ForgotPasswordPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <Suspense fallback={<Loading />}>
+            <ResetPasswordPage />
           </Suspense>
         }
       />

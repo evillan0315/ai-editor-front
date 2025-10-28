@@ -1,0 +1,1 @@
+// Add all constants and enums for all apps related content. Example: `export const APP_NAME='your application name';

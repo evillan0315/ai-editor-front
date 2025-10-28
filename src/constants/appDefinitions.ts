@@ -18,6 +18,10 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // NE
 import WebAssetIcon from '@mui/icons-material/WebAsset'; // NEW: For Playwright
 import GroupIcon from '@mui/icons-material/Group'; // NEW: For Swingers App
 
+
+export const APP_NAME = 'CodeJector';
+export const APP_DESCRIPTION = 'CodeJector';
+
 export const appDefinitions: AppDefinition[] = [
   {
     id: 'swingers',
@@ -106,8 +110,7 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'preview',
     title: 'Preview App',
-    description:
-      'Preview a successfully built frontend application in an iframe.',
+    description: 'Preview a successfully built frontend application in an iframe.',
     link: '/apps/preview',
     linkText: 'Open Preview',
     icon: BuildIcon,
