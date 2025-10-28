@@ -1,6 +1,3 @@
-// FilePath: src/components/CodeMirrorEditor.tsx
-// Title: CodeMirror 6.9.1 Editor with Safe Linter Integration
-// Reason: Remove unsupported getDiagnostics/lintState and track diagnostics manually
 import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { EditorView, Line } from '@codemirror/view';
@@ -15,6 +12,7 @@ import { Extension, EditorState } from '@codemirror/state';
 import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
 import { llmStore } from '@/stores/llmStore';
 import { fileStore } from '@/stores/fileStore';
+
 interface CodeMirrorEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -27,15 +25,19 @@ interface CodeMirrorEditorProps {
   onEditorViewChange?: (view: EditorView) => void;
   additionalExtensions?: Extension[];
 }
+
 // Function to generate diagnostics
 const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
   const diagnostics: Diagnostic[] = [];
+
   try {
     const text = view.state.doc.toString();
     const lines = text.split('\n');
+
     lines.forEach((lineText, i) => {
       const line = view.state.doc.line(i + 1); // 1-based
       const lineNumber = line.number;
+
       if (/TODO/i.test(lineText)) {
         const match = lineText.match(/TODO/i)!;
         diagnostics.push({
@@ -46,6 +48,7 @@ const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
           source: 'codejector-linter',
         });
       }
+
       const consoleMatch = lineText.match(/console\.(log|warn|error|info|debug)\s*\(/);
       if (consoleMatch) {
         diagnostics.push({
@@ -56,6 +59,7 @@ const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
           source: 'codejector-linter',
         });
       }
+
       const dbgMatch = lineText.match(/\bdebugger\b/);
       if (dbgMatch) {
         diagnostics.push({
@@ -66,6 +70,7 @@ const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
           source: 'codejector-linter',
         });
       }
+
       if (
         lineText.trim() === '' &&
         lineNumber > 1 &&
@@ -80,6 +85,7 @@ const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
         });
       }
     });
+
     syntaxTree(view.state).iterate({
       enter: (node) => {
         if (!node?.type?.name) return;
@@ -106,8 +112,10 @@ const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
       source: 'custom-linter-error',
     });
   }
+
   return diagnostics;
 };
+
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   value,
   onChange,
@@ -124,33 +132,42 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const { mode } = useStore(themeStore);
   const { buildOutput } = useStore(llmStore);
   const { saveFileContentError } = useStore(fileStore);
+
   const [editorViewInstance, setEditorViewInstance] = useState<EditorView | null>(null);
   const [currentLine, setCurrentLine] = useState(1);
   const [currentColumn, setCurrentColumn] = useState(1);
   const [currentLanguageName, setCurrentLanguageName] = useState('Plain Text');
   const [lintIssuesCount, setLintIssuesCount] = useState(0);
+  const [allDiagnostics, setAllDiagnostics] = useState<Diagnostic[]>([]); // NEW: State to store all diagnostics
+
   const handleChange = React.useCallback(
     (val: string) => onChange(val),
     [onChange],
   );
+
   // Custom linter with direct count tracking
   const basicLinterExtension = React.useMemo(() => {
     return linter((view) => {
       const diagnostics = generateBasicDiagnostics(view);
       setLintIssuesCount(diagnostics.length);
+      setAllDiagnostics(diagnostics); // NEW: Store all diagnostics
       return diagnostics;
     });
   }, []);
+
   const handleUpdate = React.useCallback(
     (viewUpdate: { view: EditorView; state: EditorState }) => {
       const { view } = viewUpdate;
       if (!view) return;
+
       if (onEditorViewChange) onEditorViewChange(view);
       if (view !== editorViewInstance) setEditorViewInstance(view);
+
       const selection = view.state.selection.main;
       const line = view.state.doc.lineAt(selection.head);
       setCurrentLine(line.number);
       setCurrentColumn(selection.head - line.from + 1);
+
       const languageData = view.state.languageDataAt(selection.head);
       const detectedLangName = languageData.find((data: any) => data.name)?.name;
       if (detectedLangName) {
@@ -168,6 +185,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     },
     [onEditorViewChange, editorViewInstance, language, filePath],
   );
+
   const extensions = React.useMemo(() => {
     const langExtensions: LanguageSupport[] = [];
     if (language) {
@@ -179,6 +197,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     } else if (filePath) {
       langExtensions.push(...getCodeMirrorLanguage(filePath, false));
     }
+
     return [
       ...langExtensions,
       createCodeMirrorTheme(muiTheme),
@@ -188,7 +207,9 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       ...(additionalExtensions || []),
     ];
   }, [language, filePath, muiTheme, additionalExtensions, basicLinterExtension]);
+
   const buildErrorMessage = buildOutput?.stderr || saveFileContentError || null;
+
   return (
     <Box
       className={`flex flex-col ${classNames || ''}`}
@@ -213,8 +234,11 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         lintIssuesCount={lintIssuesCount}
         buildErrorMessage={buildErrorMessage}
         filePath={filePath}
+        diagnostics={allDiagnostics} // NEW: Pass all diagnostics
+        editorViewInstance={editorViewInstance} // NEW: Pass editor view instance
       />
     </Box>
   );
 };
+
 export default CodeMirrorEditor;
