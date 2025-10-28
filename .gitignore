@@ -12,7 +12,7 @@ dist-ssr
 *.local
 .env
 .env.local
-src/components/swingers
+src/components/swingers/*
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
