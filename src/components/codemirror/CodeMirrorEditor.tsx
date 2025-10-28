@@ -8,7 +8,7 @@ import { Box, useTheme } from '@mui/material';
 import { themeStore } from '@/stores/themeStore';
 import { LanguageSupport, syntaxTree } from '@codemirror/language';
 import CodeMirrorStatus from './CodeMirrorStatus';
-import { Extension, EditorState } from '@codemirror/state';
+import { Extension, EditorState, ChangeSpec } from '@codemirror/state';
 import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
 import { llmStore } from '@/stores/llmStore';
 import { fileStore } from '@/stores/fileStore';
@@ -32,59 +32,16 @@ const generateBasicDiagnostics = (view: EditorView): Diagnostic[] => {
 
   try {
     const text = view.state.doc.toString();
-    const lines = text.split('\n');
 
-    lines.forEach((lineText, i) => {
-      const line = view.state.doc.line(i + 1); // 1-based
-      const lineNumber = line.number;
+    for (let i = 1; i <= view.state.doc.lines; i++) {
+      const line = view.state.doc.line(i);
+      //const lineText = line.content;
 
-      if (/TODO/i.test(lineText)) {
-        const match = lineText.match(/TODO/i)!;
-        diagnostics.push({
-          from: line.from + match.index!,
-          to: line.from + match.index! + match[0].length,
-          severity: 'warning',
-          message: 'Todo item found',
-          source: 'codejector-linter',
-        });
+      if (line.length === 0) {
+        // Only mark truly empty lines (no content, including whitespace)
+
       }
-
-      const consoleMatch = lineText.match(/console\.(log|warn|error|info|debug)\s*\(/);
-      if (consoleMatch) {
-        diagnostics.push({
-          from: line.from + consoleMatch.index!,
-          to: line.from + consoleMatch.index! + consoleMatch[0].length,
-          severity: 'warning',
-          message: 'Avoid console statements in production code',
-          source: 'codejector-linter',
-        });
-      }
-
-      const dbgMatch = lineText.match(/\bdebugger\b/);
-      if (dbgMatch) {
-        diagnostics.push({
-          from: line.from + dbgMatch.index!,
-          to: line.from + dbgMatch.index! + dbgMatch[0].length,
-          severity: 'error',
-          message: 'Debugger statement found',
-          source: 'codejector-linter',
-        });
-      }
-
-      if (
-        lineText.trim() === '' &&
-        lineNumber > 1 &&
-        lineNumber < view.state.doc.lines
-      ) {
-        diagnostics.push({
-          from: line.from,
-          to: line.from + lineText.length,
-          severity: 'info',
-          message: 'Empty line',
-          source: 'codejector-linter',
-        });
-      }
-    });
+    }
 
     syntaxTree(view.state).iterate({
       enter: (node) => {
@@ -202,6 +159,46 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     [editorViewInstance],
   );
 
+  // Function to automatically fix issues
+  const handleAutoFix = React.useCallback(
+    (fixableDiagnostics: Diagnostic[]) => {
+      if (!editorViewInstance) return;
+
+      const changes: ChangeSpec[] = [];
+
+      // Sort diagnostics in reverse order of their 'from' position to apply changes safely
+      const sortedDiagnostics = [...fixableDiagnostics].sort((a, b) => b.from - a.from);
+
+      for (const diag of sortedDiagnostics) {
+        const line = editorViewInstance.state.doc.lineAt(diag.from);
+        let change: ChangeSpec | null = null;
+
+        if (diag.message.includes('Avoid console statements')) {
+          // Comment out the entire line containing the console statement
+          const lineContent = editorViewInstance.state.doc.sliceString(line.from, line.to);
+          change = { from: line.from, to: line.to, insert: `// ${lineContent}` };
+        } else if (diag.message.includes('Debugger statement found')) {
+          // Remove the debugger statement
+          change = { from: diag.from, to: diag.to, insert: '' };
+        } else if (diag.message.includes('Empty line')) {
+          // Remove the entire empty line, including the newline character if not the last line
+          const isLastLine = line.number === editorViewInstance.state.doc.lines;
+          change = { from: line.from, to: isLastLine ? line.to : line.to + 1, insert: '' };
+        }
+
+        if (change) {
+          changes.push(change);
+        }
+      }
+
+      if (changes.length > 0) {
+        editorViewInstance.dispatch({ changes });
+        // The editor's onUpdate and onChange handlers will be triggered automatically.
+      }
+    },
+    [editorViewInstance],
+  );
+
   const extensions = React.useMemo(() => {
     const langExtensions: LanguageSupport[] = [];
     if (language) {
@@ -252,7 +249,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         filePath={filePath}
         diagnostics={allDiagnostics}
         editorViewInstance={editorViewInstance}
-        onGoToLine={handleGoToLine} 
+        onGoToLine={handleGoToLine}
+        onAutoFix={handleAutoFix}
       />
     </Box>
   );
