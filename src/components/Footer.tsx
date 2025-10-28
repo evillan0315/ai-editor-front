@@ -138,24 +138,17 @@ const Footer = () => {
         sx={{
           bgcolor: theme.palette.background.paper,
           borderTop: `1px solid ${theme.palette.divider}`,
-          minHeight: 40,
           zIndex: theme.zIndex.appBar + 1,
         }}
       >
-        <Box className="flex justify-start items-center">
-          <Box className="flex-grow relative">
+        <Box className="flex justify-start items-center flex-grow ">
+
             <MediaPlayerContainer />
-          </Box>
+        
         </Box>
-        <Box className="flex justify-start items-center gap-4 w-1/4 pl-4"></Box>
-        <Box className="flex justify-center items-center w-1/2 max-w-[600px]">
-          <IconButton
-            color="inherit"
-            aria-label="open output logger"
-            onClick={handleOpenLogDrawer}
-          >
-            <DynamicIcon iconName="CarbonTerminal" />
-          </IconButton>
+        
+        <Box className="flex justify-end items-center w-1/2 max-w-[600px] pr-4">
+          
           <Box className="flex items-center flex-shrink">
             <RecordingControls
               isScreenRecording={isScreenRecording}
@@ -169,8 +162,14 @@ const Footer = () => {
               onOpenSettings={handleOpenSettings} // Use local handleOpenSettings
             />
 
-            <RecordingStatus />
           </Box>
+          <IconButton
+            color="inherit"
+            aria-label="open output logger"
+            onClick={handleOpenLogDrawer}
+          >
+            <DynamicIcon iconName="CarbonTerminal" />
+          </IconButton>
         </Box>
       </Box>
 
