@@ -138,7 +138,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const [currentColumn, setCurrentColumn] = useState(1);
   const [currentLanguageName, setCurrentLanguageName] = useState('Plain Text');
   const [lintIssuesCount, setLintIssuesCount] = useState(0);
-  const [allDiagnostics, setAllDiagnostics] = useState<Diagnostic[]>([]); // NEW: State to store all diagnostics
+  const [allDiagnostics, setAllDiagnostics] = useState<Diagnostic[]>([]); // State to store all diagnostics
 
   const handleChange = React.useCallback(
     (val: string) => onChange(val),
@@ -150,7 +150,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     return linter((view) => {
       const diagnostics = generateBasicDiagnostics(view);
       setLintIssuesCount(diagnostics.length);
-      setAllDiagnostics(diagnostics); // NEW: Store all diagnostics
+      setAllDiagnostics(diagnostics); // Store all diagnostics
       return diagnostics;
     });
   }, []);
@@ -184,6 +184,22 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       }
     },
     [onEditorViewChange, editorViewInstance, language, filePath],
+  );
+
+  // Function to scroll to a specific line in the editor
+  const handleGoToLine = React.useCallback(
+    (lineNumber: number) => {
+      if (!editorViewInstance) return;
+
+      const line = editorViewInstance.state.doc.line(lineNumber);
+      editorViewInstance.dispatch({
+        selection: { anchor: line.from }, // Place cursor at the start of the line
+        effects: EditorView.scrollIntoView(line.from, {
+          y: 'center', // Scroll to center the line
+        }),
+      });
+    },
+    [editorViewInstance],
   );
 
   const extensions = React.useMemo(() => {
@@ -234,8 +250,9 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         lintIssuesCount={lintIssuesCount}
         buildErrorMessage={buildErrorMessage}
         filePath={filePath}
-        diagnostics={allDiagnostics} // NEW: Pass all diagnostics
-        editorViewInstance={editorViewInstance} // NEW: Pass editor view instance
+        diagnostics={allDiagnostics}
+        editorViewInstance={editorViewInstance}
+        onGoToLine={handleGoToLine} 
       />
     </Box>
   );

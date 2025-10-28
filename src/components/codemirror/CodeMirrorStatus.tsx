@@ -16,8 +16,9 @@ interface CodeMirrorStatusProps {
   filePath?: string;
   lintIssuesCount: number;
   buildErrorMessage: string | null;
-  diagnostics: Diagnostic[]; // NEW: Prop for all diagnostics
-  editorViewInstance: EditorView | null; // NEW: Prop for EditorView instance
+  diagnostics: Diagnostic[];
+  editorViewInstance: EditorView | null;
+  onGoToLine?: (line: number) => void; // NEW: Callback to navigate to a specific line
 }
 
 const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
@@ -29,6 +30,7 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
   buildErrorMessage,
   diagnostics,
   editorViewInstance,
+  onGoToLine,
 }) => {
   const muiTheme = useTheme();
   const { mode } = useStore(themeStore);
@@ -42,6 +44,15 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  // Function to handle clicking an issue item
+  const handleIssueClick = (diagnostic: Diagnostic) => {
+    const lineNumber = getLineNumber(diagnostic.from);
+    if (lineNumber !== null && onGoToLine) {
+      onGoToLine(lineNumber);
+    }
+    handleClose();
   };
 
   // Extract filename if filePath is provided
@@ -166,7 +177,7 @@ const CodeMirrorStatus: React.FC<CodeMirrorStatusProps> = ({
             diagnostics.map((diagnostic, index) => {
               const lineNumber = getLineNumber(diagnostic.from);
               return (
-                <MenuItem key={index} onClick={handleClose} sx={sxMenuItem}>
+                <MenuItem key={index} onClick={() => handleIssueClick(diagnostic)} sx={sxMenuItem}>
                   <ListItemIcon>
                     {diagnostic.severity === 'error' && <ErrorOutlineOutlinedIcon fontSize="small" color="error" />}
                     {diagnostic.severity === 'warning' && <WarningAmberOutlinedIcon fontSize="small" color="warning" />}
