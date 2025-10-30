@@ -6,7 +6,9 @@ import { ButtonColor, ButtonVariant } from '@mui/material/Button';
 import { SvgIconTypeMap } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 
-export type MuiIconComponent = OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & {
+export type MuiIconComponent = OverridableComponent<
+  SvgIconTypeMap<{}, 'svg'>
+> & {
   muiName: string;
 };
 
@@ -22,7 +24,7 @@ export interface AppDefinition {
   linkText: string;
   icon: MuiIconComponent;
   category: string;
-  tags?: string[]; 
+  tags?: string[];
   requestType?: RequestType; // Optional, for apps that pre-configure AI editor
   llmOutputFormat?: LlmOutputFormat;
 }

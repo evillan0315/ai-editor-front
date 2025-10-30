@@ -7,6 +7,7 @@ import { APP_NAME } from '@/constants/app'; // Import APP_NAME from app.ts
 
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import TextField from '@/components/ui/TextField'; // Use the custom TextField
 import Button from '@mui/material/Button';
@@ -189,7 +190,7 @@ const RegisterPage: React.FC = () => {
             Already have an account? Sign in
           </Link>
         </Box>
-    
+      </Box>
     </Container>
   );
 };

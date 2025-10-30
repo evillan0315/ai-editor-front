@@ -6,7 +6,15 @@ import {
   getToken,
 } from '@/stores/authStore';
 import { API_BASE_URL, ApiError, handleResponse, fetchWithAuth } from '@/api';
-import { UserProfile, LoginRequest, RegisterRequest, IForgotPasswordRequest, IForgotPasswordResponse, IResetPasswordRequest, IResetPasswordResponse } from '@/types/auth';
+import {
+  UserProfile,
+  LoginRequest,
+  RegisterRequest,
+  IForgotPasswordRequest,
+  IForgotPasswordResponse,
+  IResetPasswordRequest,
+  IResetPasswordResponse,
+} from '@/types/auth';
 
 export interface LoginLocalResponse {
   access_token: string;
@@ -151,10 +159,13 @@ export const requestPasswordReset = async (
   email: string,
 ): Promise<IForgotPasswordResponse> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/auth/forgot-password`, {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/auth/forgot-password`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      },
+    );
     return handleResponse<IForgotPasswordResponse>(response);
   } catch (error: ApiError) {
     console.error('Forgot password request failed', error);
@@ -172,10 +183,13 @@ export const resetPassword = async (
   newPassword: string,
 ): Promise<IResetPasswordResponse> => {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/auth/reset-password`, {
-      method: 'POST',
-      body: JSON.stringify({ token, newPassword }),
-    });
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/auth/reset-password`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ token, newPassword }),
+      },
+    );
     return handleResponse<IResetPasswordResponse>(response);
   } catch (error: ApiError) {
     console.error('Password reset failed', error);

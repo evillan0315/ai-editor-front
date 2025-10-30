@@ -9,13 +9,6 @@ import { themeStore } from '@/stores/themeStore';
 import { LanguageSupport, syntaxTree } from '@codemirror/language';
 import { Extension, EditorState, ChangeSpec } from '@codemirror/state';
 import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
-import { llmStore } from '@/stores/llmStore';
-import { fileStore } from '@/stores/fileStore';
-import CodeMirrorStatus from './CodeMirrorStatus';
-import CodeMirrorContextMenu from './CodeMirrorContextMenu';
-import { codeMirrorContextMenuStore, showCodeMirrorContextMenu, hideCodeMirrorContextMenu } from './stores/codeMirrorContextMenuStore';
-import { ICodeMirrorContextMenuItem } from './types';
-// CodeMirror commands for the context menu
 import {
   undo,
   redo,
@@ -24,6 +17,14 @@ import {
   historyField,
   history,
 } from '@codemirror/commands';
+import { llmStore } from '@/stores/llmStore';
+import { fileStore } from '@/stores/fileStore';
+import CodeMirrorStatus from './CodeMirrorStatus';
+import CodeMirrorContextMenu from './CodeMirrorContextMenu';
+import { codeMirrorContextMenuStore, showCodeMirrorContextMenu, hideCodeMirrorContextMenu } from './stores/codeMirrorContextMenuStore';
+import { ICodeMirrorContextMenuItem } from './types';
+// CodeMirror commands for the context menu
+
 // Material Icons for context menu
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
@@ -223,6 +224,31 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     },
     [editorViewInstance],
   );
+  // Helper functions for clipboard operations using document.execCommand
+  const handleCopy = useCallback(() => {
+    if (editorViewInstance) {
+      
+      editorViewInstance.focus(); // Ensure the editor has focus
+      console.log(editorViewInstance, 'editorViewInstance');
+      document.execCommand('copy');
+    }
+  }, [editorViewInstance]);
+  const handleCut = useCallback(() => {
+    if (editorViewInstance) {
+      editorViewInstance.focus(); // Ensure the editor has focus
+      document.execCommand('cut');
+    }
+  }, [editorViewInstance]);
+  const handlePaste = useCallback(() => {
+    if (editorViewInstance) {
+      editorViewInstance.focus(); // Ensure the editor has focus
+      // Note: document.execCommand('paste') is often blocked by browsers
+      // for security reasons when not directly triggered by a user's
+      // keyboard shortcut (Ctrl+V/Cmd+V) or native context menu.
+      // It might not work reliably in all environments.
+      document.execCommand('paste');
+    }
+  }, [editorViewInstance]);
   // NEW: Context menu handler
   const handleContextMenu = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -239,7 +265,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           id: 'undo',
           label: 'Undo',
           icon: <UndoIcon fontSize="small" />,
-          onClick: (view) => undo(view),
+          onClick: (view: EditorView) => undo(view),
           disabled: !canUndo,
         },
         {
@@ -254,24 +280,23 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           id: 'cut',
           label: 'Cut',
           icon: <ContentCutIcon fontSize="small" />,
-          onClick: (view) => cut(view),
+          onClick: handleCut, // Use the new helper
           disabled: isSelectionEmpty,
         },
         {
           id: 'copy',
           label: 'Copy',
           icon: <ContentCopyIcon fontSize="small" />,
-          onClick: (view) => copy(view),
+          onClick: handleCopy, // Use the new helper
           disabled: isSelectionEmpty,
         },
         {
           id: 'paste',
           label: 'Paste',
           icon: <ContentPasteIcon fontSize="small" />,
-          onClick: (view) => paste(view),
+          onClick: handlePaste, // Use the new helper
           // It's hard to reliably check if paste is possible or if clipboard has text
-          // via CodeMirror API directly due to browser security.
-          // We can leave it always enabled, or disable if the editor itself is disabled.
+          // via CodeMirror API directly due to browser security. We rely on editor focus.
           disabled: isDisabled,
         },
         { id: 'divider-2', isDivider: true },
@@ -285,7 +310,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           id: 'formatSelection',
           label: 'Format Selection',
           icon: <FormatAlignLeftIcon fontSize="small" />,
-          onClick: (view) => {
+          onClick: (view:  EditorView) => {
+            alert(view);
             // This is a basic indent. For full "format document"
             // a language-specific formatter extension would be needed.
             indentSelection(view);
@@ -295,8 +321,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       ];
       showCodeMirrorContextMenu(clientX, clientY, items);
     },
-    [editorViewInstance, isDisabled],
-  );
+    [editorViewInstance, isDisabled, handleCopy, handleCut, handlePaste],
+  ); // Add handleCopy, handleCut, handlePaste to dependencies
   // NEW: Global click listener to hide context menu
   useEffect(() => {
     const handleClickOutside = () => {
@@ -362,7 +388,6 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         onGoToLine={handleGoToLine}
         onAutoFix={handleAutoFix}
       />
-   
       <CodeMirrorContextMenu editorView={editorViewInstance} />
     </Box>
   );

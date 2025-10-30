@@ -1,6 +1,5 @@
 import { map } from 'nanostores';
 import { ICodeMirrorContextMenuItem, ICodeMirrorContextMenuState } from '@/components/codemirror/types';
-
 /**
  * @const codeMirrorContextMenuStore
  * @description A Nanostore to manage the state of the CodeMirror editor's custom context menu.
@@ -11,7 +10,6 @@ export const codeMirrorContextMenuStore = map<ICodeMirrorContextMenuState>({
   y: 0,
   items: [],
 });
-
 /**
  * @function showCodeMirrorContextMenu
  * @description Displays the CodeMirror context menu at the specified coordinates with given items.
@@ -30,7 +28,6 @@ export const showCodeMirrorContextMenu = (
   // improving UX by not immediately obscuring the clicked element.
   const offsetX = 2;
   const offsetY = 2;
-
   codeMirrorContextMenuStore.set({
     visible: true,
     x: clientX + offsetX,
@@ -38,7 +35,6 @@ export const showCodeMirrorContextMenu = (
     items,
   });
 };
-
 /**
  * @function hideCodeMirrorContextMenu
  * @description Hides the CodeMirror context menu.

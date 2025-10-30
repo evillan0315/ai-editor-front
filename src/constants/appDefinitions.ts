@@ -90,7 +90,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'ai-chat',
     title: 'AI Chat (Legacy)',
-    description: 'Engage in a conversation with AI using the older chat interface.',
+    description:
+      'Engage in a conversation with AI using the older chat interface.',
     link: '/apps/ai-chat',
     linkText: 'Open AI Chat',
     icon: ForumIcon,
@@ -111,7 +112,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'terminal',
     title: 'Terminal',
-    description: 'Access to Terminal for project automation and command execution.',
+    description:
+      'Access to Terminal for project automation and command execution.',
     link: '/apps/terminal',
     linkText: 'Open Terminal',
     icon: TerminalIcon,
@@ -121,7 +123,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'simple-git',
     title: 'Simple Git',
-    description: 'Lightweight Git interface for basic version control operations.',
+    description:
+      'Lightweight Git interface for basic version control operations.',
     link: '/apps/simple-git',
     linkText: 'Open Simple Git',
     icon: GitHubIcon,
@@ -151,7 +154,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'preview',
     title: 'App Preview',
-    description: 'Preview a successfully built frontend application in an iframe.',
+    description:
+      'Preview a successfully built frontend application in an iframe.',
     link: '/apps/preview',
     linkText: 'Open Preview',
     icon: BuildIcon,
@@ -181,7 +185,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'kanban-board',
     title: 'Project Kanban Board',
-    description: 'Visualize and manage your project tasks using a Kanban board.',
+    description:
+      'Visualize and manage your project tasks using a Kanban board.',
     link: '/apps/kanban-board',
     linkText: 'Open Kanban Board',
     icon: AssignmentIcon,
@@ -201,7 +206,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'media-player',
     title: 'Media Player',
-    description: 'Explore and enjoy a simulated music and video streaming experience.',
+    description:
+      'Explore and enjoy a simulated music and video streaming experience.',
     link: '/apps/spotify',
     linkText: 'Open Media Player',
     icon: LibraryMusicIcon,
@@ -271,7 +277,8 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: 'swingers',
     title: 'Swingers App',
-    description: 'Connect with a community of like-minded individuals for video chat.',
+    description:
+      'Connect with a community of like-minded individuals for video chat.',
     link: '/apps/swingers',
     linkText: 'Open Swingers App',
     icon: GroupIcon,

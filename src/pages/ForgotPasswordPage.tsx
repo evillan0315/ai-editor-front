@@ -30,14 +30,19 @@ const ForgotPasswordPage: React.FC = () => {
 
     try {
       const response = await requestPasswordReset(email);
-      setSuccess(response.message || 'If an account with that email exists, a password reset link has been sent.');
+      setSuccess(
+        response.message ||
+          'If an account with that email exists, a password reset link has been sent.',
+      );
       setEmail('');
     } catch (err: any) {
       // Backend typically returns a generic success message even if email not found for security reasons.
       // So, if an error is caught here, it's likely a network error or an unexpected server issue.
-      setSuccess('If an account with that email exists, a password reset link has been sent.');
+      setSuccess(
+        'If an account with that email exists, a password reset link has been sent.',
+      );
       // Optionally, log the actual error for debugging, but don't show it to the user.
-      console.error("Forgot password API error:", err);
+      console.error('Forgot password API error:', err);
     } finally {
       setLoading(false);
     }
@@ -66,13 +71,28 @@ const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <Box sx={containerSx} className="flex flex-col items-center justify-center min-h-screen p-4">
+    <Box
+      sx={containerSx}
+      className="flex flex-col items-center justify-center min-h-screen p-4"
+    >
       <Paper sx={paperSx} className="flex flex-col gap-4 w-full max-w-md">
-        <Typography variant="h5" component="h1" align="center" gutterBottom sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>
+        <Typography
+          variant="h5"
+          component="h1"
+          align="center"
+          gutterBottom
+          sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}
+        >
           Forgot Password
         </Typography>
-        <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 2 }}>
-          Enter your email address and we'll send you a link to reset your password.
+        <Typography
+          variant="body2"
+          align="center"
+          color="text.secondary"
+          sx={{ mb: 2 }}
+        >
+          Enter your email address and we'll send you a link to reset your
+          password.
         </Typography>
 
         {loading && <Loading type="linear" message="Sending reset link..." />}

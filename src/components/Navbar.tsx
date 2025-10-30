@@ -432,7 +432,12 @@ const Navbar: React.FC = () => {
                   {user?.image ? (
                     <Avatar
                       src={user.image}
-                      alt={user.name || user.username || user.email || 'User Avatar'}
+                      alt={
+                        user.name ||
+                        user.username ||
+                        user.email ||
+                        'User Avatar'
+                      }
                       sx={{ width: 32, height: 32 }}
                     />
                   ) : (

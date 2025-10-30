@@ -152,13 +152,10 @@ const Footer = () => {
         }}
       >
         <Box className="flex justify-start items-center flex-grow ">
-
-            <MediaPlayerContainer />
-        
+          <MediaPlayerContainer />
         </Box>
-        
+
         <Box className="flex justify-end items-center w-1/2 max-w-[600px] pr-4">
-          
           <Box className="flex items-center flex-shrink">
             <RecordingControls
               isScreenRecording={isScreenRecording}
@@ -171,7 +168,6 @@ const Footer = () => {
               onCapture={handleCaptureScreenshot}
               onOpenSettings={handleOpenSettings} // Use local handleOpenSettings
             />
-
           </Box>
           <IconButton
             color="inherit"

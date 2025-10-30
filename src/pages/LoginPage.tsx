@@ -64,8 +64,7 @@ const LoginPage: React.FC = () => {
         image: userImage ? decodeURIComponent(userImage) : undefined,
         role: (userRole as UserProfile['role']) || 'USER',
         username: username ? decodeURIComponent(username) : undefined,
-        provider:
-          (provider as UserProfile['provider']) || undefined,
+        provider: (provider as UserProfile['provider']) || undefined,
         // accessToken is not stored in user profile for HTTP-only cookie use case, but might be passed for CLI
       };
       loginSuccess(user, accessToken); // Pass token to loginSuccess if needed for client-side storage

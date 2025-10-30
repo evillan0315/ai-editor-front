@@ -24,6 +24,7 @@ import {
   saveActiveFile,
   openedFileContent,
   openedFile,
+  openedFileViewMode,
 } from '@/stores/fileStore';
 import { themeStore } from '@/stores/themeStore';
 import { readFileContent } from '@/api/file';
@@ -44,6 +45,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
   } = useStore(fileStore);
   const $openedFileContent = useStore(openedFileContent);
   const $openedFile = useStore(openedFile);
+  const $openedFileViewMode = useStore(openedFileViewMode);
   const muiTheme = useTheme();
   // const { mode } = useStore(themeStore); // Not needed here, handled by CodeMirrorEditor
 
@@ -130,7 +132,7 @@ const OpenedFileViewer: React.FC<OpenedFileViewerProps> = () => {
     $openedFile?.toLowerCase().endsWith('.htm');
 
   // Conditional rendering for HTML files, passing common states to the previewer
-  if (isHtmlFile) {
+  if (isHtmlFile && $openedFileViewMode === 'preview') {
     return (
       <HtmlFilePreviewer
         content={$openedFileContent}
