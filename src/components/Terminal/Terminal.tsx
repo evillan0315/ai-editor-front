@@ -8,6 +8,7 @@
  *         and handles direct writing of output, while updating the store with plain text.
  *         FIX: Updated input handling to correctly forward arrow keys and control
  *         characters to the backend PTY, enabling interactive prompts and shell history.
+ *         FIX: Enabled full copy/paste by correctly utilizing ClipboardAddon and term.onData.
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -24,13 +25,12 @@ import { TerminalToolbar } from './TerminalToolbar';
 import TerminalSettingsDialog from './TerminalSettingsDialog';
 import {
   terminalStore,
-  connectTerminal,       // Use store's connect/disconnect orchestrators
+  connectTerminal, // Use store's connect/disconnect orchestrators
   disconnectTerminal,
-  // executeCommand,      // No longer directly called by XTerminal's onKey
-  appendOutput,          // Used by XTerminal to update store with plain text
-  setSystemInfo,         // Used by XTerminal to update store with system info
-  setCurrentPath,        // Used by XTerminal to update store with current path
-  setConnected,          // Used by XTerminal for immediate state update from socket events
+  appendOutput, // Used by XTerminal to update store with plain text
+  setSystemInfo, // Used by XTerminal to update store with system info
+  setCurrentPath, // Used by XTerminal to update store with current path
+  setConnected, // Used by XTerminal for immediate state update from socket events
 } from '@/components/Terminal/stores/terminalStore';
 import { terminalSocketService } from '@/components/Terminal/services/terminalSocketService'; // NEW: Use specific terminal socket service
 import { handleLogout } from '@/services/authService';
@@ -121,80 +121,53 @@ export const XTerminal: React.FC<XTerminalProps> = ({
         // The frontend no longer manages a local command buffer or writes a '$ ' prompt.
 
         // ──────────────────────────────────────────────
-        // Input Handling (forward all key presses directly to PTY)
-        // The PTY/shell on the backend will handle line editing, history, and interactive prompts.
+        // Input Handling: Use onData for all raw input (characters, pastes)
+        // and onKey for specific control sequences.
         // ──────────────────────────────────────────────
-        term.onKey(({ key, domEvent }) => {
-          const { key: pressedKey, ctrlKey } = domEvent;
-
-          // Handle Ctrl+C for copy (if selection) or interrupt (if no selection)
-          if (ctrlKey && pressedKey.toLowerCase() === 'c') {
-            if (term.hasSelection()) {
-              navigator.clipboard.writeText(term.getSelection() ?? '').catch(() => {});
-              term.clearSelection();
-            } else {
-              // If no selection, send Ctrl+C to terminal (interrupt)
-              terminalSocketService.sendInput('\x03'); // ASCII for Ctrl+C (ETX)
-            }
-            return;
-          }
-
-          // Handle Ctrl+V for paste
-          if (ctrlKey && pressedKey.toLowerCase() === 'v') {
-            navigator.clipboard
-              .readText()
-              .then((clipText) => {
-                if (clipText) {
-                  // Xterm.js's term.paste() also sends characters via onData if configured,
-                  // which will then be forwarded to the backend PTY.
-                  term.paste(clipText);
-                }
-              })
-              .catch(() => {});
-            return;
-          }
-
-          // Forward all other key presses directly to the backend PTY.
-          // The PTY/shell will handle line editing, history, and interactive prompts.
-          switch (pressedKey) {
-            case 'Enter':
-              terminalSocketService.sendInput('\r'); // Send Carriage Return to PTY
-              break;
-
-            case 'Backspace':
-              terminalSocketService.sendInput('\x7F'); // Send ASCII DELETE to PTY
-              break;
-
-            case 'Tab':
-              terminalSocketService.sendInput('\t'); // Send Tab to PTY
-              break;
-
-            case 'ArrowUp':
-              terminalSocketService.sendInput('\x1b[A'); // ANSI escape for ArrowUp
-              break;
-
-            case 'ArrowDown':
-              terminalSocketService.sendInput('\x1b[B'); // ANSI escape for ArrowDown
-              break;
-
-            case 'ArrowLeft':
-              terminalSocketService.sendInput('\x1b[D'); // ANSI escape for ArrowLeft
-              break;
-
-            case 'ArrowRight':
-              terminalSocketService.sendInput('\x1b[C'); // ANSI escape for ArrowRight
-              break;
-
-            default:
-              // Only process single characters that are not control characters
-              // (most control keys are handled by the specific cases above, or Ctrl+ combinations)
-              if (pressedKey.length === 1 && !ctrlKey) {
-                terminalSocketService.sendInput(pressedKey);
-              }
-              break;
-          }
+        term.onData((data) => {
+          terminalSocketService.sendInput(data);
         });
 
+        term.onKey(({ domEvent }) => {
+          // Prevent default browser behavior for keys we handle to avoid conflicts
+          if (
+            domEvent.key === 'Tab' ||
+            domEvent.key === 'Enter' ||
+            domEvent.key === 'Backspace' ||
+            domEvent.key.startsWith('Arrow') ||
+            (domEvent.ctrlKey && domEvent.key.toLowerCase() === 'c')
+          ) {
+            domEvent.preventDefault();
+          }
+
+          // ClipboardAddon automatically handles Ctrl+C (copy selection) and Ctrl+V (paste).
+          // Pasted text from ClipboardAddon will flow through term.onData.
+          // We only need to handle explicit control sequences here.
+
+          if (domEvent.key === 'Enter') {
+            terminalSocketService.sendInput('\r'); // Send Carriage Return to PTY
+          } else if (domEvent.key === 'Backspace') {
+            terminalSocketService.sendInput('\x7F'); // Send ASCII DELETE to PTY
+          } else if (domEvent.key === 'Tab') {
+            terminalSocketService.sendInput('\t'); // Send Tab to PTY
+          } else if (domEvent.key === 'ArrowUp') {
+            terminalSocketService.sendInput('\x1b[A'); // ANSI escape for ArrowUp
+          } else if (domEvent.key === 'ArrowDown') {
+            terminalSocketService.sendInput('\x1b[B'); // ANSI escape for ArrowDown
+          } else if (domEvent.key === 'ArrowLeft') {
+            terminalSocketService.sendInput('\x1b[D'); // ANSI escape for ArrowLeft
+          } else if (domEvent.key === 'ArrowRight') {
+            terminalSocketService.sendInput('\x1b[C'); // ANSI escape for ArrowRight
+          } else if (domEvent.ctrlKey && domEvent.key.toLowerCase() === 'c') {
+            // If no text is selected, Ctrl+C should act as an interrupt.
+            // ClipboardAddon handles copying selected text automatically.
+            if (!term.hasSelection()) {
+              terminalSocketService.sendInput('\x03'); // ASCII for Ctrl+C (ETX) for interrupt
+            }
+          }
+          // All other printable characters are automatically captured by term.onData
+          // and sent to the backend. We do not need a 'default' case here.
+        });
       } else {
         requestAnimationFrame(waitForContainerReady);
       }
@@ -327,29 +300,10 @@ export const XTerminal: React.FC<XTerminalProps> = ({
 
   // ──────────────────────────────────────────────
   // Context menu for copy/paste functionality
+  // The ClipboardAddon provides native context menu copy/paste automatically.
+  // Removing custom contextmenu handler.
   // ──────────────────────────────────────────────
-  useEffect(() => {
-  const container = terminalContainerRef.current;
-  const term = xtermRef.current;
-  if (!container || !term) return;
 
-  const handleContextMenu = async (event: MouseEvent) => {
-    event.preventDefault(); // Prevent default browser context menu
-    if (term.hasSelection()) {
-      // If text is selected, copy it to clipboard
-      const selectedText = term.getSelection();
-      await navigator.clipboard.writeText(selectedText);
-      term.clearSelection(); // Clear selection after copying
-    } else {
-      // If no text selected, paste from clipboard
-      const text = await navigator.clipboard.readText();
-      term.paste(text); // Paste directly into XTerm.js
-    }
-  };
-
-  container.addEventListener('contextmenu', handleContextMenu);
-  return () => container.removeEventListener('contextmenu', handleContextMenu);
-}, []); // Empty dependency array ensures this runs once on mount/unmount
   // ──────────────────────────────────────────────
   // Render
   // ──────────────────────────────────────────────
