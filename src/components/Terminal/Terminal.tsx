@@ -6,6 +6,8 @@
  *         Refactored to use a dedicated terminalSocketService for socket communication
  *         and terminalStore for state management. XTerminal now owns the XTerm.js instance
  *         and handles direct writing of output, while updating the store with plain text.
+ *         FIX: Updated input handling to correctly forward arrow keys and control
+ *         characters to the backend PTY, enabling interactive prompts and shell history.
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -24,7 +26,7 @@ import {
   terminalStore,
   connectTerminal,       // Use store's connect/disconnect orchestrators
   disconnectTerminal,
-  executeCommand,
+  // executeCommand,      // No longer directly called by XTerminal's onKey
   appendOutput,          // Used by XTerminal to update store with plain text
   setSystemInfo,         // Used by XTerminal to update store with system info
   setCurrentPath,        // Used by XTerminal to update store with current path
@@ -65,7 +67,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
     const term = new Terminal({
       allowProposedApi: true,
       cursorBlink: true,
-      fontFamily: '"Fira Code", monospace',
+      fontFamily: '\"Fira Code\", monospace',
       fontSize: 13,
       convertEol: true,
       scrollback: 3000,
@@ -114,24 +116,14 @@ export const XTerminal: React.FC<XTerminalProps> = ({
         xtermRef.current = term;
         fitAddonRef.current = fitAddon;
 
-        // The initial 'Project Terminal Ready' message is now handled by connectTerminal/appendOutput
-        // The prompt is also handled by socket events and terminalStore state updates
-        // term.writeln('\x1b[36mProject Terminal Ready\x1b[0m');
-        // term.writeln('---------------------------------------');
-        // term.write('$ ');
+        // The initial 'Project Terminal Ready' message and prompt are now handled by
+        // connectTerminal/appendOutput and the PTY itself, respectively.
+        // The frontend no longer manages a local command buffer or writes a '$ ' prompt.
 
         // ──────────────────────────────────────────────
-        // Input Handling + Command History (local to XTerminal) and sending commands
+        // Input Handling (forward all key presses directly to PTY)
+        // The PTY/shell on the backend will handle line editing, history, and interactive prompts.
         // ──────────────────────────────────────────────
-        let commandBuffer = '';
-        const history: string[] = [];
-        let historyIndex = -1;
-
-        const redrawCommandLine = (currentTerm: Terminal, buffer: string) => {
-            // Clear current line after '$ '
-            currentTerm.write('\x1b[2K\r$ ' + buffer);
-        };
-
         term.onKey(({ key, domEvent }) => {
           const { key: pressedKey, ctrlKey } = domEvent;
 
@@ -142,7 +134,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
               term.clearSelection();
             } else {
               // If no selection, send Ctrl+C to terminal (interrupt)
-              terminalSocketService.sendInput('\x03'); // ASCII for Ctrl+C
+              terminalSocketService.sendInput('\x03'); // ASCII for Ctrl+C (ETX)
             }
             return;
           }
@@ -153,64 +145,51 @@ export const XTerminal: React.FC<XTerminalProps> = ({
               .readText()
               .then((clipText) => {
                 if (clipText) {
-                  commandBuffer += clipText;
-                  term.write(clipText);
+                  // Xterm.js's term.paste() also sends characters via onData if configured,
+                  // which will then be forwarded to the backend PTY.
+                  term.paste(clipText);
                 }
               })
               .catch(() => {});
             return;
           }
 
+          // Forward all other key presses directly to the backend PTY.
+          // The PTY/shell will handle line editing, history, and interactive prompts.
           switch (pressedKey) {
             case 'Enter':
-              term.write('\r\n'); // Display newline in terminal
-              const trimmed = commandBuffer.trim();
-              if (trimmed.length > 0) {
-                executeCommand(trimmed); // Use store action to send command via service
-                history.unshift(trimmed); // Add to local history
-              }
-              commandBuffer = '';
-              historyIndex = -1;
-              term.write('$ '); // Display prompt immediately for responsiveness
+              terminalSocketService.sendInput('\r'); // Send Carriage Return to PTY
               break;
 
             case 'Backspace':
-              if (commandBuffer.length > 0) {
-                commandBuffer = commandBuffer.slice(0, -1);
-                term.write('\b \b'); // Erase character in terminal: backspace, space, backspace
-              }
-              break;
-
-            case 'ArrowUp':
-              if (history.length > 0 && historyIndex < history.length - 1) {
-                historyIndex++;
-                commandBuffer = history[historyIndex];
-                redrawCommandLine(term, commandBuffer);
-              }
-              break;
-
-            case 'ArrowDown':
-              if (historyIndex > 0) {
-                historyIndex--;
-                commandBuffer = history[historyIndex];
-              } else {
-                historyIndex = -1;
-                commandBuffer = '';
-              }
-              redrawCommandLine(term, commandBuffer);
+              terminalSocketService.sendInput('\x7F'); // Send ASCII DELETE to PTY
               break;
 
             case 'Tab':
-              // Basic tab handling, actual completion would require backend interaction
-              commandBuffer += '\t';
-              term.write('  '); // Simulate tab space in terminal for visual feedback
+              terminalSocketService.sendInput('\t'); // Send Tab to PTY
+              break;
+
+            case 'ArrowUp':
+              terminalSocketService.sendInput('\x1b[A'); // ANSI escape for ArrowUp
+              break;
+
+            case 'ArrowDown':
+              terminalSocketService.sendInput('\x1b[B'); // ANSI escape for ArrowDown
+              break;
+
+            case 'ArrowLeft':
+              terminalSocketService.sendInput('\x1b[D'); // ANSI escape for ArrowLeft
+              break;
+
+            case 'ArrowRight':
+              terminalSocketService.sendInput('\x1b[C'); // ANSI escape for ArrowRight
               break;
 
             default:
               // Only process single characters that are not control characters
+              // (most control keys are handled by the specific cases above, or Ctrl+ combinations)
               if (pressedKey.length === 1 && !ctrlKey) {
-                commandBuffer += pressedKey;
-                term.write(pressedKey);
+                terminalSocketService.sendInput(pressedKey);
               }
               break;
           }
@@ -260,26 +239,22 @@ export const XTerminal: React.FC<XTerminalProps> = ({
     };
 
     const handlePrompt = (data: PromptData) => {
-      setCurrentPath(data.cwd); // Update nanostore
-      // No direct write to term here, terminal will eventually show the prompt
+      // Update CWD in store. PTY itself will print the prompt via `handleOutput`.
+      setCurrentPath(data.cwd);
     };
 
     // Listeners for internal connection/disconnection state changes of the underlying socket
     // These update the global `isConnected` state directly and write messages to XTerm
     const handleSocketConnect = () => {
       setConnected(true);
-      // Initial connection messages are now handled by terminalStore.connectTerminal
-      // and XTerminal's initial setup. No need to re-write on every socket reconnect.
     };
 
     const handleSocketDisconnect = (reason: string) => {
       setConnected(false);
-      // Disconnection messages are handled by terminalStore.disconnectTerminal
     };
 
     const handleSocketConnectError = (error: Error) => {
       setConnected(false);
-      // Connection error messages are handled by terminalStore.connectTerminal
     };
 
     // Attach listeners to the terminalSocketService instance
