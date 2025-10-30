@@ -9,6 +9,8 @@
  *         FIX: Updated input handling to correctly forward arrow keys and control
  *         characters to the backend PTY, enabling interactive prompts and shell history.
  *         FIX: Enabled full copy/paste by correctly utilizing ClipboardAddon and term.onData.
+ *         MOD: Removed `terminalHeight` prop in favor of `ResizeObserver` for dynamic sizing.
+ *         MOD: Added `onCloseDrawer` prop to align `TerminalToolbar`'s close behavior with parent drawer.
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -40,12 +42,12 @@ import { SystemInfo, PromptData } from './types/terminal'; // For type safety
 
 interface XTerminalProps {
   onLogout: () => void;
-  terminalHeight: number;
+  onCloseDrawer?: () => void; // NEW: Callback to close a parent drawer/modal
 }
 
 export const XTerminal: React.FC<XTerminalProps> = ({
   onLogout,
-  terminalHeight,
+  onCloseDrawer,
 }) => {
   const { isConnected } = useStore(terminalStore);
   const navigate = useNavigate();
@@ -55,7 +57,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
   const terminalContainerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false); // State for TerminalSettingsDialog
 
   // ──────────────────────────────────────────────
   // Initialize terminal with WebGL + Clipboard
@@ -67,7 +69,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
     const term = new Terminal({
       allowProposedApi: true,
       cursorBlink: true,
-      fontFamily: '\"Fira Code\", monospace',
+      fontFamily: '"Fira Code", monospace',
       fontSize: 13,
       convertEol: true,
       scrollback: 3000,
@@ -184,6 +186,35 @@ export const XTerminal: React.FC<XTerminalProps> = ({
   }, [mode]); // Re-run if theme mode changes to update terminal theme
 
   // ──────────────────────────────────────────────
+  // ResizeObserver for dynamic fitting
+  // ──────────────────────────────────────────────
+  useEffect(() => {
+    const container = terminalContainerRef.current;
+    const fitAddon = fitAddonRef.current;
+
+    if (!container || !fitAddon) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === container) {
+          try {
+            fitAddon.fit();
+          } catch (err) {
+            console.warn('[XTerminal] Fit on resize skipped:', err);
+          }
+        }
+      }
+    });
+
+    observer.observe(container);
+
+    return () => {
+      observer.unobserve(container);
+      observer.disconnect();
+    };
+  }, []);
+
+  // ──────────────────────────────────────────────
   // Socket Event Handling (via terminalSocketService)
   // This useEffect attaches listeners to the terminalSocketService
   // and updates both the XTerm.js instance and the nanostore.
@@ -285,20 +316,6 @@ export const XTerminal: React.FC<XTerminalProps> = ({
   }, []); // Empty dependency array ensures this effect runs once on mount/unmount
 
   // ──────────────────────────────────────────────
-  // Dynamic height refit for XTerm.js instance
-  // ──────────────────────────────────────────────
-  useEffect(() => {
-    // RequestAnimationFrame ensures refit happens after DOM layout is stable
-    requestAnimationFrame(() => {
-      try {
-        fitAddonRef.current?.fit();
-      } catch {
-        /* Ignore errors if renderer is not yet ready, common during rapid updates */
-      }
-    });
-  }, [terminalHeight]); // Re-fit whenever the provided terminalHeight changes
-
-  // ──────────────────────────────────────────────
   // Context menu for copy/paste functionality
   // The ClipboardAddon provides native context menu copy/paste automatically.
   // Removing custom contextmenu handler.
@@ -313,7 +330,7 @@ export const XTerminal: React.FC<XTerminalProps> = ({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
+        height: '100%', // Take full height of parent container
         border: 0,
         overflow: 'hidden',
         position: 'relative',
@@ -330,15 +347,14 @@ export const XTerminal: React.FC<XTerminalProps> = ({
         onDisconnect={disconnectTerminal} // Use store's disconnect action for consistency
         onSettings={() => setOpen(true)}
         onLogout={onLogout}
-        sx={{ position: 'sticky', top: 0, zIndex: 1 }} // Keeps toolbar at top on scroll
+        onCloseDrawer={onCloseDrawer} // NEW: Pass the drawer close handler
+        sx={{ position: 'sticky', top: 0, zIndex: 1 }}
       />
 
       <Box
         ref={terminalContainerRef}
-        // onClick={() => terminalContainerRef.current?.focus()} // XTerm handles its own focus logic internally
         sx={{
-          flexGrow: 1,
-          height: `${terminalHeight}px`, // Dynamic height based on prop
+          flexGrow: 1, // This will make it take all available vertical space
           overflow: 'hidden',
           '.xterm': { padding: '8px' }, // Padding inside the terminal view
         }}
