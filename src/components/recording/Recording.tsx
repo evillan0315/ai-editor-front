@@ -98,8 +98,9 @@ export function Recording() {
   const availableVideoInputDevices = useStore(availableVideoInputDevicesStore);
   // Ref for media element
   const mediaElementRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
+
   // Fetch recordings from API
-  const fetchRecordings = useCallback(async () => {
+  const fetchRecordingsData = useCallback(async () => {
     setLoading('recordingsList', true);
     try {
       const data = await recordingApi.getRecordings({
@@ -138,6 +139,7 @@ export function Recording() {
     setTotalRecordings,
     setRecordingsPage,
   ]);
+
   // Fetch available devices from API
   const fetchAvailableDevices = useCallback(async () => {
     setLoading('fetchDevices', true);
@@ -149,17 +151,23 @@ export function Recording() {
       setLoading('fetchDevices', false);
     }
   }, [setAvailableAudioInputDevices, setAvailableVideoInputDevices]);
+
+  // Effect for fetching recording data based on pagination, sort, search, and filter
   useEffect(() => {
-    fetchRecordings();
-    fetchAvailableDevices(); // Fetch devices on component mount
+    fetchRecordingsData();
   }, [
-    fetchRecordings,
-    fetchAvailableDevices,
+    fetchRecordingsData,
+    // Also trigger a fetch if recording state changes, as this implies a list update.
+    // currentRecordingId and currentCameraRecordingId are implicitly handled by isScreenRecording/isCameraRecording
     isScreenRecording,
-    currentRecordingId,
     isCameraRecording,
-    currentCameraRecordingId,
   ]);
+
+  // Effect for fetching available devices (less frequent, different dependencies)
+  useEffect(() => {
+    fetchAvailableDevices();
+  }, [fetchAvailableDevices]);
+
   // Screen Recording actions
   const handleStartScreenRecording = async () => {
     if (currentRecorderSettings.enableScreenAudio) {
@@ -196,7 +204,7 @@ export function Recording() {
       const res = await recordingApi.startRecording(dto);
       setIsScreenRecording(true);
       currentRecordingIdStore.set(res.id);
-      fetchRecordings();
+      fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
     } finally {
       setLoading('startRecording', false);
     }
@@ -208,7 +216,7 @@ export function Recording() {
       await recordingApi.stopRecording(currentRecordingId);
       setIsScreenRecording(false);
       currentRecordingIdStore.set(null);
-      fetchRecordings();
+      fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
     } finally {
       setLoading('stopRecording', false);
     }
@@ -227,7 +235,7 @@ export function Recording() {
       const res = await recordingApi.startCameraRecording(dto);
       setIsCameraRecording(true);
       currentCameraRecordingIdStore.set(res.id);
-      fetchRecordings();
+      fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
     } finally {
       setLoading('startCameraRecording', false);
     }
@@ -239,7 +247,7 @@ export function Recording() {
       await recordingApi.stopCameraRecording(currentCameraRecordingId);
       setIsCameraRecording(false);
       currentCameraRecordingIdStore.set(null);
-      fetchRecordings();
+      fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
     } finally {
       setLoading('stopCameraRecording', false);
     }
@@ -249,7 +257,8 @@ export function Recording() {
     if (
       (type === 'screenRecord' && currentRecordingId !== id) ||
       (type === 'cameraRecord' && currentCameraRecordingId !== id)
-    ) {
+    )
+    {
 //       console.warn(`Attempted to stop a non-active recording of type ${type}. ID: ${id}`);
       return; // Do not proceed if it's not the currently active recording of its type
     }
@@ -259,7 +268,7 @@ export function Recording() {
         await recordingApi.stopRecording(id);
         setIsScreenRecording(false);
         currentRecordingIdStore.set(null);
-        fetchRecordings();
+        fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
       } finally {
         setLoading('stopRecording', false);
       }
@@ -269,7 +278,7 @@ export function Recording() {
         await recordingApi.stopCameraRecording(id);
         setIsCameraRecording(false);
         currentCameraRecordingIdStore.set(null);
-        fetchRecordings();
+        fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
       } finally {
         setLoading('stopCameraRecording', false);
       }
@@ -279,7 +288,7 @@ export function Recording() {
     setLoading('captureScreenshot', true);
     try {
       await recordingApi.capture();
-      fetchRecordings(); // Refresh the list to show the new screenshot
+      fetchRecordingsData(); // Refresh the list to show the new screenshot
     } finally {
       setLoading('captureScreenshot', false);
     }
@@ -288,7 +297,7 @@ export function Recording() {
     setLoading('deleteRecording', true);
     try {
       await recordingApi.deleteRecording(id);
-      fetchRecordings();
+      fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
     } finally {
       setLoading('deleteRecording', false);
     }
@@ -306,7 +315,7 @@ export function Recording() {
       await recordingApi.updateRecording(recording.id, {
         data: { ...recording.data, animatedGif: result.fullPath },
       });
-      fetchRecordings();
+      fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
     } finally {
       setLoading('convertToGif', false);
     }
@@ -370,7 +379,7 @@ export function Recording() {
     setLoading('updateRecording', true);
     try {
       await recordingApi.updateRecording(selectedRecording.id, editableRecording);
-      fetchRecordings();
+      fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
       closeDrawer();
     } finally {
       setLoading('updateRecording', false);
@@ -389,8 +398,9 @@ export function Recording() {
       showSnackbar(
         'Recorder settings saved successfully!',
         'success',
+        { 'autoHideDuration': 5000, 'showCloseButton': true}
       );
-      hideDialog(); 
+      hideDialog();
     };
     const handleCancelSettingsInternal = () => {
       setPendingRecorderSettings(null); // Discard pending state
@@ -398,6 +408,7 @@ export function Recording() {
       showSnackbar(
         'Recorder settings discarded.',
         'info',
+        { 'autoHideDuration': 5000, 'showCloseButton': true}
       );
     };
     showDialog({
@@ -482,7 +493,7 @@ export function Recording() {
         filterBy={typeFilter}
         onFilterChange={setRecordingTypeFilter}
         filterOptions={typeFilterOptions}
-        onRefresh={fetchRecordings}
+        onRefresh={fetchRecordingsData}
         rightActions={[
           {
             id: 'recording-settings',
