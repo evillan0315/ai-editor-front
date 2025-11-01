@@ -83,7 +83,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   onUploadToGoogleDrive,
 }) => {
   const theme = useTheme();
-  const sortBy = useStore(recordingsSortByStore);
+  const sortBy = useStore(recordingsSortByStore) || 'createdAt';
   const sortOrder = useStore(recordingsSortOrderStore);
 
   const formatBytes = (bytes: number, decimals = 2) => {
@@ -96,6 +96,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   };
 
   const handleTableListSort = (columnId: string, direction: SortOrder) => {
+    console.log(columnId, 'columnId');
     setRecordingsSortBy(columnId as SortField);
     setRecordingsSortOrder(direction);
     setRecordingsPage(0);
