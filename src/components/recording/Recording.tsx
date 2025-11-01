@@ -346,17 +346,14 @@ export function Recording() {
     },
     [],
   );
-  const handleSort = (field: SortField) => {
-    console.log(field, 'field handleSort');
-    if (sortBy === field) {
-      //setRecordingsSortBy(field);
-      setRecordingsSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setRecordingsSortBy(field);
-      setRecordingsSortOrder('asc'); // Default to 'desc' when changing sort field
-    }
+
+  // Updated handleSort to match TableList's onSortChange signature
+  const handleSort = (field: string, newOrder: SortOrder) => {
+    setRecordingsSortBy(field as SortField);
+    setRecordingsSortOrder(newOrder);
     setRecordingsPage(0);
   };
+
   const handleSearch = () => setRecordingsPage(0);
   const openDrawer = (recording: RecordingItem) => {
     setSelectedRecording(recording);
@@ -454,7 +451,7 @@ export function Recording() {
     label: type,
   }));
   return (
-    <Box className="flex flex-col gap-6 p-6">
+    <Box className="flex flex-col gap-4 p-2">
       {(isLoading('recordingsList') ||
         isLoading('deleteRecording') ||
         isLoading('startRecording') ||
