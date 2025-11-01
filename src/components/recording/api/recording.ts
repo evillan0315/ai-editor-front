@@ -12,13 +12,13 @@ import {
   RecordingStatusDto,
   StartCameraRecordingDto,
   CameraRecordingResponseDto,
-  StartScreenRecordingDto, 
+  StartScreenRecordingDto,
   CaptureScreen,
   CaptureScreenResponse,
 } from '../types/recording';
 
 export const recordingApi = {
-  startRecording: async (dto: StartScreenRecordingDto) => { // Accept the new DTO
+  startRecording: async (dto: StartScreenRecordingDto) => {
     try {
       const response = await fetchWithAuth(
         `${API_BASE_URL}/recording/record-start`,
@@ -47,7 +47,7 @@ export const recordingApi = {
       throw error;
     }
   },
-  capture: async (dto: CaptureScreen): Promise<CaptureScreenResponse> => {
+  capture: async (dto?: CaptureScreen): Promise<CaptureScreenResponse> => {
     try {
       const response = await fetchWithAuth<CaptureScreen>(
         `${API_BASE_URL}/recording/screenshot`,

@@ -3,9 +3,8 @@ import { Box, LinearProgress } from '@mui/material';
 import { RecordingControls } from './RecordingControls';
 import { RecordingStatus } from './RecordingStatus';
 import { RecordingsTable } from './RecordingsTable';
-// import { RecordingSearchBar } from './RecordingSearchBar'; // Removed
 import { RecordingInfoDrawer } from './RecordingInfoDrawer';
-import { RecordingSettingsDialog } from './RecordingSettingsDialog';
+import { RecordingSettingsDialog } from './RecordingSettingsDialog'; // Keep the import for content
 import {
   isScreenRecordingStore,
   currentRecordingIdStore,
@@ -25,7 +24,6 @@ import {
   selectedRecordingStore,
   editableRecordingStore,
   recordingTypeFilterStore,
-  isRecordingSettingsDialogOpenStore,
   isVideoModalOpenStore,
   currentPlayingVideoSrcStore,
   currentPlayingMediaTypeStore,
@@ -42,7 +40,6 @@ import {
   setSelectedRecording,
   setEditableRecording,
   setRecordingTypeFilter,
-  setIsRecordingSettingsDialogOpen,
   setIsVideoModalOpen,
   setCurrentPlayingVideoSrc,
   setCurrentPlayingMediaType,
@@ -55,6 +52,7 @@ import { getFileStreamUrl } from '@/api/media';
 import { recordingApi } from './api/recording';
 import { ffmpegApi } from '@/api/ffmpeg'; // Import new ffmpegApi
 import { setLoading, isLoading } from '@/stores/loadingStore';
+import { showGlobalSnackbar as showSnackbar } from '@/stores/snackbarStore';
 import {
   StartCameraRecordingDto,
   RecordingItem,
@@ -66,9 +64,9 @@ import {
 } from './types/recording';
 import VideoModal from '@/components/VideoModal';
 import path from 'path-browserify';
-import { showDialog, hideDialog } from '@/stores/dialogStore';
+import { showDialog, hideDialog } from '@/stores/dialogStore'; // Import showDialog and hideDialog
 import AudioDeviceSelector from './AudioDeviceSelector';
-import { TableListToolbar, FilterOption } from '@/components/ui/views/table/TableListToolbar'; // Added
+import { TableListToolbar, FilterOption } from '@/components/ui/views/table/TableListToolbar';
 import SettingsIcon from '@mui/icons-material/Settings'; // Added for settings button
 
 const RECORDING_TYPES: RecordingType[] = ['screenRecord', 'screenShot', 'cameraRecord'];
@@ -92,7 +90,6 @@ export function Recording() {
   const selectedRecording = useStore(selectedRecordingStore);
   const editableRecording = useStore(editableRecordingStore);
   const typeFilter = useStore(recordingTypeFilterStore);
-  const isSettingsDialogOpen = useStore(isRecordingSettingsDialogOpenStore);
   const isVideoModalOpen = useStore(isVideoModalOpenStore);
   const currentPlayingVideoSrc = useStore(currentPlayingVideoSrcStore);
   const currentPlayingMediaType = useStore(currentPlayingMediaTypeStore);
@@ -109,9 +106,9 @@ export function Recording() {
       const data = await recordingApi.getRecordings({
         page: page + 1,
         pageSize: rowsPerPage,
-        sortBy,
-        sortOrder,
-        search: searchQuery || undefined,
+        //sortBy,
+        //sortOrder,
+        //search: searchQuery || undefined,
         type: typeFilter || undefined,
       });
 
@@ -410,11 +407,32 @@ export function Recording() {
   };
 
   const handleOpenSettingsDialog = () => {
-    setIsRecordingSettingsDialogOpen(true);
+    showDialog({
+      title: 'Recorder Settings',
+      content: <RecordingSettingsDialog />,
+      maxWidth: 'sm',
+      fullWidth: true,
+      showCloseButton: true,
+      // Actions are handled within RecordingSettingsDialog itself
+    });
   };
 
-  const handleCloseSettingsDialog = () => {
-    setIsRecordingSettingsDialogOpen(false);
+  const handleShareRecording = (recording: RecordingItem) => {
+    showSnackbar({
+      message: `Sharing recording: ${recording.name}`,
+      severity: 'info',
+    });
+    // TODO: Implement actual sharing logic (e.g., generate shareable link, open share dialog)
+    console.log('Share recording:', recording);
+  };
+
+  const handleUploadToGoogleDrive = (recording: RecordingItem) => {
+    showSnackbar({
+      message: `Uploading recording to Google Drive: ${recording.name}`,
+      severity: 'info',
+    });
+    // TODO: Implement actual Google Drive upload logic (e.g., API call to backend service)
+    console.log('Upload to Google Drive:', recording);
   };
 
   // Prepare filter options for TableListToolbar
@@ -483,7 +501,9 @@ export function Recording() {
         sortBy={sortBy}
         sortOrder={sortOrder}
         onConvertToGif={handleConvertToGif}
-        onStopRecording={handleStopRecording} // New prop
+        onStopRecording={handleStopRecording}
+        onShare={handleShareRecording}
+        onUploadToGoogleDrive={handleUploadToGoogleDrive}
       />
 
       <RecordingInfoDrawer
@@ -491,11 +511,6 @@ export function Recording() {
         onClose={closeDrawer}
         recording={selectedRecording}
         onUpdate={handleUpdateRecording}
-      />
-
-      <RecordingSettingsDialog
-        open={isSettingsDialogOpen}
-        onClose={handleCloseSettingsDialog}
       />
 
       {currentPlayingVideoSrc && (

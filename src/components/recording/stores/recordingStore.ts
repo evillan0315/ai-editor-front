@@ -65,10 +65,7 @@ export const recordingTypeFilterStore = persistentAtom<RecordingType | ''>(
   'recordingTypeFilter',
   '',
 );
-export const isRecordingSettingsDialogOpenStore = persistentAtom<boolean>(
-  'isRecordingSettingsDialogOpen',
-  false,
-);
+// Removed isRecordingSettingsDialogOpenStore as GlobalDialog manages its open state
 export const isVideoModalOpenStore = persistentAtom<boolean>(
   'isVideoModalOpen',
   false,
@@ -144,9 +141,7 @@ export const setRecordingTypeFilter = (typeFilter: RecordingType | '') => {
   recordingTypeFilterStore.set(typeFilter);
 };
 
-export const setIsRecordingSettingsDialogOpen = (open: boolean) => {
-  isRecordingSettingsDialogOpenStore.set(open);
-};
+// Removed setIsRecordingSettingsDialogOpen
 
 export const setIsVideoModalOpen = (open: boolean) => {
   isVideoModalOpenStore.set(open);

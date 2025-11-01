@@ -14,8 +14,6 @@ export function RecordingStatus() {
   const isCameraRecording = useStore(isCameraRecordingStore);
   const currentCameraRecordingId = useStore(currentCameraRecordingIdStore);
 
-  const isAnyRecordingActive = isScreenRecording || isCameraRecording;
-
   return (
     <Box className="flex flex-col gap-1">
       {isScreenRecording && (
@@ -34,14 +32,6 @@ export function RecordingStatus() {
           </Typography>
         </Tooltip>
       )}
-
-      {/*!isAnyRecordingActive && (
-        <Tooltip title="No active recording">
-          <Typography variant="body1" color="text.secondary" noWrap className="truncate">
-            No active recording
-          </Typography>
-        </Tooltip>
-      )*/}
     </Box>
   );
 }

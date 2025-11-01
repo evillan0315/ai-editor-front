@@ -9,7 +9,7 @@ import {
   currentCameraRecordingIdStore,
   setIsCameraRecording,
   recorderSettingsStore, // Import recorderSettingsStore
-  setIsRecordingSettingsDialogOpen, // <-- NEW: Import the setter for settings dialog
+  //setIsRecordingSettingsDialogOpen, // <-- NEW: Import the setter for settings dialog
 } from '@/components/recording/stores/recordingStore';
 import { recordingApi } from '@/components/recording/api/recording';
 import { setSnackbarState } from '@/stores/snackbarStore';
@@ -149,7 +149,7 @@ const Footer = () => {
   };
   // NEW: Directly open the recording settings dialog using the store setter
   const handleOpenSettings = () => {
-    setIsRecordingSettingsDialogOpen(true);
+    //setIsRecordingSettingsDialogOpen(true);
   };
   return (
     <>
