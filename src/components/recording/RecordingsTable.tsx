@@ -302,8 +302,8 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
     <TableList
       columns={columns}
       data={recordings}
-      sortColumn={sortBy}
-      sortDirection={sortOrder}
+      sortColumn={sortBy} // Pass sortBy to TableList for initial sorting
+      sortDirection={sortOrder} // Pass sortOrder to TableList for initial sorting
       onSort={handleTableListSort}
       total={total}
       page={page}

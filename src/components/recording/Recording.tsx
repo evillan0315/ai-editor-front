@@ -4,7 +4,7 @@ import { RecordingControls } from './RecordingControls';
 import { RecordingStatus } from './RecordingStatus';
 import { RecordingsTable } from './RecordingsTable';
 import { RecordingInfoDrawer } from './RecordingInfoDrawer';
-import { RecordingSettingsDialog } from './RecordingSettingsDialog'; // Keep the import for content
+import { RecordingSettingsDialog } from './RecordingSettingsDialog';
 import {
   isScreenRecordingStore,
   currentRecordingIdStore,
@@ -29,6 +29,7 @@ import {
   currentPlayingMediaTypeStore,
   availableAudioInputDevicesStore,
   availableVideoInputDevicesStore,
+  pendingRecorderSettingsStore,
   setRecordingsList,
   setTotalRecordings,
   setRecordingsPage,
@@ -45,14 +46,14 @@ import {
   setCurrentPlayingMediaType,
   setAvailableAudioInputDevices,
   setAvailableVideoInputDevices,
+  setPendingRecorderSettings,
 } from './stores/recordingStore';
 import { useStore } from '@nanostores/react';
-
 import { getFileStreamUrl } from '@/api/media';
 import { recordingApi } from './api/recording';
-import { ffmpegApi } from '@/api/ffmpeg'; // Import new ffmpegApi
+import { ffmpegApi } from '@/api/ffmpeg';
 import { setLoading, isLoading } from '@/stores/loadingStore';
-import { showGlobalSnackbar as showSnackbar } from '@/stores/snackbarStore';
+import { showGlobalSnackbar as showSnackbar, SnackbarSeverity } from '@/stores/snackbarStore';
 import {
   StartCameraRecordingDto,
   RecordingItem,
@@ -64,13 +65,14 @@ import {
 } from './types/recording';
 import VideoModal from '@/components/VideoModal';
 import path from 'path-browserify';
-import { showDialog, hideDialog } from '@/stores/dialogStore'; // Import showDialog and hideDialog
+import { showDialog, hideDialog } from '@/stores/dialogStore';
 import AudioDeviceSelector from './AudioDeviceSelector';
 import { TableListToolbar, FilterOption } from '@/components/ui/views/table/TableListToolbar';
-import SettingsIcon from '@mui/icons-material/Settings'; // Added for settings button
-
+import SettingsIcon from '@mui/icons-material/Settings';
+import GlobalActionButton from '@/components/ui/GlobalActionButton'; // Import GlobalActionButton
+import SaveIcon from '@mui/icons-material/Save'; // Import SaveIcon
+import CancelIcon from '@mui/icons-material/Cancel'; // Import CancelIcon
 const RECORDING_TYPES: RecordingType[] = ['screenRecord', 'screenShot', 'cameraRecord'];
-
 export function Recording() {
   // States from store
   const isScreenRecording = useStore(isScreenRecordingStore);
@@ -78,7 +80,6 @@ export function Recording() {
   const isCameraRecording = useStore(isCameraRecordingStore);
   const currentCameraRecordingId = useStore(currentCameraRecordingIdStore);
   const currentRecorderSettings = useStore(recorderSettingsStore);
-
   const recordings = useStore(recordingsListStore);
   const totalRecordings = useStore(totalRecordingsStore);
   const page = useStore(recordingsPageStore);
@@ -95,10 +96,8 @@ export function Recording() {
   const currentPlayingMediaType = useStore(currentPlayingMediaTypeStore);
   const availableAudioInputDevices = useStore(availableAudioInputDevicesStore);
   const availableVideoInputDevices = useStore(availableVideoInputDevicesStore);
-
   // Ref for media element
   const mediaElementRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
-
   // Fetch recordings from API
   const fetchRecordings = useCallback(async () => {
     setLoading('recordingsList', true);
@@ -106,12 +105,11 @@ export function Recording() {
       const data = await recordingApi.getRecordings({
         page: page + 1,
         pageSize: rowsPerPage,
-        //sortBy,
-        //sortOrder,
-        //search: searchQuery || undefined,
+        sortBy,
+        sortOrder,
+        search: searchQuery || undefined,
         type: typeFilter || undefined,
       });
-
       const items: RecordingItem[] = data.items.map((r) => ({
         id: r.id,
         name: r.path.split('/').pop() || r.id,
@@ -123,10 +121,8 @@ export function Recording() {
         createdById: r.createdById,
         data: r.data,
       }));
-
       setRecordingsList(items);
       setTotalRecordings(data.total);
-
       if (data.items.length === 0 && page > 0) setRecordingsPage(page - 1);
     } finally {
       setLoading('recordingsList', false);
@@ -142,7 +138,6 @@ export function Recording() {
     setTotalRecordings,
     setRecordingsPage,
   ]);
-
   // Fetch available devices from API
   const fetchAvailableDevices = useCallback(async () => {
     setLoading('fetchDevices', true);
@@ -154,7 +149,6 @@ export function Recording() {
       setLoading('fetchDevices', false);
     }
   }, [setAvailableAudioInputDevices, setAvailableVideoInputDevices]);
-
   useEffect(() => {
     fetchRecordings();
     fetchAvailableDevices(); // Fetch devices on component mount
@@ -166,7 +160,6 @@ export function Recording() {
     isCameraRecording,
     currentCameraRecordingId,
   ]);
-
   // Screen Recording actions
   const handleStartScreenRecording = async () => {
     if (currentRecorderSettings.enableScreenAudio) {
@@ -192,7 +185,6 @@ export function Recording() {
       await startScreenRecordingWithAudio(null); // No audio device
     }
   };
-
   const startScreenRecordingWithAudio = async (audioDevice: string | null) => {
     setLoading('startRecording', true);
     try {
@@ -209,7 +201,6 @@ export function Recording() {
       setLoading('startRecording', false);
     }
   };
-
   const handleStopScreenRecording = async () => {
     if (!currentRecordingId) return;
     setLoading('stopRecording', true);
@@ -222,7 +213,6 @@ export function Recording() {
       setLoading('stopRecording', false);
     }
   };
-
   // Camera Recording actions
   const handleStartCameraRecording = async () => {
     setLoading('startCameraRecording', true);
@@ -242,7 +232,6 @@ export function Recording() {
       setLoading('startCameraRecording', false);
     }
   };
-
   const handleStopCameraRecording = async () => {
     if (!currentCameraRecordingId) return;
     setLoading('stopCameraRecording', true);
@@ -255,17 +244,15 @@ export function Recording() {
       setLoading('stopCameraRecording', false);
     }
   };
-
   const handleStopRecording = async (id: string, type: RecordingType) => {
     // Ensure the recording to stop is the currently active one for its type
     if (
       (type === 'screenRecord' && currentRecordingId !== id) ||
       (type === 'cameraRecord' && currentCameraRecordingId !== id)
     ) {
-      console.warn(`Attempted to stop a non-active recording of type ${type}. ID: ${id}`);
+//       console.warn(`Attempted to stop a non-active recording of type ${type}. ID: ${id}`);
       return; // Do not proceed if it's not the currently active recording of its type
     }
-
     if (type === 'screenRecord') {
       setLoading('stopRecording', true);
       try {
@@ -288,7 +275,6 @@ export function Recording() {
       }
     }
   };
-
   const handleCaptureScreenshot = async () => {
     setLoading('captureScreenshot', true);
     try {
@@ -298,7 +284,6 @@ export function Recording() {
       setLoading('captureScreenshot', false);
     }
   };
-
   const handleDelete = async (id: string) => {
     setLoading('deleteRecording', true);
     try {
@@ -308,7 +293,6 @@ export function Recording() {
       setLoading('deleteRecording', false);
     }
   };
-
   const handleConvertToGif = async (recording: RecordingItem) => {
     setLoading('convertToGif', true);
     try {
@@ -319,7 +303,6 @@ export function Recording() {
         loop: 0,
       };
       const result = await recordingApi.convertToGif(transcodeDto);
-
       await recordingApi.updateRecording(recording.id, {
         data: { ...recording.data, animatedGif: result.fullPath },
       });
@@ -328,11 +311,9 @@ export function Recording() {
       setLoading('convertToGif', false);
     }
   };
-
   const handlePlay = (recording: RecordingItem) => {
     let mediaPath: string;
     let mediaType: 'video' | 'gif' | 'image';
-
     if (recording.data?.animatedGif) {
       mediaPath = recording.data.animatedGif;
       mediaType = 'gif';
@@ -343,14 +324,11 @@ export function Recording() {
       mediaPath = recording.path;
       mediaType = 'video';
     }
-
     const mediaUrl = getFileStreamUrl(mediaPath);
-
     setCurrentPlayingVideoSrc(mediaUrl);
     setCurrentPlayingMediaType(mediaType);
     setIsVideoModalOpen(true);
   };
-
   const handleCloseVideoModal = () => {
     setIsVideoModalOpen(false);
     setCurrentPlayingVideoSrc(null);
@@ -362,38 +340,34 @@ export function Recording() {
       }
     }
   };
-
   const handlePlayerReady = useCallback(
     (_htmlMediaElement: HTMLVideoElement) => {
       // Can be used to perform actions when the video player is ready
     },
     [],
   );
-
   const handleSort = (field: SortField) => {
+    console.log(field, 'field handleSort');
     if (sortBy === field) {
+      //setRecordingsSortBy(field);
       setRecordingsSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setRecordingsSortBy(field);
-      setRecordingsSortOrder('desc'); // Default to 'desc' when changing sort field
+      setRecordingsSortOrder('asc'); // Default to 'desc' when changing sort field
     }
     setRecordingsPage(0);
   };
-
   const handleSearch = () => setRecordingsPage(0);
-
   const openDrawer = (recording: RecordingItem) => {
     setSelectedRecording(recording);
     setEditableRecording({ name: recording.name, type: recording.type });
     setRecordingDrawerOpen(true);
   };
-
   const closeDrawer = () => {
     setSelectedRecording(null);
     setEditableRecording({});
     setRecordingDrawerOpen(false);
   };
-
   const handleUpdateRecording = async () => {
     if (!selectedRecording) return;
     setLoading('updateRecording', true);
@@ -405,42 +379,80 @@ export function Recording() {
       setLoading('updateRecording', false);
     }
   };
-
   const handleOpenSettingsDialog = () => {
+    const currentSettings = recorderSettingsStore.get();
+    setPendingRecorderSettings(currentSettings); // Initialize pending settings with current active settings
+    const handleSaveSettingsInternal = () => {
+      const newSettings = pendingRecorderSettingsStore.get();
+      if (newSettings) {
+        recorderSettingsStore.set(newSettings); // Commit pending changes to main store
+      }
+      setPendingRecorderSettings(null); // Clear pending state
+      // Close dialog
+      showSnackbar(
+        'Recorder settings saved successfully!',
+        'success',
+      );
+      hideDialog(); 
+    };
+    const handleCancelSettingsInternal = () => {
+      setPendingRecorderSettings(null); // Discard pending state
+      hideDialog(); // Close dialog
+      showSnackbar(
+        'Recorder settings discarded.',
+        'info',
+      );
+    };
     showDialog({
       title: 'Recorder Settings',
       content: <RecordingSettingsDialog />,
       maxWidth: 'sm',
       fullWidth: true,
       showCloseButton: true,
-      // Actions are handled within RecordingSettingsDialog itself
+      onClose: handleCancelSettingsInternal, // Use cancel logic if dialog is closed via X or backdrop
+      actions: (
+        <GlobalActionButton
+          globalActions={[
+            {
+              label: 'Cancel',
+              action: handleCancelSettingsInternal,
+              icon: <CancelIcon />,
+              color: 'inherit',
+              variant: 'outlined',
+            },
+            {
+              label: 'Save Settings',
+              action: handleSaveSettingsInternal,
+              icon: <SaveIcon />,
+              color: 'primary',
+              variant: 'contained',
+            },
+          ]}
+        />
+      ),
     });
   };
-
   const handleShareRecording = (recording: RecordingItem) => {
-    showSnackbar({
-      message: `Sharing recording: ${recording.name}`,
-      severity: 'info',
-    });
+    showSnackbar(
+      `Sharing recording: ${recording.name}`,
+      'info',
+    );
     // TODO: Implement actual sharing logic (e.g., generate shareable link, open share dialog)
-    console.log('Share recording:', recording);
+//     console.log('Share recording:', recording);
   };
-
   const handleUploadToGoogleDrive = (recording: RecordingItem) => {
-    showSnackbar({
-      message: `Uploading recording to Google Drive: ${recording.name}`,
-      severity: 'info',
-    });
+    showSnackbar(
+      `Uploading recording to Google Drive: ${recording.name}`,
+      'info',
+    );
     // TODO: Implement actual Google Drive upload logic (e.g., API call to backend service)
-    console.log('Upload to Google Drive:', recording);
+//     console.log('Upload to Google Drive:', recording);
   };
-
   // Prepare filter options for TableListToolbar
   const typeFilterOptions: FilterOption[] = RECORDING_TYPES.map((type) => ({
     value: type,
     label: type,
   }));
-
   return (
     <Box className="flex flex-col gap-6 p-6">
       {(isLoading('recordingsList') ||
@@ -453,7 +465,6 @@ export function Recording() {
         isLoading('convertToGif') ||
         isLoading('captureScreenshot') ||
         isLoading('fetchDevices')) && <LinearProgress />}
-
       <Box className="flex items-center justify-between">
         <RecordingControls
           isScreenRecording={isScreenRecording}
@@ -466,7 +477,6 @@ export function Recording() {
           onCapture={handleCaptureScreenshot}
         />
       </Box>
-
       <TableListToolbar
         title="Recordings"
         searchQuery={searchQuery}
@@ -486,7 +496,6 @@ export function Recording() {
           },
         ]}
       />
-
       <RecordingsTable
         recordings={recordings}
         total={totalRecordings}
@@ -505,14 +514,12 @@ export function Recording() {
         onShare={handleShareRecording}
         onUploadToGoogleDrive={handleUploadToGoogleDrive}
       />
-
       <RecordingInfoDrawer
         open={drawerOpen}
         onClose={closeDrawer}
         recording={selectedRecording}
         onUpdate={handleUpdateRecording}
       />
-
       {currentPlayingVideoSrc && (
         <VideoModal
           open={isVideoModalOpen}
