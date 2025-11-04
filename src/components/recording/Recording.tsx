@@ -3,7 +3,8 @@ import { Box, LinearProgress } from '@mui/material';
 import { RecordingControls } from './RecordingControls';
 import { RecordingStatus } from './RecordingStatus';
 import { RecordingsTable } from './RecordingsTable';
-import { RecordingInfoDrawer } from './RecordingInfoDrawer';
+// import { RecordingInfoDrawer } from './RecordingInfoDrawer'; // Removed
+import { RecordingInfoDialogContent } from './RecordingInfoDialogContent'; // New import
 import { RecordingSettingsDialog } from './RecordingSettingsDialog';
 import {
   isScreenRecordingStore,
@@ -20,7 +21,7 @@ import {
   recordingsSortByStore,
   recordingsSortOrderStore,
   recordingsSearchQueryStore,
-  recordingDrawerOpenStore,
+  // recordingDrawerOpenStore, // Removed
   selectedRecordingStore,
   editableRecordingStore,
   recordingTypeFilterStore,
@@ -37,7 +38,7 @@ import {
   setRecordingsSortBy,
   setRecordingsSortOrder,
   setRecordingsSearchQuery,
-  setRecordingDrawerOpen,
+  // setRecordingDrawerOpen, // Removed
   setSelectedRecording,
   setEditableRecording,
   setRecordingTypeFilter,
@@ -87,7 +88,7 @@ export function Recording() {
   const sortBy = useStore(recordingsSortByStore);
   const sortOrder = useStore(recordingsSortOrderStore);
   const searchQuery = useStore(recordingsSearchQueryStore);
-  const drawerOpen = useStore(recordingDrawerOpenStore);
+  // const drawerOpen = useStore(recordingDrawerOpenStore); // Removed
   const selectedRecording = useStore(selectedRecordingStore);
   const editableRecording = useStore(editableRecordingStore);
   const typeFilter = useStore(recordingTypeFilterStore);
@@ -98,7 +99,6 @@ export function Recording() {
   const availableVideoInputDevices = useStore(availableVideoInputDevicesStore);
   // Ref for media element
   const mediaElementRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
-
   // Fetch recordings from API
   const fetchRecordingsData = useCallback(async () => {
     setLoading('recordingsList', true);
@@ -139,7 +139,6 @@ export function Recording() {
     setTotalRecordings,
     setRecordingsPage,
   ]);
-
   // Fetch available devices from API
   const fetchAvailableDevices = useCallback(async () => {
     setLoading('fetchDevices', true);
@@ -151,7 +150,6 @@ export function Recording() {
       setLoading('fetchDevices', false);
     }
   }, [setAvailableAudioInputDevices, setAvailableVideoInputDevices]);
-
   // Effect for fetching recording data based on pagination, sort, search, and filter
   useEffect(() => {
     fetchRecordingsData();
@@ -162,12 +160,10 @@ export function Recording() {
     isScreenRecording,
     isCameraRecording,
   ]);
-
   // Effect for fetching available devices (less frequent, different dependencies)
   useEffect(() => {
     fetchAvailableDevices();
   }, [fetchAvailableDevices]);
-
   // Screen Recording actions
   const handleStartScreenRecording = async () => {
     if (currentRecorderSettings.enableScreenAudio) {
@@ -259,7 +255,7 @@ export function Recording() {
       (type === 'cameraRecord' && currentCameraRecordingId !== id)
     )
     {
-//       console.warn(`Attempted to stop a non-active recording of type ${type}. ID: ${id}`);
+// //       console.warn(`Attempted to stop a non-active recording of type ${type}. ID: ${id}`);
       return; // Do not proceed if it's not the currently active recording of its type
     }
     if (type === 'screenRecord') {
@@ -355,35 +351,81 @@ export function Recording() {
     },
     [],
   );
-
   // Updated handleSort to match TableList's onSortChange signature
   const handleSort = (field: string, newOrder: SortOrder) => {
     setRecordingsSortBy(field as SortField);
     setRecordingsSortOrder(newOrder);
     setRecordingsPage(0);
   };
-
   const handleSearch = () => setRecordingsPage(0);
-  const openDrawer = (recording: RecordingItem) => {
-    setSelectedRecording(recording);
-    setEditableRecording({ name: recording.name, type: recording.type });
-    setRecordingDrawerOpen(true);
+  // Renamed from openDrawer to openRecordingInfoDialog
+  const openRecordingInfoDialog = (recording: RecordingItem) => {
+    setSelectedRecording(recording); // Set selected recording
+    setEditableRecording({ // Initialize editable state
+      name: recording.name,
+      type: recording.type,
+      data: recording.data, // Important: pass the current data object for editing
+    });
+    showDialog({
+      title: `Recording Details: ${recording.name}`,
+      content: (
+        <RecordingInfoDialogContent
+          onClose={handleCloseRecordingInfoDialog}
+          onUpdate={handleUpdateRecording} // Pass the update handler
+        />
+      ),
+      maxWidth: 'sm',
+      fullWidth: true,
+      showCloseButton: true,
+      actions: (
+        <GlobalActionButton
+          globalActions={[
+            {
+              id: 'cancel-recording-info',
+              label: 'Cancel',
+              action: handleCloseRecordingInfoDialog,
+              icon: <CancelIcon />,
+              color: 'inherit',
+              variant: 'outlined',
+            },
+            {
+              id: 'save-recording-info',
+              label: 'Save Changes',
+              action: handleUpdateRecording,
+              icon: <SaveIcon />,
+              color: 'primary',
+              variant: 'contained',
+            },
+          ]}
+        />
+      ),
+      onClose: handleCloseRecordingInfoDialog, // Handle dialog close via backdrop/escape
+    });
   };
-  const closeDrawer = () => {
+  // Renamed from closeDrawer to handleCloseRecordingInfoDialog
+  const handleCloseRecordingInfoDialog = () => {
     setSelectedRecording(null);
-    setEditableRecording({});
-    setRecordingDrawerOpen(false);
+    setEditableRecording({}); // Clear editable state on close
+    hideDialog();
   };
+  // Modified handleUpdateRecording to read from store
   const handleUpdateRecording = async () => {
+    console.log(selectedRecording, 'selectedRecording');
     if (!selectedRecording) return;
+    const updatedRecordingData = editableRecordingStore.get(); // Get the latest editable state
     setLoading('updateRecording', true);
     try {
-      await recordingApi.updateRecording(selectedRecording.id, editableRecording);
+      await recordingApi.updateRecording(selectedRecording.id, updatedRecordingData);
       fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
-      closeDrawer();
+      showSnackbar('Recording updated successfully!', 'success');
     } finally {
       setLoading('updateRecording', false);
     }
+  };
+  // This function will be called by the 'Save Changes' button in the GlobalDialog actions
+  const handleUpdateRecordingAndCloseDialog = async () => {
+    await handleUpdateRecording();
+    handleCloseRecordingInfoDialog(); // Close dialog after saving
   };
   const handleOpenSettingsDialog = () => {
     const currentSettings = recorderSettingsStore.get();
@@ -394,13 +436,13 @@ export function Recording() {
         recorderSettingsStore.set(newSettings); // Commit pending changes to main store
       }
       setPendingRecorderSettings(null); // Clear pending state
+       hideDialog();
       // Close dialog
       showSnackbar(
         'Recorder settings saved successfully!',
         'success',
-        { 'autoHideDuration': 5000, 'showCloseButton': true}
+        { 'showCloseButton': true}
       );
-      hideDialog();
     };
     const handleCancelSettingsInternal = () => {
       setPendingRecorderSettings(null); // Discard pending state
@@ -408,7 +450,7 @@ export function Recording() {
       showSnackbar(
         'Recorder settings discarded.',
         'info',
-        { 'autoHideDuration': 5000, 'showCloseButton': true}
+        { 'showCloseButton': true}
       );
     };
     showDialog({
@@ -422,6 +464,7 @@ export function Recording() {
         <GlobalActionButton
           globalActions={[
             {
+              id: 'cancel-recorder-settings',
               label: 'Cancel',
               action: handleCancelSettingsInternal,
               icon: <CancelIcon />,
@@ -429,14 +472,15 @@ export function Recording() {
               variant: 'outlined',
             },
             {
+              id: 'save-recorder-settings',
               label: 'Save Settings',
               action: handleSaveSettingsInternal,
               icon: <SaveIcon />,
               color: 'primary',
               variant: 'contained',
             },
-          ]}
-        />
+          ]
+        }/>
       ),
     });
   };
@@ -446,7 +490,7 @@ export function Recording() {
       'info',
     );
     // TODO: Implement actual sharing logic (e.g., generate shareable link, open share dialog)
-//     console.log('Share recording:', recording);
+// //     console.log('Share recording:', recording);
   };
   const handleUploadToGoogleDrive = (recording: RecordingItem) => {
     showSnackbar(
@@ -454,7 +498,7 @@ export function Recording() {
       'info',
     );
     // TODO: Implement actual Google Drive upload logic (e.g., API call to backend service)
-//     console.log('Upload to Google Drive:', recording);
+// //     console.log('Upload to Google Drive:', recording);
   };
   // Prepare filter options for TableListToolbar
   const typeFilterOptions: FilterOption[] = RECORDING_TYPES.map((type) => ({
@@ -513,7 +557,7 @@ export function Recording() {
         onRowsPerPageChange={setRecordingsRowsPerPage}
         onPlay={handlePlay}
         onDelete={handleDelete}
-        onView={openDrawer}
+        onView={openRecordingInfoDialog} // Use the new dialog opener
         onSort={handleSort}
         sortBy={sortBy}
         sortOrder={sortOrder}
@@ -522,12 +566,7 @@ export function Recording() {
         onShare={handleShareRecording}
         onUploadToGoogleDrive={handleUploadToGoogleDrive}
       />
-      <RecordingInfoDrawer
-        open={drawerOpen}
-        onClose={closeDrawer}
-        recording={selectedRecording}
-        onUpdate={handleUpdateRecording}
-      />
+ 
       {currentPlayingVideoSrc && (
         <VideoModal
           open={isVideoModalOpen}
