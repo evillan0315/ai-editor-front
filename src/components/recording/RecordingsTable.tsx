@@ -108,10 +108,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
       title: (
         <Box
           sx={{
-            backgroundColor: theme.palette.error.main,
-            color: theme.palette.error.contrastText,
-            p: 2,
-            display: 'flex',
+            color: theme.palette.error.main,
             alignItems: 'center',
           }}
         >
@@ -246,7 +243,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
             id: `details-${recording.id}`,
             label: 'Edit Details',
             icon: <EditIcon />,
-            action: () => handleUpdateRecording(recording.id), // Changed from onView to onUpdate
+            action: () => onUpdate(recording), // Changed from onView to onUpdate
             color: 'info',
             tooltip: 'Edit Details',
           },

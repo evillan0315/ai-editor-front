@@ -15,6 +15,7 @@ export type RecordingType = 'screenRecord' | 'screenShot' | 'cameraRecord';
 export interface RecordingItem {
   id: string;
   name: string;
+  description: string;
   createdAt: string;
   sizeBytes: number;
   type: RecordingType; // Use the specific RecordingType union
