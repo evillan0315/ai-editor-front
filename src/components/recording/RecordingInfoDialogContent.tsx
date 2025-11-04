@@ -9,12 +9,10 @@ import {
   editableRecordingStore,
   selectedRecordingStore,
   setEditableRecording,
-  setSelectedRecording,
 } from './stores/recordingStore';
 
 interface RecordingInfoDialogContentProps {
-  onClose: () => void; // To signal parent to close the dialog
-  onUpdate: () => void; // To signal parent to save changes (parent will read from store)
+  // onClose and onUpdate props removed as parent handles dialog closure and save action
 }
 
 const RECORDING_TYPES: RecordingType[] = ['screenRecord', 'screenShot', 'cameraRecord'];
@@ -25,76 +23,33 @@ interface DataField {
   value: string; // Stringified value for text input
 }
 
-export const RecordingInfoDialogContent: React.FC<RecordingInfoDialogContentProps> = ({
-  onClose,
-  onUpdate,
-}) => {
+export const RecordingInfoDialogContent: React.FC<RecordingInfoDialogContentProps> = () => {
   const selectedRecording = useStore(selectedRecordingStore);
   const editableRecording = useStore(editableRecordingStore);
 
-  // Local state for form fields, especially for dynamic 'data' object
-  const [formData, setFormData] = useState<Partial<RecordingItem & { dataFields: DataField[] }>>({
-    name: '',
-    type: '',
-    dataFields: [],
-  });
+  // Local state for UI representation of data fields, kept in sync with editableRecordingStore.data
+  const [localDataFields, setLocalDataFields] = useState<DataField[]>([]);
 
+  // Effect to initialize local state from editableRecordingStore
   useEffect(() => {
-    if (selectedRecording) {
-      const dataFields: DataField[] = Object.entries(selectedRecording.data || {}).map(([key, value]) => ({
+    if (editableRecording) {
+      const dataFields: DataField[] = Object.entries(editableRecording.data || {}).map(([key, value]) => ({
         id: nanoid(),
         key,
-        value: JSON.stringify(value), // Stringify complex values for display
+        // If it's a string, use it directly. Otherwise, stringify for display.
+        // The parsing logic in updateDataInStore will handle conversion back.
+        value: typeof value === 'string' ? value : JSON.stringify(value),
       }));
-
-      setFormData({
-        name: selectedRecording.name,
-        type: selectedRecording.type,
-        dataFields,
-      });
+      setLocalDataFields(dataFields);
     }
-  }, [selectedRecording]);
+  }, [editableRecording]); // Depend on editableRecording to re-initialize if it changes externally
 
   if (!selectedRecording) return null; // Should not happen if dialog is opened correctly
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  }, []);
-
-  const handleDataFieldChange = useCallback(
-    (id: string, field: 'key' | 'value', value: string) => {
-      setFormData((prev) => ({
-        ...prev,
-        dataFields: prev.dataFields?.map((item) =>
-          item.id === id ? { ...item, [field]: value } : item,
-        ) || [],
-      }));
-    },
-    [],
-  );
-
-  const handleAddDataField = useCallback(() => {
-    setFormData((prev) => ({
-      ...prev,
-      dataFields: [...(prev.dataFields || []), { id: nanoid(), key: '', value: '""' }],
-    }));
-  }, []);
-
-  const handleRemoveDataField = useCallback((id: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      dataFields: prev.dataFields?.filter((item) => item.id !== id) || [],
-    }));
-  }, []);
-
-  const handleSave = () => {
-    // Reconstruct data object from dataFields
+  // Function to reconstruct the data object from localDataFields and update the editableRecordingStore
+  const updateDataInStore = useCallback((updatedDataFields: DataField[]) => {
     const reconstructedData: { [key: string]: any } = {};
-    formData.dataFields?.forEach((field) => {
+    updatedDataFields.forEach((field) => {
       try {
         // Attempt to parse if it looks like JSON, otherwise keep as string
         reconstructedData[field.key] = JSON.parse(field.value);
@@ -102,31 +57,55 @@ export const RecordingInfoDialogContent: React.FC<RecordingInfoDialogContentProp
         reconstructedData[field.key] = field.value;
       }
     });
+    setEditableRecording({ ...editableRecording, data: reconstructedData });
+  }, [editableRecording]);
 
-    // Update the editableRecordingStore with new name, type, and reconstructed data
-    setEditableRecording({
-      ...editableRecording,
-      name: formData.name,
-      type: formData.type as RecordingType,
-      data: reconstructedData,
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const newName = e.target.value;
+    setEditableRecording({ ...editableRecording, name: newName });
+  }, [editableRecording]);
+
+  const handleTypeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newType = e.target.value as RecordingType;
+    setEditableRecording({ ...editableRecording, type: newType });
+  }, [editableRecording]);
+
+  const handleDataFieldChange = useCallback(
+    (id: string, field: 'key' | 'value', value: string) => {
+      setLocalDataFields((prev) => {
+        const updated = prev.map((item) =>
+          item.id === id ? { ...item, [field]: value } : item,
+        );
+        updateDataInStore(updated); // Update store immediately after local state change
+        return updated;
+      });
+    },
+    [updateDataInStore],
+  );
+
+  const handleAddDataField = useCallback(() => {
+    setLocalDataFields((prev) => {
+      const updated = [...prev, { id: nanoid(), key: '', value: '""' }];
+      updateDataInStore(updated); // Update store immediately after local state change
+      return updated;
     });
-    onUpdate(); // Signal parent to commit the update
-  };
+  }, [updateDataInStore]);
 
-  const handleCancel = () => {
-    // Reset editable state and close
-    setSelectedRecording(null); // Clear selected recording
-    setEditableRecording({}); // Clear editable form data
-    onClose();
-  };
+  const handleRemoveDataField = useCallback((id: string) => {
+    setLocalDataFields((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      updateDataInStore(updated); // Update store immediately after local state change
+      return updated;
+    });
+  }, [updateDataInStore]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, p: 2 }}>
       <TextField
         label="Name"
         name="name"
-        value={formData.name || ''}
-        onChange={handleChange}
+        value={editableRecording.name || ''}
+        onChange={handleNameChange}
         fullWidth
         size="small"
       />
@@ -134,8 +113,8 @@ export const RecordingInfoDialogContent: React.FC<RecordingInfoDialogContentProp
         label="Type"
         name="type"
         select
-        value={formData.type || ''}
-        onChange={handleChange}
+        value={editableRecording.type || ''}
+        onChange={handleTypeChange}
         fullWidth
         size="small"
       >
@@ -175,7 +154,7 @@ export const RecordingInfoDialogContent: React.FC<RecordingInfoDialogContentProp
         <Typography variant="body2" fontWeight="bold" gutterBottom>
           Data Fields:
         </Typography>
-        {formData.dataFields?.map((field) => (
+        {localDataFields.map((field) => (
           <Fragment key={field.id}>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
               <TextField
