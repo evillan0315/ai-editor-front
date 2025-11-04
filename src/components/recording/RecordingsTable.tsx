@@ -41,7 +41,7 @@ interface RecordingsTableProps {
   onRowsPerPageChange: (rowsPerPage: number) => void; // New prop for pagination
   onPlay: (recording: RecordingItem) => void;
   onDelete: (id: string) => void;
-  onView: (recording: RecordingItem) => void;
+  onUpdate: (recording: RecordingItem) => void; // Changed from onView to onUpdate
   onConvertToGif: (recording: RecordingItem) => void;
   onStopRecording: (id: string, type: RecordingType) => void;
   onShare: (recording: RecordingItem) => void; // New prop
@@ -75,7 +75,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   onRowsPerPageChange,
   onPlay,
   onDelete,
-  onView,
+  onUpdate, // Changed from onView to onUpdate
   onConvertToGif,
   onStopRecording,
   onShare,
@@ -100,7 +100,9 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   const handleTableListSort = (columnId: string, direction: Order) => {
     onSort(columnId as SortField, direction as SortOrder);
   };
-
+  const handleUpdateRecording = (recordingId: string) => {
+  
+  };
   const handleDeleteClick = (id: string, name: string) => {
     showDialog({
       title: (
@@ -244,7 +246,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
             id: `details-${recording.id}`,
             label: 'Edit Details',
             icon: <EditIcon />,
-            action: () => onView(recording),
+            action: () => handleUpdateRecording(recording.id), // Changed from onView to onUpdate
             color: 'info',
             tooltip: 'Edit Details',
           },
