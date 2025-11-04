@@ -13,28 +13,24 @@ import { useTheme } from '@mui/material/styles';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
+import EditIcon from '@mui/icons-material/Edit';
 import GifIcon from '@mui/icons-material/Gif';
 import StopCircle from '@mui/icons-material/StopCircle';
 import ShareIcon from '@mui/icons-material/Share'; // New import
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove'; // New import
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 import VideocamIcon from '@mui/icons-material/Videocam';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import ImageIcon from '@mui/icons-material/Image';
 
 import { RecordingItem, SortField, SortOrder, RecordingType } from './types/recording';
-import { useStore } from '@nanostores/react';
-import {
-  recordingsListStore,
-  recordingsSortByStore,
-  recordingsSortOrderStore,
-  setRecordingsSortBy,
-  setRecordingsSortOrder,
-  setRecordingsPage,
-} from './stores/recordingStore';
+// Removed useStore imports as sortBy/sortOrder are now props
 
-import { TableList, TableListColumn } from '@/components/ui/views/table/TableList'; // Import TableList
+import { TableList, ITableColumn, Order } from '@/components/ui/views/table/TableList'; // Import TableList and Order type
 import { showDialog, hideDialog } from '@/stores/dialogStore';
+import { DropdownActionMenu } from '@/components/ui/dropdown';
+import { GlobalAction } from '@/types/app';
 
 interface RecordingsTableProps {
   recordings: RecordingItem[];
@@ -50,6 +46,9 @@ interface RecordingsTableProps {
   onStopRecording: (id: string, type: RecordingType) => void;
   onShare: (recording: RecordingItem) => void; // New prop
   onUploadToGoogleDrive: (recording: RecordingItem) => void; // New prop
+  sortBy: SortField;
+  sortOrder: SortOrder;
+  onSort: (field: SortField, order: SortOrder) => void; // Callback to notify parent of sort change
 }
 
 // Styles for the stop recording icon, matching color of RecordingControls stop button
@@ -81,10 +80,12 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
   onStopRecording,
   onShare,
   onUploadToGoogleDrive,
+  sortBy,
+  sortOrder,
+  onSort,
 }) => {
   const theme = useTheme();
-  const sortBy = useStore(recordingsSortByStore) || 'createdAt';
-  const sortOrder = useStore(recordingsSortOrderStore);
+  // Removed useStore calls for sortBy and sortOrder, now from props
 
   const formatBytes = (bytes: number, decimals = 2) => {
     if (!+bytes) return '0 Bytes';
@@ -95,11 +96,9 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   };
 
-  const handleTableListSort = (columnId: string, direction: SortOrder) => {
-    console.log(columnId, 'columnId');
-    setRecordingsSortBy(columnId as SortField);
-    setRecordingsSortOrder(direction);
-    setRecordingsPage(0);
+  // This function now directly maps to the onSort prop provided by the parent
+  const handleTableListSort = (columnId: string, direction: Order) => {
+    onSort(columnId as SortField, direction as SortOrder);
   };
 
   const handleDeleteClick = (id: string, name: string) => {
@@ -148,7 +147,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
     });
   };
 
-  const columns: TableListColumn<RecordingItem>[] = [
+  const columns: ITableColumn<RecordingItem>[] = [
     {
       id: 'name',
       label: 'Name',
@@ -223,78 +222,75 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
       label: 'Actions',
       align: 'right',
       sortable: false,
-      render: (recording) => (
-        <Box className="flex justify-end space-x-2">
-          {recording.type === 'screenRecord' &&
-            !recording.data?.animatedGif &&
-            recording.status !== 'recording' && (
-              <IconButton
-                onClick={() => onConvertToGif(recording)}
-                color="primary"
-                title="Convert to GIF"
-              >
-                <GifIcon />
-              </IconButton>
-            )}
-          {((recording.type === 'screenRecord' ||
-            recording.type === 'cameraRecord') &&
-            recording.status !== 'recording') && (
-            <IconButton
-              onClick={() => onPlay(recording)}
-              color="primary"
-              title="Play Recording"
-            >
-              <PlayArrowIcon />
-            </IconButton>
-          )}
-          {recording.type === 'screenShot' && (
-            <IconButton
-              onClick={() => onPlay(recording)}
-              color="primary"
-              title="View Screenshot"
-            >
-              <PlayArrowIcon />
-            </IconButton>
-          )}
-          {recording.data?.animatedGif && (
-            <IconButton
-              onClick={() => onPlay(recording)}
-              color="primary"
-              title="View Animated GIF"
-            >
-              <GifIcon />
-            </IconButton>
-          )}
-          <IconButton
-            onClick={() => onShare(recording)}
-            color="secondary"
-            title="Share Recording"
-          >
-            <ShareIcon />
-          </IconButton>
-          <IconButton
-            onClick={() => onUploadToGoogleDrive(recording)}
-            color="success"
-            title="Upload to Google Drive"
-          >
-            <DriveFileMoveIcon />
-          </IconButton>
-          <IconButton
-            onClick={() => onView(recording)}
-            color="info"
-            title="View Details"
-          >
-            <InfoIcon />
-          </IconButton>
-          <IconButton
-            onClick={() => handleDeleteClick(recording.id, recording.name)}
-            color="error"
-            title="Delete"
-          >
-            <DeleteIcon />
-          </IconButton>
-        </Box>
-      ),
+      render: (recording) => {
+        const dropdownActions: GlobalAction[] = [
+          {
+            id: `share-${recording.id}`,
+            label: 'Share Recording',
+            icon: <ShareIcon />,
+            action: () => onShare(recording),
+            color: 'secondary',
+            tooltip: 'Share Recording',
+          },
+          {
+            id: `upload-${recording.id}`,
+            label: 'Upload to Google Drive',
+            icon: <DriveFileMoveIcon />,
+            action: () => onUploadToGoogleDrive(recording),
+            color: 'success',
+            tooltip: 'Upload to Google Drive',
+          },
+          {
+            id: `details-${recording.id}`,
+            label: 'Edit Details',
+            icon: <EditIcon />,
+            action: () => onView(recording),
+            color: 'info',
+            tooltip: 'Edit Details',
+          },
+          {
+            id: `delete-${recording.id}`,
+            label: 'Delete',
+            icon: <DeleteIcon />,
+            action: () => handleDeleteClick(recording.id, recording.name),
+            color: 'error',
+            tooltip: 'Delete Recording',
+          },
+        ];
+
+        if (recording.type === 'screenRecord' && !recording.data?.animatedGif && recording.status !== 'recording') {
+          dropdownActions.unshift({
+            id: `convertToGif-${recording.id}`,
+            label: 'Convert to GIF',
+            icon: <GifIcon />,
+            action: () => onConvertToGif(recording),
+            color: 'primary',
+            tooltip: 'Convert to GIF',
+          });
+        }
+
+        if (((recording.type === 'screenRecord' || recording.type === 'cameraRecord') && recording.status !== 'recording') || recording.type === 'screenShot' || recording.data?.animatedGif) {
+          dropdownActions.unshift({
+            id: `play-${recording.id}`,
+            label: 'Play/View',
+            icon: (recording.data?.animatedGif || recording.type === 'screenShot') ? <ImageIcon /> : <PlayArrowIcon />,
+            action: () => onPlay(recording),
+            color: 'primary',
+            tooltip: (recording.data?.animatedGif || recording.type === 'screenShot') ? 'View Media' : 'Play Recording',
+          });
+        }
+
+        return (
+          <Box className="flex justify-end space-x-2">
+            <DropdownActionMenu
+              actions={dropdownActions}
+              iconButtonProps={{ size: 'small', color: 'inherit' }}
+              menuTrigger={<IconButton size="small" color="inherit" title="More Actions"><MoreVertIcon /></IconButton>}
+              id={`recording-actions-${recording.id}`}
+            />
+          </Box>
+        );
+      },
     },
   ];
 
@@ -302,44 +298,19 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
     <TableList
       columns={columns}
       data={recordings}
-      sortColumn={sortBy} // Pass sortBy to TableList for initial sorting
-      sortDirection={sortOrder} // Pass sortOrder to TableList for initial sorting
-      onSort={handleTableListSort}
-      total={total}
+      orderBy={sortBy} 
+      order={sortOrder}
+      onSortChange={handleTableListSort}
+      rowCount={total}
       page={page}
       rowsPerPage={rowsPerPage}
       onPageChange={(event, newPage) => onPageChange(newPage)} // Pass newPage directly
       onRowsPerPageChange={(event) => onRowsPerPageChange(parseInt(event.target.value, 10))} // Pass parsed value
       // Custom styling for the TableList container to match original Paper styling
-      containerSx={(theme) => ({
+      tableContainerSx={(theme) => ({
         borderRadius: '8px',
         boxShadow: theme.shadows[3],
         backgroundColor: theme.palette.background.paper,
-      })}
-      // Optional: Pass specific styling for head, header cells, rows, and cells if TableList supports it
-      headSx={(theme) => ({
-        backgroundColor:
-          theme.palette.mode === 'dark'
-            ? theme.palette.grey[800]
-            : theme.palette.primary.light,
-      })}
-      headerCellSx={(theme) => ({
-        color: theme.palette.primary.contrastText,
-        fontWeight: 'bold',
-        padding: theme.spacing(2),
-        whiteSpace: 'nowrap',
-      })}
-      rowSx={(theme) => ({
-        '&:hover': {
-          backgroundColor: theme.palette.action.hover,
-        },
-      })}
-      cellSx={(theme) => ({
-        color: theme.palette.text.primary,
-        padding: theme.spacing(2),
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
       })}
     />
   );

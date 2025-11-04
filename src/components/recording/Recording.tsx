@@ -3,7 +3,6 @@ import { Box, LinearProgress } from '@mui/material';
 import { RecordingControls } from './RecordingControls';
 import { RecordingStatus } from './RecordingStatus';
 import { RecordingsTable } from './RecordingsTable';
-// import { RecordingInfoDrawer } from './RecordingInfoDrawer'; // Removed
 import { RecordingInfoDialogContent } from './RecordingInfoDialogContent'; // New import
 import { RecordingSettingsDialog } from './RecordingSettingsDialog';
 import {
@@ -21,7 +20,6 @@ import {
   recordingsSortByStore,
   recordingsSortOrderStore,
   recordingsSearchQueryStore,
-  // recordingDrawerOpenStore, // Removed
   selectedRecordingStore,
   editableRecordingStore,
   recordingTypeFilterStore,
@@ -38,7 +36,6 @@ import {
   setRecordingsSortBy,
   setRecordingsSortOrder,
   setRecordingsSearchQuery,
-  // setRecordingDrawerOpen, // Removed
   setSelectedRecording,
   setEditableRecording,
   setRecordingTypeFilter,
@@ -88,7 +85,6 @@ export function Recording() {
   const sortBy = useStore(recordingsSortByStore);
   const sortOrder = useStore(recordingsSortOrderStore);
   const searchQuery = useStore(recordingsSearchQueryStore);
-  // const drawerOpen = useStore(recordingDrawerOpenStore); // Removed
   const selectedRecording = useStore(selectedRecordingStore);
   const editableRecording = useStore(editableRecordingStore);
   const typeFilter = useStore(recordingTypeFilterStore);
@@ -255,7 +251,6 @@ export function Recording() {
       (type === 'cameraRecord' && currentCameraRecordingId !== id)
     )
     {
-// //       console.warn(`Attempted to stop a non-active recording of type ${type}. ID: ${id}`);
       return; // Do not proceed if it's not the currently active recording of its type
     }
     if (type === 'screenRecord') {
@@ -370,8 +365,8 @@ export function Recording() {
       title: `Recording Details: ${recording.name}`,
       content: (
         <RecordingInfoDialogContent
-          onClose={handleCloseRecordingInfoDialog}
-          onUpdate={handleUpdateRecording} // Pass the update handler
+          // onClose is handled by the dialog itself
+          // onUpdate is no longer needed as component directly updates store
         />
       ),
       maxWidth: 'sm',
@@ -391,7 +386,7 @@ export function Recording() {
             {
               id: 'save-recording-info',
               label: 'Save Changes',
-              action: handleUpdateRecording,
+              action: handleUpdateRecording, // This will now read the live editableRecordingStore
               icon: <SaveIcon />,
               color: 'primary',
               variant: 'contained',
@@ -399,7 +394,7 @@ export function Recording() {
           ]}
         />
       ),
-      onClose: handleCloseRecordingInfoDialog, // Handle dialog close via backdrop/escape
+      onClose: handleCloseRecordingInfoDialog, // Handle dialog close via backdrop/escape/X button
     });
   };
   // Renamed from closeDrawer to handleCloseRecordingInfoDialog
@@ -418,14 +413,10 @@ export function Recording() {
       await recordingApi.updateRecording(selectedRecording.id, updatedRecordingData);
       fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
       showSnackbar('Recording updated successfully!', 'success');
+      handleCloseRecordingInfoDialog(); // Close dialog after successful save
     } finally {
       setLoading('updateRecording', false);
     }
-  };
-  // This function will be called by the 'Save Changes' button in the GlobalDialog actions
-  const handleUpdateRecordingAndCloseDialog = async () => {
-    await handleUpdateRecording();
-    handleCloseRecordingInfoDialog(); // Close dialog after saving
   };
   const handleOpenSettingsDialog = () => {
     const currentSettings = recorderSettingsStore.get();
@@ -479,8 +470,8 @@ export function Recording() {
               color: 'primary',
               variant: 'contained',
             },
-          ]
-        }/>
+          ]}
+        />
       ),
     });
   };
@@ -490,7 +481,6 @@ export function Recording() {
       'info',
     );
     // TODO: Implement actual sharing logic (e.g., generate shareable link, open share dialog)
-// //     console.log('Share recording:', recording);
   };
   const handleUploadToGoogleDrive = (recording: RecordingItem) => {
     showSnackbar(
@@ -498,7 +488,6 @@ export function Recording() {
       'info',
     );
     // TODO: Implement actual Google Drive upload logic (e.g., API call to backend service)
-// //     console.log('Upload to Google Drive:', recording);
   };
   // Prepare filter options for TableListToolbar
   const typeFilterOptions: FilterOption[] = RECORDING_TYPES.map((type) => ({
@@ -566,7 +555,6 @@ export function Recording() {
         onShare={handleShareRecording}
         onUploadToGoogleDrive={handleUploadToGoogleDrive}
       />
- 
       {currentPlayingVideoSrc && (
         <VideoModal
           open={isVideoModalOpen}
