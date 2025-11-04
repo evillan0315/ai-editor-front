@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, Fragment } from 'react';
+import React, { useEffect, useState, useCallback, Fragment, useRef } from 'react';
 import { Box, TextField, Button, MenuItem, Typography, Divider, IconButton, InputAdornment } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -18,93 +18,162 @@ interface RecordingInfoDialogContentProps {
 const RECORDING_TYPES: RecordingType[] = ['screenRecord', 'screenShot', 'cameraRecord'];
 
 interface DataField {
-  id: string;
+  id: string; // Unique ID for React key prop, generated locally for stability
   key: string;
   value: string; // Stringified value for text input
 }
+
+// Helper to create DataField, reusing existing ID if available for stability
+const createDataFieldFromEntry = (key: string, value: any, existingId?: string): DataField => ({
+  id: existingId || nanoid(),
+  key,
+  value: typeof value === 'string' ? value : JSON.stringify(value),
+});
 
 export const RecordingInfoDialogContent: React.FC<RecordingInfoDialogContentProps> = () => {
   const selectedRecording = useStore(selectedRecordingStore);
   const editableRecording = useStore(editableRecordingStore);
 
-  // Local state for UI representation of data fields, kept in sync with editableRecordingStore.data
-  const [localDataFields, setLocalDataFields] = useState<DataField[]>([]);
+  // Local state for UI representation of form fields, initialized from editableRecordingStore.
+  // Changes to these states update the global store via useEffects.
+  const [localDraftName, setLocalDraftName] = useState<string>(editableRecording.name || '');
+  const [localDraftType, setLocalDraftType] = useState<RecordingType>(editableRecording.type || 'screenRecord');
+  const [localDraftDataFields, setLocalDraftDataFields] = useState<DataField[]>([]);
 
-  // Effect to initialize local state from editableRecordingStore
+  // useRef to store a map of keys to DataField objects to maintain stable IDs for data fields.
+  // This prevents React from re-mounting inputs unnecessarily when the 'data' object reference changes.
+  const dataFieldMapRef = useRef<Map<string, DataField>>(new Map());
+
+  // Effect to initialize local draft states when editableRecording changes from parent
   useEffect(() => {
     if (editableRecording) {
-      const dataFields: DataField[] = Object.entries(editableRecording.data || {}).map(([key, value]) => ({
-        id: nanoid(),
-        key,
-        // If it's a string, use it directly. Otherwise, stringify for display.
-        // The parsing logic in updateDataInStore will handle conversion back.
-        value: typeof value === 'string' ? value : JSON.stringify(value),
-      }));
-      setLocalDataFields(dataFields);
+      setLocalDraftName(editableRecording.name || '');
+      setLocalDraftType(editableRecording.type || 'screenRecord');
+
+      const newDataFields: DataField[] = [];
+      const currentKeysInStore = new Set<string>();
+
+      // Populate newDataFields, reusing existing IDs from dataFieldMapRef if keys match
+      Object.entries(editableRecording.data || {}).forEach(([key, value]) => {
+        currentKeysInStore.add(key);
+        const existingDataField = dataFieldMapRef.current.get(key);
+        const dataField = createDataFieldFromEntry(key, value, existingDataField?.id);
+        newDataFields.push(dataField);
+      });
+
+      // Clean up old IDs that are no longer present in editableRecording.data
+      dataFieldMapRef.current.forEach((_dataField, storedKey) => {
+        if (!currentKeysInStore.has(storedKey)) {
+          dataFieldMapRef.current.delete(storedKey);
+        }
+      });
+
+      // Update dataFieldMapRef: add/update new fields with current values
+      const newMap = new Map<string, DataField>();
+      newDataFields.forEach(field => newMap.set(field.key, field));
+      dataFieldMapRef.current = newMap; // Replace the ref map with the new one
+
+      setLocalDraftDataFields(newDataFields);
     }
   }, [editableRecording]); // Depend on editableRecording to re-initialize if it changes externally
 
-  if (!selectedRecording) return null; // Should not happen if dialog is opened correctly
+  // Effect to update the nanostore when localDraftName or localDraftType changes (deferred update)
+  useEffect(() => {
+    setEditableRecording({
+      ...editableRecording,
+      name: localDraftName,
+      type: localDraftType,
+    });
+  }, [localDraftName, localDraftType]); // Only update store when name/type changes locally
 
-  // Function to reconstruct the data object from localDataFields and update the editableRecordingStore
-  const updateDataInStore = useCallback((updatedDataFields: DataField[]) => {
+  // Effect to update the nanostore when localDraftDataFields changes (deferred update)
+  useEffect(() => {
     const reconstructedData: { [key: string]: any } = {};
-    updatedDataFields.forEach((field) => {
-      try {
-        // Attempt to parse if it looks like JSON, otherwise keep as string
-        reconstructedData[field.key] = JSON.parse(field.value);
-      } catch (e) {
-        reconstructedData[field.key] = field.value;
+    localDraftDataFields.forEach((field) => {
+      // Ensure unique keys when reconstructing. Empty keys are skipped.
+      if (field.key) {
+        try {
+          reconstructedData[field.key] = JSON.parse(field.value);
+        } catch (e) {
+          reconstructedData[field.key] = field.value;
+        }
       }
     });
     setEditableRecording({ ...editableRecording, data: reconstructedData });
-  }, [editableRecording]);
+  }, [localDraftDataFields]); // Depend on localDraftDataFields to update the store for data
+
+  if (!selectedRecording) return null; // Should not happen if dialog is opened correctly
 
   const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const newName = e.target.value;
-    setEditableRecording({ ...editableRecording, name: newName });
-  }, [editableRecording]);
+    setLocalDraftName(e.target.value);
+  }, []); // Updates local state
 
   const handleTypeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newType = e.target.value as RecordingType;
-    setEditableRecording({ ...editableRecording, type: newType });
-  }, [editableRecording]);
+    setLocalDraftType(e.target.value as RecordingType);
+  }, []); // Updates local state
 
   const handleDataFieldChange = useCallback(
-    (id: string, field: 'key' | 'value', value: string) => {
-      setLocalDataFields((prev) => {
-        const updated = prev.map((item) =>
-          item.id === id ? { ...item, [field]: value } : item,
-        );
-        updateDataInStore(updated); // Update store immediately after local state change
+    (idToUpdate: string, field: 'key' | 'value', newValue: string) => {
+      setLocalDraftDataFields((prev) => {
+        const updated = prev.map((item) => {
+          if (item.id === idToUpdate) {
+            // If key is changed, we need to handle ref map update carefully
+            if (field === 'key') {
+              // Remove old key from ref map and add new one
+              dataFieldMapRef.current.delete(item.key);
+              const newItem = { ...item, [field]: newValue };
+              dataFieldMapRef.current.set(newValue, newItem); 
+              return newItem;
+            } else {
+              const newItem = { ...item, [field]: newValue };
+              dataFieldMapRef.current.set(item.key, newItem); // Update existing field in ref map
+              return newItem;
+            }
+          }
+          return item;
+        });
         return updated;
       });
     },
-    [updateDataInStore],
+    [],
   );
 
   const handleAddDataField = useCallback(() => {
-    setLocalDataFields((prev) => {
-      const updated = [...prev, { id: nanoid(), key: '', value: '""' }];
-      updateDataInStore(updated); // Update store immediately after local state change
-      return updated;
-    });
-  }, [updateDataInStore]);
+    setLocalDraftDataFields((prev) => {
+      // Generate a unique key for the new field, ensuring it doesn't conflict with existing keys
+      let newKey = `newField`;
+      let counter = 1;
+      while (dataFieldMapRef.current.has(`${newKey}${counter}`))
+      {
+        counter++;
+      }
+      newKey = `${newKey}${counter}`;
 
-  const handleRemoveDataField = useCallback((id: string) => {
-    setLocalDataFields((prev) => {
-      const updated = prev.filter((item) => item.id !== id);
-      updateDataInStore(updated); // Update store immediately after local state change
+      const newField = createDataFieldFromEntry(newKey, '""'); // Default to empty string JSON representation
+      dataFieldMapRef.current.set(newKey, newField); // Add to ref map
+      return [...prev, newField];
+    });
+  }, []);
+
+  const handleRemoveDataField = useCallback((idToRemove: string) => {
+    setLocalDraftDataFields((prev) => {
+      const updated = prev.filter((item) => {
+        if (item.id === idToRemove) {
+          dataFieldMapRef.current.delete(item.key); // Remove from ref map
+          return false;
+        }
+        return true;
+      });
       return updated;
     });
-  }, [updateDataInStore]);
+  }, []);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, p: 2 }}>
       <TextField
         label="Name"
         name="name"
-        value={editableRecording.name || ''}
+        value={localDraftName}
         onChange={handleNameChange}
         fullWidth
         size="small"
@@ -113,7 +182,7 @@ export const RecordingInfoDialogContent: React.FC<RecordingInfoDialogContentProp
         label="Type"
         name="type"
         select
-        value={editableRecording.type || ''}
+        value={localDraftType}
         onChange={handleTypeChange}
         fullWidth
         size="small"
@@ -154,8 +223,8 @@ export const RecordingInfoDialogContent: React.FC<RecordingInfoDialogContentProp
         <Typography variant="body2" fontWeight="bold" gutterBottom>
           Data Fields:
         </Typography>
-        {localDataFields.map((field) => (
-          <Fragment key={field.id}>
+        {localDraftDataFields.map((field) => (
+          <Fragment key={field.id}> {/* Use stable field.id for key */}
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
               <TextField
                 label="Key"
