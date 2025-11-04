@@ -212,14 +212,7 @@ export const RecordingSettingsDialog: React.FC<RecordingSettingsDialogProps> = (
           </MenuItem>
         ))}
       </TextField>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, pt: 3 }}>
-        <Button onClick={handleClose} variant="outlined">
-          Cancel
-        </Button>
-        <Button onClick={handleSave} variant="contained">
-          Save Settings
-        </Button>
-      </Box>
+      
     </Box>
   );
 };
