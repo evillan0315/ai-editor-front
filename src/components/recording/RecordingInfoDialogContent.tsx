@@ -71,6 +71,10 @@ export const RecordingInfoDialogContent: React.FC<RecordingInfoDialogContentProp
     setEditableRecording({ ...editableRecordingStore.get(), name: e.target.value });
   }, []); // Directly update the nanostore
 
+  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setEditableRecording({ ...editableRecordingStore.get(), description: e.target.value });
+  }, []); // Directly update the nanostore
+
   const handleTypeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setEditableRecording({ ...editableRecordingStore.get(), type: e.target.value as RecordingType });
   }, []); // Directly update the nanostore
@@ -148,6 +152,16 @@ export const RecordingInfoDialogContent: React.FC<RecordingInfoDialogContentProp
         onChange={handleNameChange}
         fullWidth
         size="small"
+      />
+      <TextField
+        label="Description"
+        name="description"
+        value={editableRecording.description || ''}
+        onChange={handleDescriptionChange}
+        fullWidth
+        size="small"
+        multiline
+        rows={2}
       />
       <TextField
         label="Type"

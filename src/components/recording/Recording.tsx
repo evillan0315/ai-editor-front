@@ -111,6 +111,7 @@ export function Recording() {
       const items: RecordingItem[] = data.items.map((r) => ({
         id: r.id,
         name: r.path.split('/').pop() || r.id,
+        description: r.description,
         createdAt: r.createdAt,
         sizeBytes: r.data.fileSize || 0,
         type: r.type as RecordingType, // Cast to RecordingType
@@ -359,6 +360,7 @@ export function Recording() {
     setSelectedRecording(recording); // Set selected recording
     setEditableRecording({ // Initialize editable state
       name: recording.name,
+      description: recording.description,
       type: recording.type,
       data: recording.data, // Important: pass the current data object for editing
     });

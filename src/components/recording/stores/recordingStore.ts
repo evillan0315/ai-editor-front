@@ -22,8 +22,7 @@ export const isCameraRecordingStore = persistentAtom<boolean>(
 );
 
 // New stores for Recording.tsx states
-export const recordingsListStore = persistentAtom<RecordingItem[]>(
-  'recordingsList',
+export const recordingsListStore = atom<RecordingItem[]>(
   [],
 );
 export const totalRecordingsStore = persistentAtom<number>(
@@ -134,10 +133,12 @@ export const setRecordingsSearchQuery = (query: string) => {
 // };
 
 export const setSelectedRecording = (recording: RecordingItem | null) => {
+  console.log(recording, 'recording')
   selectedRecordingStore.set(recording);
 };
 
 export const setEditableRecording = (editable: Partial<RecordingItem>) => {
+  console.log(editable, 'editable')
   // This setter now directly updates the editable state with the provided partial object
   // The transformation of 'data' to/from form fields is handled within RecordingInfoDialogContent
   editableRecordingStore.set(editable);
