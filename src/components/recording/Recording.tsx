@@ -546,7 +546,7 @@ export function Recording() {
         onRowsPerPageChange={setRecordingsRowsPerPage}
         onPlay={handlePlay}
         onDelete={handleDelete}
-        onView={openRecordingInfoDialog} // Use the new dialog opener
+        onUpdate={openRecordingInfoDialog} // Use the new dialog opener
         onSort={handleSort}
         sortBy={sortBy}
         sortOrder={sortOrder}
