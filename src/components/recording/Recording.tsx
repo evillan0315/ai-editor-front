@@ -103,9 +103,9 @@ export function Recording() {
       const data = await recordingApi.getRecordings({
         page: page + 1,
         pageSize: rowsPerPage,
-        //sortBy,
-        //sortOrder,
-        //search: searchQuery || undefined,
+        sortBy,
+        sortOrder,
+        search: searchQuery || undefined,
         type: typeFilter || undefined,
       });
       const items: RecordingItem[] = data.items.map((r) => ({
