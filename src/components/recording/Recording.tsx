@@ -85,7 +85,8 @@ export function Recording() {
   const sortBy = useStore(recordingsSortByStore);
   const sortOrder = useStore(recordingsSortOrderStore);
   const searchQuery = useStore(recordingsSearchQueryStore);
-  const selectedRecording = useStore(selectedRecordingStore);
+  // The `selectedRecording` used in handleUpdateRecording will now be explicitly fetched from the store.
+  // const selectedRecording = useStore(selectedRecordingStore); 
   const editableRecording = useStore(editableRecordingStore);
   const typeFilter = useStore(recordingTypeFilterStore);
   const isVideoModalOpen = useStore(isVideoModalOpenStore);
@@ -199,7 +200,7 @@ export function Recording() {
       fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
     } finally {
       setLoading('startRecording', false);
-    }
+    }c
   };
   const handleStopScreenRecording = async () => {
     if (!currentRecordingId) return;
@@ -403,14 +404,21 @@ export function Recording() {
     setEditableRecording({}); // Clear editable state on close
     hideDialog();
   };
-  // Modified handleUpdateRecording to read from store
+  // Modified handleUpdateRecording to read from store directly
   const handleUpdateRecording = async () => {
-    console.log(selectedRecording, 'selectedRecording');
-    if (!selectedRecording) return;
+    const currentSelectedRecording = selectedRecordingStore.get(); // Get the latest value directly from the store
+    console.log(currentSelectedRecording, 'selectedRecording from store on update attempt');
+
+    if (!currentSelectedRecording) {
+      console.error('No recording selected to update.');
+      showSnackbar('No recording selected to update.', 'error');
+      return;
+    }
+
     const updatedRecordingData = editableRecordingStore.get(); // Get the latest editable state
     setLoading('updateRecording', true);
     try {
-      await recordingApi.updateRecording(selectedRecording.id, updatedRecordingData);
+      await recordingApi.updateRecording(currentSelectedRecording.id, updatedRecordingData);
       fetchRecordingsData(); // Use fetchRecordingsData to trigger refetch
       showSnackbar('Recording updated successfully!', 'success');
       handleCloseRecordingInfoDialog(); // Close dialog after successful save
