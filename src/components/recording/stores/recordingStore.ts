@@ -1,4 +1,5 @@
 import { persistentAtom } from '@/utils/persistentAtom';
+import { atom } from 'nanostores'; // Import atom
 import { IRecorderSettings, RecordingItem, SortField, SortOrder, RecordingType, DeviceDto } from '../types/recording';
 
 // Existing stores
@@ -49,17 +50,17 @@ export const recordingsSearchQueryStore = persistentAtom<string>(
   'recordingsSearchQuery',
   '',
 );
-export const recordingDrawerOpenStore = persistentAtom<boolean>(
-  'recordingDrawerOpen',
-  false,
-);
+// export const recordingDrawerOpenStore = persistentAtom<boolean>( // Removed
+//   'recordingDrawerOpen',
+//   false,
+// );
 export const selectedRecordingStore = persistentAtom<RecordingItem | null>(
   'selectedRecording',
   null,
 );
 export const editableRecordingStore = persistentAtom<Partial<RecordingItem>>(
   'editableRecording',
-  {}, // Store the editable form state
+  {}, // Store the editable form state directly
 );
 export const recordingTypeFilterStore = persistentAtom<RecordingType | ''>(
   'recordingTypeFilter',
@@ -87,6 +88,9 @@ export const availableVideoInputDevicesStore = persistentAtom<DeviceDto[]>(
   'availableVideoInputDevices',
   [],
 );
+
+// NEW: Temporary store for recording settings dialog pending changes
+export const pendingRecorderSettingsStore = atom<IRecorderSettings | null>(null);
 
 // Setters
 export const setIsScreenRecording = (isRecording: boolean) => {
@@ -125,15 +129,17 @@ export const setRecordingsSearchQuery = (query: string) => {
   recordingsSearchQueryStore.set(query);
 };
 
-export const setRecordingDrawerOpen = (open: boolean) => {
-  recordingDrawerOpenStore.set(open);
-};
+// export const setRecordingDrawerOpen = (open: boolean) => { // Removed
+//   recordingDrawerOpenStore.set(open);
+// };
 
 export const setSelectedRecording = (recording: RecordingItem | null) => {
   selectedRecordingStore.set(recording);
 };
 
 export const setEditableRecording = (editable: Partial<RecordingItem>) => {
+  // This setter now directly updates the editable state with the provided partial object
+  // The transformation of 'data' to/from form fields is handled within RecordingInfoDialogContent
   editableRecordingStore.set(editable);
 };
 
@@ -165,17 +171,22 @@ export const setAvailableVideoInputDevices = (devices: DeviceDto[]) => {
   availableVideoInputDevicesStore.set(devices);
 };
 
+// NEW: Setter for pending recorder settings
+export const setPendingRecorderSettings = (settings: IRecorderSettings | null) => {
+  pendingRecorderSettingsStore.set(settings);
+};
+
 export const recorderSettingsStore = persistentAtom<IRecorderSettings>(
   'recorderSettings',
   {
     namePrefix: 'codejector-recording',
     screenResolution: '1920x1080',
     screenFramerate: 30,
-    enableScreenAudio: false, // New: Default to no audio for screen recording
-    screenAudioDevice: 'default', // New: Default audio device for screen recording
+    enableScreenAudio: false,
+    screenAudioDevice: 'default',
     cameraResolution: '1280x720',
     cameraFramerate: 30,
     cameraVideoDevice: '/dev/video0',
-    cameraAudioDevice: 'default', // Changed default to 'default' for flexibility
+    cameraAudioDevice: 'default',
   },
 );
