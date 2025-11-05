@@ -13,6 +13,7 @@
 
 - [📖 Table of Contents](#-table-of-contents)
 - [🖼️ Screenshots](#️-screenshots)
+- [▶️ Demo](#️-demo)
 - [🏛️ High-Level Architecture](#️-high-level-architecture)
 - [🗂️ Project Structure](#️-project-structure)
 - [✨ Features](#-features)
@@ -43,6 +44,14 @@
 ![Project Board Music App](project-board-music-app.png)
 ![Project Board Homepage](project-board-homepage.png)
 ![Project Board Apps](project-board-apps.png)
+
+---
+
+## ▶️ Demo
+
+Watch a video demonstration of the project on YouTube:
+
+[![Watch the demo](https://img.youtube.com/vi/js7CvamJwKM/hqdefault.jpg)](https://youtu.be/js7CvamJwKM)
 
 ---
 

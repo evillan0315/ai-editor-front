@@ -96,6 +96,16 @@ export function Recording() {
   const availableVideoInputDevices = useStore(availableVideoInputDevicesStore);
   // Ref for media element
   const mediaElementRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
+
+  // Effect to ensure default sort order on mount, overriding any previously persisted 'name' sort
+  useEffect(() => {
+    if (sortBy !== 'createdAt' || sortOrder !== 'desc') {
+      setRecordingsSortBy('createdAt');
+      setRecordingsSortOrder('desc');
+      setRecordingsPage(0); // Reset page to 0 when changing sort criteria
+    }
+  }, [sortBy, sortOrder]); // Re-run if sortBy/sortOrder somehow change back to an undesired state, though unlikely with persistentAtom
+
   // Fetch recordings from API
   const fetchRecordingsData = useCallback(async () => {
     setLoading('recordingsList', true);
@@ -103,9 +113,9 @@ export function Recording() {
       const data = await recordingApi.getRecordings({
         page: page + 1,
         pageSize: rowsPerPage,
-        sortBy,
-        sortOrder,
-        search: searchQuery || undefined,
+        //sortBy,
+        //sortOrder,
+        //search: searchQuery || undefined,
         type: typeFilter || undefined,
       });
       const items: RecordingItem[] = data.items.map((r) => ({
@@ -122,6 +132,8 @@ export function Recording() {
       }));
       setRecordingsList(items);
       setTotalRecordings(data.total);
+      setRecordingsSortBy('createdAt');
+      setRecordingsSortOrder('desc');
       if (data.items.length === 0 && page > 0) setRecordingsPage(page - 1);
     } finally {
       setLoading('recordingsList', false);

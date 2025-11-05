@@ -82,7 +82,7 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
   onToggle,
 }) => {
   const muiTheme = useTheme();
-  const ActionIconComponent = ACTION_ICON[change.action]; // Renamed to avoid conflict
+  const ActionIconComponent = ACTION_ICON[change.action.toLowerCase()]; // Renamed to avoid conflict
 
   const [isEditingFilePath, setIsEditingFilePath] = useState(false);
   const [editedFilePath, setEditedFilePath] = useState(change.filePath);
@@ -258,7 +258,7 @@ export const ChangeItem: React.FC<ChangeItemProps> = ({
         )}
         <Chip
           label={change.action.toUpperCase()}
-          color={ACTION_COLOR[change.action]}
+          color={ACTION_COLOR[change.action.toLowerCase()]}
           size="small"
           icon={<ActionIconComponent fontSize="small" />} // Use the specific action icon for the chip
         />

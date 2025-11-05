@@ -91,7 +91,7 @@ export const generateCode = async (
   let rawText: string | null = null;
 
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/llm/generate-llm`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/llm/generate-llm?provider=gemini`, {
       method: 'POST',
       body: JSON.stringify(data),
       //headers: { 'Content-Type': 'application/json' },

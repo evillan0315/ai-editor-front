@@ -37,13 +37,11 @@ export const recordingsRowsPerPageStore = persistentAtom<number>(
   'recordingsRowsPerPage',
   10,
 );
-export const recordingsSortByStore = persistentAtom<SortField>(
-  'recordingsSortBy',
-  'createdAt',
+export const recordingsSortByStore = atom<SortField>(
+  'createdAt', // Changed default sort field from 'name' to 'createdAt'
 );
-export const recordingsSortOrderStore = persistentAtom<SortOrder>(
-  'recordingsSortOrder',
-  'desc',
+export const recordingsSortOrderStore = atom<SortOrder>(
+  'desc', // Changed default sort order from 'asc' to 'desc'
 );
 export const recordingsSearchQueryStore = persistentAtom<string>(
   'recordingsSearchQuery',

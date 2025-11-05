@@ -119,7 +119,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
       ),
       content: (
         <DialogContentText id="alert-dialog-description" sx={{ p: 2 }}>
-          Are you sure you want to delete the recording \"{name}\" This action cannot be undone."
+          Are you sure you want to delete the recording "{name}" This action cannot be undone."
         </DialogContentText>
       ),
       actions: (
@@ -152,6 +152,18 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
       label: 'Name',
       sortable: true,
       render: (recording) => recording.name,
+    },
+    {
+      id: 'description',
+      label: 'Description',
+      sortable: false, // Description might be long, sorting usually isn't ideal
+      render: (recording) => (
+        <Tooltip title={recording.description} placement="top">
+          <Typography variant="body2" noWrap sx={{ maxWidth: '200px' }}>
+            {recording.description}
+          </Typography>
+        </Tooltip>
+      ),
     },
     {
       id: 'type',
@@ -297,7 +309,7 @@ const RecordingsTable: React.FC<RecordingsTableProps> = ({
     <TableList
       columns={columns}
       data={recordings}
-      orderBy={sortBy} 
+      orderBy={sortBy||'createdAt'} 
       order={sortOrder}
       onSortChange={handleTableListSort}
       rowCount={total}
